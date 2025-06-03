@@ -1,0 +1,34 @@
+export const COLORS = {
+  background: {
+    primary: '#18181B',   // 전체 배경
+    card: '#232326',      // 카드/컨테이너 배경
+  },
+  text: {
+    primary: '#F3F4F6',   // 주요 텍스트
+    secondary: '#A1A1AA', // 보조 텍스트
+    disabled: '#52525B',  // 비활성화 텍스트
+    buttonText: '#18181B', // 버튼 텍스트
+  },
+  accent: {
+    green: '#4ADE80',     // 포인트(버튼, 태그, 플로팅 버튼)
+  },
+  border: {
+    default: '#27272A',   // 카드/입력창 등 경계선
+  },
+  gray: {
+    100: '#F7FAFC',
+    200: '#EDF2F7',
+    300: '#E2E8F0',
+    400: '#CBD5E0',
+    500: '#A0AEC0',
+    600: '#718096',
+    700: '#4A5568',
+    800: '#2D3748',
+    900: '#1A202C',
+  },
+  error: '#E53E3E',
+  success: '#38A169',
+  warning: '#DD6B20',
+} as const;
+
+export type ColorType = typeof COLORS; 
