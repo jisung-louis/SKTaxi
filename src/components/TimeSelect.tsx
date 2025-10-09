@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native';
 import { COLORS } from '../constants/colors';
 
-const ITEM_HEIGHT = 40;
+const ITEM_HEIGHT = 50;
 const VISIBLE_ITEMS = 3;
 export const DAY_PERIOD = ['오전', '오후'];
 export const HOURS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
@@ -19,15 +19,37 @@ export function formatTimeToSelect(date: Date): string {
 }
 
 export interface TimeSelectProps {
-  timeVal: string;  // 'YYYY-MM-DD HH:mm:ss'
+  timeVal: string;  // 'HH:mm:ss'
   onChange: (value: string) => void;
+  containerStyle?: ViewStyle;
+  periodStyle?: ViewStyle;
+  hourStyle?: ViewStyle;
+  minuteStyle?: ViewStyle;
+  periodTextStyle?: TextStyle;
+  hourTextStyle?: TextStyle;
+  minuteTextStyle?: TextStyle;
+  colonStyle?: TextStyle;
+  itemHeight?: number;
+  visibleItems?: number;
 }
 
-export const TimeSelect: React.FC<TimeSelectProps> = ({ timeVal, onChange }) => {
+export const TimeSelect: React.FC<TimeSelectProps> = ({
+  timeVal,
+  onChange,
+  containerStyle,
+  periodStyle,
+  hourStyle,
+  minuteStyle,
+  periodTextStyle,
+  hourTextStyle,
+  minuteTextStyle,
+  colonStyle,
+  itemHeight = ITEM_HEIGHT,
+  visibleItems = VISIBLE_ITEMS,
+}) => {
   // 파싱
   const initial = useMemo(() => {
-    const [date, time] = timeVal.split(' ');
-    const [HH, MM] = time.split(':');
+    const [HH, MM] = timeVal.split(':');
     const hour = parseInt(HH, 10);
     const period = hour < 12 ? '오전' : '오후';
     const hour12 = hour % 12 === 0 ? 12 : hour % 12;
@@ -35,7 +57,6 @@ export const TimeSelect: React.FC<TimeSelectProps> = ({ timeVal, onChange }) => 
       period,
       hour: hour12.toString().padStart(2, '0'),
       minute: MM,
-      date,
     };
   }, [timeVal]);
 
@@ -48,55 +69,98 @@ export const TimeSelect: React.FC<TimeSelectProps> = ({ timeVal, onChange }) => 
     let h = parseInt(hour, 10);
     if (period === '오후' && h !== 12) h += 12;
     if (period === '오전' && h === 12) h = 0;
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = (now.getMonth() + 1).toString().padStart(2, '0');
-    const dd = now.getDate().toString().padStart(2, '0');
-    const ss = '00';
-    const result = `${yyyy}-${mm}-${dd} ${h.toString().padStart(2, '0')}:${minute}:${ss}`;
+    const result = `${h.toString().padStart(2, '0')}:${minute}:00`;
     onChange(result);
   }, [period, hour, minute, onChange]);
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.label}>출발시간</Text>
-      <View style={styles.timeRow}>
-        <PeriodSelect value={period} onChange={setPeriod} />
-        <HourSelect value={hour} onChange={setHour} />
-        <Text style={styles.colon}>:</Text>
-        <MinuteSelect value={minute} onChange={setMinute} />
-      </View>
+    <View style={[styles.timeRow, containerStyle]}>
+      <PeriodSelect
+        value={period}
+        onChange={setPeriod}
+        width={48}
+        fontSize={18}
+        style={periodStyle}
+        textStyle={periodTextStyle}
+        itemHeight={itemHeight}
+        visibleItems={visibleItems}
+      />
+      <HourSelect
+        value={hour}
+        onChange={setHour}
+        width={72}
+        fontSize={40}
+        style={hourStyle}
+        textStyle={hourTextStyle}
+        itemHeight={itemHeight}
+        visibleItems={visibleItems}
+      />
+      <Text style={[styles.colon, colonStyle]}>:</Text>
+      <MinuteSelect
+        value={minute}
+        onChange={setMinute}
+        width={72}
+        fontSize={40}
+        style={minuteStyle}
+        textStyle={minuteTextStyle}
+        itemHeight={itemHeight}
+        visibleItems={visibleItems}
+      />
     </View>
   );
 };
 
-const PeriodSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+interface ScrollPickerProps {
+  data: string[];
+  value: string;
+  onChange: (v: string) => void;
+  width: number;
+  fontSize: number;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+  itemHeight: number;
+  visibleItems: number;
+}
+
+const PeriodSelect = ({ value, onChange, width, fontSize, style, textStyle, itemHeight, visibleItems }: Omit<ScrollPickerProps, 'data'>) => (
   <ScrollPicker
     data={DAY_PERIOD}
     value={value}
     onChange={onChange}
-    width={48}
-    fontSize={16}
+    width={width}
+    fontSize={fontSize}
+    style={style}
+    textStyle={textStyle}
+    itemHeight={itemHeight}
+    visibleItems={visibleItems}
   />
 );
 
-const HourSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+const HourSelect = ({ value, onChange, width, fontSize, style, textStyle, itemHeight, visibleItems }: Omit<ScrollPickerProps, 'data'>) => (
   <ScrollPicker
     data={HOURS}
     value={value}
     onChange={onChange}
-    width={72}
-    fontSize={40}
+    width={width}
+    fontSize={fontSize}
+    style={style}
+    textStyle={textStyle}
+    itemHeight={itemHeight}
+    visibleItems={visibleItems}
   />
 );
 
-const MinuteSelect = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+const MinuteSelect = ({ value, onChange, width, fontSize, style, textStyle, itemHeight, visibleItems }: Omit<ScrollPickerProps, 'data'>) => (
   <ScrollPicker
     data={MINUTES}
     value={value}
     onChange={onChange}
-    width={72}
-    fontSize={40}
+    width={width}
+    fontSize={fontSize}
+    style={style}
+    textStyle={textStyle}
+    itemHeight={itemHeight}
+    visibleItems={visibleItems}
   />
 );
 
@@ -106,25 +170,37 @@ const ScrollPicker = ({
   onChange,
   width,
   fontSize,
-}: {
-  data: string[];
-  value: string;
-  onChange: (v: string) => void;
-  width: number;
-  fontSize: number;
-}) => {
+  style,
+  textStyle,
+  itemHeight,
+  visibleItems,
+}: ScrollPickerProps) => {
   const selectedIndex = data.indexOf(value);
+  const [scrollY, setScrollY] = useState(0);
+  const getOpacity = (index: number) => {
+    const itemPosition = index * itemHeight;
+    const centerIndex = Math.floor(visibleItems / 2);
+    const centerY = scrollY;
+    const distanceFromCenter = Math.abs(itemPosition - centerY);
+    const maxDistance = itemHeight * centerIndex;
+    return Math.max(0.2, 1 - distanceFromCenter / maxDistance);
+  };
+
   return (
-    <View style={[styles.pickerContainer, { width }]}> 
+    <View style={[styles.pickerContainer, { width, height: itemHeight * visibleItems }, style]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        snapToInterval={ITEM_HEIGHT}
+        snapToInterval={itemHeight}
         decelerationRate="fast"
         contentContainerStyle={{
-          paddingVertical: (ITEM_HEIGHT * (VISIBLE_ITEMS - 1)) / 2,
+          paddingVertical: itemHeight * Math.floor(visibleItems / 2),
         }}
+        onScroll={(e) => {
+          setScrollY(e.nativeEvent.contentOffset.y);
+        }}
+        scrollEventThrottle={16}
         onMomentumScrollEnd={e => {
-          const idx = Math.round(e.nativeEvent.contentOffset.y / ITEM_HEIGHT);
+          const idx = Math.round(e.nativeEvent.contentOffset.y / itemHeight);
           onChange(data[idx]);
         }}
         style={{ flex: 1 }}
@@ -134,83 +210,72 @@ const ScrollPicker = ({
             key={item}
             style={[
               styles.pickerItem,
-              idx === selectedIndex && styles.pickerItemSelected,
+              { height: itemHeight },
             ]}
           >
             <Text style={[
-              idx === selectedIndex ? styles.pickerTextSelected : styles.pickerText,
-              { fontSize },
+              styles.pickerText,
+              { 
+                fontSize,
+                opacity: getOpacity(idx),
+              },
+              textStyle,
+              //idx === selectedIndex && styles.pickerTextSelected, //선택된 시간 bold처리
             ]}>
               {item}
             </Text>
           </View>
         ))}
       </ScrollView>
-      {/* 중앙선 */}
-      <View style={styles.pickerHighlight} pointerEvents="none" />
+      {/*<View
+        style={[
+          styles.pickerHighlight,
+          {
+            top: (itemHeight * (visibleItems-1))/2,
+            height: itemHeight,
+          },
+        ]}
+        pointerEvents="none"
+      />*/}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 20,
-    padding: 20,
-    marginVertical: 8,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-    marginBottom: 8,
-  },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
     justifyContent: 'flex-start',
   },
   colon: {
     fontSize: 40,
     fontWeight: 'bold',
-    color: COLORS.text.primary,
     marginHorizontal: 4,
   },
   pickerContainer: {
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
   pickerItem: {
-    height: ITEM_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  pickerItemSelected: {},
   pickerText: {
-    color: COLORS.text.secondary,
-    fontWeight: '400',
     textAlign: 'center',
+    opacity: 1,
   },
   pickerTextSelected: {
-    color: COLORS.text.buttonText,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   pickerHighlight: {
     position: 'absolute',
-    top: (ITEM_HEIGHT * (VISIBLE_ITEMS - 1)) / 2,
     left: 0,
     right: 0,
-    height: ITEM_HEIGHT,
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: COLORS.border.default,
+    borderColor: '#E5E5E5',
     zIndex: 10,
   },
-}); 
+});

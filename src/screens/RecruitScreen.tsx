@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
 import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TimeSelect, formatTimeToSelect } from '../components/TimeSelect';
+import { CustomTooltip } from '../components/CustomTooltip';
 
 const DEPARTURE_OPTIONS = [
   ['명학역', '안양역', '금정역'],
@@ -27,6 +28,9 @@ export const RecruitScreen = () => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [detail, setDetail] = useState('');
+  const [showKeywordInfo, setShowKeywordInfo] = useState(false);
+  const [customKeyword, setCustomKeyword] = useState('');
+  const [showKeywordInput, setShowKeywordInput] = useState(false);
 
   const now = new Date();
   now.setHours(8, 0, 0, 0); // 오전 8시 0분 0초
@@ -45,14 +49,18 @@ export const RecruitScreen = () => {
     setKeywords(prev => prev.includes(kw) ? prev.filter(k => k !== kw) : [...prev, kw]);
   };
 
-  // 더미 시간 선택 (실제 DateTimePicker로 교체 가능)
-  const handleTimeSelect = () => {
-    // 더미: 현재 시간으로 설정
-    const now = new Date();
-    const h = now.getHours().toString().padStart(2, '0');
-    const m = now.getMinutes().toString().padStart(2, '0');
-    setTime(`${h}:${m}`);
-    setShowTimePicker(false);
+  const handleAddKeyword = () => {
+    if (!customKeyword.trim()) {
+      Alert.alert('알림', '키워드를 입력해주세요.');
+      return;
+    }
+    if (keywords.includes(customKeyword)) {
+      Alert.alert('알림', '이미 추가된 키워드입니다.');
+      return;
+    }
+    setKeywords(prev => [...prev, customKeyword]);
+    setCustomKeyword('');
+    setShowKeywordInput(false);
   };
 
   return (
@@ -166,24 +174,54 @@ export const RecruitScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <TimeSelect timeVal={time} onChange={setTime} />
+          <Text style={styles.label}>출발시간</Text>
+          <TimeSelect
+            timeVal={time.split(' ')[1]} // 'HH:mm:ss' 형식으로 변환
+            onChange={(newTime) => {
+              const [date] = time.split(' ');
+              setTime(`${date} ${newTime}`);
+            }}
+            containerStyle={styles.timeSelectContainer}
+            periodStyle={styles.timeSelectPeriod}
+            hourStyle={styles.timeSelectHour}
+            minuteStyle={styles.timeSelectMinute}
+            periodTextStyle={styles.timeSelectPeriodText}
+            hourTextStyle={styles.timeSelectHourText}
+            minuteTextStyle={styles.timeSelectMinuteText}
+            colonStyle={styles.timeSelectColon}
+          />
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>키워드 선택</Text>
-          <View style={styles.keywordContainer}>
-            {KEYWORD_OPTIONS.map(kw => (
-              <TouchableOpacity
-                key={kw}
-                style={[
-                  styles.keywordButton,
-                  keywords.includes(kw) && styles.keywordButtonSelected,
-                ]}
-                onPress={() => handleKeywordToggle(kw)}
-              >
-                <Text style={keywords.includes(kw) ? styles.keywordTextSelected : styles.keywordText}>{kw}</Text>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>키워드 선택</Text>
+            <View style={{ position: 'relative' }}>
+              <TouchableOpacity onPress={() => setShowKeywordInfo(v => !v)}>
+                <Text style={styles.infoButton}>ⓘ</Text>
               </TouchableOpacity>
+              <CustomTooltip
+                visible={showKeywordInfo}
+                text={"동승자에게 전달할 메시지를 키워드로 입력해보세요!"}
+                onClose={() => setShowKeywordInfo(false)}
+                style={{ left: 30, top: -40,zIndex:1000  }}
+              />
+            </View>
+          </View>
+          <View style={styles.keywordContainer}>
+            {keywords.map(kw => (
+              <View key={kw} style={styles.keywordItem}>
+                <Text style={styles.keywordText}>{kw}</Text>
+                <TouchableOpacity onPress={() => setKeywords(prev => prev.filter(k => k !== kw))}>
+                  <Text style={styles.removeKeywordButton}>×</Text>
+                </TouchableOpacity>
+              </View>
             ))}
+            <TouchableOpacity 
+              style={styles.addKeywordButton}
+              onPress={() => setShowKeywordInput(true)}
+            >
+              <Text style={styles.addKeywordButtonText}>+ 키워드 추가</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -202,6 +240,42 @@ export const RecruitScreen = () => {
       <TouchableOpacity style={styles.buttonFixed} onPress={handleRecruit}>
         <Text style={styles.buttonText}>택시 모집 시작</Text>
       </TouchableOpacity>
+
+      <Modal
+        visible={showKeywordInput}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowKeywordInput(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TextInput
+              style={styles.keywordInput}
+              value={customKeyword}
+              onChangeText={setCustomKeyword}
+              placeholder="키워드를 입력하세요"
+              placeholderTextColor={COLORS.text.disabled}
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalCancelButton]}
+                onPress={() => {
+                  setShowKeywordInput(false);
+                  setCustomKeyword('');
+                }}
+              >
+                <Text style={styles.modalButtonText}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.modalConfirmButton]}
+                onPress={handleAddKeyword}
+              >
+                <Text style={[styles.modalButtonText, styles.modalConfirmButtonText]}>추가</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -304,38 +378,147 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
   },
-  keywordButton: {
+  keywordItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accent.green,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    margin: 4,
+  },
+  keywordText: {
+    color: COLORS.text.buttonText,
+    fontSize: 14,
+    marginRight: 4,
+  },
+  removeKeywordButton: {
+    color: COLORS.text.buttonText,
+    fontSize: 20,
+    marginLeft: 4,
+    fontWeight: 'bold',
+  },
+  addKeywordButton: {
     borderWidth: 1,
     borderColor: COLORS.accent.green,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     margin: 4,
-    backgroundColor: COLORS.background.primary,
   },
-  keywordButtonSelected: {
-    backgroundColor: COLORS.accent.green,
-    borderColor: COLORS.accent.green,
-  },
-  keywordText: {
+  addKeywordButtonText: {
     color: COLORS.accent.green,
     fontSize: 14,
   },
-  keywordTextSelected: {
-    color: COLORS.text.buttonText,
-    fontSize: 14,
-    fontWeight: 'bold',
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  timeButton: {
-    borderWidth: 1,
-    borderColor: COLORS.accent.green,
+  infoButton: {
+    fontSize: 16,
+    color: COLORS.text.secondary,
+    marginLeft: 8,
+    marginBottom: 16,
+  },
+  timeSelectContainer: {
+    width: '100%',
+    justifyContent: 'flex-end',
+    backgroundColor:COLORS.background.card,
+  },
+  timeSelectPeriod: {
+  },
+  timeSelectHour: {
+  },
+  timeSelectMinute: {
+  },
+  timeSelectPeriodText: {
+    color: COLORS.text.secondary,
+  },
+  timeSelectHourText: {
+    color: COLORS.text.primary,
+  },
+  timeSelectMinuteText: {
+    color: COLORS.text.primary,
+  },
+  timeSelectColon: {
+    color: COLORS.text.primary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: COLORS.background.card,
+    borderRadius: 16,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalText: {
+    fontSize: 16,
+    color: COLORS.text.primary,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  modalCloseButton: {
+    backgroundColor: COLORS.accent.green,
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
   },
-  timeButtonText: {
-    color: COLORS.accent.green,
+  modalCloseButtonText: {
+    color: COLORS.text.buttonText,
     fontSize: 16,
     fontWeight: '600',
+  },
+  keywordInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: COLORS.text.primary,
+    marginBottom: 20,
+    backgroundColor:COLORS.background.primary,
+    minHeight: 45,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  modalCancelButton: {
+    backgroundColor: COLORS.background.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  modalConfirmButton: {
+    backgroundColor: COLORS.accent.green,
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+  },
+  modalConfirmButtonText: {
+    color: COLORS.text.buttonText,
+  },
+  tooltipContent: {
+    padding: 8,
+    minWidth: 200,
+  },
+  tooltipText: {
+    color: COLORS.text.buttonText,
+    fontSize: 14,
+    textAlign: 'center',
   },
 }); 
