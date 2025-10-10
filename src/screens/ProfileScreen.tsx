@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Text } from '../components/common/Text';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+//import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { useAuthContext } from '../contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';

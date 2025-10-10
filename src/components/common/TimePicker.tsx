@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '../../constants/colors';
 
 const ITEM_HEIGHT = 50;
 const VISIBLE_ITEMS = 3;
@@ -18,7 +18,7 @@ export function formatTimeToSelect(date: Date): string {
   return `${yyyy}-${mm}-${dd} ${HH}:${MM}:${ss}`;
 }
 
-export interface TimeSelectProps {
+export interface TimePickerProps {
   timeVal: string;  // 'HH:mm:ss'
   onChange: (value: string) => void;
   containerStyle?: ViewStyle;
@@ -33,7 +33,7 @@ export interface TimeSelectProps {
   visibleItems?: number;
 }
 
-export const TimeSelect: React.FC<TimeSelectProps> = ({
+export const TimePicker: React.FC<TimePickerProps> = ({
   timeVal,
   onChange,
   containerStyle,

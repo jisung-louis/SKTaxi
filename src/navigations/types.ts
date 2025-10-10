@@ -6,10 +6,10 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  Home: undefined;
-  Recruit: undefined;
-  Chat: undefined;
-  Profile: undefined;
+  홈: undefined;
+  택시: undefined;
+  게시판: undefined;
+  공지: undefined;
 };
 
 export type AuthStackParamList = {

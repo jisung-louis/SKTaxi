@@ -46,10 +46,10 @@ const styles = StyleSheet.create({
   outlined: {
     backgroundColor: COLORS.background.primary,
     borderWidth: 1,
-    borderColor: COLORS.border.light,
+    borderColor: COLORS.border.default,
   },
   filled: {
-    backgroundColor: COLORS.background.secondary,
+    backgroundColor: COLORS.background.card,
   },
 });
 

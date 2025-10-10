@@ -59,7 +59,7 @@ const Button = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? COLORS.background.primary : COLORS.primary}
+          color={variant === 'primary' ? COLORS.background.primary : COLORS.accent.green}
           size="small"
         />
       ) : (
@@ -77,15 +77,15 @@ const styles = StyleSheet.create({
   },
   // Variants
   primary: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.accent.green,
   },
   secondary: {
-    backgroundColor: COLORS.secondary,
+    backgroundColor: COLORS.background.card,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: COLORS.primary,
+    borderColor: COLORS.accent.green,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -111,13 +111,13 @@ const styles = StyleSheet.create({
     color: COLORS.background.primary,
   },
   secondaryText: {
-    color: COLORS.background.primary,
+    color: COLORS.accent.green,
   },
   outlineText: {
-    color: COLORS.primary,
+    color: COLORS.accent.green,
   },
   ghostText: {
-    color: COLORS.primary,
+    color: COLORS.accent.green,
   },
   smallText: {
     fontSize: 14,

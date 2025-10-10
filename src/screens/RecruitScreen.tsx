@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
-import { Text } from '../components/common/Text';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
+//import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TimeSelect, formatTimeToSelect } from '../components/TimeSelect';
-import { CustomTooltip } from '../components/CustomTooltip';
+import { TimePicker, formatTimeToSelect } from '../components/common/TimePicker';
+import { CustomTooltip } from '../components/common/CustomTooltip';
 
 const DEPARTURE_OPTIONS = [
   ['명학역', '안양역', '금정역'],
@@ -175,7 +175,7 @@ export const RecruitScreen = () => {
 
         <View style={styles.card}>
           <Text style={styles.label}>출발시간</Text>
-          <TimeSelect
+          <TimePicker
             timeVal={time.split(' ')[1]} // 'HH:mm:ss' 형식으로 변환
             onChange={(newTime) => {
               const [date] = time.split(' ');
