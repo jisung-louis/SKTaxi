@@ -1,4 +1,6 @@
-export const dummyParties = [
+import { Party } from "../../types/party";
+
+export const dummyParties: Party[] = [
     {
       id: '1',
       departureTime: '오전 08:50',
@@ -6,8 +8,10 @@ export const dummyParties = [
       destination: 'ai 공학관',
       members: 3,
       maxMembers: 4,
-      tags: ['#아침', '#등교', '#빠른출발'],
+      leader: '홍길동',
+      tags: ['#아침아침아', '#등교등교등', '#빠른출발발' ],
       location: { latitude: 37.4501, longitude: 127.1287 },
+      description: '명학역 1번출구 앞 뿔테안경입니다',
     },
     {
       id: '2',
@@ -16,8 +20,10 @@ export const dummyParties = [
       destination: '기숙사',
       members: 2,
       maxMembers: 4,
+      leader: '김길동',
       tags: ['#점심', '#기숙사', '#여유'],
       location: { latitude: 37.3921, longitude: 126.9487 },
+      description: '8:45분까지 빨리 모이기!',
     },
     {
       id: '3',
@@ -26,8 +32,10 @@ export const dummyParties = [
       destination: '가천대',
       members: 4,
       maxMembers: 4,
+      leader: '이길동',
       tags: ['#퇴근', '#만차', '#정시출발'],
       location: { latitude: 37.3614, longitude: 126.9357 },
+      description: '정왕역에서 가천대로 이동하는 택시 파티입니다!',
     },
     {
       id: '4',
@@ -36,8 +44,10 @@ export const dummyParties = [
       destination: '수원시청',
       members: 1,
       maxMembers: 3,
+      leader: '박길동',
       tags: ['#아침', '#출근', '#빠른출발'],
       location: { latitude: 37.2659, longitude: 127.0004 },
+      description: '수원역에서 수원시청으로 이동하는 택시 파티입니다!',
     },
     {
       id: '5',
@@ -46,8 +56,10 @@ export const dummyParties = [
       destination: '인천대학교',
       members: 2,
       maxMembers: 4,
+      leader: '최길동',
       tags: ['#등교', '#여유', '#학생'],
       location: { latitude: 37.3861, longitude: 126.6399 },
+      description: '빨리빨리 오세요!!!',
     },
     {
       id: '6',
@@ -56,8 +68,10 @@ export const dummyParties = [
       destination: '서울역',
       members: 3,
       maxMembers: 4,
+      leader: '정길동',
       tags: ['#퇴근', '#빠른출발', '#정시출발'],
       location: { latitude: 37.4981, longitude: 127.0276 },
+      description: '강남역에서 서울역으로 이동하는 택시 파티입니다!',
     },
     {
       id: '7',
@@ -66,8 +80,10 @@ export const dummyParties = [
       destination: '부천시청',
       members: 1,
       maxMembers: 3,
+      leader: '오길동',
       tags: ['#아침', '#출근', '#여유'],
       location: { latitude: 37.4854, longitude: 126.7827 },
+      description: '부천역에서 부천시청으로 이동하는 택시 파티입니다!',
     },
     {
       id: '8',
@@ -76,8 +92,10 @@ export const dummyParties = [
       destination: '일산동구청',
       members: 2,
       maxMembers: 4,
+      leader: '유길동',
       tags: ['#등교', '#여유', '#학생'],
       location: { latitude: 37.6821, longitude: 126.7698 },
+      description: '일산역에서 일산동구청으로 이동하는 택시 파티입니다!',
     },
     {
       id: '9',
@@ -86,7 +104,9 @@ export const dummyParties = [
       destination: '분당구청',
       members: 3,
       maxMembers: 4,
+      leader: '장길동',
       tags: ['#퇴근', '#빠른출발', '#정시출발'],
       location: { latitude: 37.3519, longitude: 127.1087 },
+      description: '분당역에서 분당구청으로 이동하는 택시 파티입니다!',
     }
   ];

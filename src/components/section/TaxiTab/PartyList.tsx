@@ -1,27 +1,25 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Animated, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
-import { BOTTOMSHEET_HANDLE_HEIGHT } from '../../../constants/constants';
+import { BOTTOMSHEET_HANDLE_HEIGHT, PARTY_CARD_HEIGHT } from '../../../constants/constants';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AnimatedReanimated, { useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
+import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
+import { BOTTOM_TAB_BAR_HEIGHT } from '../../../constants/constants';
+import { Party } from '../../../types/party';
+import Button from '../../common/Button';
 
-export interface TaxiParty {
-  id: string;
-  departureTime: string;
-  departure: string;
-  destination: string;
-  members: number;
-  maxMembers: number;
-  tags: string[];
-  location: { latitude: number; longitude: number };
-}
 
 interface PartyListProps {
-  parties: TaxiParty[];
+  parties: Party[];
   selectedPartyId: string | null;
   bottomSheetIndex: number;
-  onPressParty: (party: TaxiParty, index: number) => void;
+  onPressParty: (party: Party, index: number) => void;
+  onToggleBottomSheet: () => void;
+  animatedPosition: AnimatedReanimated.SharedValue<number>;
 }
 
 export const PartyList: React.FC<PartyListProps> = ({
@@ -29,21 +27,53 @@ export const PartyList: React.FC<PartyListProps> = ({
   selectedPartyId,
   bottomSheetIndex,
   onPressParty,
+  onToggleBottomSheet,
+  animatedPosition,
 }) => {
   const { top, bottom } = useSafeAreaInsets();
+
+  const animatedMarginTop = useAnimatedStyle(() => {
+    const margin = interpolate(
+      animatedPosition.value,
+      [0, 500], // 예상 범위 조정
+      [top - BOTTOMSHEET_HANDLE_HEIGHT, 0],
+      Extrapolation.CLAMP // 범위 초과 시 클램프
+    );
+    return { marginTop: margin };
+  });
+
+  const animatedIconStyle = useAnimatedStyle(() => {
+    const rotation = interpolate(
+      animatedPosition.value,
+      [0, WINDOW_WIDTH - top], // adjust according to bottomsheet height range
+      [0, 180],
+      Extrapolation.CLAMP
+    );
+    return {
+      transform: [{ rotate: `${rotation}deg` }],
+    };
+  });
+
   return (
-    <View>
-      <View style={[styles.headerContainer, { marginTop: top - BOTTOMSHEET_HANDLE_HEIGHT }]}>
+    <View style={{ flexGrow: 1 }}>
+      <AnimatedReanimated.View style={[styles.headerContainer, animatedMarginTop]}>
         <Text style={[styles.header]}>모집 중인 택시 파티</Text>
-        <TouchableOpacity style={styles.headerButton}>
-          <Icon name="chevron-down" size={32} color={COLORS.accent.green} />
+        <TouchableOpacity style={styles.headerButton} onPress={onToggleBottomSheet}>
+          <Animated.View style={animatedIconStyle}>
+            <Icon 
+              name={"chevron-down"} 
+              size={32} 
+              color={COLORS.accent.green} 
+            />
+          </Animated.View>
         </TouchableOpacity>
-      </View>
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? 520 : 220 }}
+      </AnimatedReanimated.View>
+      <FlatList
+        data={parties}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? BOTTOM_TAB_BAR_HEIGHT + WINDOW_WIDTH + 100 : BOTTOM_TAB_BAR_HEIGHT + 200}}
         showsVerticalScrollIndicator={false}
-      >
-        {parties.map((party, index) => {
+        renderItem={({ item: party, index }) => {
           const isSelected = selectedPartyId === party.id;
           return (
             <TouchableOpacity
@@ -54,29 +84,41 @@ export const PartyList: React.FC<PartyListProps> = ({
               <Animated.View
                 style={[
                   styles.card,
-                  isSelected && styles.cardSelected,
+                  isSelected && (styles.cardSelected),
                 ]}
               >
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={styles.timeContainer}>
                   <Text style={styles.time}>{party.departureTime}</Text>
                   <Text style={styles.members}>{party.members}/{party.maxMembers}명</Text>
                 </View>
-                <Text style={styles.place}>{party.departure} → {party.destination}</Text>
-                <View style={styles.tags}>
-                  {party.tags.map(tag => (
-                    <Text key={tag} style={styles.tag}>{tag}</Text>
-                  ))}
+                <View style={styles.placeContainer}>
+                  <Text style={styles.place}>{party.departure} → {party.destination}</Text>
+                  <Text style={styles.leader}>리더 : {party.leader}</Text>
+                </View>
+                <View style={styles.tagsContainer}>
+                  <View style={styles.tags}>
+                    {party.tags.map((tag: string) => (
+                      <Text key={tag} style={styles.tag}>{tag}</Text>
+                    ))}
+                  </View>
+                  <Icon name={isSelected ? "caret-up" : "caret-down"} size={24} color={COLORS.text.primary} />
                 </View>
                 {isSelected && (
-                  <View style={styles.detail}>
-                    <Text style={styles.detailText}>상세정보: 출발지({party.departure}), 목적지({party.destination})</Text>
+                  <View style={styles.selectedContainer}>
+                    <View style={styles.detail}>
+                      <Text style={styles.detailText}>{party.description}</Text>  
+                    </View>
+                    <Button
+                      title="동승 요청"
+                      onPress={() => {}}
+                    />
                   </View>
                 )}
               </Animated.View>
             </TouchableOpacity>
           );
-        })}
-      </ScrollView>
+        }}
+      />
     </View>
   );
 };
@@ -87,7 +129,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginHorizontal: 16,
-    marginBottom: 12,
+    marginVertical: 12,
   },
   headerButton: {
     backgroundColor: COLORS.background.card,
@@ -116,35 +158,53 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
     transform: [{ scale: 1 }],
+    height: PARTY_CARD_HEIGHT,
+    gap: 8,
   },
   cardSelected: {
-    borderWidth: 2,
-    borderColor: COLORS.accent.green,
-    transform: [{ scale: 1.05 }],
+    outlineWidth: 2,
+    outlineColor: COLORS.accent.green,
     shadowColor: COLORS.accent.green,
     shadowOpacity: 0.2,
     elevation: 4,
+    height: 'auto',
+  },
+  placeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   time: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
   },
   place: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    marginTop: 8,
-    marginBottom: 4,
+  },
+  leader: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.primary,
   },
   members: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
+    fontWeight: 'bold',
     color: COLORS.text.secondary,
-    fontWeight: '600',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
+    overflow: 'hidden',
   },
   tag: {
     backgroundColor: COLORS.accent.green,
@@ -153,11 +213,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     marginRight: 6,
-    marginBottom: 4,
-    fontSize: 12,
+    ...TYPOGRAPHY.caption1,
+  },
+  selectedContainer: {
+    marginTop: 8,
+    gap: 16,
   },
   detail: {
-    marginTop: 12,
     padding: 12,
     backgroundColor: COLORS.background.primary,
     borderRadius: 12,
@@ -167,5 +229,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-
-
