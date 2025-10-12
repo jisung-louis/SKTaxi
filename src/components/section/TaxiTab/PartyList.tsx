@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -18,6 +18,7 @@ interface PartyListProps {
   selectedPartyId: string | null;
   bottomSheetIndex: number;
   onPressParty: (party: Party, index: number) => void;
+  onRequestJoinParty: (party: Party) => void;
   onToggleBottomSheet: () => void;
   animatedPosition: AnimatedReanimated.SharedValue<number>;
 }
@@ -27,10 +28,38 @@ export const PartyList: React.FC<PartyListProps> = ({
   selectedPartyId,
   bottomSheetIndex,
   onPressParty,
+  onRequestJoinParty,
   onToggleBottomSheet,
   animatedPosition,
 }) => {
   const { top, bottom } = useSafeAreaInsets();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState('최신순');
+
+  const sortOptions = [
+    { label: '최신순', value: 'latest' },
+    { label: '가까운순', value: 'distance' },
+  ];
+
+  const handleSortSelect = (option: { label: string; value: string }) => {
+    setSelectedSort(option.label);
+    setIsDropdownOpen(false);
+    // TODO: 실제 정렬 로직 구현
+    console.log('정렬 옵션 선택:', option.value);
+  };
+
+  // 드롭다운 외부 터치 시 닫기
+  useEffect(() => {
+    const handlePressOutside = () => {
+      if (isDropdownOpen) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    return () => {
+      // cleanup은 필요 없음
+    };
+  }, [isDropdownOpen]);
 
   const animatedMarginTop = useAnimatedStyle(() => {
     const margin = interpolate(
@@ -55,24 +84,64 @@ export const PartyList: React.FC<PartyListProps> = ({
   });
 
   return (
-    <View style={{ flexGrow: 1 }}>
-      <AnimatedReanimated.View style={[styles.headerContainer, animatedMarginTop]}>
-        <Text style={[styles.header]}>모집 중인 택시 파티</Text>
-        <TouchableOpacity style={styles.headerButton} onPress={onToggleBottomSheet}>
-          <Animated.View style={animatedIconStyle}>
-            <Icon 
-              name={"chevron-down"} 
-              size={32} 
-              color={COLORS.accent.green} 
-            />
-          </Animated.View>
-        </TouchableOpacity>
-      </AnimatedReanimated.View>
+    <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
+      <View style={{ flexGrow: 1 }}>
+        <AnimatedReanimated.View style={[styles.headerContainer, animatedMarginTop]}>
+          <Text style={[styles.header]}>모집 중인 택시 파티</Text>
+          <View style={styles.headerRightContainer}>
+            <View style={styles.dropdownContainer}>
+              <TouchableOpacity 
+                style={styles.dropdown}
+                onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <Text style={styles.headerRightText}>{selectedSort}</Text>
+                <Icon 
+                  name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
+                  size={18} 
+                  color={COLORS.text.secondary} 
+                />
+              </TouchableOpacity>
+              
+              {isDropdownOpen && (
+                <View style={styles.dropdownMenu}>
+                  {sortOptions.map((option) => (
+                    <TouchableOpacity
+                      key={option.value}
+                      style={[
+                        styles.dropdownItem,
+                        selectedSort === option.label && styles.dropdownItemSelected
+                      ]}
+                      onPress={() => handleSortSelect(option)}
+                    >
+                      <Text style={[
+                        styles.dropdownItemText,
+                        selectedSort === option.label && styles.dropdownItemTextSelected
+                      ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+            
+            <TouchableOpacity style={styles.headerButton} onPress={onToggleBottomSheet}>
+              <Animated.View style={animatedIconStyle}>
+                <Icon 
+                  name={"chevron-down"} 
+                  size={32} 
+                  color={COLORS.accent.green} 
+                />
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+        </AnimatedReanimated.View>
       <FlatList
         data={parties}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? BOTTOM_TAB_BAR_HEIGHT + WINDOW_WIDTH + 100 : BOTTOM_TAB_BAR_HEIGHT + 200}}
+        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? WINDOW_WIDTH + 200 : 300}}
         showsVerticalScrollIndicator={false}
+        style={{ height: '100%'}}
         renderItem={({ item: party, index }) => {
           const isSelected = selectedPartyId === party.id;
           return (
@@ -110,7 +179,7 @@ export const PartyList: React.FC<PartyListProps> = ({
                     </View>
                     <Button
                       title="동승 요청"
-                      onPress={() => {}}
+                      onPress={() => onRequestJoinParty(party)}
                     />
                   </View>
                 )}
@@ -119,7 +188,8 @@ export const PartyList: React.FC<PartyListProps> = ({
           );
         }}
       />
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -130,6 +200,55 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 16,
     marginVertical: 12,
+    zIndex: 1000,
+  },
+  headerRightContainer: {
+    flexDirection: 'row',
+    gap: 12, 
+    alignItems: 'center',
+  },
+  dropdownContainer: {
+    position: 'relative',
+  },
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.background.card,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 32 + 10,
+    right: 0,
+    backgroundColor: COLORS.background.card,
+    borderRadius: 12,
+    paddingVertical: 8,
+    minWidth: 120,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+    zIndex: 1000,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dropdownItemSelected: {
+    backgroundColor: COLORS.accent.green + '20',
+  },
+  dropdownItemText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+  },
+  dropdownItemTextSelected: {
+    color: COLORS.accent.green,
+    fontWeight: '600',
   },
   headerButton: {
     backgroundColor: COLORS.background.card,
@@ -139,13 +258,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerButtonText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-  },
   header: {
     ...TYPOGRAPHY.title1,
     color: COLORS.text.primary,
+  },
+  headerRightText: {
+    ...TYPOGRAPHY.body2,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
   },
   card: {
     backgroundColor: COLORS.background.card,

@@ -3,11 +3,11 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typhograpy';
+import Button from '../components/common/Button';
 
 export const HomeScreen = () => {
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
+    <View style={styles.container}>
       <Text style={styles.text}>HomeScreen</Text>
       <Text style={styles.text}>HomeScreen</Text>
       <Text style={styles.text}>HomeScreen</Text>
@@ -24,8 +24,8 @@ export const HomeScreen = () => {
       <Text style={styles.text}>HomeScreen</Text>
       <Text style={styles.text}>HomeScreen</Text>
       <Text style={styles.text}>HomeScreen</Text>
-      </ScrollView>
-    </SafeAreaView >
+      <Button title="테스트" onPress={() => console.log('테스트')} />
+    </View >
   );
 };
 

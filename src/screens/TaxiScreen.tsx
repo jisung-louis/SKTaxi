@@ -1,5 +1,8 @@
 import React, { useRef } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { TaxiStackParamList } from '../navigations/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import MapView from 'react-native-maps';
@@ -11,11 +14,16 @@ import { useTaxiBottomSheet } from '../components/section/TaxiTab/hooks/useTaxiB
 import { usePartySelection } from '../components/section/TaxiTab/hooks/usePartySelection';
 import { BOTTOMSHEET_HANDLE_HEIGHT, BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Animated, { useAnimatedStyle, interpolate, useAnimatedReaction, useSharedValue, runOnJS, Extrapolation } from 'react-native-reanimated';
+import Button from '../components/common/Button';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+type TaxiScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'TaxiMain'>;
 
 export const TaxiScreen = () => {
+  const navigation = useNavigation<TaxiScreenNavigationProp>();
   const mapRef = useRef<MapView | null>(null);
   const { location, loading } = useCurrentLocation();
-  const { bottomSheetRef, bottomSheetIndex, snapPoints, handleChange, toggleBottomSheet, animatedPosition, animatedIndex, DEFAULT_SNAP_POINTS, FULL_SNAP_POINT} = useTaxiBottomSheet();
+  const { bottomSheetRef, bottomSheetIndex, snapPoints, handleChange, toggleBottomSheet, animatedPosition, animatedIndex,} = useTaxiBottomSheet();
   const { selectedPartyId, handleCardPress } = usePartySelection(mapRef, location);
   const HANDLE_WIDTH = 48;
 
@@ -62,7 +70,7 @@ export const TaxiScreen = () => {
         onChange={handleChange}
         animatedPosition={animatedPosition}
         animatedIndex={animatedIndex}
-        // enableDynamicSizing={false}
+        enableDynamicSizing={false}
       >
         <BottomSheetView>
           <PartyList
@@ -72,9 +80,16 @@ export const TaxiScreen = () => {
             animatedPosition={animatedPosition}
             onPressParty={(party) => handleCardPress(party)}
             onToggleBottomSheet={toggleBottomSheet}
+            onRequestJoinParty={(party) => {
+              console.log('onRequestJoinParty', JSON.stringify(party, null, 2));
+              navigation.navigate('AcceptancePending', { party });
+            }}
           />
         </BottomSheetView>
       </BottomSheet>
+      <TouchableOpacity style={styles.floatingButtonContainer} onPress={() => navigation.navigate('Recruit')}>
+        <Icon name="add-outline" size={48} color={COLORS.background.primary} />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -85,4 +100,22 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.primary,
   },
   // Card 관련 스타일은 PartyList로 이동됨
+  floatingButtonContainer: {
+    position: 'absolute',
+    bottom: 16,
+    right: 16,
+    zIndex: 10000,
+    backgroundColor: COLORS.accent.green,
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: COLORS.accent.green,
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
 });

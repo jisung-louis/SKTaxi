@@ -97,16 +97,16 @@ export const dummyParties: Party[] = [
       location: { latitude: 37.6821, longitude: 126.7698 },
       description: '일산역에서 일산동구청으로 이동하는 택시 파티입니다!',
     },
-    {
-      id: '9',
-      departureTime: '오후 07:00',
-      departure: '분당역',
-      destination: '분당구청',
-      members: 3,
-      maxMembers: 4,
-      leader: '장길동',
-      tags: ['#퇴근', '#빠른출발', '#정시출발'],
-      location: { latitude: 37.3519, longitude: 127.1087 },
-      description: '분당역에서 분당구청으로 이동하는 택시 파티입니다!',
-    }
+    // {
+    //   id: '9',
+    //   departureTime: '오후 07:00',
+    //   departure: '분당역',
+    //   destination: '분당구청',
+    //   members: 3,
+    //   maxMembers: 4,
+    //   leader: '장길동',
+    //   tags: ['#퇴근', '#빠른출발', '#정시출발'],
+    //   location: { latitude: 37.3519, longitude: 127.1087 },
+    //   description: '분당역에서 분당구청으로 이동하는 택시 파티입니다!',
+    // },
   ];

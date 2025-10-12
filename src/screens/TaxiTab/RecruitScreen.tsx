@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
 //import { Text } from '../components/common/Text';
-import { COLORS } from '../constants/colors';
+import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TimePicker, formatTimeToSelect } from '../components/common/TimePicker';
-import { CustomTooltip } from '../components/common/CustomTooltip';
+import { TimePicker, formatTimeToSelect } from '../../components/common/TimePicker';
+import { CustomTooltip } from '../../components/common/CustomTooltip';
+import PageHeader from '../../components/common/PageHeader';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { TYPOGRAPHY } from '../../constants/typhograpy';
 
 const DEPARTURE_OPTIONS = [
   ['명학역', '안양역', '금정역'],
@@ -18,7 +22,13 @@ const DESTINATION_OPTIONS = [
 
 const KEYWORD_OPTIONS = ['#여성전용', '#조용히', '#음악', '#짐많음', '#흡연', '#동승환영'];
 
+type RecruitScreenNavigationProp = NativeStackNavigationProp<RecruitScreenParamList, 'Recruit'>;
+type RecruitScreenParamList = {
+  Recruit: undefined;
+};
+
 export const RecruitScreen = () => {
+  const navigation = useNavigation<RecruitScreenNavigationProp>();
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
   const [customDeparture, setCustomDeparture] = useState('');
@@ -63,10 +73,14 @@ export const RecruitScreen = () => {
     setShowKeywordInput(false);
   };
 
+  const onBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Text style={styles.title}>택시 파티 모집하기</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <PageHeader onBack={onBack} padding={0} title="택시 파티 모집하기"/>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false} style={{marginTop: 10}}>
         <View style={styles.card}>
           <Text style={styles.label}>출발지</Text>
           {DEPARTURE_OPTIONS.map((row, rowIdx) => (
@@ -296,13 +310,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background.primary,
     padding: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: COLORS.text.primary,
-    marginTop: 8,
-    marginBottom: 24,
   },
   inputContainer: {
     marginBottom: 20,
