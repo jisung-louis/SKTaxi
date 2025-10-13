@@ -2,7 +2,9 @@ export const COLORS = {
   background: {
     primary: '#18181B',   // 전체 배경
     card: '#232326',      // 카드/컨테이너 배경
+    dropdown: '#303033',  // 드롭다운 배경
     white: '#FFFFFF',     // 화이트 배경
+    surface: '#27272A',   // 서피스 배경
   },
   text: {
     primary: '#F3F4F6',   // 주요 텍스트

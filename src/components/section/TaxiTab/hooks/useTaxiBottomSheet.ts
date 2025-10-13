@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useSharedValue } from 'react-native-reanimated';
 import BottomSheet, { WINDOW_HEIGHT, WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-import { BOTTOMSHEET_HANDLE_HEIGHT } from '../../../../constants/constants';
+import { BOTTOMSHEET_HANDLE_HEIGHT, BOTTOM_TAB_BAR_HEIGHT } from '../../../../constants/constants';
 
 export const useTaxiBottomSheet = () => {
   const [bottomSheetIndex, setBottomSheetIndex] = useState(0);
@@ -9,7 +9,7 @@ export const useTaxiBottomSheet = () => {
   const animatedPosition = useSharedValue(0);
   const animatedIndex = useSharedValue(0);
 
-  const DEFAULT_SNAP_POINTS = WINDOW_WIDTH;
+  const DEFAULT_SNAP_POINTS = WINDOW_WIDTH + BOTTOM_TAB_BAR_HEIGHT;
   const FULL_SNAP_POINT = WINDOW_HEIGHT
   const snapPoints = useMemo(
     () => [DEFAULT_SNAP_POINTS, FULL_SNAP_POINT],

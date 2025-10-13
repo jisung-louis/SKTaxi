@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '../../components/common/Button';
+import { BOTTOM_TAB_BAR_HEIGHT } from '../../constants/constants';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;
 type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'AcceptancePending'>;
@@ -17,14 +18,14 @@ export const AcceptancePendingScreen = () => {
   const navigation = useNavigation<AcceptancePendingScreenNavigationProp>();
   const route = useRoute<AcceptancePendingScreenRouteProp>();
   const { party } = route.params;
-  
+  const insets = useSafeAreaInsets();
   const onBack = () => {
     navigation.goBack();
   };
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView 
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom }]}
         showsVerticalScrollIndicator={false}
         >
           {/* 상단 상태 카드 */}
@@ -153,13 +154,12 @@ const styles = StyleSheet.create({
 
   // 경로 표시 스타일
   routeContainer: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   routeItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 8,
   },
   routeIconContainer: {
     width: 24,
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   routeLine: {
     width: 2,
-    height: 20,
+    height: 16,
     backgroundColor: COLORS.accent.green + '40',
     marginLeft: 11,
     marginVertical: 4,
@@ -183,13 +183,12 @@ const styles = StyleSheet.create({
 
   // 파티 상세 정보 스타일
   partyDetails: {
-    gap: 16,
+    gap: 8,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 4,
   },
   detailLabel: {
     ...TYPOGRAPHY.body2,
@@ -216,6 +215,6 @@ const styles = StyleSheet.create({
   button: {
     height: 40,
     borderRadius: 12,
-    marginTop: 12,
+    marginTop: 16,
   },
 });

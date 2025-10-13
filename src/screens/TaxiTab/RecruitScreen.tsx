@@ -12,6 +12,7 @@ import { TaxiStackParamList } from '../../navigations/types';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import { DEPARTURE_OPTIONS, DESTINATION_OPTIONS, DEPARTURE_LOCATION, DESTINATION_LOCATION } from '../../constants/constants';
+import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 
 type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Recruit'>;
 
@@ -113,7 +114,7 @@ export const RecruitScreen = () => {
       )}
       <ScrollView 
         ref={scrollViewRef}
-        contentContainerStyle={{ paddingBottom: 300 }} 
+        contentContainerStyle={{ paddingBottom: 400 }} 
         showsVerticalScrollIndicator={false} 
         style={{marginTop: 10}}
       >
@@ -346,7 +347,7 @@ export const RecruitScreen = () => {
         </View>
       </ScrollView>
       <View style={styles.floatingSubmitButton}>
-        <Button title="택시 모집 시작" onPress={handleRecruit} style={{marginHorizontal: 16}}/>
+        <Button title="택시 모집 시작" onPress={handleRecruit} style={{width: '100%'}}/>
       </View>
       <Modal
         visible={showKeywordInput}
@@ -530,6 +531,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
+    backgroundColor: COLORS.background.primary,
+    padding: 16,
+    width: WINDOW_WIDTH,
+    height: 48 + (16 * 2) + 40, // 버튼 높이 + 패딩 + 하단 안전영역
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.default,
   },
   memberContainer: {
     flexDirection: 'row',

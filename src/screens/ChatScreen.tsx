@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 
 
 interface Message {
@@ -22,6 +24,20 @@ export const ChatScreen = () => {
       timestamp: new Date(),
     },
   ]);
+
+  const isFocused = useIsFocused();
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
+    translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
+  }, [isFocused]);
+
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const handleSend = () => {
     if (!message.trim()) return;
@@ -55,6 +71,7 @@ export const ChatScreen = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
+      <Animated.View style={[styles.container, screenAnimatedStyle]}>
       <FlatList
         data={messages}
         renderItem={renderMessage}
@@ -74,6 +91,7 @@ export const ChatScreen = () => {
           <Text style={styles.sendButtonText}>전송</Text>
         </TouchableOpacity>
       </View>
+      </Animated.View>
     </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -139,7 +139,7 @@ export const PartyList: React.FC<PartyListProps> = ({
       <FlatList
         data={parties}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? WINDOW_WIDTH + 200 : 300}}
+        contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? WINDOW_WIDTH + 250 : 350}}
         showsVerticalScrollIndicator={false}
         style={{ height: '100%'}}
         renderItem={({ item: party, index }) => {
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 32 + 10,
     right: 0,
-    backgroundColor: COLORS.background.card,
+    backgroundColor: COLORS.background.dropdown,
     borderRadius: 12,
     paddingVertical: 8,
     minWidth: 120,

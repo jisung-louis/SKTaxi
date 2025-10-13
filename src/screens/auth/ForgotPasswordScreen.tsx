@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity, TextInput, KeyboardAvoidingView, Pl
 import { Text } from '../../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PageHeader from '../../components/common/PageHeader';
 
 export const ForgotPasswordScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
@@ -13,8 +14,13 @@ export const ForgotPasswordScreen = ({ navigation }: any) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
+        <PageHeader
+          onBack={() => navigation.goBack()}
+          title="비밀번호 찾기"
+          padding={16}
+          style={{ paddingBottom: 24 }}
+        />
         <View style={styles.header}>
-          <Text style={styles.title}>비밀번호 찾기</Text>
           <Text style={styles.subtitle}>가입한 이메일 주소를 입력해주세요</Text>
         </View>
 
@@ -58,11 +64,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 32,
     paddingBottom: 48,
   },
   title: {
     fontSize: 32,
+    lineHeight: 40,
     fontWeight: 'bold',
     color: COLORS.text.primary,
     marginBottom: 8,

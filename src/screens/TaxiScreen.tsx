@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { TaxiStackParamList } from '../navigations/types';
@@ -13,7 +13,8 @@ import { useCurrentLocation } from '../components/section/TaxiTab/hooks/useCurre
 import { useTaxiBottomSheet } from '../components/section/TaxiTab/hooks/useTaxiBottomSheet';
 import { usePartySelection } from '../components/section/TaxiTab/hooks/usePartySelection';
 import { BOTTOMSHEET_HANDLE_HEIGHT, BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
-import Animated, { useAnimatedStyle, interpolate, useAnimatedReaction, useSharedValue, runOnJS, Extrapolation } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, interpolate, useAnimatedReaction, useSharedValue, runOnJS, Extrapolation, withTiming } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 import Button from '../components/common/Button';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -26,6 +27,23 @@ export const TaxiScreen = () => {
   const { bottomSheetRef, bottomSheetIndex, snapPoints, handleChange, toggleBottomSheet, animatedPosition, animatedIndex,} = useTaxiBottomSheet();
   const { selectedPartyId, handleCardPress } = usePartySelection(mapRef, location);
   const HANDLE_WIDTH = 48;
+  const isFocused = useIsFocused();
+  const screenTranslateY = useSharedValue(0);
+  const mapOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // 화면 전환 시 흰색 플래시 방지를 위해 opacity는 고정, 위치만 살짝 슬라이드
+    screenTranslateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
+  }, [isFocused]);
+
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: COLORS.background.primary,
+    transform: [{ translateY: screenTranslateY.value }],
+  }));
+
+  const mapAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: mapOpacity.value,
+  }));
 
   const animatedHandleIndicatorStyle = useAnimatedStyle(() => {
     const width = interpolate(
@@ -38,24 +56,27 @@ export const TaxiScreen = () => {
   });
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, screenAnimatedStyle]}>
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.accent.green} />
           <Text style={{ color: COLORS.text.secondary, marginTop: 16 }}>위치 정보를 불러오는 중...</Text>
         </View>
       ) : location ? (
-        <MapView
-          ref={mapRef}
-          style={{ width: WINDOW_WIDTH, height: WINDOW_WIDTH + BOTTOMSHEET_HANDLE_HEIGHT}}
-          initialRegion={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }}
-          showsUserLocation={true}
-        />
+        <Animated.View style={mapAnimatedStyle}>
+          <MapView
+            ref={mapRef}
+            style={{ width: WINDOW_WIDTH, height: WINDOW_WIDTH + BOTTOMSHEET_HANDLE_HEIGHT}}
+            initialRegion={{
+              latitude: location.latitude,
+              longitude: location.longitude,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
+            showsUserLocation={true}
+            onMapReady={() => { mapOpacity.value = withTiming(1, { duration: 200 }); }}
+          />
+        </Animated.View>
       ) : (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <Text style={{ color: COLORS.text.secondary }}>위치 정보를 가져올 수 없습니다.</Text>
@@ -90,7 +111,7 @@ export const TaxiScreen = () => {
       <TouchableOpacity style={styles.floatingButtonContainer} onPress={() => navigation.navigate('Recruit')}>
         <Icon name="add-outline" size={48} color={COLORS.background.primary} />
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -102,7 +123,7 @@ const styles = StyleSheet.create({
   // Card 관련 스타일은 PartyList로 이동됨
   floatingButtonContainer: {
     position: 'absolute',
-    bottom: 16,
+    bottom: 16 + BOTTOM_TAB_BAR_HEIGHT,
     right: 16,
     zIndex: 10000,
     backgroundColor: COLORS.accent.green,

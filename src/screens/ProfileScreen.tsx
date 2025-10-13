@@ -1,12 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { useAuthContext } from '../contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 
 export const ProfileScreen = () => {
   const { user, signOut } = useAuthContext();
+  const isFocused = useIsFocused();
+  const opacity = useSharedValue(1);
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
+    translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
+  }, [isFocused]);
+
+  const screenAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const handleSignOut = () => {
     Alert.alert(
@@ -28,6 +43,7 @@ export const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Animated.View style={[styles.container, screenAnimatedStyle]}>
       <View style={styles.profileSection}>
         <View style={styles.avatarContainer}>
           <Text style={styles.avatarText}>
@@ -56,6 +72,7 @@ export const ProfileScreen = () => {
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
         <Text style={styles.signOutText}>로그아웃</Text>
       </TouchableOpacity>
+      </Animated.View>
     </SafeAreaView>
   );
 };

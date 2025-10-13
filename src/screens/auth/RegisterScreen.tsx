@@ -5,6 +5,7 @@ import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
 import { validateEmail } from '../../utils/validation';
+import PageHeader from '../../components/common/PageHeader';
 
 // 컴포넌트 최상단에서 Android LayoutAnimation 활성화
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -94,12 +95,13 @@ export const RegisterScreen = ({ navigation }: any) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
+        <PageHeader
+          onBack={() => navigation.goBack()}
+          title="회원가입"
+          padding={16}
+          style={{ paddingBottom: 24 }}
+        />
         <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Text style={styles.title}>회원가입</Text>
-            <Text style={styles.subtitle}>SK택시의 새로운 회원이 되어주세요</Text>
-          </View>
-
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <Text style={styles.label}>이름</Text>
@@ -225,11 +227,11 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 32,
     paddingBottom: 48,
   },
   title: {
     fontSize: 32,
+    lineHeight: 40,
     fontWeight: 'bold',
     color: COLORS.text.primary,
     marginBottom: 8,

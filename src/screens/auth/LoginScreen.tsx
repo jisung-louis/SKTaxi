@@ -68,6 +68,7 @@ export const LoginScreen = ({ navigation }: any) => {
         <View style={styles.header}>
           <Text style={styles.title}>로그인</Text>
           <Text style={styles.subtitle}>SK택시에 오신 것을 환영합니다</Text>
+          <Text style={styles.subtitle}>이 서비스는 성결대학교 학생들만 이용 가능합니다</Text>
         </View>
 
         <View style={styles.form}>
@@ -75,7 +76,7 @@ export const LoginScreen = ({ navigation }: any) => {
             <Text style={styles.label}>이메일</Text>
             <TextInput
               style={styles.input}
-              placeholder="이메일을 입력하세요"
+              placeholder="학교 이메일을 입력하세요 (@sungkyul.ac.kr)"
               placeholderTextColor={COLORS.text.disabled}
               value={email}
               onChangeText={setEmail}
@@ -146,6 +147,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
+    lineHeight: 40,
     fontWeight: 'bold',
     color: COLORS.text.primary,
     marginBottom: 8,
