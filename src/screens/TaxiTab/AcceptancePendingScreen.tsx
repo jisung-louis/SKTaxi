@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { TaxiStackParamList } from '../../navigations/types';
+import firestore, { collection, doc, onSnapshot } from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { formatKoreanAmPmTime } from '../../utils/datetime'; // SKTaxi: 시간 포맷 유틸 추가
 import Button from '../../components/common/Button';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../constants/constants';
+import { useUserDisplayNames } from '../../hooks/useUserDisplayNames';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;
 type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'AcceptancePending'>;
@@ -17,11 +21,34 @@ type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'Acceptanc
 export const AcceptancePendingScreen = () => {
   const navigation = useNavigation<AcceptancePendingScreenNavigationProp>();
   const route = useRoute<AcceptancePendingScreenRouteProp>();
-  const { party } = route.params;
+  const { party, requestId } = route.params as any;
   const insets = useSafeAreaInsets();
+  const { displayNameMap } = useUserDisplayNames([party?.leaderId]);
   const onBack = () => {
     navigation.goBack();
   };
+
+  // SKTaxi: 요청 상태 구독 - accepted 시 채팅 화면으로 이동, declined 시 이전 화면으로
+  useEffect(() => {
+    if (!requestId) return;
+    const requestDocRef = doc(collection(firestore(getApp()), 'joinRequests'), requestId);
+    const unsub = onSnapshot(requestDocRef, (snap) => {
+      const data = snap.data() as any;
+      if (data?.status === 'accepted') {
+        navigation.reset({
+          index: 1,
+          routes: [
+            { name: 'TaxiMain' as any },
+            { name: 'Chat' as any, params: { partyId: party?.id } },
+          ],
+        });
+      } else if (data?.status === 'declined') {
+        // SKTaxi: 거절당한 경우 이전 화면으로 돌아가기
+        navigation.popToTop();
+      }
+    });
+    return () => unsub();
+  }, [requestId, party?.id, navigation]);
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView 
@@ -48,20 +75,20 @@ export const AcceptancePendingScreen = () => {
             <Text style={styles.cardTitle}>파티 정보</Text>
             
             <View style={styles.routeContainer}>
-              <View style={styles.routeItem}>
+            <View style={styles.routeItem}>
                 <View style={styles.routeIconContainer}>
                   <Icon name="radio-button-on" size={16} color={COLORS.accent.green} />
                 </View>
-                <Text style={styles.routeText}>{party.departure}</Text>
+              <Text style={styles.routeText}>{party?.departure?.name ?? ''}</Text>
               </View>
               
               <View style={styles.routeLine} />
               
-              <View style={styles.routeItem}>
+            <View style={styles.routeItem}>
                 <View style={styles.routeIconContainer}>
                   <Icon name="location" size={16} color={COLORS.accent.green} />
                 </View>
-                <Text style={styles.routeText}>{party.destination}</Text>
+              <Text style={styles.routeText}>{party?.destination?.name ?? ''}</Text>
               </View>
             </View>
 
@@ -69,19 +96,19 @@ export const AcceptancePendingScreen = () => {
               <View style={styles.detailRow}>
                 <Icon name="time-outline" size={20} color={COLORS.text.secondary} />
                 <Text style={styles.detailLabel}>출발시간</Text>
-                <Text style={styles.detailValue}>{party.departureTime}</Text>
+              <Text style={styles.detailValue}>{formatKoreanAmPmTime(party?.departureTime)}</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Icon name="person-outline" size={20} color={COLORS.text.secondary} />
-                <Text style={styles.detailLabel}>파티장</Text>
-                <Text style={styles.detailValue}>{party.leader}</Text>
+              <Text style={styles.detailLabel}>파티장</Text>
+              <Text style={styles.detailValue}>{displayNameMap[party?.leaderId] ?? party?.leaderId}</Text>
               </View>
               
               <View style={styles.detailRow}>
                 <Icon name="people-outline" size={20} color={COLORS.text.secondary} />
-                <Text style={styles.detailLabel}>인원</Text>
-                <Text style={styles.detailValue}>{party.members}/{party.maxMembers}명</Text>
+              <Text style={styles.detailLabel}>인원</Text>
+              <Text style={styles.detailValue}>{Array.isArray(party?.members) ? party.members.length : party?.members}/{party?.maxMembers}명</Text>
               </View>
             </View>
           </View>

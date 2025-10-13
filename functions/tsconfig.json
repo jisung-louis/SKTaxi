@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2020",
+    "lib": ["ES2020"],
+    // SKTaxi: RN 타입 충돌 방지를 위해 node 타입만 로드 (firebase-functions는 패키지 자체에 내장 타입 사용)
+    "types": ["node"],
+    // 상위 워크스페이스의 @types 탐색 방지
+    "typeRoots": ["./node_modules/@types"],
+    "skipLibCheck": true
+  },
+  "compileOnSave": true,
+  "include": [
+    "src"
+  ]
+}

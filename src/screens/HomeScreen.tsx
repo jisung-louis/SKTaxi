@@ -11,7 +11,8 @@ import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Surface from '../components/common/Surface';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
-import { dummyParties } from '../constants/mock_data/dummyParties';
+import { useParties } from '../hooks/useParties'; // SKTaxi: Firestore parties 구독 훅 사용
+import { formatKoreanAmPmTime } from '../utils/datetime'; // SKTaxi: 시간 포맷 유틸
 
 type Food = {
   id: string;
@@ -40,6 +41,7 @@ const dummyFoods: Food[] = [
 ];
 
 export const HomeScreen = () => {
+  const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
@@ -90,16 +92,16 @@ export const HomeScreen = () => {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={dummyParties}
-            keyExtractor={(it) => it.id}
+            data={parties}
+            keyExtractor={(it) => it.id as string}
             renderItem={({ item }) => 
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
+            <TouchableOpacity style={styles.card} activeOpacity={0.9} key={item.id as string}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.departure} → {item.destination}</Text>
-                <Text style={styles.cardMembersText}>{item.members}/{item.maxMembers}명</Text>
+                <Text style={styles.cardTitle}>{item.departure.name} → {item.destination.name}</Text>
+                <Text style={styles.cardMembersText}>{Array.isArray(item.members) ? item.members.length : (item.members as any)}/{item.maxMembers}명</Text>
               </View>
-              <Text style={styles.cardTimeText}>{item.departureTime}</Text>
-              {item.description ? <Text style={styles.cardSubtitle}>{item.description}</Text> : null}
+              <Text style={styles.cardTimeText}>{formatKoreanAmPmTime(item.departureTime)}</Text>
+              {item.detail ? <Text style={styles.cardSubtitle}>{item.detail}</Text> : null}
             </TouchableOpacity>
           }
             horizontal
@@ -178,8 +180,8 @@ export const HomeScreen = () => {
             renderItem={({ item }) => 
             <TouchableOpacity style={[styles.card, { width: 150, height: 150 }]} activeOpacity={0.9} key={item.id}>
               <Text style={styles.cardTitle}>{item.date} {item.dateTitle}요일</Text>
-              {item.title.map((title) => (
-                <Text style={styles.cardSubtitle}>{title}</Text>
+              {item.title.map((title, idx) => (
+                <Text key={`${item.id}-${idx}`} style={styles.cardSubtitle}>{title}</Text>
               ))}
             </TouchableOpacity>
           }

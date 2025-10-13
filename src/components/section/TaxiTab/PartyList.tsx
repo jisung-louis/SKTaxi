@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -10,7 +10,17 @@ import Animated from 'react-native-reanimated';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../../constants/constants';
 import { Party } from '../../../types/party';
+// SKTaxi: 동승 요청 생성 핸들러 구현을 위한 Firebase 의존성 추가 (모듈식)
+import { getApp } from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
+import firestore, { addDoc, collection, serverTimestamp } from '@react-native-firebase/firestore';
 import Button from '../../common/Button';
+import { useUserDisplayNames } from '../../../hooks/useUserDisplayNames'; // SKTaxi: uid->displayName 매핑 훅 추가
+import { formatKoreanAmPmTime } from '../../../utils/datetime'; // SKTaxi: 시간 포맷 유틸
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { TaxiStackParamList } from '../../../navigations/types';
+import { useMyParty } from '../../../hooks/useMyParty'; // SKTaxi: 사용자 파티 소속 여부 확인
 
 
 interface PartyListProps {
@@ -35,6 +45,14 @@ export const PartyList: React.FC<PartyListProps> = ({
   const { top, bottom } = useSafeAreaInsets();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedSort, setSelectedSort] = useState('최신순');
+  const navigation = useNavigation<NativeStackNavigationProp<TaxiStackParamList>>();
+
+  // SKTaxi: 리더 uid들을 수집해 displayName 매핑
+  const leaderUids = parties.map((p) => p.leaderId).filter(Boolean) as string[];
+  const { displayNameMap } = useUserDisplayNames(leaderUids);
+
+  // SKTaxi: 사용자 파티 소속 여부 확인
+  const { hasParty, partyId: myPartyId } = useMyParty();
 
   const sortOptions = [
     { label: '최신순', value: 'latest' },
@@ -82,6 +100,19 @@ export const PartyList: React.FC<PartyListProps> = ({
       transform: [{ rotate: `${rotation}deg` }],
     };
   });
+
+  // SKTaxi: 빈 상태 컴포넌트
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Image 
+        source={require('../../../../assets/images/empty_taxi_party.png')} 
+        style={styles.emptyImage}
+        resizeMode="contain"
+      />
+      <Text style={styles.emptyTitle}>모집 중인 파티가 없어요</Text>
+      <Text style={styles.emptySubtitle}>첫 번째 파티를 만들어보세요!</Text>
+    </View>
+  );
 
   return (
     <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
@@ -138,10 +169,11 @@ export const PartyList: React.FC<PartyListProps> = ({
         </AnimatedReanimated.View>
       <FlatList
         data={parties}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => (item.id ? String(item.id) : `${item.leaderId}-${item.departureTime}-${index}`)}
         contentContainerStyle={{ paddingBottom: bottomSheetIndex === 0 ? WINDOW_WIDTH + 250 : 350}}
         showsVerticalScrollIndicator={false}
         style={{ height: '100%'}}
+        ListEmptyComponent={renderEmptyState}
         renderItem={({ item: party, index }) => {
           const isSelected = selectedPartyId === party.id;
           return (
@@ -157,16 +189,21 @@ export const PartyList: React.FC<PartyListProps> = ({
                 ]}
               >
                 <View style={styles.timeContainer}>
-                  <Text style={styles.time}>{party.departureTime}</Text>
-                  <Text style={styles.members}>{party.members}/{party.maxMembers}명</Text>
+                  <Text style={styles.time}>{formatKoreanAmPmTime(party.departureTime)}</Text>
+                  <Text style={[
+                    styles.members,
+                    Array.isArray(party.members) && party.members.length >= party.maxMembers && styles.membersFull
+                  ]}>
+                    {Array.isArray(party.members) ? party.members.length : party.members}/{party.maxMembers}명
+                  </Text>
                 </View>
                 <View style={styles.placeContainer}>
-                  <Text style={styles.place}>{party.departure} → {party.destination}</Text>
-                  <Text style={styles.leader}>리더 : {party.leader}</Text>
+                  <Text style={styles.place}>{party.departure.name} → {party.destination.name}</Text>
+                  <Text style={styles.leader}>리더 : {displayNameMap[party.leaderId] || party.leaderId}</Text>
                 </View>
                 <View style={styles.tagsContainer}>
                   <View style={styles.tags}>
-                    {party.tags.map((tag: string) => (
+                    {(party.tags || []).map((tag: string) => (
                       <Text key={tag} style={styles.tag}>{tag}</Text>
                     ))}
                   </View>
@@ -175,11 +212,55 @@ export const PartyList: React.FC<PartyListProps> = ({
                 {isSelected && (
                   <View style={styles.selectedContainer}>
                     <View style={styles.detail}>
-                      <Text style={styles.detailText}>{party.description}</Text>  
+                      <Text style={styles.detailText}>{party.detail || ''}</Text>  
                     </View>
                     <Button
-                      title="동승 요청"
-                      onPress={() => onRequestJoinParty(party)}
+                      title={
+                        party.id === myPartyId 
+                          ? "내가 속한 파티" 
+                          : Array.isArray(party.members) && party.members.length >= party.maxMembers
+                            ? "파티가 가득 찼어요"
+                            : "동승 요청"
+                      }
+                      disabled={
+                        party.id === myPartyId || 
+                        (Array.isArray(party.members) && party.members.length >= party.maxMembers)
+                      }
+                      onPress={async () => {
+                        const user = auth(getApp()).currentUser;
+                        if (!user) return;
+
+                        // SKTaxi: 파티가 가득 찬 경우
+                        if (Array.isArray(party.members) && party.members.length >= party.maxMembers) {
+                          // eslint-disable-next-line no-alert
+                          (globalThis as any)?.alert?.('이 파티는 이미 가득 찼어요.');
+                          return;
+                        }
+
+                        // SKTaxi: 이미 다른 파티에 소속되어 있는지 확인
+                        if (hasParty && party.id !== myPartyId) {
+                          // eslint-disable-next-line no-alert
+                          (globalThis as any)?.alert?.('이미 다른 파티에 소속되어 있어요. 파티를 탈퇴하고 다시 요청해주세요.');
+                          return;
+                        }
+
+                        try {
+                        const ref = await addDoc(collection(firestore(getApp()), 'joinRequests'), {
+                            partyId: party.id,
+                            leaderId: (party as any).leaderId ?? (party as any).leader,
+                            requesterId: user.uid,
+                            status: 'pending',
+                            createdAt: serverTimestamp(),
+                          });
+                          // SKTaxi: UX 피드백
+                          // eslint-disable-next-line no-alert
+                          (globalThis as any)?.alert?.('방장에게 요청을 보냈어요.');
+                        // SKTaxi: 수락 대기 화면으로 이동 (requestId 전달)
+                        navigation.navigate('AcceptancePending', { party, requestId: ref.id });
+                        } catch (e) {
+                          console.warn('requestJoin failed', e);
+                        }
+                      }}
                     />
                   </View>
                 )}
@@ -316,6 +397,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text.secondary,
   },
+  membersFull: {
+    color: '#FF6B6B', // SKTaxi: 파티가 가득 찬 경우 붉은색
+  },
   tagsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -347,5 +431,25 @@ const styles = StyleSheet.create({
   detailText: {
     color: COLORS.text.primary,
     fontSize: 14,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyImage: {
+    width: 180,
+    height: 180,
+  },
+  emptyTitle: {
+    ...TYPOGRAPHY.title2,
+    color: COLORS.text.primary,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
   },
 });

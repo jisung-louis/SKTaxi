@@ -1,6 +1,8 @@
+import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
+// SKTaxi: FCM 토큰 저장을 위한 messaging 의존성 사용을 대비해 lib 경로 통일 유지
 import { User } from '../types/auth';
 
 // Firebase 인스턴스 (지연 초기화)
@@ -10,21 +12,24 @@ let _storageInstance: ReturnType<typeof storage> | null = null;
 
 export const authInstance = () => {
   if (!_authInstance) {
-    _authInstance = auth();
+    // SKTaxi: RNFirebase v22 권고에 따라 getApp()으로 초기화
+    _authInstance = auth(getApp());
   }
   return _authInstance;
 };
 
 export const firestoreInstance = () => {
   if (!_firestoreInstance) {
-    _firestoreInstance = firestore();
+    // SKTaxi: getApp()으로 Firestore 인스턴스 생성
+    _firestoreInstance = firestore(getApp());
   }
   return _firestoreInstance;
 };
 
 export const storageInstance = () => {
   if (!_storageInstance) {
-    _storageInstance = storage();
+    // SKTaxi: getApp()으로 Storage 인스턴스 생성
+    _storageInstance = storage(getApp());
   }
   return _storageInstance;
 };

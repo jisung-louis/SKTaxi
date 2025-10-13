@@ -13,6 +13,11 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import { DEPARTURE_OPTIONS, DESTINATION_OPTIONS, DEPARTURE_LOCATION, DESTINATION_LOCATION } from '../../constants/constants';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
+// SKTaxi: Firestore 저장 로직 추가
+import { getApp } from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import { sendSystemMessage } from '../../hooks/useMessages';
 
 type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Recruit'>;
 
@@ -40,7 +45,7 @@ export const RecruitScreen = () => {
   const [departureLocation, setDepartureLocation] = useState({ row: 0, col: 0 });
   const [destinationLocation, setDestinationLocation] = useState({ row: 0, col: 0 });
 
-  const handleRecruit = () => {
+  const handleRecruit = async () => {
     if (!departure || !destination || !time) {
       Alert.alert('알림', '출발지, 도착지, 출발시간을 모두 입력해주세요.');
       return;
@@ -64,20 +69,45 @@ export const RecruitScreen = () => {
       destinationCoord = DESTINATION_LOCATION[destinationLocation.row][destinationLocation.col];
     }
     
-    // TODO: Firebase에 택시 모집 정보 저장
-    Alert.alert('알림', '택시 모집이 시작되었습니다.');
-    console.log('Recruit:', {
-      time,
-      departure,
-      destination,
-      maxMembers,
-      keywords,
-      detail,
-      departureCoord,
-      destinationCoord,
-      departureLocation,
-      destinationLocation
-    });
+    const user = auth(getApp()).currentUser;
+    if (!user) {
+      Alert.alert('알림', '로그인이 필요합니다.');
+      return;
+    }
+
+    try {
+      const departureTimeISO = new Date(new Date().toDateString() + ' ' + time).toISOString();
+      const partyDoc = {
+        // SKTaxi: 실제 Firestore 저장 필드 구성
+        leaderId: user.uid,
+        departure: { name: departure, lat: departureCoord?.latitude ?? 0, lng: departureCoord?.longitude ?? 0 },
+        destination: { name: destination, lat: destinationCoord?.latitude ?? 0, lng: destinationCoord?.longitude ?? 0 },
+        departureTime: departureTimeISO,
+        maxMembers,
+        members: [user.uid],
+        tags: keywords,
+        detail,
+        status: 'open' as const,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      };
+
+      const ref = await firestore(getApp()).collection('parties').add(partyDoc);
+      
+      // SKTaxi: 채팅방 생성 시스템 메시지 전송
+      try {
+        await sendSystemMessage(ref.id, '채팅방이 생성되었어요!');
+      } catch (error) {
+        console.error('SKTaxi RecruitScreen: Error sending system message:', error);
+        // 시스템 메시지 전송 실패해도 전체 프로세스는 계속 진행
+      }
+      
+      Alert.alert('알림', '택시 모집이 시작되었습니다.');
+      navigation.navigate('Chat', { partyId: ref.id });
+    } catch (e) {
+      Alert.alert('오류', '파티 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.warn('create party failed', e); // SKTaxi: 디버깅 로그
+    }
   };
 
   const handleKeywordToggle = (kw: string) => {

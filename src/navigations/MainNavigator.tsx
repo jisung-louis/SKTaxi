@@ -5,10 +5,11 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MainTabParamList, TaxiStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
-import { ChatScreen } from '../screens/ChatScreen';
+import { BoardScreen } from '../screens/BoardScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
+import { ChatScreen } from '../screens/TaxiTab/ChatScreen';
 import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
@@ -24,6 +25,7 @@ const TaxiStackNavigator = () => {
     <TaxiStack.Navigator screenOptions={{ headerShown: false }}>
       <TaxiStack.Screen name="TaxiMain" component={TaxiScreen} />
       <TaxiStack.Screen name="AcceptancePending" component={AcceptancePendingScreen} />
+      <TaxiStack.Screen name="Chat" component={ChatScreen} />
       <TaxiStack.Screen name="Recruit" component={RecruitScreen} />
       <TaxiStack.Screen name="MapSearch" component={MapSearchScreen} />
     </TaxiStack.Navigator>
@@ -74,7 +76,7 @@ export const MainNavigator = () => {
       />
       <Tab.Screen 
         name="게시판" 
-        component={ChatScreen}
+        component={BoardScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
@@ -101,7 +103,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
 
   // 탭별로 숨길 내부 스택 스크린 이름들
   const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
-    '택시': ['Recruit', 'MapSearch'],
+    '택시': ['Recruit', 'MapSearch', 'Chat'],
   };
 
   const shouldHide = React.useMemo(() => {

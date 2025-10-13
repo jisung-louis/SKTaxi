@@ -15,12 +15,13 @@ export type MainTabParamList = {
 
 export type TaxiStackParamList = {
   TaxiMain: undefined;
-  AcceptancePending: { party: Party }; // party 객체를 파라미터로 받음
+  AcceptancePending: { party: Party; requestId: string }; // SKTaxi: 요청 문서 id 추가 전달
   Recruit: undefined;
   MapSearch: {
     type: 'departure' | 'destination';
     onLocationSelect: (location: { latitude: number; longitude: number; address: string }) => void;
   };
+  Chat: { partyId: string };
 };
 
 export type AuthStackParamList = {
