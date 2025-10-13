@@ -17,6 +17,10 @@ export type TaxiStackParamList = {
   TaxiMain: undefined;
   AcceptancePending: { party: Party }; // party 객체를 파라미터로 받음
   Recruit: undefined;
+  MapSearch: {
+    type: 'departure' | 'destination';
+    onLocationSelect: (location: { latitude: number; longitude: number; address: string }) => void;
+  };
 };
 
 export type AuthStackParamList = {

@@ -1,20 +1,21 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList } from './types';
+import { MainTabParamList, TaxiStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { ChatScreen } from '../screens/ChatScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
+import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const TaxiStack = createNativeStackNavigator();
+const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
 
 const TaxiStackNavigator = () => {
   return (
@@ -22,6 +23,7 @@ const TaxiStackNavigator = () => {
       <TaxiStack.Screen name="TaxiMain" component={TaxiScreen} />
       <TaxiStack.Screen name="AcceptancePending" component={AcceptancePendingScreen} />
       <TaxiStack.Screen name="Recruit" component={RecruitScreen} />
+      <TaxiStack.Screen name="MapSearch" component={MapSearchScreen} />
     </TaxiStack.Navigator>
   );
 };

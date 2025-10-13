@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -8,11 +8,12 @@ interface PageHeaderProps {
   onBack: () => void;
   title?: string;
   padding?: number;
+  style?: StyleProp<ViewStyle>;
 }
 
-const PageHeader = ({ onBack, title, padding = 10 }: PageHeaderProps) => {
+const PageHeader = ({ onBack, title, padding = 10, style }: PageHeaderProps) => {
   return (
-    <View style={[styles.container, {paddingHorizontal: padding}]}>
+    <View style={[styles.container, {paddingHorizontal: padding}, style]}>
       <Icon name="chevron-back" size={36} color={COLORS.text.primary} onPress={onBack} />
       {title && <Text style={styles.title}>{title}</Text>}
     </View>

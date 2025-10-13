@@ -12,13 +12,11 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({ visible, text, onC
   if (!visible) return null;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <View style={styles.overlay} pointerEvents="auto">
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-      </View>
+      <TouchableOpacity
+        style={StyleSheet.absoluteFill}
+        activeOpacity={1}
+        onPress={onClose}
+      />
       <View style={[styles.tooltipBox, style]} pointerEvents="box-none">
         <Text style={styles.tooltipText}>{text}</Text>
       </View>
@@ -27,11 +25,6 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({ visible, text, onC
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-    zIndex: 1,
-  },
   tooltipBox: {
     position: 'absolute',
     top: 30,

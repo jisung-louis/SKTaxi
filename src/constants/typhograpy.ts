@@ -21,22 +21,22 @@ export const TYPOGRAPHY : {[key: string]: TextStyle} = {
     body1: {
         fontSize: 16,
         fontWeight: 'normal',
-        lineHeight: 24,
+        lineHeight: 20,
     },
     body2: {
         fontSize: 14,
         fontWeight: 'normal',
-        lineHeight: 20,
+        lineHeight: 28,
     },
     /** caption */
     caption1: {
         fontSize: 12,
         fontWeight: 'normal',
-        lineHeight: 16,
+        lineHeight: 14,
     },
     caption2: {
         fontSize: 10,
         fontWeight: 'normal',
-        lineHeight: 14,
+        lineHeight: 12,
     },
 };

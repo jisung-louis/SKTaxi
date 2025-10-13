@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../../constants/colors';
@@ -8,27 +8,16 @@ import { CustomTooltip } from '../../components/common/CustomTooltip';
 import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { TaxiStackParamList } from '../../navigations/types';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
+import Button from '../../components/common/Button';
+import { DEPARTURE_OPTIONS, DESTINATION_OPTIONS, DEPARTURE_LOCATION, DESTINATION_LOCATION } from '../../constants/constants';
 
-const DEPARTURE_OPTIONS = [
-  ['명학역', '안양역', '금정역'],
-  ['범계역', '성결대학교'],
-];
-
-const DESTINATION_OPTIONS = [
-  ['성결대학교', '안양역', '금정역'],
-  ['범계역', '명학역'],
-];
-
-const KEYWORD_OPTIONS = ['#여성전용', '#조용히', '#음악', '#짐많음', '#흡연', '#동승환영'];
-
-type RecruitScreenNavigationProp = NativeStackNavigationProp<RecruitScreenParamList, 'Recruit'>;
-type RecruitScreenParamList = {
-  Recruit: undefined;
-};
+type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Recruit'>;
 
 export const RecruitScreen = () => {
   const navigation = useNavigation<RecruitScreenNavigationProp>();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
   const [customDeparture, setCustomDeparture] = useState('');
@@ -41,18 +30,53 @@ export const RecruitScreen = () => {
   const [showKeywordInfo, setShowKeywordInfo] = useState(false);
   const [customKeyword, setCustomKeyword] = useState('');
   const [showKeywordInput, setShowKeywordInput] = useState(false);
+  const [maxMembers, setMaxMembers] = useState(4);
 
   const now = new Date();
-  now.setHours(8, 0, 0, 0); // 오전 8시 0분 0초
-  const [time, setTime] = useState(formatTimeToSelect(now));
+  const currentHour = now.getHours().toString().padStart(2, '0');
+  const currentMinute = now.getMinutes().toString().padStart(2, '0');
+  const [time, setTime] = useState(`${currentHour}:${currentMinute}:00`);
+  const [departureLocation, setDepartureLocation] = useState({ row: 0, col: 0 });
+  const [destinationLocation, setDestinationLocation] = useState({ row: 0, col: 0 });
 
   const handleRecruit = () => {
     if (!departure || !destination || !time) {
       Alert.alert('알림', '출발지, 도착지, 출발시간을 모두 입력해주세요.');
       return;
     }
+    
+    if (departure === destination) {
+      Alert.alert('알림', '출발지와 도착지가 같을 수 없습니다.\n다른 도착지를 선택해주세요.');
+      return;
+    }
+    // 좌표 가져오기
+    let departureCoord = null;
+    let destinationCoord = null;
+    
+    if (!isCustom) {
+      // 미리 정의된 출발지의 좌표
+      departureCoord = DEPARTURE_LOCATION[departureLocation.row][departureLocation.col];
+    }
+    
+    if (!isCustomDestination) {
+      // 미리 정의된 도착지의 좌표
+      destinationCoord = DESTINATION_LOCATION[destinationLocation.row][destinationLocation.col];
+    }
+    
     // TODO: Firebase에 택시 모집 정보 저장
     Alert.alert('알림', '택시 모집이 시작되었습니다.');
+    console.log('Recruit:', {
+      time,
+      departure,
+      destination,
+      maxMembers,
+      keywords,
+      detail,
+      departureCoord,
+      destinationCoord,
+      departureLocation,
+      destinationLocation
+    });
   };
 
   const handleKeywordToggle = (kw: string) => {
@@ -80,7 +104,19 @@ export const RecruitScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <PageHeader onBack={onBack} padding={0} title="택시 파티 모집하기"/>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false} style={{marginTop: 10}}>
+      {showKeywordInfo && (
+        <TouchableOpacity
+          style={styles.tooltipOverlay}
+          activeOpacity={1}
+          onPress={() => setShowKeywordInfo(false)}
+        />
+      )}
+      <ScrollView 
+        ref={scrollViewRef}
+        contentContainerStyle={{ paddingBottom: 300 }} 
+        showsVerticalScrollIndicator={false} 
+        style={{marginTop: 10}}
+      >
         <View style={styles.card}>
           <Text style={styles.label}>출발지</Text>
           {DEPARTURE_OPTIONS.map((row, rowIdx) => (
@@ -95,6 +131,9 @@ export const RecruitScreen = () => {
                   onPress={() => {
                     setDeparture(station);
                     setIsCustom(false);
+                    // 해당 station의 인덱스 찾기
+                    const stationIndex = DEPARTURE_OPTIONS[rowIdx].indexOf(station);
+                    setDepartureLocation({ row: rowIdx, col: stationIndex });
                   }}
                 >
                   <Text style={departure === station && !isCustom ? styles.segmentTextSelected : styles.segmentText}>
@@ -120,18 +159,29 @@ export const RecruitScreen = () => {
               )}
             </View>
           ))}
-          {isCustom && (
-            <TextInput
-              style={[styles.input, { marginTop: 8 }]}
-              value={customDeparture}
-              onChangeText={text => {
-                setCustomDeparture(text);
-                setDeparture(text);
-              }}
-              placeholder="출발지를 직접 입력하세요"
-              placeholderTextColor={COLORS.text.disabled}
-            />
-          )}
+            {isCustom && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+               <Text
+                 style={[styles.input, { marginTop: 8, flex: 1, color: COLORS.text.secondary }]}
+               >
+                 {customDeparture || '지도에서 선택해주세요'}
+               </Text>
+               <Button 
+                 title="지도 검색" 
+                 onPress={() => {
+                   navigation.navigate('MapSearch', {
+                     type: 'departure',
+                     onLocationSelect: (location) => {
+                       // 지도에서 입력받은 지역 명칭(또는 좌표 문자열)을 표시
+                       setCustomDeparture(location.address);
+                       setDeparture(location.address);
+                     }
+                   });
+                 }} 
+                 style={{ marginTop: 8, height: 40 }}
+               />
+              </View>
+            )}
         </View>
 
         <View style={styles.card}>
@@ -148,6 +198,9 @@ export const RecruitScreen = () => {
                   onPress={() => {
                     setDestination(station);
                     setIsCustomDestination(false);
+                    // 해당 station의 인덱스 찾기
+                    const stationIndex = DESTINATION_OPTIONS[rowIdx].indexOf(station);
+                    setDestinationLocation({ row: rowIdx, col: stationIndex });
                   }}
                 >
                   <Text style={destination === station && !isCustomDestination ? styles.segmentTextSelected : styles.segmentText}>
@@ -173,27 +226,36 @@ export const RecruitScreen = () => {
               )}
             </View>
           ))}
-          {isCustomDestination && (
-            <TextInput
-              style={[styles.input, { marginTop: 8 }]}
-              value={customDestination}
-              onChangeText={text => {
-                setCustomDestination(text);
-                setDestination(text);
-              }}
-              placeholder="도착지를 직접 입력하세요"
-              placeholderTextColor={COLORS.text.disabled}
-            />
-          )}
+            {isCustomDestination && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+               <Text
+                 style={[styles.input, { marginTop: 8, flex: 1, color: COLORS.text.secondary }]}
+               >
+                 {customDestination || '지도에서 선택해주세요'}
+               </Text>
+               <Button 
+                 title="지도 검색" 
+                 onPress={() => {
+                   navigation.navigate('MapSearch', {
+                     type: 'destination',
+                     onLocationSelect: (location) => {
+                       setCustomDestination(location.address);
+                       setDestination(location.address);
+                     }
+                   });
+                 }} 
+                 style={{ marginTop: 8, height: 40 }}
+               />
+              </View>
+            )}
         </View>
 
         <View style={styles.card}>
           <Text style={styles.label}>출발시간</Text>
           <TimePicker
-            timeVal={time.split(' ')[1]} // 'HH:mm:ss' 형식으로 변환
+            timeVal={time} // 이미 'HH:mm:ss' 형식
             onChange={(newTime) => {
-              const [date] = time.split(' ');
-              setTime(`${date} ${newTime}`);
+              setTime(newTime);
             }}
             containerStyle={styles.timeSelectContainer}
             periodStyle={styles.timeSelectPeriod}
@@ -203,7 +265,34 @@ export const RecruitScreen = () => {
             hourTextStyle={styles.timeSelectHourText}
             minuteTextStyle={styles.timeSelectMinuteText}
             colonStyle={styles.timeSelectColon}
+            
           />
+        </View>
+        
+        <View style={styles.card}>
+          <View style={styles.labelContainer}>
+            <Text style={styles.label}>최대 인원</Text>
+            <Text style={styles.infoText}>본인을 포함한 인원을 선택해주세요!</Text>
+          </View>
+          <View style={styles.memberContainer}>
+            {[1, 2, 3, 4, 5, 6].map((count) => (
+              <TouchableOpacity
+                key={count}
+                style={[
+                  styles.memberButton,
+                  maxMembers === count && styles.memberButtonSelected,
+                ]}
+                onPress={() => setMaxMembers(count)}
+              >
+                <Text style={[
+                  styles.memberButtonText,
+                  maxMembers === count && styles.memberButtonTextSelected,
+                ]}>
+                  {count}명
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <View style={styles.card}>
@@ -215,9 +304,9 @@ export const RecruitScreen = () => {
               </TouchableOpacity>
               <CustomTooltip
                 visible={showKeywordInfo}
-                text={"동승자에게 전달할 메시지를 키워드로 입력해보세요!"}
+                text={"동승자에게 전달할 메시지를 키워드로 입력해보세요!\n(예: #중생관, #짐많음, #여자만 등)"}
                 onClose={() => setShowKeywordInfo(false)}
-                style={{ left: 30, top: -40,zIndex:1000  }}
+                style={{ left: 30, top: -40, zIndex: 1000 }}
               />
             </View>
           </View>
@@ -245,16 +334,20 @@ export const RecruitScreen = () => {
             style={[styles.input, { minHeight: 80 }]}
             value={detail}
             onChangeText={setDetail}
-            placeholder="상세 내용을 입력하세요 (예: 짐이 많아요, 조용히 가고 싶어요 등)"
+            placeholder="상세 내용을 입력하세요 (예: 명학역 1번출구에서 만나요, 검은 모자 쓰고 있어요 등)"
             placeholderTextColor={COLORS.text.disabled}
             multiline
+            onFocus={() => {
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 100);
+            }}
           />
         </View>
       </ScrollView>
-      <TouchableOpacity style={styles.buttonFixed} onPress={handleRecruit}>
-        <Text style={styles.buttonText}>택시 모집 시작</Text>
-      </TouchableOpacity>
-
+      <View style={styles.floatingSubmitButton}>
+        <Button title="택시 모집 시작" onPress={handleRecruit} style={{marginHorizontal: 16}}/>
+      </View>
       <Modal
         visible={showKeywordInput}
         transparent={true}
@@ -315,10 +408,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   input: {
     borderWidth: 1,
@@ -328,29 +420,7 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     color: COLORS.text.primary,
-  },
-  button: {
-    backgroundColor: COLORS.accent.green,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  buttonFixed: {
-    backgroundColor: COLORS.accent.green,
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 24,
-    zIndex: 10,
-  },
-  buttonText: {
-    color: COLORS.text.buttonText,
-    fontSize: 16,
-    fontWeight: '600',
+    minHeight: 45,
   },
   segmentContainer: {
     flexDirection: 'row',
@@ -369,7 +439,6 @@ const styles = StyleSheet.create({
   },
   segmentButtonSelected: {
     backgroundColor: COLORS.accent.green,
-    borderColor: COLORS.accent.green,
   },
   segmentText: {
     color: COLORS.text.primary,
@@ -419,7 +488,7 @@ const styles = StyleSheet.create({
   },
   labelContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
   },
   infoButton: {
     fontSize: 16,
@@ -427,10 +496,15 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     marginBottom: 16,
   },
+  infoText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    marginLeft: 8,
+    marginBottom: 16,
+  },
   timeSelectContainer: {
-    width: '100%',
+    width: 'auto',
     justifyContent: 'flex-end',
-    backgroundColor:COLORS.background.card,
   },
   timeSelectPeriod: {
   },
@@ -449,6 +523,43 @@ const styles = StyleSheet.create({
   },
   timeSelectColon: {
     color: COLORS.text.primary,
+  },
+  floatingSubmitButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  memberContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  memberButton: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: COLORS.background.primary,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  memberButtonSelected: {
+    backgroundColor: COLORS.accent.green,
+    borderColor: COLORS.accent.green,
+  },
+  memberButtonText: {
+    color: COLORS.text.primary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  memberButtonTextSelected: {
+    color: COLORS.text.buttonText,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -527,5 +638,14 @@ const styles = StyleSheet.create({
     color: COLORS.text.buttonText,
     fontSize: 14,
     textAlign: 'center',
+  },
+  tooltipOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
+    backgroundColor: 'transparent',
   },
 }); 

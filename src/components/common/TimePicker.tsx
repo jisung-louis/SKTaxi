@@ -64,6 +64,13 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   const [hour, setHour] = useState(initial.hour);
   const [minute, setMinute] = useState(initial.minute);
 
+  // timeVal이 변경될 때 상태 동기화
+  useEffect(() => {
+    setPeriod(initial.period);
+    setHour(initial.hour);
+    setMinute(initial.minute);
+  }, [initial.period, initial.hour, initial.minute]);
+
   // 시간 변경 시 콜백
   useEffect(() => {
     let h = parseInt(hour, 10);
@@ -176,7 +183,13 @@ const ScrollPicker = ({
   visibleItems,
 }: ScrollPickerProps) => {
   const selectedIndex = data.indexOf(value);
-  const [scrollY, setScrollY] = useState(0);
+  const [scrollY, setScrollY] = useState(selectedIndex * itemHeight);
+  
+  // value가 변경될 때 scrollY도 업데이트
+  React.useEffect(() => {
+    setScrollY(selectedIndex * itemHeight);
+  }, [selectedIndex, itemHeight]);
+  
   const getOpacity = (index: number) => {
     const itemPosition = index * itemHeight;
     const centerIndex = Math.floor(visibleItems / 2);
@@ -192,6 +205,7 @@ const ScrollPicker = ({
         showsVerticalScrollIndicator={false}
         snapToInterval={itemHeight}
         decelerationRate="fast"
+        contentOffset={{ x: 0, y: selectedIndex * itemHeight }}
         contentContainerStyle={{
           paddingVertical: itemHeight * Math.floor(visibleItems / 2),
         }}
