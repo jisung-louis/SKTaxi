@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Modal, ScrollView, Clipboard, TouchableWithoutFeedback, Keyboard } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,13 +12,15 @@ import { TaxiStackParamList } from '../../navigations/types';
 import firestore, { collection, doc, getDoc, updateDoc, deleteDoc, arrayRemove, query, where, getDocs } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useMessages, sendMessage, sendSystemMessage } from '../../hooks/useMessages';
+import { useMessages, sendMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage } from '../../hooks/useMessages';
 import { useParties } from '../../hooks/useParties';
 import { useUserDisplayNames } from '../../hooks/useUserDisplayNames';
 import { Message } from '../../types/firestore';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '../../components/common/Button';
+import Surface from '../../components/common/Surface';
+import { WINDOW_HEIGHT, WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 
 type ChatScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>;
 
@@ -28,6 +30,10 @@ export const ChatScreen = () => {
   const [message, setMessage] = useState('');
   const partyId = route.params?.partyId;
   const flatListRef = useRef<FlatList>(null);
+  const kickHandledRef = useRef<boolean>(false);
+  const deleteHandledRef = useRef<boolean>(false);
+  const seenPartyRef = useRef<boolean>(false); // SKTaxi: 해당 파티가 한번이라도 존재했는지
+  const selfLeaveRef = useRef<boolean>(false); // SKTaxi: 사용자가 직접 나간 경우
   
   // SKTaxi: 실시간 메시지 구독
   const { messages, loading: messagesLoading, error: messagesError } = useMessages(partyId);
@@ -43,6 +49,69 @@ export const ChatScreen = () => {
   // SKTaxi: 현재 사용자가 리더인지 확인
   const currentUser = auth(getApp()).currentUser;
   const isLeader = currentParty?.leaderId === currentUser?.uid;
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  
+  // SKTaxi: 계좌 정보 모달 관련 상태
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [userAccount, setUserAccount] = useState<any>(null);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [editingAccountInline, setEditingAccountInline] = useState(false);
+  
+  // SKTaxi: 도착 모달 관련 상태
+  const [showArrivalModal, setShowArrivalModal] = useState(false);
+  const [taxiFare, setTaxiFare] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  
+  // SKTaxi: 도착 모달용 계좌정보 상태 (기존 계좌 모달과 분리)
+  const [arrivalBankName, setArrivalBankName] = useState('');
+  const [arrivalAccountNumber, setArrivalAccountNumber] = useState('');
+  const [arrivalAccountHolder, setArrivalAccountHolder] = useState('');
+  const [arrivalHideName, setArrivalHideName] = useState(false);
+  const [showArrivalBankDropdown, setShowArrivalBankDropdown] = useState(false);
+  const [rememberArrivalAccount, setRememberArrivalAccount] = useState(false);
+  const arrivalTaxiFareRef = useRef<TextInput>(null);
+  
+  // SKTaxi: 정산 현황 관련 상태
+  const [settlementStatus, setSettlementStatus] = useState<{[key: string]: boolean}>({});
+  const [showSettlementModal, setShowSettlementModal] = useState(false);
+  const [isNoticeBarMinimized, setIsNoticeBarMinimized] = useState(false);
+  const [perPersonAmount, setPerPersonAmount] = useState<number>(0);
+  const [isPartyEnded, setIsPartyEnded] = useState(false);
+  
+  // SKTaxi: 정산 현황 바 애니메이션
+  const noticeBarHeight = useSharedValue(52);
+  const settlementListOpacity = useSharedValue(1);
+  
+  // SKTaxi: 동적 높이 계산 (N빵 인원 수 * 22 + 헤더 높이)
+  const calculateNoticeBarHeight = (memberCount: number) => {
+    return Math.max(52, memberCount * 22 + 52); // 최소 52px, 헤더 52px + 멤버당 22px
+  };
+
+  // SKTaxi: 정산 현황 바 애니메이션 스타일
+  const animatedNoticeBarStyle = useAnimatedStyle(() => {
+    return {
+      height: noticeBarHeight.value,
+    };
+  });
+
+  const animatedSettlementListStyle = useAnimatedStyle(() => {
+    return {
+      opacity: settlementListOpacity.value,
+    };
+  });
+  
+  // SKTaxi: 계좌 정보 입력 상태 (등록되지 않은 경우)
+  const [tempBankName, setTempBankName] = useState('');
+  const [tempAccountNumber, setTempAccountNumber] = useState('');
+  const [tempAccountHolder, setTempAccountHolder] = useState('');
+  const [tempHideName, setTempHideName] = useState(false);
+  const [rememberAccount, setRememberAccount] = useState(false);
+  const [showBankDropdown, setShowBankDropdown] = useState(false);
+  
+  const BANKS = [
+    '신한','KB국민','카카오','토스뱅크','IBK기업','NH농협','케이뱅크','하나','우리','수협','SC제일','한국씨티',
+    '부산은행','대구은행','광주은행','제주은행','전북은행','경남은행','새마을금고','우체국','신협'
+  ];
 
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
@@ -96,6 +165,50 @@ export const ChatScreen = () => {
     })();
   }, [route.params?.partyId]);
 
+  // SKTaxi: 파티 상태가 "arrived"일 때 정산 현황 초기화
+  useEffect(() => {
+    if (currentParty?.status === 'arrived' && memberUids.length > 0) {
+      if (currentParty.settlement) {
+        // SKTaxi: 서버에서 정산 현황 가져오기
+        const serverSettlementStatus: {[key: string]: boolean} = {};
+        Object.keys(currentParty.settlement.members).forEach(memberId => {
+          serverSettlementStatus[memberId] = currentParty.settlement!.members[memberId].settled;
+        });
+        setSettlementStatus(serverSettlementStatus);
+        setPerPersonAmount(currentParty.settlement.perPersonAmount);
+      } else {
+        // SKTaxi: 정산 현황이 없으면 초기화 (모든 멤버를 정산 중으로 설정, 리더는 정산자로 true 설정)
+        const initialSettlementStatus: {[key: string]: boolean} = {};
+        memberUids.forEach(memberId => {
+          // SKTaxi: 리더이면서 N빵 인원에 포함된 경우 정산 완료로 처리
+          const isLeader = memberId === currentParty?.leaderId;
+          initialSettlementStatus[memberId] = isLeader;
+        });
+        setSettlementStatus(initialSettlementStatus);
+      }
+      setIsNoticeBarMinimized(false);
+      
+      // SKTaxi: 정산 현황 바 애니메이션 초기화
+      noticeBarHeight.value = withTiming(52, { duration: 300 });
+      settlementListOpacity.value = withTiming(1, { duration: 300 });
+    }
+  }, [currentParty?.status, currentParty?.settlement, memberUids, currentParty?.leaderId]);
+
+  // SKTaxi: settlementStatus가 변경될 때마다 높이 업데이트
+  useEffect(() => {
+    if (currentParty?.status === 'arrived' && Object.keys(settlementStatus).length > 0) {
+      const memberCount = Object.keys(settlementStatus).length;
+      const dynamicHeight = calculateNoticeBarHeight(memberCount);
+      noticeBarHeight.value = withTiming(dynamicHeight, { duration: 300 });
+    }
+  }, [settlementStatus, currentParty?.status]);
+
+  // SKTaxi: end 메시지가 있는지 확인하여 동승 종료 상태 설정
+  useEffect(() => {
+    const hasEndMessage = messages.some(message => message.type === 'end');
+    setIsPartyEnded(hasEndMessage);
+  }, [messages]);
+
   // SKTaxi: 메시지가 추가될 때마다 스크롤을 맨 아래로
   useEffect(() => {
     if (messages.length > 0) {
@@ -105,10 +218,69 @@ export const ChatScreen = () => {
     }
   }, [messages.length]);
 
+  // SKTaxi: 강퇴 클라이언트 감지 - 내 uid가 members에서 사라지면 방에서 나가기
+  useEffect(() => {
+    if (!currentParty || !currentUser?.uid) return;
+    const members: string[] = Array.isArray(currentParty.members) ? currentParty.members : [];
+    const stillMember = members.includes(currentUser.uid);
+    if (!stillMember && !kickHandledRef.current && !selfLeaveRef.current) {
+      kickHandledRef.current = true;
+      Alert.alert('알림', '리더가 나를 강퇴했어요.');
+      navigation.popToTop();
+    }
+  }, [currentParty?.members, currentUser?.uid]);
+
+  // SKTaxi: 파티 존재 감지 (한 번이라도 파티가 렌더되면 플래그 세팅)
+  useEffect(() => {
+    if (currentParty) {
+      seenPartyRef.current = true;
+    }
+  }, [currentParty]);
+
+//   // SKTaxi: 파티 삭제 클라이언트 감지 - 이전에 존재했던 파티가 사라지면(리더가 아닌 경우) 방에서 나가기
+//   useEffect(() => {
+//     if (currentParty) { deleteHandledRef.current = false; return; }
+//     if (!currentUser?.uid) return;
+//     // 리더는 삭제 트리거를 직접 실행하므로 중복 알림 방지
+//     if (isLeader) return;
+//     // 파티가 한 번도 보인 적이 없다면(초기 로딩) 알림 금지
+//     if (!seenPartyRef.current) return;
+//     if (!deleteHandledRef.current) {
+//       deleteHandledRef.current = true;
+//       Alert.alert('알림', '리더가 파티를 해체했어요!');
+//       //navigation.popToTop();
+//     }
+//   }, [currentParty, isLeader, currentUser?.uid]);
+
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
+
+  // SKTaxi: 멤버 강퇴 처리
+  const handleKick = async (memberId: string, displayName: string) => {
+    if (!partyId || !currentParty || !isLeader) return;
+    if (memberId === currentParty.leaderId) return;
+    Alert.alert(
+      '멤버 강퇴',
+      `${displayName}님을 강퇴할까요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        { text: '강퇴', style: 'destructive', onPress: async () => {
+            try {
+              await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+                members: arrayRemove(memberId),
+                updatedAt: firestore.FieldValue.serverTimestamp(),
+              });
+              await sendSystemMessage(partyId, `${displayName}님이 강퇴되었어요.`);
+            } catch (error) {
+              console.error('멤버 강퇴 실패:', error);
+              Alert.alert('오류', '멤버 강퇴에 실패했어요.');
+            }
+          } },
+      ]
+    );
+  };
 
   // SKTaxi: 메뉴 애니메이션 스타일
   const menuAnimatedStyle = useAnimatedStyle(() => ({
@@ -132,7 +304,7 @@ export const ChatScreen = () => {
 
     try {
       await sendMessage(partyId, message.trim());
-      setMessage('');
+    setMessage('');
     } catch (error) {
       console.error('메시지 전송 실패:', error);
       Alert.alert('오류', '메시지 전송에 실패했습니다.');
@@ -166,21 +338,566 @@ export const ChatScreen = () => {
     }, 100);
   };
 
+  // SKTaxi: 계좌 정보 로드
+  const loadUserAccount = async () => {
+    if (!currentUser?.uid) return;
+    
+    setAccountLoading(true);
+    try {
+      const userDoc = await getDoc(doc(collection(firestore(getApp()), 'users'), currentUser.uid));
+      const userData = userDoc.data();
+      const account = userData?.account;
+      
+      if (account && (account.bankName || account.accountNumber || account.accountHolder)) {
+        setUserAccount(account);
+        // SKTaxi: 수정 폼 기본값 초기화
+        setTempBankName(account.bankName || '');
+        setTempAccountNumber(account.accountNumber || '');
+        setTempAccountHolder(account.accountHolder || '');
+        setTempHideName(account.hideName || false);
+        setRememberAccount(true);
+      } else {
+        setUserAccount(null);
+        // 비등록 상태 초기화
+        setTempBankName('');
+        setTempAccountNumber('');
+        setTempAccountHolder('');
+        setTempHideName(false);
+        setRememberAccount(false);
+      }
+    } catch (error) {
+      console.error('계좌 정보 로드 실패:', error);
+      setUserAccount(null);
+    } finally {
+      setAccountLoading(false);
+    }
+  };
+
+  // SKTaxi: 계좌 정보 전송
+  const sendAccountInfo = async () => {
+    if (!currentUser?.uid || !partyId) return;
+    
+    let bankName = '';
+    let accountNumber = '';
+    let accountHolder = '';
+    let hideName = false;
+    
+    if (userAccount && !editingAccountInline) {
+      // 등록된 계좌 정보가 있는 경우
+      bankName = userAccount.bankName;
+      accountNumber = userAccount.accountNumber;
+      accountHolder = userAccount.accountHolder || '';
+      hideName = userAccount.hideName || false;
+    } else {
+      // 임시 입력된 계좌 정보
+      if (!tempBankName || !tempAccountNumber || !tempAccountHolder) {
+        Alert.alert('알림', '은행명, 계좌번호, 예금주명을 입력해주세요.');
+        return;
+      }
+      bankName = tempBankName;
+      accountNumber = tempAccountNumber;
+      accountHolder = tempAccountHolder || '';
+      hideName = tempHideName;
+    }
+    
+    try {
+      // useMessages의 sendAccountMessage 함수 사용
+      await sendAccountMessage(partyId, {
+        bankName,
+        accountNumber,
+        accountHolder,
+        hideName,
+      });
+      
+      setShowAccountModal(false);
+      
+      // 기억하기 체크박스가 체크된 경우 Firestore에 저장/업데이트
+      if (rememberAccount && tempBankName && tempAccountNumber) {
+        firestore(getApp()).collection('users').doc(currentUser.uid).set({
+          account: {
+            bankName: tempBankName,
+            accountNumber: tempAccountNumber,
+            accountHolder: tempAccountHolder || '',
+            hideName: tempHideName,
+          }
+        }, { merge: true });
+      }
+    } catch (error) {
+      console.error('계좌 정보 전송 실패:', error);
+      Alert.alert('오류', '계좌 정보 전송에 실패했습니다.');
+    }
+  };
+
+  // SKTaxi: 도착 확인 함수
+  const handleArrivalConfirm = () => {
+    Alert.alert(
+      '도착 확인',
+      '택시가 목적지에 도착했나요?',
+      [
+        { text: '아니오', style: 'cancel' },
+        { 
+          text: '예', 
+          onPress: async () => {
+            try {
+              // SKTaxi: 사용자 계좌 정보 로드
+              const user = auth(getApp()).currentUser;
+              if (!user) return;
+
+              const userDoc = await firestore(getApp()).collection('users').doc(user.uid).get();
+              const userData = userDoc.data();
+              
+              // SKTaxi: 도착 모달용 계좌정보 초기화
+              if (userData?.account) {
+                setArrivalBankName(userData.account.bankName || '');
+                setArrivalAccountNumber(userData.account.accountNumber || '');
+                setArrivalAccountHolder(userData.account.accountHolder || '');
+                setArrivalHideName(userData.account.hideName || false);
+                setRememberArrivalAccount(true); // 기존 계좌정보가 있으면 기억하기 체크
+              } else {
+                setArrivalBankName('');
+                setArrivalAccountNumber('');
+                setArrivalAccountHolder('');
+                setArrivalHideName(false);
+                setRememberArrivalAccount(false); // 기존 계좌정보가 없으면 기억하기 해제
+              }
+
+              // SKTaxi: N빵할 사람 초기값을 모든 멤버로 설정
+              setSelectedMembers(memberUids);
+
+              setShowArrivalModal(true);
+              
+              // SKTaxi: 모달이 열린 후 택시비 입력에 포커스
+              setTimeout(() => {
+                arrivalTaxiFareRef.current?.focus();
+              }, 300); // 모달 애니메이션 완료 후 포커스
+            } catch (error) {
+              console.error('SKTaxi: 계좌 정보 로드 중 오류:', error);
+              setShowArrivalModal(true);
+              
+              // SKTaxi: 에러 케이스에서도 포커스
+              setTimeout(() => {
+                arrivalTaxiFareRef.current?.focus();
+              }, 300);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // SKTaxi: 도착 확정 함수
+  const handleArrivalSubmit = async () => {
+    if (!currentUser?.uid || !partyId || !taxiFare || selectedMembers.length === 0) {
+      Alert.alert('알림', '택시비와 N빵할 사람을 모두 입력해주세요.');
+      return;
+    }
+
+    const fare = parseInt(taxiFare);
+    if (isNaN(fare) || fare <= 0) {
+      Alert.alert('알림', '올바른 택시비를 입력해주세요.');
+      return;
+    }
+
+    const perPerson = Math.floor(fare / selectedMembers.length);
+    const leaderName = currentUser.displayName || '리더';
+
+    try {
+      // 도착 메시지 전송
+      const arrivalMessageData = {
+        taxiFare: fare,
+        perPerson,
+        memberCount: selectedMembers.length,
+        bankName: arrivalBankName,
+        accountNumber: arrivalAccountNumber,
+        accountHolder: arrivalAccountHolder,
+        hideName: arrivalHideName,
+      };
+
+      await sendArrivedMessage(partyId, arrivalMessageData);
+
+      // SKTaxi: 계좌 정보를 기억하기가 체크되어 있으면 서버에 저장
+      if (rememberArrivalAccount && arrivalBankName && arrivalAccountNumber && arrivalAccountHolder) {
+        try {
+          await firestore(getApp()).collection('users').doc(currentUser.uid).set({
+            account: {
+              bankName: arrivalBankName,
+              accountNumber: arrivalAccountNumber,
+              accountHolder: arrivalAccountHolder,
+              hideName: arrivalHideName,
+            }
+          }, { merge: true });
+        } catch (error) {
+          console.error('SKTaxi: 계좌 정보 저장 중 오류:', error);
+        }
+      }
+
+      // SKTaxi: 정산 현황 초기화 (리더는 자동으로 정산 완료 처리)
+      const initialSettlementStatus: {[key: string]: boolean} = {};
+      const settlementMembers: {[key: string]: {settled: boolean; settledAt?: any}} = {};
+      
+      selectedMembers.forEach(memberId => {
+        // SKTaxi: 리더이면서 N빵 인원에 포함된 경우 정산 완료로 처리
+        const isLeader = memberId === currentParty?.leaderId;
+        initialSettlementStatus[memberId] = isLeader;
+        
+        // SKTaxi: settledAt은 settled가 true일 때만 포함
+        const memberData: {settled: boolean; settledAt?: any} = {
+          settled: isLeader
+        };
+        if (isLeader) {
+          memberData.settledAt = firestore.FieldValue.serverTimestamp();
+        }
+        settlementMembers[memberId] = memberData;
+      });
+
+      // SKTaxi: 파티 상태를 "arrived"로 변경하고 정산 현황 저장
+      await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+        status: 'arrived',
+        settlement: {
+          status: 'pending',
+          perPersonAmount: perPerson,
+          members: settlementMembers
+        },
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+        setSettlementStatus(initialSettlementStatus);
+        setIsNoticeBarMinimized(false);
+        
+        // SKTaxi: 정산 현황 바 애니메이션 초기화 (동적 높이 계산)
+        const dynamicHeight = calculateNoticeBarHeight(selectedMembers.length);
+        noticeBarHeight.value = withTiming(dynamicHeight, { duration: 300 });
+        settlementListOpacity.value = withTiming(1, { duration: 300 });
+
+      setShowArrivalModal(false);
+      setTaxiFare('');
+      setSelectedMembers([]);
+      
+      // SKTaxi: 도착 모달용 계좌정보 상태 초기화
+      setArrivalBankName('');
+      setArrivalAccountNumber('');
+      setArrivalAccountHolder('');
+      setArrivalHideName(false);
+      setShowArrivalBankDropdown(false);
+      setRememberArrivalAccount(false);
+    } catch (error) {
+      console.error('도착 메시지 전송 실패:', error);
+      Alert.alert('오류', '도착 메시지 전송에 실패했습니다.');
+    }
+  };
+
+  // SKTaxi: 멤버 선택 토글
+  const toggleMemberSelection = (memberId: string) => {
+    setSelectedMembers(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  // SKTaxi: 정산 완료 처리
+  const handleSettlementComplete = async (memberId: string, memberName: string) => {
+    Alert.alert(
+      '정산 확인',
+      `${memberName}님이 돈을 송금했나요?`,
+      [
+        { text: '아니오', style: 'cancel' },
+        { 
+          text: '예', 
+          onPress: async () => {
+            try {
+              // SKTaxi: 서버에 정산 완료 상태 업데이트
+              const partyRef = doc(collection(firestore(getApp()), 'parties'), partyId);
+              await updateDoc(partyRef, {
+                [`settlement.members.${memberId}.settled`]: true,
+                [`settlement.members.${memberId}.settledAt`]: firestore.FieldValue.serverTimestamp(),
+                updatedAt: firestore.FieldValue.serverTimestamp(),
+              });
+
+              // SKTaxi: 로컬 상태 업데이트
+              setSettlementStatus(prev => ({
+                ...prev,
+                [memberId]: true
+              }));
+            } catch (error) {
+              console.error('SKTaxi: 정산 완료 처리 중 오류:', error);
+              Alert.alert('오류', '정산 완료 처리 중 오류가 발생했습니다.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // SKTaxi: 동승 종료 처리
+  const handlePartyEnd = async () => {
+    const allSettled = Object.values(settlementStatus).every(status => status);
+    const unsettledMembers = Object.keys(settlementStatus).filter(memberId => !settlementStatus[memberId]);
+    
+    if (allSettled) {
+      Alert.alert(
+        '동승 종료',
+        '동승 파티를 종료할까요?',
+        [
+          { text: '아니오', style: 'cancel' },
+          { 
+            text: '예', 
+            onPress: async () => {
+              try {
+                // SKTaxi: 정산 상태를 완료로 업데이트
+                const partyRef = doc(collection(firestore(getApp()), 'parties'), partyId);
+                await updateDoc(partyRef, {
+                  'settlement.status': 'completed',
+                  updatedAt: firestore.FieldValue.serverTimestamp(),
+                });
+                
+                handleLeaderDeleteParty(true);
+              } catch (error) {
+                console.error('SKTaxi: 정산 상태 업데이트 중 오류:', error);
+                Alert.alert('오류', '정산 상태 업데이트 중 오류가 발생했습니다.');
+              }
+            }
+          }
+        ]
+      );
+    } else {
+      const unsettledNames = unsettledMembers.map(memberId => displayNameMap[memberId] || '익명').join(', ');
+      Alert.alert(
+        '동승 종료',
+        `${unsettledNames}님이 아직 정산을 안한 것 같아요. 그래도 동승 파티를 종료할까요?`,
+        [
+          { text: '아니오', style: 'cancel' },
+          { 
+            text: '예', 
+            onPress: async () => {
+              try {
+                // SKTaxi: 정산 상태를 완료로 업데이트
+                const partyRef = doc(collection(firestore(getApp()), 'parties'), partyId);
+                await updateDoc(partyRef, {
+                  'settlement.status': 'completed',
+                  updatedAt: firestore.FieldValue.serverTimestamp(),
+                });
+                
+                handleLeaderDeleteParty(true);
+              } catch (error) {
+                console.error('SKTaxi: 정산 상태 업데이트 중 오류:', error);
+                Alert.alert('오류', '정산 상태 업데이트 중 오류가 발생했습니다.');
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
   // SKTaxi: 메뉴 아이템 클릭 핸들러
-  const handleMenuPress = (type: string) => {
-    console.log(`${type} 선택됨`);
-    setShowMenu(false);
+  const handleMenuPress = async (type: string) => {
+    // console.log(`${type} 선택됨`);
+    // setShowMenu(false);
+
+    // // SKTaxi: 메뉴 닫기 애니메이션
+    // menuTranslateY.value = withTiming(100, { duration: 300 });
+    // menuOpacity.value = withTiming(0, { duration: 300 });
+
+    // SKTaxi: 각 메뉴 아이템별 기능 구현
+    try {
+      if (type === 'account') {
+        // 계좌 정보 모달 열기
+        setEditingAccountInline(false); // SKTaxi: 모달 열 때 상태 초기화
+        await loadUserAccount();
+        setShowAccountModal(true);
+      } else if (type === 'arrive') {
+        // 도착 확인
+        handleArrivalConfirm();
+      } else if (type === 'settlement') {
+        // 정산 현황 모달 열기
+        setShowSettlementModal(true);
+      } else if (type === 'endParty') {
+        // 동승 종료
+        handlePartyEnd();
+      } else if (type === 'close') {
+        if (!partyId || !currentUser?.uid || !currentParty) return;
+
+        const isLeader = currentParty.leaderId === currentUser.uid;
+        if (!isLeader) {
+          Alert.alert('알림', '방장만 모집 상태를 변경할 수 있어요.');
+          return;
+        }
+
+        // SKTaxi: 상태 토글 (open <-> closed)
+        const nextStatus = currentParty.status === 'closed' ? 'open' : 'closed';
+        await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+          status: nextStatus,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
+
+        if (nextStatus === 'closed') {
+          await sendSystemMessage(partyId, '파티 모집이 마감되었어요!');
+        } else {
+          await sendSystemMessage(partyId, '모집을 재개했어요!');
+        }
+      }
+    } catch (error) {
+      console.error('handleMenuPress error:', error);
+      Alert.alert('오류', '작업 처리 중 문제가 발생했어요.');
+    }
+  };
+
+  // SKTaxi: 계좌 정보 복사 함수
+  const copyAccountInfo = (bankName: string, accountNumber: string) => {
+    const accountText = `${bankName} ${accountNumber}`;
+    Clipboard.setString(accountText);
+    Alert.alert('복사 완료', '계좌 정보가 클립보드에 복사되었습니다.');
+  };
+
+  // SKTaxi: 계좌 정보 메시지 렌더링
+  const renderAccountMessage = (item: Message) => {
+    if (!item.accountData) return null;
     
-    // SKTaxi: 메뉴 닫기 애니메이션
-    menuTranslateY.value = withTiming(100, { duration: 300 });
-    menuOpacity.value = withTiming(0, { duration: 300 });
+    const { bankName, accountNumber, accountHolder, hideName } = item.accountData;
+    const isMyMessage = item.senderId === currentUser?.uid;
     
-    // TODO: 각 메뉴 아이템별 기능 구현
+    // 예금주명 처리 (hideName이 true면 마스킹)
+    const displayName = hideName && accountHolder 
+      ? accountHolder.charAt(0) + '*'.repeat(accountHolder.length - 1)
+      : accountHolder;
+    
+    return (
+    <View style={[
+      styles.messageContainer,
+        {outlineWidth: 1, outlineColor: COLORS.accent.green},
+        isMyMessage ? [styles.myMessage, { backgroundColor: COLORS.background.card }] : styles.otherMessage
+      ]}>
+        <View style={styles.accountMessageContainer}>
+          <Text style={styles.accountMessageTitle}>{item.senderName}님이 계좌번호를 공유했어요.</Text>
+          <View style={styles.accountInfoContainer}>
+            <View style={styles.accountInfoTextContainer}>
+              <Text style={styles.accountInfo}>{bankName} {accountNumber}</Text>
+              {displayName && (
+                <Text style={styles.accountHolder}>{displayName}</Text>
+              )}
+            </View>
+            <TouchableOpacity 
+              style={styles.copyButton}
+              onPress={() => copyAccountInfo(bankName, accountNumber)}
+            >
+              <Icon name="copy-outline" size={20} color={COLORS.accent.green} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Text style={styles.timestamp}>
+          {item.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 
+           new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </View>
+    );
+  };
+
+  // SKTaxi: 동승 종료 메시지 렌더링
+  const renderEndMessage = (item: Message) => {
+    return (
+      <View style={styles.endMessageContainer}>
+        <View style={styles.endMessageContent}>
+          <Icon name="checkmark-circle" size={20} color={COLORS.accent.green} />
+          <Text style={styles.endMessageText}>{item.text}</Text>
+        </View>
+        <TouchableOpacity 
+          style={styles.leaveRoomButton}
+          onPress={() => navigation.popToTop()}
+        >
+          <Text style={styles.leaveRoomButtonText}>방 나가기</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // SKTaxi: 도착 메시지 렌더링
+  const renderArrivalMessage = (item: Message) => {
+    if (!item.arrivalData) return null;
+    
+    const { taxiFare, perPerson, memberCount, bankName, accountNumber, accountHolder, hideName } = item.arrivalData;
+    const isMyMessage = item.senderId === currentUser?.uid;
+    
+    // 예금주명 처리 (hideName이 true면 마스킹)
+    const displayName = hideName && accountHolder 
+      ? accountHolder.charAt(0) + '*'.repeat(accountHolder.length - 1)
+      : accountHolder;
+    
+    return (
+      <View style={[
+        styles.messageContainer,
+        {outlineWidth: 1, outlineColor: COLORS.accent.green},
+        isMyMessage ? [styles.myMessage, { backgroundColor: COLORS.background.card }] : styles.otherMessage
+      ]}>
+        <View style={styles.arrivalMessageContainer}>
+          <View style={styles.arrivalHeader}>
+            <Icon name="checkmark-circle" size={24} color={COLORS.accent.green} />
+            <Text style={styles.arrivalMessageTitle}>택시가 목적지에 도착했어요!</Text>
+          </View>
+          
+          <View style={styles.arrivalInfoSection}>
+            <View style={styles.arrivalInfoRow}>
+              <View style={styles.arrivalInfoItem}>
+                <Text style={styles.arrivalInfoLabel}>총 택시비</Text>
+                <Text style={styles.arrivalInfoValue}>{taxiFare.toLocaleString()}원</Text>
+              </View>
+              <View style={styles.arrivalInfoItem}>
+                <Text style={styles.arrivalInfoLabel}>N빵 인원</Text>
+                <Text style={styles.arrivalInfoValue}>{memberCount}명</Text>
+              </View>
+            </View>
+            
+            <View style={styles.arrivalCalculationSection}>
+              <Text style={styles.arrivalCalculationText}>
+                {taxiFare.toLocaleString()}원 ÷ {memberCount}명 = 
+              </Text>
+              <Text style={styles.arrivalPerPersonAmount}>{perPerson.toLocaleString()}원</Text>
+            </View>
+            
+            <Text style={styles.arrivalInstructionText}>
+              {perPerson.toLocaleString()}원씩 {item.senderName}님에게 송금해주세요
+            </Text>
+          </View>
+          
+          <View style={styles.arrivalAccountSection}>
+            <Text style={styles.arrivalAccountSectionTitle}>송금 계좌 정보</Text>
+            <View style={styles.arrivalAccountInfoContainer}>
+              <View style={styles.arrivalAccountInfoTextContainer}>
+                <Text style={styles.arrivalAccountAmount}>{perPerson.toLocaleString()}원</Text>
+                <Text style={styles.arrivalAccountInfo}>{bankName} {accountNumber}</Text>
+                {displayName && (
+                  <Text style={styles.arrivalAccountHolder}>{displayName}</Text>
+                )}
+              </View>
+              <TouchableOpacity 
+                style={styles.arrivalCopyButton}
+                onPress={() => copyAccountInfo(bankName, accountNumber)}
+              >
+                <Icon name="copy-outline" size={18} color={COLORS.accent.green} />
+                <Text style={styles.arrivalCopyButtonText}>복사</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+        <Text style={styles.timestamp}>
+          {item.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 
+           new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text>
+      </View>
+    );
   };
 
   const renderMessage = ({ item }: { item: Message }) => {
     const isMyMessage = item.senderId === currentUser?.uid;
     const isSystemMessage = item.type === 'system';
+    const isAccountMessage = item.type === 'account';
+    const isArrivalMessage = item.type === 'arrived';
+    const isEndMessage = item.type === 'end';
+    
+    // SKTaxi: 동승 종료 메시지 렌더링
+    if (isEndMessage) {
+      return renderEndMessage(item);
+    }
     
     // SKTaxi: 시스템 메시지 렌더링
     if (isSystemMessage) {
@@ -191,22 +908,32 @@ export const ChatScreen = () => {
       );
     }
     
+    // SKTaxi: 계좌 정보 메시지 렌더링
+    if (isAccountMessage) {
+      return renderAccountMessage(item);
+    }
+    
+    // SKTaxi: 도착 메시지 렌더링
+    if (isArrivalMessage) {
+      return renderArrivalMessage(item);
+    }
+    
     // SKTaxi: 일반 메시지 렌더링
     return (
-      <View style={[
-        styles.messageContainer,
+    <View style={[
+      styles.messageContainer,
         isMyMessage ? styles.myMessage : styles.otherMessage
-      ]}>
+    ]}>
         {!isMyMessage && (
           <Text style={styles.senderName}>{item.senderName}</Text>
         )}
-        <Text style={styles.messageText}>{item.text}</Text>
-        <Text style={styles.timestamp}>
+      <Text style={styles.messageText}>{item.text}</Text>
+      <Text style={styles.timestamp}>
           {item.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 
            new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-    );
+      </Text>
+    </View>
+  );
   };
 
   const handleDotMenuPress = () => {
@@ -244,6 +971,9 @@ export const ChatScreen = () => {
     if (!partyId || !currentUser?.uid) return;
 
     try {
+      // SKTaxi: 직접 나가기 플래그 설정 (강퇴 감지 방지)
+      selfLeaveRef.current = true;
+
       // SKTaxi: 사용자 정보 조회하여 시스템 메시지 전송
       const userDoc = await getDoc(doc(collection(firestore(getApp()), 'users'), currentUser.uid));
       const userData = userDoc.data();
@@ -286,7 +1016,7 @@ export const ChatScreen = () => {
   };
 
   // SKTaxi: 리더 파티 삭제 함수
-  const handleLeaderDeleteParty = async () => {
+  const handleLeaderDeleteParty = async (isPartyArrived = false) => {
     if (!partyId || !isLeader) return;
 
     try {
@@ -301,11 +1031,17 @@ export const ChatScreen = () => {
       const deletePromises = joinRequestsSnapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
 
-      // SKTaxi: 파티 삭제
-      await deleteDoc(doc(collection(firestore(getApp()), 'parties'), partyId));
+      // SKTaxi: 동승 종료 메시지 전송
 
-      Alert.alert('알림', '파티가 삭제되었습니다.');
-      navigation.popToTop();
+      setIsPartyEnded(true);
+      setShowMenu(false);
+      await deleteDoc(doc(collection(firestore(getApp()), 'parties'), partyId));
+      await sendEndMessage(partyId, isPartyArrived);
+      if (!isPartyArrived) {
+        // SKTaxi: 파티 삭제
+        setShowSideMenu(false);
+        Alert.alert('알림', '파티가 삭제되었습니다.');
+      }
     } catch (error) {
       console.error('파티 삭제 실패:', error);
       Alert.alert('오류', '파티 삭제에 실패했습니다.');
@@ -332,10 +1068,14 @@ export const ChatScreen = () => {
         {
           text: memberCount <= 1 ? '취소하기' : '예',
           style: 'destructive',
-          onPress: handleLeaderDeleteParty,
+            onPress: () => handleLeaderDeleteParty(false),
         },
       ]
     );
+  };
+
+  const handleShareParty = () => {
+    Alert.alert('아직 못해 ㅠ', '파티 공유 기능은 준비중이에요')
   };
 
   return (
@@ -370,7 +1110,7 @@ export const ChatScreen = () => {
                 <Icon name="close" size={24} color={COLORS.text.primary} />
               </TouchableOpacity>
             </View>
-            
+            {!isPartyEnded ? (
             <View style={styles.sideMenuContent}>
               <View style={styles.memberSection}>
                 <Text style={styles.sectionTitle}>참여 멤버 ({memberUids.length}명)</Text>
@@ -380,11 +1120,12 @@ export const ChatScreen = () => {
                   ) : (
                     memberUids.map((uid) => {
                       const displayName = displayNameMap[uid] || '익명';
+                      const isMe = uid === currentUser?.uid;
                       const isLeader = currentParty.leaderId === uid;
                       const initial = displayName.charAt(0).toUpperCase();
                       
                       return (
-                        <View key={uid} style={styles.memberItem}>
+                        <TouchableOpacity key={uid} style={styles.memberItem} onPress={() => setSelectedMemberId(uid)}>
                           <View style={[
                             styles.memberAvatar,
                             isLeader && styles.leaderAvatar
@@ -397,25 +1138,45 @@ export const ChatScreen = () => {
                               styles.memberRole,
                               isLeader && styles.leaderRole
                             ]}>
-                              {isLeader ? '리더' : '멤버'}
+                                {isMe ? 
+                                isLeader ? '리더(나)' : '멤버(나)'
+                                :
+                                isLeader ? '리더' : '멤버'
+                                }
                             </Text>
                           </View>
-                        </View>
+                          {(uid !== currentUser?.uid) && (
+                            <View style={{ gap: 8, alignItems: 'flex-start' }}>
+                              {/* 모든 사용자에게 노출 (본인 제외) */}
+                              <TouchableOpacity style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }} onPress={() => Alert.alert('멤버 정보', displayName)}>
+                                <Icon name="information-circle-outline" size={18} color={COLORS.text.secondary} />
+                                <Text style={styles.memberRole}>정보보기</Text>
+                              </TouchableOpacity>
+                              {/* 리더에게만 노출 (리더 본인 제외, 정산 중이 아닐 때만) */}
+                              {currentParty.leaderId === currentUser?.uid && currentParty.status !== 'arrived' && (
+                                <TouchableOpacity style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }} onPress={() => handleKick(uid, displayName)}>
+                                  <Icon name="remove-circle" size={18} color="#FF6B6B" />
+                                  <Text style={[styles.memberRole, { color: '#FF6B6B' }]}>강퇴</Text>
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          )}
+                        </TouchableOpacity>
                       );
                     })
                   )}
                 </View>
               </View>
-              
+              <Surface color={COLORS.background.card} height={1} margin={16} />
               <View style={styles.actionSection}>
                 {/* SKTaxi: 리더만 설정 버튼 표시 */}
-                {isLeader && (
+                {/* {isLeader && (
                   <TouchableOpacity style={styles.actionButton}>
                     <Icon name="settings" size={20} color={COLORS.accent.green} />
                     <Text style={styles.actionButtonText}>설정</Text>
                   </TouchableOpacity>
-                )}
-                <TouchableOpacity style={styles.actionButton}>
+                )} */}
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleShareParty()}>
                   <Icon name="share" size={20} color={COLORS.accent.green} />
                   <Text style={styles.actionButtonText}>공유</Text>
                 </TouchableOpacity>
@@ -430,13 +1191,89 @@ export const ChatScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
+            ) : (
+                <TouchableOpacity 
+                    style={[styles.actionButton, { margin: 20 }]}
+                    onPress={() => navigation.popToTop()}
+                >
+                    <Icon name="exit" size={20} color="#FF6B6B" />
+                    <Text style={[styles.actionButtonText, { color: '#FF6B6B' }]}>나가기</Text>
+                </TouchableOpacity>
+            )}
           </Animated.View>
         )}
-        <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-        <Animated.View style={[styles.container, screenAnimatedStyle]}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+        
+      <Animated.View style={[styles.container, screenAnimatedStyle]}>
+       {currentParty?.status === 'arrived' && (
+         <Animated.View style={[styles.topNoticeBar, animatedNoticeBarStyle]}>
+           <TouchableOpacity style={styles.noticeBarContent} onPress={() => setShowSettlementModal(true)}>
+             <Text style={styles.noticeBarTitle}>정산 현황</Text>
+             <Animated.View style={[styles.settlementList, animatedSettlementListStyle]}>
+              {Object.keys(settlementStatus)
+                .sort((a, b) => {
+                  // SKTaxi: 리더를 맨 앞에, 나머지는 이름순 정렬
+                  const aIsLeader = a === currentParty?.leaderId;
+                  const bIsLeader = b === currentParty?.leaderId;
+                  
+                  if (aIsLeader && !bIsLeader) return -1;
+                  if (!aIsLeader && bIsLeader) return 1;
+                  
+                  // 리더가 아닌 경우 이름순 정렬
+                  const aName = displayNameMap[a] || '익명';
+                  const bName = displayNameMap[b] || '익명';
+                  return aName.localeCompare(bName);
+                })
+                .map((memberId) => {
+                const displayName = displayNameMap[memberId] || '익명';
+                const isSettled = settlementStatus[memberId];
+                const isMe = memberId === currentUser?.uid;
+                const isLeader = memberId === currentParty?.leaderId;
+                
+                return (
+                  <View key={memberId} style={styles.settlementItem}>
+                    <Icon 
+                      name={isLeader ? "flag" : (isSettled ? "checkbox" : "square-outline")} 
+                      size={16} 
+                      color={isLeader ? COLORS.accent.green : (isSettled ? COLORS.accent.green : COLORS.text.secondary)} 
+                    />
+                    <Text style={[styles.settlementText, isSettled && styles.settlementTextCompleted, isMe && {fontWeight: '700'}]}>
+                      {displayName}님 {isLeader ? '정산자' : `${perPersonAmount.toLocaleString()}원 ${isSettled ? '송금완료' : '송금 중'}`}{isMe && ' (나)'}
+                    </Text>
+                  </View>
+                );
+              })}
+             </Animated.View>
+           </TouchableOpacity>
+           <TouchableOpacity 
+             style={styles.noticeBarToggle}
+             onPress={() => {
+               const newMinimized = !isNoticeBarMinimized;
+               setIsNoticeBarMinimized(newMinimized);
+               
+               // SKTaxi: 애니메이션 적용 (동적 높이 계산)
+               const memberCount = Object.keys(settlementStatus).length;
+               if (newMinimized) {
+                 noticeBarHeight.value = withTiming(52, { duration: 300 });
+                 settlementListOpacity.value = withTiming(0, { duration: 300 });
+               } else {
+                 const dynamicHeight = calculateNoticeBarHeight(memberCount);
+                 noticeBarHeight.value = withTiming(dynamicHeight, { duration: 300 });
+                 settlementListOpacity.value = withTiming(1, { duration: 300 });
+               }
+             }}
+           >
+             <Icon 
+               name={isNoticeBarMinimized ? "chevron-down" : "chevron-up"} 
+               size={20} 
+               color={COLORS.text.secondary} 
+             />
+           </TouchableOpacity>
+         </Animated.View>
+       )}
         {messagesLoading ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>메시지를 불러오는 중...</Text>
@@ -446,12 +1283,12 @@ export const ChatScreen = () => {
             <Text style={styles.errorText}>메시지를 불러올 수 없습니다.</Text>
           </View>
         ) : (
-          <FlatList
+      <FlatList
             ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
+        data={messages}
+        renderItem={renderMessage}
             keyExtractor={item => item.id || ''}
-            contentContainerStyle={styles.messageList}
+        contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator={false}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           />
@@ -477,43 +1314,469 @@ export const ChatScreen = () => {
                       </TouchableOpacity>
                       <Text style={styles.menuItemText}>계좌전송</Text>
                     </View>
+                    {isLeader && (
+                        <>
+                    {currentParty?.status !== 'arrived' ? (
+                      <View style={styles.menuItemWrapper}>
+                        <TouchableOpacity 
+                          style={styles.menuItem} 
+                          onPress={() => handleMenuPress('close')}
+                        >
+                          <Icon name={currentParty?.status === 'closed' ? 'refresh-circle' : 'close-circle'} size={32} color={COLORS.accent.green} />
+                        </TouchableOpacity>
+                        <Text style={styles.menuItemText}>{currentParty?.status === 'closed' ? '모집재개' : '모집마감'}</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.menuItemWrapper}>
+                        <TouchableOpacity 
+                          style={styles.menuItem} 
+                          onPress={() => handleMenuPress('settlement')}
+                        >
+                          <Icon name="receipt" size={32} color={COLORS.accent.blue} />
+                        </TouchableOpacity>
+                        <Text style={styles.menuItemText}>정산현황</Text>
+                      </View>
+                    )}
                     <View style={styles.menuItemWrapper}>
                       <TouchableOpacity 
                         style={styles.menuItem} 
-                        onPress={() => handleMenuPress('close')}
+                        onPress={() => handleMenuPress(currentParty?.status === 'arrived' ? 'endParty' : 'arrive')}
                       >
-                        <Icon name="close-circle" size={32} color={COLORS.accent.green} />
+                        <Icon name={currentParty?.status === 'arrived' ? "log-out" : "checkmark-circle"} size={32} color={currentParty?.status === 'arrived' ? COLORS.accent.red : COLORS.accent.green} />
                       </TouchableOpacity>
-                      <Text style={styles.menuItemText}>모집마감</Text>
+                      <Text style={styles.menuItemText}>{currentParty?.status === 'arrived' ? '동승종료' : '도착'}</Text>
                     </View>
-                    <View style={styles.menuItemWrapper}>
-                      <TouchableOpacity 
-                        style={styles.menuItem} 
-                        onPress={() => handleMenuPress('arrive')}
-                      >
-                        <Icon name="checkmark-circle" size={32} color={COLORS.accent.green} />
-                      </TouchableOpacity>
-                      <Text style={styles.menuItemText}>도착</Text>
-                    </View>
+                    </>
+                )}
                   </Animated.View>
                 )}
-                <View style={styles.inputContainer}>
-                    <TouchableOpacity style={styles.plusButton} onPress={handlePlusPress}>
-                        <Icon name="add" size={24} color={COLORS.text.primary} />
-                    </TouchableOpacity>
-                    <TextInput
-                        style={styles.input}
-                        value={message}
-                        onChangeText={setMessage}
-                        placeholder="메시지를 입력하세요"
-                        placeholderTextColor={COLORS.text.disabled}
-                        multiline
-                        onFocus={handleInputFocus}
+      <View style={styles.inputContainer}>
+                    {!isPartyEnded && (
+                        <TouchableOpacity style={styles.plusButton} onPress={handlePlusPress}>
+                            {showMenu ? (
+                                <Icon name="close-outline" size={24} color={COLORS.text.primary} />
+                            ) : (
+                                <Icon name="add" size={24} color={COLORS.text.primary} />
+                            )}
+                        </TouchableOpacity>
+                    )}
+        <TextInput
+          style={[styles.input, isPartyEnded && styles.disabledInput]}
+          value={message}
+          onChangeText={setMessage}
+          placeholder={isPartyEnded ? "동승이 종료된 채팅방입니다" : "메시지를 입력하세요"}
+          placeholderTextColor={COLORS.text.disabled}
+          multiline
+          editable={!isPartyEnded}
+          onFocus={handleInputFocus}
+        />
+                    <Button 
+                        title="전송" 
+                        onPress={handleSend} 
+                        disabled={isPartyEnded}
+                        style={{
+                            height: 40, 
+                            borderRadius: 16,
+                            opacity: isPartyEnded ? 0.5 : 1
+                        }} 
                     />
-                    <Button title="전송" onPress={handleSend} style={{height: 40, borderRadius: 16}} />
+      </View>
+      </Animated.View>
+    </KeyboardAvoidingView>
+        
+        {/* SKTaxi: 계좌 정보 모달 */}
+        <Modal
+          visible={showAccountModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowAccountModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.accountModalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>계좌 정보</Text>
+                <TouchableOpacity onPress={() => setShowAccountModal(false)}>
+                  <Icon name="close" size={24} color={COLORS.text.primary} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.modalBody}>
+                {accountLoading ? (
+                  <Text style={styles.loadingText}>계좌 정보를 불러오는 중...</Text>
+                ) : (userAccount && !editingAccountInline) ? (
+                  // 등록된 계좌 정보가 있고 수정 모드가 아닌 경우
+                  <View>
+                    <View style={styles.accountInfoItem}>
+                      <Text style={styles.accountInfoLabel}>은행명</Text>
+                      <Text style={styles.accountInfoValue}>{userAccount.bankName}</Text>
+                    </View>
+                    <View style={styles.accountInfoItem}>
+                      <Text style={styles.accountInfoLabel}>계좌번호</Text>
+                      <Text style={styles.accountInfoValue}>{userAccount.accountNumber}</Text>
+                    </View>
+                    {userAccount.hideName && userAccount.accountHolder && (
+                      <View style={styles.accountInfoItem}>
+                        <Text style={styles.accountInfoLabel}>예금주</Text>
+                        <Text style={styles.accountInfoValue}>{userAccount.accountHolder}</Text>
+                      </View>
+                    )}
+                    
+                    <View style={styles.modalButtonContainer}>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, styles.modalEditButton, {flex: 1}]}
+                        onPress={() => {
+                          // SKTaxi: 모달 내 인라인 수정 폼으로 전환 및 기본값 유지
+                          setEditingAccountInline(true);
+                          setRememberAccount(true);
+                        }}
+                      >
+                        <Text style={styles.modalEditButtonText}>수정하기</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, styles.modalSendButton, {flex: 1}]}
+                        onPress={sendAccountInfo}
+                      >
+                        <Text style={styles.modalSendButtonText}>전송하기</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  // 계좌 정보가 등록되지 않았거나 수정 모드인 경우
+                  <View>
+                    <View style={styles.bankInputContainer}>
+                      <View style={[styles.inputGroup, { flex: 3.33 }]}>
+                        <Text style={styles.inputLabel}>은행명</Text>
+                        <TouchableOpacity 
+                          style={styles.bankSelectButton}
+                          onPress={() => setShowBankDropdown(!showBankDropdown)}
+                        >
+                          <Text style={[styles.bankSelectText, !tempBankName && { color: COLORS.text.disabled }]}>
+                            {tempBankName || '은행 선택'}
+                          </Text>
+                          <Icon name="chevron-down" size={18} color={COLORS.text.secondary} />
+                        </TouchableOpacity>
+                        {showBankDropdown && (
+                          <ScrollView style={styles.bankDropdown}>
+                            {BANKS.map((bank) => (
+                              <TouchableOpacity
+                                key={bank}
+                                style={styles.bankOption}
+                                onPress={() => {
+                                  setTempBankName(bank);
+                                  setShowBankDropdown(false);
+                                }}
+                              >
+                                <Text style={styles.bankOptionText}>{bank}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        )}
+                      </View>
+                      
+                      <View style={[styles.inputGroup, { flex: 6.66 }]}>
+                        <Text style={styles.inputLabel}>계좌번호</Text>
+                        <TextInput
+                          style={[styles.textInput, {...TYPOGRAPHY.body2}]}
+                          value={tempAccountNumber}
+                          onChangeText={(text) => setTempAccountNumber(text.replace(/[^0-9]/g, ''))}
+                          placeholder="계좌번호를 입력하세요"
+                          placeholderTextColor={COLORS.text.disabled}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                    </View>
+                    
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>예금주명 (이름)</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={tempAccountHolder}
+                        onChangeText={setTempAccountHolder}
+                        placeholder="이름을 입력하세요"
+                        placeholderTextColor={COLORS.text.disabled}
+                      />
+                    </View>
+                    
+                    <TouchableOpacity 
+                      style={styles.checkboxContainer}
+                      onPress={() => setTempHideName(!tempHideName)}
+                    >
+                      <Icon 
+                        name={tempHideName ? "checkbox" : "square-outline"} 
+                        size={20} 
+                        color={tempHideName ? COLORS.accent.green : COLORS.text.secondary} 
+                      />
+                      <Text style={styles.checkboxText}>이름 일부만 공개</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.checkboxContainer}
+                      onPress={() => setRememberAccount(!rememberAccount)}
+                    >
+                      <Icon 
+                        name={rememberAccount ? "checkbox" : "square-outline"} 
+                        size={20} 
+                        color={rememberAccount ? COLORS.accent.green : COLORS.text.secondary} 
+                      />
+                      <Text style={styles.checkboxText}>계좌 정보를 기억하기</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalSendButton, styles.fullWidthButton]}
+                      onPress={sendAccountInfo}
+                    >
+                      <Text style={styles.modalSendButtonText}>전송하기</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
                 </View>
-            </Animated.View>
-        </KeyboardAvoidingView>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        
+        {/* SKTaxi: 도착 모달 */}
+        <Modal
+          visible={showArrivalModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => {
+            setShowArrivalModal(false);
+            // SKTaxi: 도착 모달용 계좌정보 상태 초기화
+            setArrivalBankName('');
+            setArrivalAccountNumber('');
+            setArrivalAccountHolder('');
+            setArrivalHideName(false);
+            setShowArrivalBankDropdown(false);
+            setRememberArrivalAccount(false);
+          }}
+        >
+          <TouchableWithoutFeedback onPress={() => {Keyboard.dismiss()}}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {Keyboard.dismiss()}}>
+                <View style={styles.accountModalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>도착 확정</Text>
+                    <TouchableOpacity onPress={() => {
+                      setShowArrivalModal(false);
+                      // SKTaxi: 도착 모달용 계좌정보 상태 초기화
+                      setArrivalBankName('');
+                      setArrivalAccountNumber('');
+                      setArrivalAccountHolder('');
+                      setArrivalHideName(false);
+                      setShowArrivalBankDropdown(false);
+                      setRememberArrivalAccount(false);
+                    }}>
+                      <Icon name="close" size={24} color={COLORS.text.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.modalBody}>
+                    <View style={styles.rowContainer}>
+                      <View style={[styles.inputGroup, { flex: 3.33 }]}>
+                        <Text style={styles.inputLabel}>택시비 (원)</Text>
+                        <TextInput
+                          ref={arrivalTaxiFareRef}
+                          style={styles.textInput}
+                          value={taxiFare}
+                          onChangeText={(text) => setTaxiFare(text.replace(/[^0-9]/g, ''))}
+                          placeholder="택시비"
+                          placeholderTextColor={COLORS.text.disabled}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                      <View style={{ flex: 0.66 }} />
+                      
+                      <View style={[styles.inputGroup, { flex: 6 }]}>
+                        <Text style={styles.inputLabel}>N빵할 사람</Text>
+                        <View style={styles.memberSelectionContainer}>
+                          {memberUids.map((uid) => {
+                            const displayName = displayNameMap[uid] || '익명';
+                            const isSelected = selectedMembers.includes(uid);
+                            const isMe = uid === currentUser?.uid;
+                            
+                            return (
+                              <TouchableOpacity
+                                key={uid}
+                                style={[styles.memberSelectionItem, isSelected && styles.memberSelectionItemSelected]}
+                                onPress={() => toggleMemberSelection(uid)}
+                              >
+                                <Icon 
+                                  name={isSelected ? "checkbox" : "square-outline"} 
+                                  size={16} 
+                                  color={isSelected ? COLORS.accent.green : COLORS.text.secondary} 
+                                />
+                                <Text style={[styles.memberSelectionText, isSelected && styles.memberSelectionTextSelected]}>
+                                  {displayName} {isMe && '(나)'}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    </View>
+                    
+                    {/* 계좌 정보 입력 폼 (기존 계좌 모달과 동일) */}
+                    <View style={styles.bankInputContainer}>
+                      <View style={[styles.inputGroup, { flex: 3.33 }]}>
+                        <Text style={styles.inputLabel}>은행명</Text>
+                        <TouchableOpacity 
+                          style={styles.bankSelectButton}
+                          onPress={() => setShowArrivalBankDropdown(!showArrivalBankDropdown)}
+                        >
+                          <Text style={[styles.bankSelectText, !arrivalBankName && { color: COLORS.text.disabled }]}>
+                            {arrivalBankName || '은행 선택'}
+                          </Text>
+                          <Icon name="chevron-down" size={18} color={COLORS.text.secondary} />
+                        </TouchableOpacity>
+                        {showArrivalBankDropdown && (
+                          <ScrollView style={styles.bankDropdown}>
+                            {BANKS.map((bank) => (
+                              <TouchableOpacity
+                                key={bank}
+                                style={styles.bankOption}
+                                onPress={() => {
+                                  setArrivalBankName(bank);
+                                  setShowArrivalBankDropdown(false);
+                                }}
+                              >
+                                <Text style={styles.bankOptionText}>{bank}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        )}
+                      </View>
+                      
+                      <View style={[styles.inputGroup, { flex: 6.66 }]}>
+                        <Text style={styles.inputLabel}>계좌번호</Text>
+                        <TextInput
+                          style={styles.textInput}
+                          value={arrivalAccountNumber}
+                          onChangeText={(text) => setArrivalAccountNumber(text.replace(/[^0-9]/g, ''))}
+                          placeholder="계좌번호를 입력하세요"
+                          placeholderTextColor={COLORS.text.disabled}
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                    </View>
+                    
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>예금주명 (이름)</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={arrivalAccountHolder}
+                        onChangeText={setArrivalAccountHolder}
+                        placeholder="이름을 입력하세요"
+                        placeholderTextColor={COLORS.text.disabled}
+                      />
+                    </View>
+                    
+                    <TouchableOpacity 
+                      style={[styles.checkboxContainer, { marginTop: 8 }]}
+                      onPress={() => setArrivalHideName(!arrivalHideName)}
+                    >
+                      <Icon 
+                        name={arrivalHideName ? "checkbox" : "square-outline"} 
+                        size={20} 
+                        color={arrivalHideName ? COLORS.accent.green : COLORS.text.secondary} 
+                      />
+                      <Text style={styles.checkboxText}>이름 일부만 공개</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                      style={styles.checkboxContainer}
+                      onPress={() => setRememberArrivalAccount(!rememberArrivalAccount)}
+                    >
+                      <Icon 
+                        name={rememberArrivalAccount ? "checkbox" : "square-outline"} 
+                        size={20} 
+                        color={rememberArrivalAccount ? COLORS.accent.green : COLORS.text.secondary} 
+                      />
+                      <Text style={styles.checkboxText}>계좌 정보를 기억하기</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalSendButton, styles.fullWidthButton]}
+                      onPress={handleArrivalSubmit}
+                    >
+                      <Text style={styles.modalSendButtonText}>도착 확정</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        
+        {/* SKTaxi: 정산 현황 모달 */}
+        <Modal
+          visible={showSettlementModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowSettlementModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowSettlementModal(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {Keyboard.dismiss()}}>
+                <View style={styles.settlementModalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>정산 현황 업데이트</Text>
+                    <TouchableOpacity onPress={() => setShowSettlementModal(false)}>
+                      <Icon name="close" size={24} color={COLORS.text.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <ScrollView style={[styles.modalBody, {paddingTop: 0}]}>
+                    {Object.keys(settlementStatus)
+                      .sort((a, b) => {
+                        // SKTaxi: 리더를 맨 앞에, 나머지는 이름순 정렬
+                        const aIsLeader = a === currentParty?.leaderId;
+                        const bIsLeader = b === currentParty?.leaderId;
+                        
+                        if (aIsLeader && !bIsLeader) return -1;
+                        if (!aIsLeader && bIsLeader) return 1;
+                        
+                        // 리더가 아닌 경우 이름순 정렬
+                        const aName = displayNameMap[a] || '익명';
+                        const bName = displayNameMap[b] || '익명';
+                        return aName.localeCompare(bName);
+                      })
+                      .map((memberId) => {
+                      const displayName = displayNameMap[memberId] || '익명';
+                      const isSettled = settlementStatus[memberId];
+                      const isMe = memberId === currentUser?.uid;
+                      const isLeader = memberId === currentParty?.leaderId;
+                      
+                      return (
+                        <View key={memberId} style={styles.settlementModalItem}>
+                          <View style={styles.settlementModalItemLeft}>
+                            <Text style={styles.settlementModalName}>
+                              {displayName}{isMe && ' (나)'}
+                            </Text>
+                            <Text style={styles.settlementAmount}>{perPersonAmount.toLocaleString()}원</Text>
+                            <Text style={[styles.settlementModalStatus, isSettled && styles.settlementModalStatusCompleted]}>
+                              {isLeader ? '정산자' : (isSettled ? '정산 완료' : '정산 중...')}
+                            </Text>
+                          </View>
+                          {!isSettled && !isLeader && (
+                            <TouchableOpacity 
+                              style={styles.settlementCompleteButton}
+                              onPress={() => handleSettlementComplete(memberId, displayName)}
+                            >
+                              <Text style={styles.settlementCompleteButtonText}>정산완료</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
     </SafeAreaView>
   );
 };
@@ -522,6 +1785,103 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
+  },
+  topNoticeBar: { 
+    backgroundColor: COLORS.background.primary,
+    borderBottomWidth: 2,
+    borderBottomColor: COLORS.border.default,
+    zIndex: 1000,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    minHeight: 52,
+    overflow: 'hidden',
+  },
+  noticeBarContent: {
+    marginVertical: 6,
+    flex: 1,
+  },
+  noticeBarTitle: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+  },
+  settlementList: {
+    marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  settlementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+    marginBottom: 4,
+    gap: 4,
+  },
+  settlementText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginLeft: 4,
+  },
+  settlementTextCompleted: {
+    color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  noticeBarToggle: {
+    padding: 8,
+  },
+  // SKTaxi: 정산 현황 모달 스타일
+  settlementModalContent: {
+    backgroundColor: COLORS.background.card,
+    borderRadius: 16,
+    margin: 20,
+    maxHeight: '50%',
+    width: WINDOW_WIDTH - 80,
+  },
+  settlementModalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.dark,
+  },
+  settlementModalItemLeft: {
+    flex: 1,
+  },
+  settlementModalName: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  settlementAmount: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.accent.green + '90',
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  settlementModalStatus: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+  },
+  settlementModalStatusCompleted: {
+    color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  settlementCompleteButton: {
+    backgroundColor: COLORS.accent.green,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  settlementCompleteButtonText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.background.primary,
+    fontWeight: '600',
   },
   title: {
     ...TYPOGRAPHY.title3,
@@ -610,6 +1970,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.default,
   },
+  // SKTaxi: 동승 종료 메시지 스타일
+  endMessageContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.background.card,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  endMessageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  endMessageText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    marginLeft: 8,
+  },
+  leaveRoomButton: {
+    backgroundColor: COLORS.accent.red,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  leaveRoomButtonText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.background.white,
+    fontWeight: '600',
+  },
+  disabledInput: {
+    opacity: 0.5,
+    backgroundColor: COLORS.background.card,
+  },
   menuContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -656,7 +2054,7 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     bottom: 0,
-    width: '60%',
+    width: '70%',
     backgroundColor: COLORS.background.primary,
     zIndex: 1001,
     shadowColor: '#000',
@@ -683,7 +2081,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   memberSection: {
-    marginBottom: 30,
   },
   sectionTitle: {
     ...TYPOGRAPHY.title4,
@@ -691,7 +2088,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   memberList: {
-    gap: 12,
   },
   memberItem: {
     flexDirection: 'row',
@@ -762,5 +2158,356 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     textAlign: 'center',
+  },
+  // SKTaxi: 계좌 정보 모달 스타일
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  accountModalContent: {
+    backgroundColor: COLORS.background.primary,
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.dark,
+  },
+  modalTitle: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: WINDOW_HEIGHT - 80,
+  },
+  accountInfoItem: {
+    marginBottom: 16,
+  },
+  accountInfoLabel: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginBottom: 4,
+  },
+  accountInfoValue: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '500',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  modalButton: {
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalEditButton: {
+    backgroundColor: COLORS.background.card,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  modalEditButtonText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  modalSendButton: {
+    backgroundColor: COLORS.accent.green,
+  },
+  modalSendButtonText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.buttonText,
+    fontWeight: '600',
+  },
+  fullWidthButton: {
+    marginTop: 16,
+  },
+  inputGroup: {
+    marginBottom: 8,
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 8,
+  },
+  bankInputContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 16,
+  },
+  inputLabel: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginBottom: 8,
+  },
+  bankSelectButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    backgroundColor: COLORS.background.card,
+    position: 'relative',
+    minHeight: 44,
+  },
+  bankSelectText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  bankDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    maxHeight: 250,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 8,
+    backgroundColor: COLORS.background.card,
+    marginTop: 4,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  bankOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.dark,
+  },
+  bankOptionText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: COLORS.background.card,
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    minHeight: 44,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  checkboxText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  // SKTaxi: 계좌 정보 메시지 스타일
+  accountMessageContainer: {
+    borderRadius: 12,
+    padding: 0,
+    marginVertical: 4,
+  },
+  accountMessageTitle: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginBottom: 12,
+  },
+  accountInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  accountInfoTextContainer: {
+    flex: 1,
+  },
+  accountInfo: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  accountHolder: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+  },
+  copyButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: COLORS.background.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    marginLeft: 12,
+  },
+  // SKTaxi: 도착 메시지 스타일
+  arrivalMessageContainer: {
+    padding: 10,
+  },
+  arrivalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  arrivalMessageTitle: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.accent.green,
+    marginLeft: 8,
+    fontWeight: '700',
+  },
+  arrivalInfoSection: {
+    marginBottom: 16,
+  },
+  arrivalInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  arrivalInfoItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: 12,
+    marginHorizontal: 4,
+  },
+  arrivalInfoLabel: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.text.secondary,
+    marginBottom: 4,
+  },
+  arrivalInfoValue: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+  },
+  arrivalCalculationSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.accent.green + '10',
+    borderRadius: 12,
+  },
+  arrivalCalculationText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    marginRight: 8,
+  },
+  arrivalPerPersonAmount: {
+    ...TYPOGRAPHY.title2,
+    color: COLORS.accent.green,
+    fontWeight: '800',
+  },
+  arrivalInstructionText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  arrivalAccountSection: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.default,
+    paddingTop: 16,
+  },
+  arrivalAccountSectionTitle: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  arrivalAccountInfoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: COLORS.background.primary,
+    borderRadius: 12,
+  },
+  arrivalAccountInfoTextContainer: {
+    flex: 1,
+  },
+  arrivalAccountAmount: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.accent.green,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  arrivalAccountInfo: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  arrivalAccountHolder: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+  },
+  arrivalCopyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.accent.green + '20',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.accent.green,
+  },
+  arrivalCopyButtonText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.accent.green,
+    marginLeft: 4,
+    fontWeight: '600',
+  },
+  // SKTaxi: 멤버 선택 스타일
+  memberSelectionContainer: {
+    marginTop: 8,
+  },
+  memberSelectionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginBottom: 4,
+    backgroundColor: COLORS.background.card,
+  },
+  memberSelectionItemSelected: {
+    backgroundColor: COLORS.accent.green + '20',
+    outlineWidth: 1,
+    outlineColor: COLORS.accent.green,
+  },
+  memberSelectionText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    marginLeft: 8,
+  },
+  memberSelectionTextSelected: {
+    color: COLORS.accent.green,
+    fontWeight: '600',
   },
 }); 

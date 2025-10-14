@@ -19,8 +19,10 @@ export const useAuth = () => {
             uid: firebaseUser.uid,
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
-            phoneNumber: firebaseUser.phoneNumber,
+            studentId: null,
             photoURL: firebaseUser.photoURL,
+            linkedAccounts: [],
+            realname: null,
           },
           loading: false,
         });
@@ -57,9 +59,11 @@ export const useAuth = () => {
             uid: user.uid,
             email: user.email,
             displayName: data.displayName,
-            phoneNumber: data.phoneNumber,
+            studentId: data.studentId,
             photoURL: user.photoURL,
             linkedAccounts: [],
+            account: null,
+            realname: null,
           });
           // SKTaxi: 회원가입 직후 FCM 토큰 저장
           await ensureFcmTokenSaved();

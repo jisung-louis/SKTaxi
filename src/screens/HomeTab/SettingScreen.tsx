@@ -1,0 +1,245 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { COLORS } from '../../constants/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import PageHeader from '../../components/common/PageHeader';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { TYPOGRAPHY } from '../../constants/typhograpy';
+
+export const SettingScreen = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+
+  const handleNotice = () => {
+    navigation.navigate('AppNotice');
+  };
+
+  const handleNotification = () => {
+    navigation.navigate('NotificationSetting');
+  };
+
+  const handleInquiry = () => {
+    navigation.navigate('Inquiries');
+  };
+
+  const handleTerms = () => {
+    navigation.navigate('TermsOfUse');
+  };
+
+  const handlePrivacy = () => {
+    navigation.navigate('PrivacyPolicy');
+  };
+
+  const handleAppVersion = () => {
+    Alert.alert('앱 버전', 'SKTaxi v1.0.0');
+  };
+
+  const handleAbout = () => {
+    Alert.alert('앱 정보', 'SKTaxi\n성결대학교 택시 동승 서비스');
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <PageHeader onBack={() => navigation.goBack()} title="설정" borderBottom />
+      
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
+        {/* 공지 및 알림 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>공지 및 알림</Text>
+          <View style={styles.sectionCard}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleNotice}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="megaphone" size={20} color={COLORS.accent.blue} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>앱 공지사항</Text>
+                  <Text style={styles.menuSubtext}>새로운 소식과 업데이트를 확인하세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleNotification}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="notifications" size={20} color={COLORS.accent.green} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>알림 설정</Text>
+                  <Text style={styles.menuSubtext}>푸시 알림을 관리하세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 지원 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>지원</Text>
+          <View style={styles.sectionCard}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleInquiry}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="help-circle" size={20} color={COLORS.accent.red} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>문의사항</Text>
+                  <Text style={styles.menuSubtext}>궁금한 점이 있으시면 문의해주세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 법적 정보 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>법적 정보</Text>
+          <View style={styles.sectionCard}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleTerms}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="document-text" size={20} color={COLORS.text.secondary} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>이용약관</Text>
+                  <Text style={styles.menuSubtext}>서비스 이용약관을 확인하세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handlePrivacy}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="shield-checkmark" size={20} color={COLORS.text.secondary} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>개인정보 처리방침</Text>
+                  <Text style={styles.menuSubtext}>개인정보 보호정책을 확인하세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 앱 정보 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>앱 정보</Text>
+          <View style={styles.sectionCard}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleAppVersion}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="information-circle" size={20} color={COLORS.text.secondary} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>앱 버전</Text>
+                  <Text style={styles.menuSubtext}>현재 버전: v1.0.0</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+            
+            <View style={styles.divider} />
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleAbout}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="apps" size={20} color={COLORS.text.secondary} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>앱 정보</Text>
+                  <Text style={styles.menuSubtext}>SKTaxi에 대해 알아보세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 하단 여백 */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background.primary,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    ...TYPOGRAPHY.title4,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  sectionCard: {
+    backgroundColor: COLORS.background.card,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+  },
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.background.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  menuTextContainer: {
+    flex: 1,
+  },
+  menuText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  menuSubtext: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.text.secondary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border.light,
+    marginLeft: 56,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});

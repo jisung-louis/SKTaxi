@@ -9,7 +9,17 @@ export type Party = {
   members: string[]; // uid list (leader 포함)
   tags?: string[];
   detail?: string;
-  status: 'open' | 'closed' | 'onboard';
+  status: 'open' | 'closed' | 'arrived';
+  settlement?: { // SKTaxi: 정산 현황 필드 추가
+    status: 'pending' | 'completed';
+    perPersonAmount: number;
+    members: {
+      [memberId: string]: {
+        settled: boolean;
+        settledAt?: any;
+      };
+    };
+  };
   createdAt?: any;
   updatedAt?: any;
 };
@@ -42,7 +52,22 @@ export type Message = {
   senderId: string;
   senderName: string;
   text: string;
-  type?: 'user' | 'system'; // SKTaxi: 메시지 타입 추가 (기본값: 'user')
+  type?: 'user' | 'system' | 'account' | 'arrived' | 'end'; // SKTaxi: 메시지 타입 추가 (기본값: 'user')
+  accountData?: { // SKTaxi: 계좌 정보 메시지용 데이터
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    hideName: boolean;
+  };
+  arrivalData?: { // SKTaxi: 도착 메시지용 데이터
+    taxiFare: number;
+    perPerson: number;
+    memberCount: number;
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    hideName: boolean;
+  };
   createdAt?: any;
   updatedAt?: any;
 };

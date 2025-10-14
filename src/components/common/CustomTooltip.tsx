@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, Animated } from 'react-native';
 
 interface CustomTooltipProps {
   visible: boolean;
@@ -9,6 +9,17 @@ interface CustomTooltipProps {
 }
 
 export const CustomTooltip: React.FC<CustomTooltipProps> = ({ visible, text, onClose, style }) => {
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(opacity, { toValue: 1, duration: 180, useNativeDriver: true }).start();
+    } else {
+      // 컴포넌트가 사라지면 부모에서 null을 리턴하므로 사전 페이드아웃을 위해 onClose 호출 전에 부모가 visible=false를 전달해야 함
+      Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }).start();
+    }
+  }, [visible, opacity]);
+
   if (!visible) return null;
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -17,9 +28,9 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({ visible, text, onC
         activeOpacity={1}
         onPress={onClose}
       />
-      <View style={[styles.tooltipBox, style]} pointerEvents="box-none">
+      <Animated.View style={[styles.tooltipBox, style, { opacity }]} pointerEvents="box-none">
         <Text style={styles.tooltipText}>{text}</Text>
-      </View>
+      </Animated.View>
     </View>
   );
 };

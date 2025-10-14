@@ -16,11 +16,13 @@ export async function ensureFcmTokenSaved(): Promise<void> {
   const user = auth().currentUser;
   if (!user) return;
 
+  console.log('ensureFcmTokenSaved');
   try {
     // SKTaxi: iOS에서 원격 메시지 등록 보장 (안드로이드는 무시됨)
     try { await messaging().registerDeviceForRemoteMessages(); } catch {}
     await messaging().requestPermission().catch(() => {}); // SKTaxi: 권한 거부는 무시
     const token = await getFcmTokenWithRetry();
+    console.log('token:', token);
     if (!token) return;
 
     // SKTaxi: 단일기기 정책 - 현재 토큰만 유지

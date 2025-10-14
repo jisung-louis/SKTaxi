@@ -2,11 +2,21 @@ import React from 'react';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList, TaxiStackParamList } from './types';
+import { MainTabParamList, TaxiStackParamList, HomeStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
-import { ProfileScreen } from '../screens/ProfileScreen';
+import { ProfileScreen } from '../screens/HomeTab/ProfileScreen';
+import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
+import { SettingScreen } from '../screens/HomeTab/SettingScreen';
+import { ProfileEditScreen } from '../screens/HomeTab/SettingScreen/ProfileEditScreen';
+import { AppNoticeScreen } from '../screens/HomeTab/SettingScreen/AppNoticeScreen';
+import { AccountModificationScreen } from '../screens/HomeTab/SettingScreen/AccountModificationScreen';
+import { NofiticationSettingScreen } from '../screens/HomeTab/SettingScreen/NofiticationSettingScreen';
+import { InquiriesScreen } from '../screens/HomeTab/SettingScreen/InquiriesScreen';
+import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScreen';
+import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
+import { NoticeScreen } from '../screens/NoticeScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
 import { ChatScreen } from '../screens/TaxiTab/ChatScreen';
@@ -19,6 +29,7 @@ import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 
 const TaxiStackNavigator = () => {
   return (
@@ -29,6 +40,24 @@ const TaxiStackNavigator = () => {
       <TaxiStack.Screen name="Recruit" component={RecruitScreen} />
       <TaxiStack.Screen name="MapSearch" component={MapSearchScreen} />
     </TaxiStack.Navigator>
+  );
+};
+
+const HomeStackNavigator = () => {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
+      <HomeStack.Screen name="Notification" component={NotificationScreen} />
+      <HomeStack.Screen name="Setting" component={SettingScreen} />
+      <HomeStack.Screen name="Profile" component={ProfileScreen} />
+      <HomeStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+      <HomeStack.Screen name="AppNotice" component={AppNoticeScreen} />
+      <HomeStack.Screen name="AccountModification" component={AccountModificationScreen} />
+      <HomeStack.Screen name="NotificationSetting" component={NofiticationSettingScreen} />
+      <HomeStack.Screen name="Inquiries" component={InquiriesScreen} />
+      <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
+      <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+    </HomeStack.Navigator>
   );
 };
 
@@ -52,16 +81,18 @@ export const MainNavigator = () => {
           gap: 12,
         },
         headerShown: false,
+        lazy: false,
       }}
       initialRouteName="홈"
     >
       <Tab.Screen 
         name="홈" 
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="home-outline" size={size} color={color} style={{ marginBottom: 4 }} />
           ),
+          lazy: false,
         }}
       />
       <Tab.Screen 
@@ -81,15 +112,17 @@ export const MainNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
           ),
+          lazy: false,
         }}
       />
       <Tab.Screen 
         name="공지" 
-        component={ProfileScreen}
+        component={NoticeScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="notifications-outline" size={size} color={color} style={{ marginBottom: 4 }} />
           ),
+          lazy: false,
         }}
       />
     </Tab.Navigator>
@@ -104,6 +137,9 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
   // 탭별로 숨길 내부 스택 스크린 이름들
   const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
+    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy'],
+    '게시판': [],
+    '공지': [],
   };
 
   const shouldHide = React.useMemo(() => {

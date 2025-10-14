@@ -186,15 +186,20 @@ export const PartyList: React.FC<PartyListProps> = ({
                 style={[
                   styles.card,
                   isSelected && (styles.cardSelected),
+                  (party.status === 'closed' || party.status === 'arrived') && styles.cardClosed,
                 ]}
               >
                 <View style={styles.timeContainer}>
-                  <Text style={styles.time}>{formatKoreanAmPmTime(party.departureTime)}</Text>
+                  <Text style={styles.time}>{formatKoreanAmPmTime(party.departureTime)} 출발</Text>
                   <Text style={[
                     styles.members,
-                    Array.isArray(party.members) && party.members.length >= party.maxMembers && styles.membersFull
+                    (party.status === 'closed' || party.status === 'arrived' || (Array.isArray(party.members) && party.members.length >= party.maxMembers)) && styles.membersFull
                   ]}>
-                    {Array.isArray(party.members) ? party.members.length : party.members}/{party.maxMembers}명
+                    {party.status === 'closed'
+                      ? '모집 마감'
+                      : party.status === 'arrived'
+                        ? '도착 완료'
+                        : `${Array.isArray(party.members) ? party.members.length : party.members}/${party.maxMembers}명`}
                   </Text>
                 </View>
                 <View style={styles.placeContainer}>
@@ -211,24 +216,44 @@ export const PartyList: React.FC<PartyListProps> = ({
                 </View>
                 {isSelected && (
                   <View style={styles.selectedContainer}>
+                    {party.detail && (
                     <View style={styles.detail}>
                       <Text style={styles.detailText}>{party.detail || ''}</Text>  
                     </View>
+                    )}
                     <Button
                       title={
-                        party.id === myPartyId 
-                          ? "내가 속한 파티" 
-                          : Array.isArray(party.members) && party.members.length >= party.maxMembers
-                            ? "파티가 가득 찼어요"
-                            : "동승 요청"
+                        party.status === 'closed'
+                          ? '모집 마감된 파티'
+                          : party.status === 'arrived'
+                            ? '도착 완료된 파티'
+                            : party.id === myPartyId 
+                              ? '내가 속한 파티' 
+                              : Array.isArray(party.members) && party.members.length >= party.maxMembers
+                                ? '파티가 가득 찼어요'
+                                : '동승 요청'
                       }
                       disabled={
+                        party.status === 'closed' ||
+                        party.status === 'arrived' ||
                         party.id === myPartyId || 
                         (Array.isArray(party.members) && party.members.length >= party.maxMembers)
                       }
                       onPress={async () => {
                         const user = auth(getApp()).currentUser;
                         if (!user) return;
+
+                        if (party.status === 'closed') {
+                          // eslint-disable-next-line no-alert
+                          (globalThis as any)?.alert?.('이 파티는 모집이 마감되었어요.');
+                          return;
+                        }
+
+                        if (party.status === 'arrived') {
+                          // eslint-disable-next-line no-alert
+                          (globalThis as any)?.alert?.('이 파티는 이미 도착 완료되었어요.');
+                          return;
+                        }
 
                         // SKTaxi: 파티가 가득 찬 경우
                         if (Array.isArray(party.members) && party.members.length >= party.maxMembers) {
@@ -369,6 +394,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     elevation: 4,
     height: 'auto',
+  },
+  cardClosed: {
+    opacity: 0.5,
   },
   placeContainer: {
     flexDirection: 'row',

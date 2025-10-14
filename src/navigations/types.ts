@@ -7,8 +7,8 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  홈: undefined;
-  택시: undefined;
+  홈: NavigatorScreenParams<HomeStackParamList>;
+  택시: NavigatorScreenParams<TaxiStackParamList>;
   게시판: undefined;
   공지: undefined;
 };
@@ -22,6 +22,20 @@ export type TaxiStackParamList = {
     onLocationSelect: (location: { latitude: number; longitude: number; address: string }) => void;
   };
   Chat: { partyId: string };
+};
+
+export type HomeStackParamList = {
+  HomeMain: undefined;
+  Notification: undefined;
+  Setting: undefined;
+  Profile: undefined;
+  ProfileEdit: undefined;
+  AppNotice: undefined;
+  AccountModification: undefined;
+  NotificationSetting: undefined;
+  Inquiries: undefined;
+  TermsOfUse: undefined;
+  PrivacyPolicy: undefined;
 };
 
 export type AuthStackParamList = {

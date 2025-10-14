@@ -26,7 +26,7 @@ export const TYPOGRAPHY : {[key: string]: TextStyle} = {
     body2: {
         fontSize: 14,
         fontWeight: 'normal',
-        lineHeight: 28,
+        lineHeight: 18,
     },
     /** caption */
     caption1: {

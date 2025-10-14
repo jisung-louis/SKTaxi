@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,12 +18,14 @@ import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { sendSystemMessage } from '../../hooks/useMessages';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Recruit'>;
 
 export const RecruitScreen = () => {
   const navigation = useNavigation<RecruitScreenNavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
+  const keywordInputRef = useRef<TextInput>(null);
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
   const [customDeparture, setCustomDeparture] = useState('');
@@ -115,15 +117,25 @@ export const RecruitScreen = () => {
   };
 
   const handleAddKeyword = () => {
-    if (!customKeyword.trim()) {
+    const raw = customKeyword.trim();
+    if (!raw) {
       Alert.alert('알림', '키워드를 입력해주세요.');
       return;
     }
-    if (keywords.includes(customKeyword)) {
+    if (raw.length > 5) {
+      Alert.alert('알림', '키워드는 최대 5글자까지 입력 가능합니다.');
+      return;
+    }
+    if (keywords.length >= 3) {
+      Alert.alert('알림', '키워드는 최대 3개까지 추가할 수 있습니다.');
+      return;
+    }
+    const withHash = raw.startsWith('#') ? raw : `#${raw}`;
+    if (keywords.includes(withHash)) {
       Alert.alert('알림', '이미 추가된 키워드입니다.');
       return;
     }
-    setKeywords(prev => [...prev, customKeyword]);
+    setKeywords(prev => [...prev, withHash]);
     setCustomKeyword('');
     setShowKeywordInput(false);
   };
@@ -134,7 +146,7 @@ export const RecruitScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <PageHeader onBack={onBack} padding={0} title="택시 파티 모집하기"/>
+      <PageHeader onBack={onBack} title="택시 파티 모집하기"/>
       {showKeywordInfo && (
         <TouchableOpacity
           style={styles.tooltipOverlay}
@@ -145,8 +157,8 @@ export const RecruitScreen = () => {
       <ScrollView 
         ref={scrollViewRef}
         contentContainerStyle={{ paddingBottom: 400 }} 
-        showsVerticalScrollIndicator={false} 
-        style={{marginTop: 10}}
+        showsVerticalScrollIndicator
+        style={{marginTop: 10, paddingHorizontal: 16}}
       >
         <View style={styles.card}>
           <Text style={styles.label}>출발지</Text>
@@ -306,7 +318,7 @@ export const RecruitScreen = () => {
             <Text style={styles.infoText}>본인을 포함한 인원을 선택해주세요!</Text>
           </View>
           <View style={styles.memberContainer}>
-            {[1, 2, 3, 4, 5, 6].map((count) => (
+            {[2, 3, 4, 5, 6, 7].map((count) => (
               <TouchableOpacity
                 key={count}
                 style={[
@@ -337,7 +349,7 @@ export const RecruitScreen = () => {
                 visible={showKeywordInfo}
                 text={"동승자에게 전달할 메시지를 키워드로 입력해보세요!\n(예: #중생관, #짐많음, #여자만 등)"}
                 onClose={() => setShowKeywordInfo(false)}
-                style={{ left: 30, top: -40, zIndex: 1000 }}
+                style={{ left: 30, top: -60, zIndex: 1000 }}
               />
             </View>
           </View>
@@ -346,15 +358,29 @@ export const RecruitScreen = () => {
               <View key={kw} style={styles.keywordItem}>
                 <Text style={styles.keywordText}>{kw}</Text>
                 <TouchableOpacity onPress={() => setKeywords(prev => prev.filter(k => k !== kw))}>
-                  <Text style={styles.removeKeywordButton}>×</Text>
+                <Icon name="close" size={20} color={COLORS.text.buttonText} />
                 </TouchableOpacity>
               </View>
             ))}
             <TouchableOpacity 
-              style={styles.addKeywordButton}
-              onPress={() => setShowKeywordInput(true)}
+              style={[styles.addKeywordButton, keywords.length >= 3 && styles.addKeywordButtonDisabled]}
+              onPress={() => {
+                if (keywords.length >= 3) {
+                  Alert.alert('알림', '키워드는 최대 3개까지 추가할 수 있습니다.');
+                  return;
+                }
+                setCustomKeyword('');
+                setShowKeywordInput(true);
+                // 약간의 딜레이 후 포커스 (모달 오픈 타이밍 보정)
+                setTimeout(() => {
+                  keywordInputRef.current?.focus();
+                }, 50);
+              }}
+              disabled={keywords.length >= 3}
             >
-              <Text style={styles.addKeywordButtonText}>+ 키워드 추가</Text>
+              <Text style={[styles.addKeywordButtonText, keywords.length >= 3 && styles.addKeywordButtonTextDisabled]}>
+                + 키워드 추가
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -385,34 +411,46 @@ export const RecruitScreen = () => {
         animationType="fade"
         onRequestClose={() => setShowKeywordInput(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <TextInput
-              style={styles.keywordInput}
-              value={customKeyword}
-              onChangeText={setCustomKeyword}
-              placeholder="키워드를 입력하세요"
-              placeholderTextColor={COLORS.text.disabled}
-            />
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalCancelButton]}
-                onPress={() => {
-                  setShowKeywordInput(false);
-                  setCustomKeyword('');
-                }}
-              >
-                <Text style={styles.modalButtonText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.modalConfirmButton]}
-                onPress={handleAddKeyword}
-              >
-                <Text style={[styles.modalButtonText, styles.modalConfirmButtonText]}>추가</Text>
-              </TouchableOpacity>
-            </View>
+        <TouchableWithoutFeedback onPress={() => setShowKeywordInput(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ width: '80%' }}>
+                <View style={styles.modalContent}>
+                  <TextInput
+                    ref={keywordInputRef}
+                    style={styles.keywordInput}
+                    value={customKeyword}
+                    onChangeText={(text) => {
+                      if (text.length <= 5) {
+                        setCustomKeyword(text);
+                      }
+                    }}
+                    placeholder="키워드를 입력하세요 (최대 5글자)"
+                    placeholderTextColor={COLORS.text.disabled}
+                    maxLength={5}
+                  />
+                  <View style={styles.modalButtonContainer}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalCancelButton]}
+                      onPress={() => {
+                        setShowKeywordInput(false);
+                        setCustomKeyword('');
+                      }}
+                    >
+                      <Text style={styles.modalButtonText}>취소</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.modalConfirmButton]}
+                      onPress={handleAddKeyword}
+                    >
+                      <Text style={[styles.modalButtonText, styles.modalConfirmButtonText]}>추가</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </SafeAreaView>
   );
@@ -433,7 +471,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
-    padding: 16,
   },
   inputContainer: {
     marginBottom: 20,
@@ -460,9 +497,9 @@ const styles = StyleSheet.create({
   },
   segmentButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     marginHorizontal: 2,
-    borderRadius: 16,
+    borderRadius: 12,
     backgroundColor: COLORS.background.primary,
     alignItems: 'center',
     borderWidth: 1,
@@ -473,11 +510,11 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     color: COLORS.text.primary,
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
   },
   segmentTextSelected: {
     color: COLORS.text.buttonText,
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
     fontWeight: 'bold',
   },
   keywordContainer: {
@@ -499,12 +536,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 4,
   },
-  removeKeywordButton: {
-    color: COLORS.text.buttonText,
-    fontSize: 20,
-    marginLeft: 4,
-    fontWeight: 'bold',
-  },
   addKeywordButton: {
     borderWidth: 1,
     borderColor: COLORS.accent.green,
@@ -516,6 +547,13 @@ const styles = StyleSheet.create({
   addKeywordButtonText: {
     color: COLORS.accent.green,
     fontSize: 14,
+  },
+  addKeywordButtonDisabled: {
+    opacity: 0.5,
+    borderColor: COLORS.border.light,
+  },
+  addKeywordButtonTextDisabled: {
+    color: COLORS.text.disabled,
   },
   labelContainer: {
     flexDirection: 'row',
@@ -608,7 +646,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.card,
     borderRadius: 16,
     padding: 20,
-    width: '80%',
     maxWidth: 400,
   },
   modalText: {

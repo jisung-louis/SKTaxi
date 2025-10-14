@@ -99,3 +99,120 @@ export async function sendSystemMessage(partyId: string, text: string): Promise<
     throw error;
   }
 }
+
+// SKTaxi: 계좌 정보 메시지 전송 함수
+export async function sendAccountMessage(
+  partyId: string, 
+  accountData: {
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    hideName: boolean;
+  }
+): Promise<void> {
+  const user = auth(getApp()).currentUser;
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  try {
+    const messagesRef = collection(firestore(getApp()), 'chats', partyId, 'messages');
+    
+    // 사용자 정보 조회
+    const userDoc = await firestore(getApp()).collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    const senderName = userData?.displayName || userData?.email || '익명';
+
+    const messageData: Omit<Message, 'id'> = {
+      partyId,
+      senderId: user.uid,
+      senderName,
+      text: '', // account 타입은 text 대신 accountData 사용
+      type: 'account',
+      accountData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(messagesRef, messageData);
+  } catch (error) {
+    console.error('SKTaxi sendAccountMessage: Error sending account message:', error);
+    throw error;
+  }
+}
+
+// SKTaxi: 도착 메시지 전송 함수
+export async function sendArrivedMessage(
+  partyId: string,
+  arrivalData: {
+    taxiFare: number;
+    perPerson: number;
+    memberCount: number;
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+    hideName: boolean;
+  }
+): Promise<void> {
+  const user = auth(getApp()).currentUser;
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  try {
+    const messagesRef = collection(firestore(getApp()), 'chats', partyId, 'messages');
+    
+    // 사용자 정보 조회
+    const userDoc = await firestore(getApp()).collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    const senderName = userData?.displayName || userData?.email || '익명';
+
+    const messageData: Omit<Message, 'id'> = {
+      partyId,
+      senderId: user.uid,
+      senderName,
+      text: '', // arrived 타입은 text 대신 arrivalData 사용
+      type: 'arrived',
+      arrivalData,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(messagesRef, messageData);
+  } catch (error) {
+    console.error('SKTaxi sendArrivedMessage: Error sending arrived message:', error);
+    throw error;
+  }
+}
+
+// SKTaxi: 동승 종료 메시지 전송 함수
+export async function sendEndMessage(partyId: string, partyArrived: boolean): Promise<void> {
+  const user = auth(getApp()).currentUser;
+  if (!user) {
+    throw new Error('로그인이 필요합니다.');
+  }
+
+  try {
+    const messagesRef = collection(firestore(getApp()), 'chats', partyId, 'messages');
+    
+    // 사용자 정보 조회
+    const userDoc = await firestore(getApp()).collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    const senderName = userData?.displayName || userData?.email || '익명';
+
+    const messageData: Omit<Message, 'id'> = {
+      partyId,
+      senderId: user.uid,
+      senderName,
+      text: partyArrived ? '동승이 종료되었어요.' : '파티가 해체되었어요.',
+      type: 'end',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await addDoc(messagesRef, messageData);
+  } catch (error) {
+    console.error('SKTaxi sendEndMessage: Error sending end message:', error);
+    throw error;
+  }
+}

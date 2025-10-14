@@ -2,9 +2,11 @@ export interface User {
   uid: string;
   email: string | null;
   displayName: string | null;
-  phoneNumber: string | null;
+  studentId: string | null;
   photoURL: string | null;
   linkedAccounts?: LinkedAccount[];
+  account?: UserAccountInfo | null;
+  realname?: string | null;
 }
 
 export interface LinkedAccount {
@@ -24,7 +26,7 @@ export interface SignUpData {
   email: string;
   password: string;
   displayName: string;
-  phoneNumber: string;
+  studentId: string;
 }
 
 export interface SignInData {
@@ -43,3 +45,10 @@ export interface SocialSignInData {
   displayName?: string;
   photoURL?: string;
 } 
+
+export interface UserAccountInfo {
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  hideName?: boolean;
+}

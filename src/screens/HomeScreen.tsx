@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { MainTabParamList } from '../navigations/types';
@@ -13,6 +13,8 @@ import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-na
 import { useIsFocused } from '@react-navigation/native';
 import { useParties } from '../hooks/useParties'; // SKTaxi: Firestore parties 구독 훅 사용
 import { formatKoreanAmPmTime } from '../utils/datetime'; // SKTaxi: 시간 포맷 유틸
+import Button from '../components/common/Button';
+import { useAuth } from '../hooks/useAuth'; // SKTaxi: 현재 사용자 정보
 
 type Food = {
   id: string;
@@ -42,6 +44,7 @@ const dummyFoods: Food[] = [
 
 export const HomeScreen = () => {
   const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
+  const { user } = useAuth(); // SKTaxi: 현재 사용자 정보
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
@@ -49,6 +52,7 @@ export const HomeScreen = () => {
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
@@ -60,53 +64,158 @@ export const HomeScreen = () => {
     transform: [{ translateY: translateY.value }],
   }));
 
+  // SKTaxi: 스크롤을 맨 위로 올리는 함수
+  const scrollToTop = () => {
+    scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  // SKTaxi: 파티 카드 클릭 핸들러
+  const handlePartyCardPress = (party: any) => {
+    // SKTaxi: 현재 사용자가 이미 다른 파티에 참여 중인지 확인 (자신의 파티 포함)
+    const isUserInAnyParty = parties.some(p => 
+      p.members.includes(user?.uid || '') && p.id !== party.id
+    );
+
+    // SKTaxi: 현재 사용자가 이 파티에 속해 있는지 확인
+    const isUserInThisParty = party.members.includes(user?.uid || '');
+
+    if (isUserInAnyParty) {
+      Alert.alert('알림', '이미 다른 파티에 소속되어 있어요. 파티를 탈퇴하고 다시 요청해주세요.');
+      return;
+    }
+
+    if (isUserInThisParty) {
+      Alert.alert('알림', '이미 이 파티에 참여하고 있어요.');
+      return;
+    }
+
+    if (party.status === 'open') {
+      Alert.alert(
+        '동승 요청',
+        `${party.departure.name} → ${party.destination.name} 파티에 동승 요청을 보낼까요?`,
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '요청 보내기', onPress: () => {
+            // TODO: 동승 요청 로직 구현
+            console.log('동승 요청 보내기:', party.id);
+          }}
+        ]
+      );
+    } else if (party.status === 'closed') {
+      Alert.alert('알림', '이 파티는 모집이 마감되었어요');
+    } else if (party.status === 'arrived') {
+      Alert.alert('알림', '이 파티는 이미 목적지에 도착했어요');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.headerLeft} onPress={scrollToTop} activeOpacity={1}>
             <View style={styles.logoPlaceholder} />
             <Text style={styles.appName}>SKTaxi</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIconBtn}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Notification' })}>
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Setting' })}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]}>
+            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => navigation.navigate('홈', { screen: 'Profile' })}>
               <Icon name="person-circle-outline" size={26} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ marginTop: 24, paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom }} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={{ 
+            paddingTop: 20, 
+            paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20,
+            paddingHorizontal: 4
+          }} 
+          showsVerticalScrollIndicator={false}
+        >
         {/* Taxi Segment */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>현재 모집중인 택시</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('택시')}>
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="car" size={20} color={COLORS.accent.green} />
+              <Text style={styles.sectionTitle}>현재 모집중인 택시 파티</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.sectionActionButton}
+              onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })}
+            >
               <Text style={styles.sectionAction}>모두 보기</Text>
+              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
           <FlatList
             data={parties}
             keyExtractor={(it) => it.id as string}
             renderItem={({ item }) => 
-            <TouchableOpacity style={styles.card} activeOpacity={0.9} key={item.id as string}>
+            <TouchableOpacity 
+              style={[styles.card, (item.status === 'arrived' || item.status === 'closed') && styles.cardDisabled]} 
+              activeOpacity={0.8} 
+              key={item.id as string}
+              onPress={() => handlePartyCardPress(item)}
+            >
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.departure.name} → {item.destination.name}</Text>
-                <Text style={styles.cardMembersText}>{Array.isArray(item.members) ? item.members.length : (item.members as any)}/{item.maxMembers}명</Text>
+                <View style={styles.cardTitleContainer}>
+                  <View style={styles.routeContainer}>
+                    <View style={styles.locationDot} />
+                    <Text style={styles.cardTitle}>{item.departure.name}</Text>
+                  </View>
+                  <Icon name="arrow-forward" size={16} color={COLORS.text.secondary} />
+                  <View style={styles.routeContainer}>
+                    <View style={[styles.locationDot, styles.destinationDot]} />
+                    <Text style={styles.cardTitle}>{item.destination.name}</Text>
+                  </View>
+                </View>
               </View>
-              <Text style={styles.cardTimeText}>{formatKoreanAmPmTime(item.departureTime)}</Text>
-              {item.detail ? <Text style={styles.cardSubtitle}>{item.detail}</Text> : null}
+              <View style={styles.cardBodyContainer}>
+                {item.detail ? (
+                  <View style={styles.detailContainer}>
+                    <Icon name="chatbubble-outline" size={14} color={COLORS.text.secondary} style={{ flex:1 }} />
+                    <Text style={[styles.cardSubtitle, { flex: 12 }]} numberOfLines={1}>{item.detail}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.statusBadgeContainer}>
+                  <View style={styles.timeContainer}>
+                    <Icon name="time-outline" size={14} color={COLORS.accent.green} />
+                    <Text style={styles.cardTimeText}>{formatKoreanAmPmTime(item.departureTime)} 출발</Text>
+                  </View>
+                  <View style={[styles.statusBadge, (item.status === 'arrived' || item.status === 'closed') && styles.statusBadgeDisabled]}>
+                    <Text style={[styles.statusText, (item.status === 'arrived' || item.status === 'closed') && styles.statusTextDisabled]}>
+                      {item.status === 'arrived' ? '도착완료' : item.status === 'closed' ? '모집마감' : `${(item.members.length)}/${item.maxMembers}명`}
+                    </Text>
+                  </View>
+                </View>
+              </View>
             </TouchableOpacity>
           }
             horizontal
             showsHorizontalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            ListEmptyComponent={() => 
+              <View style={styles.emptyContainer}>
+                <Image source={require('../../assets/images/empty_taxi_party.png')} style={styles.emptyImage} />
+                <View style={styles.emptyTextContainer}>
+                  <Text style={styles.emptyText}>모집 중인 파티가 없어요</Text>
+                  <Text style={styles.emptyText}>첫 번째 파티를 만들어보세요!</Text>
+                  <Button 
+                    title="파티 만들기" 
+                    onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })} 
+                    size="small"
+                    style={styles.emptyButton}
+                  />
+                </View>
+              </View>
+              }
           />
         </View>
 
@@ -115,18 +224,21 @@ export const HomeScreen = () => {
         {/* Notice Segment */}
         <View style={styles.section}>
           <View style={[styles.sectionHeader, { position: 'relative' }]}>
-            <TouchableOpacity
-              style={styles.sectionDropdownContainer}
-              activeOpacity={0.8}
-              onPress={() => setIsNoticeDropdownOpen(v => !v)}
-            >
-              <Text style={styles.sectionTitle}>{noticeType}</Text>
-              <Icon
-                name={isNoticeDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-                size={22}
-                color={COLORS.text.primary}
-              />
-            </TouchableOpacity>
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="megaphone" size={20} color={COLORS.accent.blue} />
+              <TouchableOpacity
+                style={styles.sectionDropdownContainer}
+                activeOpacity={0.8}
+                onPress={() => setIsNoticeDropdownOpen(v => !v)}
+              >
+                <Text style={styles.sectionTitle}>{noticeType}</Text>
+                <Icon
+                  name={isNoticeDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+                  size={18}
+                  color={COLORS.text.primary}
+                />
+              </TouchableOpacity>
+            </View>
             {isNoticeDropdownOpen && (
               <View style={styles.dropdownMenu}>
                 {(['학교 공지사항', '내 과 공지사항'] as const).map(label => (
@@ -145,22 +257,41 @@ export const HomeScreen = () => {
                 ))}
               </View>
             )}
-            <TouchableOpacity onPress={() => navigation.navigate('공지')}>
+            <TouchableOpacity 
+              style={styles.sectionActionButton}
+              onPress={() => navigation.navigate('공지')}
+            >
               <Text style={styles.sectionAction}>모두 보기</Text>
+              <Icon name="chevron-forward" size={16} color={COLORS.accent.blue} />
             </TouchableOpacity>
           </View>
           <FlatList
             data={noticeItems}
             keyExtractor={(it) => it.id}
             renderItem={({ item }) => 
-            <TouchableOpacity style={styles.card} activeOpacity={0.9}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-              {item.subtitle ? <Text style={styles.cardSubtitle}>{item.subtitle}</Text> : null}
+            <TouchableOpacity style={styles.noticeCard} activeOpacity={0.8}>
+              <View style={styles.noticeCardHeader}>
+                <View style={styles.noticeIconContainer}>
+                  <Icon name="document-text" size={16} color={COLORS.accent.blue} />
+                </View>
+                <Text style={styles.noticeCardTitle}>{item.title}</Text>
+              </View>
+              {item.subtitle ? (
+                <Text style={styles.noticeCardSubtitle}>{item.subtitle}</Text>
+              ) : null}
             </TouchableOpacity>
           }
             horizontal
             showsHorizontalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            ListEmptyComponent={() => 
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyTextContainer}>
+                <Text style={styles.emptyText}>현재 공지 정보가 없습니다.</Text>
+                <Text style={styles.emptyText}>서비스 준비중이에요!</Text>
+              </View>
+            </View>
+            }
           />
         </View>
 
@@ -169,25 +300,50 @@ export const HomeScreen = () => {
         {/* 학식 Segment */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>학식</Text>
-            <TouchableOpacity>
+            <View style={styles.sectionTitleContainer}>
+              <Icon name="restaurant" size={20} color={COLORS.accent.red} />
+              <Text style={styles.sectionTitle}>학식</Text>
+            </View>
+            <TouchableOpacity style={styles.sectionActionButton}>
               <Text style={styles.sectionAction}>모두 보기</Text>
+              <Icon name="chevron-forward" size={16} color={COLORS.accent.red} />
             </TouchableOpacity>
           </View>
           <FlatList
             data={dummyFoods}
             keyExtractor={(it) => it.id}
             renderItem={({ item }) => 
-            <TouchableOpacity style={[styles.card, { width: 150, height: 150 }]} activeOpacity={0.9} key={item.id}>
-              <Text style={styles.cardTitle}>{item.date} {item.dateTitle}요일</Text>
-              {item.title.map((title, idx) => (
-                <Text key={`${item.id}-${idx}`} style={styles.cardSubtitle}>{title}</Text>
-              ))}
+            <TouchableOpacity style={styles.foodCard} activeOpacity={0.8} key={item.id}>
+              <View style={styles.foodCardHeader}>
+                <View style={styles.foodDateContainer}>
+                  <Text style={styles.foodDate}>{item.date}</Text>
+                  <Text style={styles.foodDay}>{item.dateTitle}요일</Text>
+                </View>
+                <View style={styles.foodIconContainer}>
+                  <Icon name="restaurant" size={20} color={COLORS.accent.red} />
+                </View>
+              </View>
+              <View style={styles.foodMenuContainer}>
+                {item.title.map((title, idx) => (
+                  <View key={`${item.id}-${idx}`} style={styles.foodMenuItem}>
+                    <View style={styles.foodMenuDot} />
+                    <Text style={styles.foodMenuText}>{title}</Text>
+                  </View>
+                ))}
+              </View>
             </TouchableOpacity>
           }
             horizontal
             showsHorizontalScrollIndicator={false}
             ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+            ListEmptyComponent={() => 
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyTextContainer}>
+                <Text style={styles.emptyText}>현재 학식 정보가 없습니다.</Text>
+                <Text style={styles.emptyText}>서비스 준비중이에요!</Text>
+              </View>
+            </View>
+            }
           />
         </View>
 
@@ -258,7 +414,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    //paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.default,
   },
@@ -266,6 +422,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    paddingVertical: 12,
+    paddingRight: 30,
   },
   logoPlaceholder: {
     width: 28,
@@ -297,19 +455,37 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
     gap: 16,
+    marginBottom: 8,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   sectionTitle: {
     ...TYPOGRAPHY.title2,
     color: COLORS.text.primary,
+    fontWeight: '700',
+  },
+  sectionActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: COLORS.background.card,
   },
   sectionAction: {
     ...TYPOGRAPHY.body2,
     color: COLORS.accent.green,
+    fontWeight: '600',
   },
   sectionDropdownContainer: {
     flexDirection: 'row',
@@ -349,37 +525,209 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 220,
-    height: 110,
+    height: 130,
+    borderRadius: 20,
+    backgroundColor: COLORS.background.card,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    padding: 18,
+    paddingBottom: 12,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardDisabled: {
+    opacity: 0.6,
+    backgroundColor: COLORS.background.surface,
+  },
+  cardTitle: {
+    ...TYPOGRAPHY.body1,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    fontSize: 14,
+  },
+  cardSubtitle: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    fontSize: 12,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  cardTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  routeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  locationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.accent.green,
+  },
+  destinationDot: {
+    backgroundColor: COLORS.accent.blue,
+  },
+  statusBadge: {
+    backgroundColor: COLORS.accent.green + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusBadgeDisabled: {
+    backgroundColor: COLORS.accent.red + '20',
+  },
+  statusText: {
+    ...TYPOGRAPHY.caption1,
+    fontWeight: '600',
+    color: COLORS.accent.green,
+    fontSize: 11,
+  },
+  statusTextDisabled: {
+    color: COLORS.accent.red,
+  },
+  cardBodyContainer: {
+    gap: 8,
+  },
+  detailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statusBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 6,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cardTimeText: {
+    ...TYPOGRAPHY.caption1,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    fontSize: 12,
+  },
+  // SKTaxi: 공지사항 카드 스타일
+  noticeCard: {
+    width: 200,
+    height: 100,
     borderRadius: 16,
     backgroundColor: COLORS.background.card,
     borderWidth: 1,
     borderColor: COLORS.border.default,
     padding: 16,
     justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  cardTitle: {
+  noticeCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  noticeIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.accent.blue + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noticeCardTitle: {
     ...TYPOGRAPHY.body1,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: COLORS.text.primary,
+    fontSize: 14,
+    flex: 1,
   },
-  cardSubtitle: {
+  noticeCardSubtitle: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
+    fontSize: 12,
   },
-  cardHeader: {
+  // SKTaxi: 학식 카드 스타일
+  foodCard: {
+    width: 160,
+    height: 140,
+    borderRadius: 16,
+    backgroundColor: COLORS.background.card,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    padding: 16,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  foodCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  cardMembersText: {
-    ...TYPOGRAPHY.caption1,
-    fontWeight: 'bold',
-    color: COLORS.text.secondary,
+  foodDateContainer: {
+    gap: 2,
   },
-  cardTimeText: {
-    ...TYPOGRAPHY.caption1,
-    fontWeight: 'bold',
+  foodDate: {
+    ...TYPOGRAPHY.body1,
+    fontWeight: '700',
     color: COLORS.text.primary,
+    fontSize: 16,
+  },
+  foodDay: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    fontSize: 11,
+  },
+  foodIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.accent.red + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  foodMenuContainer: {
+    gap: 6,
+  },
+  foodMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  foodMenuDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.accent.red,
+  },
+  foodMenuText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.primary,
+    fontSize: 11,
+    flex: 1,
   },
   calendarCard: {
     borderRadius: 16,
@@ -422,5 +770,25 @@ const styles = StyleSheet.create({
   timetableCourse: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
+  },
+  emptyContainer: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  emptyImage: {
+    width: 140,
+    height: 140,
+  },
+  emptyTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  emptyText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+  },
+  emptyButton: {
+    marginTop: 16,
+    width: '80%',
   },
 });

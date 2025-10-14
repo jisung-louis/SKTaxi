@@ -119,9 +119,14 @@ export const MapSearchScreen: React.FC<MapSearchScreenProps> = ({ navigation, ro
             <TextInput
                 style={styles.selectedLocationNameText}
                 value={regionName}
-                onChangeText={setRegionName}
-                placeholder={type === 'departure' ? '출발지 지역 명칭을 입력하세요' : '도착지 지역 명칭을 입력하세요'}
+                onChangeText={(text) => {
+                    if (text.length <= 5) {
+                        setRegionName(text);
+                    }
+                }}
+                placeholder={type === 'departure' ? '출발지 지역 명칭을 입력하세요 (최대 5글자)' : '도착지 지역 명칭을 입력하세요 (최대 5글자)'}
                 placeholderTextColor={COLORS.text.secondary}
+                maxLength={5}
             />
             </View>
             
@@ -166,7 +171,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border.default,
     zIndex: 10000000,
-    height: 140,
+    height: 180,
   },
   selectedLocationNameContainer: {
     marginBottom: 16,

@@ -14,9 +14,13 @@ export const COLORS = {
   },
   accent: {
     green: '#4ADE80',     // 포인트(버튼, 태그, 플로팅 버튼)
+    blue: '#3B82F6',      // 파란색 포인트
+    red: '#EF4444',       // 빨간색 포인트
   },
   border: {
     default: '#27272A',   // 카드/입력창 등 경계선
+    light: '#9999A2',     // 연한 경계선
+    dark: '#48484A',     // 어두운 경계선
   },
   gray: {
     100: '#F7FAFC',
