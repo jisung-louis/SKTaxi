@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList, TaxiStackParamList, HomeStackParamList } from './types';
+import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
@@ -26,10 +26,12 @@ import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Animated } from 'react-native';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
+import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
 
 const TaxiStackNavigator = () => {
   return (
@@ -58,6 +60,15 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </HomeStack.Navigator>
+  );
+};
+
+const NoticeStackNavigator = () => {
+  return (
+    <NoticeStack.Navigator screenOptions={{ headerShown: false }}>
+      <NoticeStack.Screen name="NoticeMain" component={NoticeScreen} />
+      <NoticeStack.Screen name="NoticeDetail" component={NoticeDetailScreen} />
+    </NoticeStack.Navigator>
   );
 };
 
@@ -117,7 +128,7 @@ export const MainNavigator = () => {
       />
       <Tab.Screen 
         name="공지" 
-        component={NoticeScreen}
+        component={NoticeStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="notifications-outline" size={size} color={color} style={{ marginBottom: 4 }} />
@@ -139,7 +150,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
     '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy'],
     '게시판': [],
-    '공지': [],
+    '공지': ['NoticeDetail'],
   };
 
   const shouldHide = React.useMemo(() => {

@@ -1,43 +1,9 @@
 rules_version = '2';
+
 service cloud.firestore {
-  match /databases/{db}/documents {
-    function signedIn() { return request.auth != null; }
-
-    match /parties/{partyId} {
-      allow read: if true;
-      allow create: if signedIn();
-      // SKTaxi: 리더는 모든 업데이트 가능, 멤버는 members 배열만 수정 가능
-      allow update: if signedIn() && (
-        request.auth.uid == resource.data.leaderId ||
-        (request.auth.uid in resource.data.members && 
-         request.resource.data.diff(resource.data).changedKeys().hasOnly(['members', 'updatedAt']))
-      );
-      allow delete: if signedIn() && request.auth.uid == resource.data.leaderId;
-    }
-
-
-    // joinRequests 그대로 유지 (필요 시 조정)
-    match /joinRequests/{requestId} {
-      allow create: if signedIn() && request.resource.data.requesterId == request.auth.uid;
-      allow read: if signedIn();
-      allow update: if signedIn() && (
-        request.auth.uid == resource.data.requesterId ||
-        (request.auth.uid == resource.data.leaderId &&
-         request.resource.data.diff(resource.data).changedKeys().hasOnly(['status']))
-      );
-      // SKTaxi: 리더가 파티 삭제 시 관련 joinRequests 삭제 가능
-      allow delete: if signedIn() && request.auth.uid == resource.data.leaderId;
-    }
-
-    // chats 서브컬렉션 규칙 추가 - 로그인한 사용자만 접근 가능
-    match /chats/{partyId}/messages/{messageId} {
-      allow read, create: if signedIn();
-    }
-
-    // users 등 나머지 규칙은 기존대로
-    match /users/{uid} {
-      allow read: if signedIn();
-      allow write: if signedIn() && request.auth.uid == uid;
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

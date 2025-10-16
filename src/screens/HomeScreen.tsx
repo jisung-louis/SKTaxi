@@ -15,6 +15,7 @@ import { useParties } from '../hooks/useParties'; // SKTaxi: Firestore parties �
 import { formatKoreanAmPmTime } from '../utils/datetime'; // SKTaxi: 시간 포맷 유틸
 import Button from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth'; // SKTaxi: 현재 사용자 정보
+import { getFirestore, collection, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
 
 type Food = {
   id: string;
@@ -23,11 +24,7 @@ type Food = {
   title: string[];
 };
 
-const noticeItems = [
-  { id: 'n1', title: '학사 공지', subtitle: '수강정정 안내' },
-  { id: 'n2', title: '셔틀 공지', subtitle: '노선 임시 변경' },
-  { id: 'n3', title: '행사 안내', subtitle: '축제 일정 공개' },
-];
+type SimpleNotice = { id: string; title: string; content?: string; postedAt?: any; category?: string };
 
 const dummyFoods: Food[] = [
   { id: 'f1', date: '11/03', dateTitle: '월', title: ['아침', '점심', '저녁'] },
@@ -49,6 +46,8 @@ export const HomeScreen = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
   const [isNoticeDropdownOpen, setIsNoticeDropdownOpen] = useState(false);
+  const [recentNotices, setRecentNotices] = useState<SimpleNotice[]>([]);
+  const [loadingNotices, setLoadingNotices] = useState<boolean>(false);
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -68,6 +67,27 @@ export const HomeScreen = () => {
   const scrollToTop = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
+
+  // SKTaxi: 최근 공지 10개 로드 (postedAt desc)
+  useEffect(() => {
+    const loadRecentNotices = async () => {
+      try {
+        setLoadingNotices(true);
+        const db = getFirestore();
+        const ref = collection(db, 'notices');
+        const q = fsQuery(ref, orderBy('postedAt', 'desc'), fsLimit(10));
+        const snap = await getDocs(q);
+        const items: SimpleNotice[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        setRecentNotices(items);
+      } catch (e) {
+        console.log('최근 공지 로드 실패:', e);
+        setRecentNotices([]);
+      } finally {
+        setLoadingNotices(false);
+      }
+    };
+    loadRecentNotices();
+  }, []);
 
   // SKTaxi: 파티 카드 클릭 핸들러
   const handlePartyCardPress = (party: any) => {
@@ -259,26 +279,54 @@ export const HomeScreen = () => {
             )}
             <TouchableOpacity 
               style={styles.sectionActionButton}
-              onPress={() => navigation.navigate('공지')}
+              onPress={() => navigation.navigate('공지', { screen: 'NoticeMain' })}
             >
               <Text style={styles.sectionAction}>모두 보기</Text>
               <Icon name="chevron-forward" size={16} color={COLORS.accent.blue} />
             </TouchableOpacity>
           </View>
           <FlatList
-            data={noticeItems}
+            data={recentNotices}
             keyExtractor={(it) => it.id}
             renderItem={({ item }) => 
-            <TouchableOpacity style={styles.noticeCard} activeOpacity={0.8}>
+            <TouchableOpacity 
+              style={styles.noticeCard} 
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } })}
+            >
               <View style={styles.noticeCardHeader}>
-                <View style={styles.noticeIconContainer}>
-                  <Icon name="document-text" size={16} color={COLORS.accent.blue} />
+                <View style={styles.noticeHeaderLeft}>
+                  <View style={styles.noticeIconContainer}>
+                    <Icon name="document-text" size={16} color={COLORS.accent.blue} />
+                  </View>
+                  {!!item.category && (
+                    <View style={styles.noticeChip}>
+                      <Text style={styles.noticeChipText}>{item.category}</Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={styles.noticeCardTitle}>{item.title}</Text>
+                <Icon name="chevron-forward" size={16} color={COLORS.text.secondary} />
               </View>
-              {item.subtitle ? (
-                <Text style={styles.noticeCardSubtitle}>{item.subtitle}</Text>
-              ) : null}
+
+              <Text style={styles.noticeCardTitle} numberOfLines={2}>{item.title}</Text>
+              {!!item.content && (
+                <Text style={styles.noticeCardSubtitle} numberOfLines={3}>{item.content}</Text>
+              )}
+
+              <View style={styles.noticeMetaRow}>
+                <View style={styles.noticeMetaLeft}>
+                  <Icon name="time-outline" size={12} color={COLORS.text.secondary} />
+                  <Text style={styles.noticeTimeText} numberOfLines={1}>
+                    {(() => {
+                      try {
+                        const d: any = (item as any)?.postedAt;
+                        const dt = d?.toDate ? d.toDate() : (d? new Date(d): null);
+                        return dt ? dt.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit'}) + ' ' + dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit'}) : '';
+                      } catch { return ''; }
+                    })()}
+                  </Text>
+                </View>
+              </View>
             </TouchableOpacity>
           }
             horizontal
@@ -287,8 +335,7 @@ export const HomeScreen = () => {
             ListEmptyComponent={() => 
             <View style={styles.emptyContainer}>
               <View style={styles.emptyTextContainer}>
-                <Text style={styles.emptyText}>현재 공지 정보가 없습니다.</Text>
-                <Text style={styles.emptyText}>서비스 준비중이에요!</Text>
+                <Text style={styles.emptyText}>{loadingNotices ? '공지사항을 불러오는 중...' : '현재 공지 정보가 없습니다.'}</Text>
               </View>
             </View>
             }
@@ -625,13 +672,13 @@ const styles = StyleSheet.create({
   },
   // SKTaxi: 공지사항 카드 스타일
   noticeCard: {
-    width: 200,
-    height: 100,
+    width: 220,
+    height: 180,
     borderRadius: 16,
     backgroundColor: COLORS.background.card,
     borderWidth: 1,
     borderColor: COLORS.border.default,
-    padding: 16,
+    padding: 14,
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -642,8 +689,13 @@ const styles = StyleSheet.create({
   noticeCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  noticeHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    marginBottom: 8,
   },
   noticeIconContainer: {
     width: 24,
@@ -653,17 +705,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  noticeChip: {
+    backgroundColor: COLORS.accent.blue + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.accent.blue + '40',
+  },
+  noticeChipText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.accent.blue,
+    fontWeight: '700',
+  },
   noticeCardTitle: {
     ...TYPOGRAPHY.body1,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.text.primary,
     fontSize: 14,
     flex: 1,
+    lineHeight: 20,
   },
   noticeCardSubtitle: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
     fontSize: 12,
+  },
+  noticeMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
+  noticeMetaLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  noticeTimeText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    fontSize: 11,
   },
   // SKTaxi: 학식 카드 스타일
   foodCard: {

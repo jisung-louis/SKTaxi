@@ -4,8 +4,6 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
 import https from 'https';
 const Parser = require('rss-parser');
-import axios from 'axios';
-import * as cheerio from 'cheerio';
 
 // SKTaxi: 모든 함수 기본 리전을 Firestore 리전과 동일하게 설정
 setGlobalOptions({ region: 'asia-northeast3' });
@@ -47,7 +45,6 @@ const NOTICE_CATEGORIES = {
 } as const;
 
 const RSS_BASE_URL = 'https://www.sungkyul.ac.kr/bbs/skukr';
-const BASE_URL = 'https://www.sungkyul.ac.kr';
 
 export const onJoinRequestCreate = onDocumentCreated('joinRequests/{requestId}', async (event) => {
   const snap = event.data;
@@ -268,13 +265,8 @@ export const scheduledRSSFetch = onSchedule({
             
             if (!existingDoc.exists) {
               // SKTaxi: 새 문서 생성
-              const { html: contentDetail, attachments: contentAttachments } = await crawlNoticeContent(notice.link);
-
-              // include contentAttachments (structured objects) in the stored document as well
               batch.set(docRef, {
                 ...notice,
-                contentDetail,
-                contentAttachments,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
               });
@@ -328,72 +320,3 @@ export const scheduledRSSFetch = onSchedule({
     console.error('❌ 스케줄된 RSS 가져오기 실패:', error);
   }
 });
-
-
-// SKTaxi: 공지사항 본문을 HTML로 크롤링 (이미지 포함)
-
-export async function crawlNoticeContent(noticeUrl: string): Promise<{ html: string; attachments: { name: string; downloadUrl: string; previewUrl: string }[] }> {
-  try {
-    const resp = await axios.get(noticeUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-      },
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-    });
-
-    const $ = cheerio.load(resp.data);
-
-    // 공지 본문 HTML (.view-con)
-    const $viewCon = $('.view-con');
-    $viewCon.find('img').each((_, img) => {
-      const $img = $(img);
-      const src = $img.attr('src');
-      if (src && src.startsWith('/')) {
-        $img.attr('src', `${BASE_URL}${src}`);
-      }
-    });
-    const contentHtml = $viewCon.html() || '';
-
-    // 첨부파일 리스트 (.view-file)
-    const attachments: { name: string; downloadUrl: string; previewUrl: string }[] = [];
-    const $viewFile = $('.view-file');
-
-    $viewFile.find('li').each((_, li) => {
-      const $li = $(li);
-      const $links = $li.find('a');
-      let name = '';
-      let downloadUrl = '';
-      let previewUrl = '';
-
-      $links.each((__, aEl) => {
-        const $a = $(aEl);
-        const href = ($a.attr('href') || '').trim();
-        const text = $a.text().trim();
-        if (text && !name) name = text;
-
-        if (!href) return;
-        let url = href;
-        if (href.startsWith('/')) {
-          url = `${BASE_URL}${href}`;
-        } else if (!href.startsWith('http://') && !href.startsWith('https://')) {
-          url = `${BASE_URL}/${href}`.replace(/([^:]\/\/)\/+/, '$1');
-        }
-
-        if (href.includes('download.do')) {
-          downloadUrl = url;
-        } else if (href.includes('synapView.do')) {
-          previewUrl = url;
-        }
-      });
-
-      if (name || downloadUrl || previewUrl) {
-        attachments.push({ name, downloadUrl, previewUrl });
-      }
-    });
-
-    return { html: contentHtml, attachments };
-  } catch (error) {
-    console.error(`❌ 공지 크롤링 실패 (${noticeUrl}):`, error);
-    return { html: '', attachments: [] };
-  }
-}

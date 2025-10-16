@@ -1,0 +1,298 @@
+import * as admin from 'firebase-admin';
+import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { setGlobalOptions } from 'firebase-functions/v2/options';
+const Parser = require('rss-parser');
+
+// SKTaxi: 모든 함수 기본 리전을 Firestore 리전과 동일하게 설정
+setGlobalOptions({ region: 'asia-northeast3' });
+
+admin.initializeApp();
+const db = admin.firestore();
+const fcm = admin.messaging();
+
+// SKTaxi: SSL 설정 (학교 사이트용) //위험함 고쳐야함
+process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+
+// SKTaxi: RSS 파서 설정
+const parser = new Parser({
+  customFields: {
+    item: ['description', 'content:encoded']
+  },
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+  },
+  rejectUnauthorized: false
+});
+
+// SKTaxi: 공지사항 카테고리별 RSS 설정
+const NOTICE_CATEGORIES = {
+  '새소식': 97,
+  '학사': 96,
+  '학생': 116,
+  '장학/등록/학자금': 95,
+  '입학': 94,
+  '취업/진로개발/창업': 93,
+  '공모/행사': 90,
+  '교육/글로벌': 89,
+  '일반': 87,
+  '입찰구매정보': 86,
+  '사회봉사센터': 84,
+  '장애학생지원센터': 83,
+  '생활관': 82,
+  '비교과': 80
+} as const;
+
+const RSS_BASE_URL = 'https://www.sungkyul.ac.kr/bbs/skukr';
+
+export const onJoinRequestCreate = onDocumentCreated('joinRequests/{requestId}', async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const req = snap.data() as any;
+  const leaderId = req?.leaderId as string | undefined;
+  if (!leaderId) return;
+
+  const userDoc = await db.doc(`users/${leaderId}`).get();
+  const tokens: string[] = (userDoc.get('fcmTokens') || []) as string[];
+  if (!tokens.length) return;
+
+  const message = {
+    tokens,
+    notification: {
+      title: '동승 요청이 도착했어요',
+      body: '앱에서 확인하고 수락/거절을 선택해주세요.',
+    },
+    data: {
+      type: 'join_request',
+      partyId: String(req?.partyId || ''),
+      requestId: String(event.params.requestId || ''),
+      requesterId: String(req?.requesterId || ''),
+    },
+    apns: { payload: { aps: { sound: 'default' } } },
+    android: { priority: 'high' as const },
+  };
+
+  const resp = await fcm.sendEachForMulticast(message as any);
+  // SKTaxi: 실패한 토큰 정리
+  const failedTokens: string[] = [];
+  resp.responses.forEach((r, idx) => {
+    if (!r.success) failedTokens.push((message as any).tokens[idx]);
+  });
+  if (failedTokens.length) {
+    await db.runTransaction(async (tx) => {
+      const ref = db.doc(`users/${leaderId}`);
+      const snapUser = await tx.get(ref);
+      const cur: string[] = (snapUser.get('fcmTokens') || []) as string[];
+      const next = cur.filter((t) => !failedTokens.includes(t));
+      tx.update(ref, { fcmTokens: next });
+    });
+  }
+});
+
+// SKTaxi: 파티 삭제 시 멤버들에게 알림 전송
+export const onPartyDelete = onDocumentDeleted('parties/{partyId}', async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const partyData = snap.data() as any;
+  const members = partyData?.members as string[] | undefined;
+  const leaderId = partyData?.leaderId as string | undefined;
+  
+  if (!members || !Array.isArray(members) || members.length <= 1) return; // 리더만 있으면 알림 불필요
+
+  // SKTaxi: 리더를 제외한 멤버들에게만 알림 전송
+  const memberIds = members.filter((memberId: string) => memberId !== leaderId);
+  if (memberIds.length === 0) return;
+
+  // SKTaxi: 멤버들의 FCM 토큰 수집
+  const tokens: string[] = [];
+  for (const memberId of memberIds) {
+    try {
+      const userDoc = await db.doc(`users/${memberId}`).get();
+      const userTokens = (userDoc.get('fcmTokens') || []) as string[];
+      tokens.push(...userTokens);
+    } catch (error) {
+      console.error(`Error getting tokens for user ${memberId}:`, error);
+    }
+  }
+
+  if (tokens.length === 0) return;
+
+  const message = {
+    tokens,
+    notification: {
+      title: '파티가 해체되었어요',
+      body: '리더가 파티를 해체했습니다.',
+    },
+    data: {
+      type: 'party_deleted',
+      partyId: String(event.params.partyId || ''),
+    },
+    apns: { payload: { aps: { sound: 'default' } } },
+    android: { priority: 'high' as const },
+  };
+
+  const resp2 = await fcm.sendEachForMulticast(message as any);
+  // SKTaxi: 실패한 토큰 정리 (멤버 전원)
+  const deadTokens: string[] = [];
+  resp2.responses.forEach((r, idx) => {
+    if (!r.success) deadTokens.push((message as any).tokens[idx]);
+  });
+  if (deadTokens.length) {
+    // 각 멤버 문서에서 죽은 토큰 제거
+    await Promise.all(memberIds.map(async (uid) => {
+      try {
+        const userRef = db.doc(`users/${uid}`);
+        const userSnap = await userRef.get();
+        const cur: string[] = (userSnap.get('fcmTokens') || []) as string[];
+        const next = cur.filter((t) => !deadTokens.includes(t));
+        if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+      } catch {}
+    }));
+  }
+});
+
+// SKTaxi: 단일 카테고리 RSS 처리
+async function processSingleCategory(category: string, categoryId: number, rowCount: number) {
+  const rssUrl = `${RSS_BASE_URL}/${categoryId}/rssList.do?row=${rowCount}`;
+  
+  try {
+    const feed = await parser.parseURL(rssUrl);
+    console.log(`📊 ${category} RSS 파싱 성공: ${feed.items.length}개 아이템`);
+    
+    return feed.items.map((item: any, index: number) => {
+      // 상대 경로를 절대 경로로 변환
+      const fullLink = item.link?.startsWith('http') 
+        ? item.link 
+        : `https://www.sungkyul.ac.kr${item.link}`;
+      
+      // SKTaxi: Firestore 문서 ID는 카테고리와 타임스탬프를 포함
+      const docId = `rss_${categoryId}_${Date.now()}_${index}`;
+      
+      // SKTaxi: guid는 별도 필드로 저장
+      const cleanGuid = (item.guid || fullLink || `rss_${categoryId}_${Date.now()}_${index}`)
+        .replace(/[^a-zA-Z0-9_-]/g, '_') // 특수문자를 _로 변환
+        .replace(/_+/g, '_') // 연속된 _를 하나로 변환
+        .substring(0, 100); // 길이 제한
+      
+      return {
+        id: docId, // SKTaxi: Firestore 문서 ID와 동일
+        title: item.title || '',
+        content: item.contentSnippet || item.content || '',
+        link: fullLink,
+        date: item.pubDate || '',
+        category: category, // SKTaxi: 실제 카테고리명 사용
+        createdAt: new Date().toISOString(),
+        author: '성결대학교',
+        guid: cleanGuid, // SKTaxi: 별도 필드로 저장
+        source: 'RSS'
+      };
+    });
+  } catch (error) {
+    console.error(`❌ ${category} RSS 처리 실패:`, error);
+    return []; // 실패한 카테고리는 빈 배열 반환
+  }
+}
+
+// SKTaxi: 공지사항 처리 공통 로직 (모든 카테고리)
+async function processSchoolNotices(rowCount: number = 2000) {
+  console.log(`🔍 학교 공지사항 RSS 가져오기 시작... (${rowCount}개)`);
+  
+  const allNotices: any[] = [];
+  const categoryResults: {[key: string]: number} = {};
+  
+  // SKTaxi: 모든 카테고리 병렬 처리
+  const categoryPromises = Object.entries(NOTICE_CATEGORIES).map(async ([category, categoryId]) => {
+    const notices = await processSingleCategory(category, categoryId, rowCount);
+    categoryResults[category] = notices.length;
+    return notices;
+  });
+  
+  const categoryNoticesArrays = await Promise.all(categoryPromises);
+  
+  // SKTaxi: 모든 카테고리의 공지사항을 하나의 배열로 합치기
+  categoryNoticesArrays.forEach(notices => {
+    allNotices.push(...notices);
+  });
+  
+  console.log(`📊 전체 RSS 파싱 완료: ${allNotices.length}개 아이템`);
+  console.log(`📊 카테고리별 결과:`, categoryResults);
+  
+  // SKTaxi: 기존 공지사항과 비교하여 새 공지사항만 추가
+  const batch = db.batch();
+  const collectionRef = db.collection('notices');
+  
+  // 기존 공지사항 ID 목록 가져오기
+  const existingNoticesSnapshot = await collectionRef.get();
+  const existingIds = new Set(existingNoticesSnapshot.docs.map(doc => doc.id));
+  
+  let newNoticesCount = 0;
+  let updatedNoticesCount = 0;
+  
+  for (const notice of allNotices) {
+    const docRef = collectionRef.doc(notice.id); // SKTaxi: id를 문서 ID로 사용
+    
+    if (existingIds.has(notice.id)) {
+      // 기존 공지사항 업데이트 (내용 변경 가능)
+      batch.set(docRef, notice, { merge: true });
+      updatedNoticesCount++;
+    } else {
+      // 새 공지사항 추가
+      batch.set(docRef, notice);
+      newNoticesCount++;
+    }
+  }
+  
+  await batch.commit();
+  
+  console.log(`📊 처리 결과: 새 공지사항 ${newNoticesCount}개, 업데이트 ${updatedNoticesCount}개`);
+  console.log(`✅ ${allNotices.length}개 공지사항 저장 완료`);
+  
+  return {
+    totalCount: allNotices.length,
+    newCount: newNoticesCount,
+    updatedCount: updatedNoticesCount,
+    categoryResults: categoryResults
+  };
+}
+
+// SKTaxi: 초기 DB 세팅용 - 모든 공지사항 한 번에 가져오기 (개발자만 사용)
+export const fetchSchoolNotices = onRequest(async (req, res) => {
+  try {
+    const result = await processSchoolNotices(2000);
+    
+    res.json({ 
+      success: true, 
+      count: result.totalCount,
+      newCount: result.newCount,
+      updatedCount: result.updatedCount,
+      categoryResults: result.categoryResults,
+      message: '공지사항이 성공적으로 업데이트되었습니다.'
+    });
+    
+  } catch (error) {
+    console.error('❌ RSS 처리 실패:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: (error as Error).message 
+    });
+  }
+});
+
+// SKTaxi: 30분마다 자동으로 새 공지사항만 추가 (사용자 경험에 영향 없음)
+export const scheduledRSSFetch = onSchedule({
+  schedule: '*/30 * * * *',
+  timeZone: 'Asia/Seoul'
+}, async (event) => {
+  try {
+    console.log('⏰ 스케줄된 RSS 가져오기 시작...');
+    
+    const result = await processSchoolNotices(100); // SKTaxi: 30분마다 실행되므로 100개면 충분
+    
+    console.log(`📊 스케줄 처리 결과: 새 공지사항 ${result.newCount}개, 업데이트 ${result.updatedCount}개`);
+    console.log(`✅ 스케줄된 RSS 가져오기 완료: ${result.totalCount}개`);
+    
+  } catch (error) {
+    console.error('❌ 스케줄된 RSS 가져오기 실패:', error);
+  }
+});

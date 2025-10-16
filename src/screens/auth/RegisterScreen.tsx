@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../hooks/useAuth';
 import { validateEmail } from '../../utils/validation';
 import PageHeader from '../../components/common/PageHeader';
+import { TYPOGRAPHY } from '../../constants/typhograpy';
 
 // 컴포넌트 최상단에서 Android LayoutAnimation 활성화
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -349,24 +350,25 @@ const styles = StyleSheet.create({
   },
   form: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
+    paddingVertical: 32,
   },
   inputContainer: {
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    ...TYPOGRAPHY.body2,
     color: COLORS.text.secondary,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   input: {
     backgroundColor: COLORS.background.card,
     borderRadius: 12,
     padding: 16,
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
     borderWidth: 1,
     borderColor: COLORS.border.default,
+    minHeight: 48,
   },
   registerButton: {
     backgroundColor: COLORS.accent.green,
@@ -378,7 +380,7 @@ const styles = StyleSheet.create({
   },
   registerButtonText: {
     color: COLORS.text.buttonText,
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
     fontWeight: '600',
   },
   loginContainer: {
@@ -388,11 +390,11 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: COLORS.text.secondary,
-    fontSize: 14,
+    ...TYPOGRAPHY.body2,
   },
   loginLink: {
     color: COLORS.accent.green,
-    fontSize: 14,
+    ...TYPOGRAPHY.body2,
     fontWeight: '600',
   },
   emailButton: {

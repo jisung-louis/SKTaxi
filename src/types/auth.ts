@@ -7,6 +7,7 @@ export interface User {
   linkedAccounts?: LinkedAccount[];
   account?: UserAccountInfo | null;
   realname?: string | null;
+  joinedAt?: any;
 }
 
 export interface LinkedAccount {
