@@ -27,6 +27,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Animated } from 'react-native';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
+import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -68,6 +69,7 @@ const NoticeStackNavigator = () => {
     <NoticeStack.Navigator screenOptions={{ headerShown: false }}>
       <NoticeStack.Screen name="NoticeMain" component={NoticeScreen} />
       <NoticeStack.Screen name="NoticeDetail" component={NoticeDetailScreen} />
+      <NoticeStack.Screen name="NoticeDetailWebView" component={NoticeDetailWebViewScreen} />
     </NoticeStack.Navigator>
   );
 };
@@ -150,7 +152,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
     '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy'],
     '게시판': [],
-    '공지': ['NoticeDetail'],
+    '공지': ['NoticeDetail', 'NoticeDetailWebView'],
   };
 
   const shouldHide = React.useMemo(() => {

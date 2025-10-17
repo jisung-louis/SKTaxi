@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNotices, Notice } from '../hooks/useNotices';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Button from '../components/common/Button';
 
 export const NoticeScreen = () => {
   const isFocused = useIsFocused();

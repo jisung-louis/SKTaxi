@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
@@ -11,20 +11,11 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Notice } from '../../hooks/useNotices';
 import { convertToSubviewURL } from '../../utils/linkConverter';
 import RenderHTML from 'react-native-render-html';
-import { defaultHTMLElementModels, HTMLContentModel } from 'react-native-render-html';
-import { parseHtmlTables } from '../../utils/htmlparser/parseHtmlTables';
-import CustomTable from '../../components/htmlparser/CustomTable';
-import {
-  IMGElementContainer,
-  IMGElementContentError,
-  IMGElementContentSuccess,
-  useIMGElementProps,
-  useIMGElementState
-} from 'react-native-render-html';
-
-import { HTMLElementModelShape } from 'react-native-render-html';
-
-import { CSSProperties } from 'react';
+import Button from '../../components/common/Button';
+import CustomImageRenderer from '../../components/htmlRender/CustomImageRenderer';
+//import CustomTableRenderer from '../../components/htmlRender/CustomTableRenderer';
+import { WebView } from 'react-native-webview';
+import { domNodeToHTMLString } from 'react-native-render-html';
 
 export const NoticeDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -86,108 +77,79 @@ export const NoticeDetailScreen = () => {
     return null;
   }, [notice]);
 
-  const tableHtmls = useMemo(() => {
-    if (!notice?.contentDetail) return [];
-    return parseHtmlTables(notice.contentDetail);
-  }, [notice]);
-
-  const htmlWithoutTables = useMemo(() => {
-    if (!notice?.contentDetail) return null;
-    const html = notice.contentDetail
-      .replace(/<table[\s\S]*?<\/table>/gi, '') // remove all table tags
-      .replace(/src="\/(.*?)"/g, 'src="https://www.sungkyul.ac.kr/$1"')
-      .replace(/src="http:\/\//g, 'src="https://');
-    return { html };
-  }, [notice]);
-
-
-
-
-
-  const CustomImageRenderer = (props: any) => {
-    const imgProps = useIMGElementProps(props);
-    const state = useIMGElementState(imgProps);
   
-    const aspectRatio = state.dimensions.width && state.dimensions.height
-      ? state.dimensions.width / state.dimensions.height
-      : 1;
-  
-    // Error fallback
-    if (state.type === 'error') {
-      return (
-        <IMGElementContainer style={{
-          ...state.containerStyle,
-          width: state.dimensions.width,
-          height: state.dimensions.height,
-          aspectRatio: aspectRatio,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: COLORS.border.default,
-          borderRadius: 8,
-          padding: 8,
-          backgroundColor: COLORS.background.card,
-          overflow: 'hidden',
-        }}
-        onPress={imgProps.onPress}
-        >
-        <Text style={{ color: COLORS.text.secondary, fontStyle: 'italic', textAlign: 'center' }}>
-          이미지를 불러올 수 없어요.{'\n'}실제 홈페이지에서 확인해주세요!
-        </Text>
-        </IMGElementContainer>
-      );
+  // const renderTableToWebView = (props: any) => {
+  //   const {tnode} = props;
+  //   const html = domNodeToHTMLString(tnode?.domNode);
+  //   return <WebView source={{ html }} style={{ width: '100%', height: 'auto' }} contentContainerStyle={{ paddingBottom: 4 }} originWhitelist={['*']} />;
+  // };
+
+
+const TableToWebView = (props: any) => {
+  const { tnode } = props;
+  const [height, setHeight] = useState(100);
+  const TARGET_WIDTH = Math.max(0, width - 40);
+
+  const html = useMemo(() => {
+    try {
+      const inner = domNodeToHTMLString(tnode.domNode as any) || '<div></div>';
+      return `
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <style>
+          html, body { margin:0; padding:0; background:transparent; }
+          table { border-collapse: collapse; }
+        </style>
+        <div id="wrap">${inner}</div>
+      `;
+    } catch {
+      return '<div></div>';
     }
-  
-    // Success state
-    if (state.type === 'success') {
-      return (
-        <IMGElementContainer
-          style={{
-            ...state.containerStyle,
-            width: state.dimensions.width,
-            height: state.dimensions.height,
-            aspectRatio: aspectRatio,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: COLORS.border.default,
-            borderRadius: 8,
-            padding: 8,
-            backgroundColor: COLORS.background.card,
-            overflow: 'hidden',
-          }}
-          onPress={imgProps.onPress}
-        >
-          <IMGElementContentSuccess {...state} />
-        </IMGElementContainer>
-      );
-    }
+  }, [tnode]);
 
-    // Loading spinner
-    return (
-      <IMGElementContainer
-        style={{
-          ...state.containerStyle,
-          width: state.dimensions.width,
-          height: state.dimensions.height,
-          aspectRatio: aspectRatio,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderWidth: 1,
-          borderColor: COLORS.border.default,
-          borderRadius: 8,
-          padding: 8,
-          backgroundColor: COLORS.background.card,
-          overflow: 'hidden',
-        }}
-        onPress={imgProps.onPress}
-      >
-        <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 8 }}>
-          <ActivityIndicator color={COLORS.accent.green} size="small" />
-        </View>
-      </IMGElementContainer>
-    );
-  };
+  const injectedJS = `
+    (function() {
+      var TARGET_W = ${TARGET_WIDTH};
+      var S = 1;
+      function applyScale() {
+        var el = document.getElementById('wrap');
+        if (!el) return 0;
+        var naturalW = el.scrollWidth || el.offsetWidth || 0;
+        if (!naturalW) return 0;
+        S = TARGET_W > 0 ? (TARGET_W / naturalW) : 1;
+        el.style.transformOrigin = 'top left';
+        el.style.transform = 'scale(' + S + ')';
+        el.style.width = naturalW + 'px';
+        var rawH = el.scrollHeight || el.offsetHeight || 0;
+        var scaledH = Math.ceil(rawH * S);
+        if (scaledH > 0 && window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(String(scaledH));
+        }
+        return scaledH;
+      }
+      function schedule() { setTimeout(applyScale, 0); }
+      schedule();
+      window.addEventListener('load', schedule);
+      try { new ResizeObserver(applyScale).observe(document.body); } catch (_) {}
+    })();
+    true;
+  `;
+
+  const onMessage = useCallback((e: any) => {
+    const h = Number(e?.nativeEvent?.data);
+    if (Number.isFinite(h) && h > 0) setHeight(h);
+  }, []);
+
+  return (
+      <WebView
+        originWhitelist={['*']}
+        source={{ html }}
+        injectedJavaScript={injectedJS}
+        onMessage={onMessage}
+        style={{ width: '100%', height }}
+        scrollEnabled
+      />
+  );
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -227,13 +189,21 @@ export const NoticeDetailScreen = () => {
                 )}
               </View>
             </View>
-            {!!htmlWithoutTables ? (
+            {!!htmlSource ? (
               <RenderHTML
                 contentWidth={width - 40}
-                source={htmlWithoutTables}
+                source={htmlSource}
                 defaultTextProps={{ selectable: true }}
                 baseStyle={{ color: COLORS.text.primary, fontSize: 14, lineHeight: 20 }}
-                renderers={{ img: CustomImageRenderer }}
+                tagsStyles={{
+                  td: { fontSize: 10, lineHeight: 14 },
+                  th: { fontSize: 10, lineHeight: 14 },
+                }}
+                renderers={{ 
+                  img: CustomImageRenderer,
+                  //table: CustomTableRenderer,
+                  table: TableToWebView,
+                 }}
                 renderersProps={{
                   a: {
                     onPress: (_evt: any, href?: string) => {
@@ -242,19 +212,50 @@ export const NoticeDetailScreen = () => {
                     }
                   }
                 }}
-                //customHTMLElementModels={customHTMLElementModels}
               />
             ) : !!notice?.content && (
               <Text style={styles.bodyText}>{notice?.content}</Text>
             )}
 
-            {tableHtmls.map((tableHtml, index) => (
-              <CustomTable key={index} html={tableHtml} />
-            ))}
 
+            {!!(notice as any)?.contentAttachments?.length && (
+              <View style={styles.attachmentsCard}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Icon name="attach-outline" size={16} color={COLORS.text.secondary} />
+                  <Text style={{ ...TYPOGRAPHY.body2, color: COLORS.text.secondary }}>첨부파일</Text>
+                </View>
+                <View style={{ gap: 10 }}>
+                  {(notice as any).contentAttachments.map((att: any, idx: number) => (
+                    <View key={`${att.downloadUrl || idx}`} style={styles.attachmentRow}>
+                      <TouchableOpacity 
+                        onPress={() => Linking.openURL(att.downloadUrl)}
+                        activeOpacity={0.85}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+                      >
+                        <Icon name="document-text-outline" size={18} color={COLORS.accent.green} />
+                        <Text numberOfLines={1} style={styles.attachmentName}>{att.name || '첨부파일'}</Text>
+                      </TouchableOpacity>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {!!att.previewUrl && (
+                          <TouchableOpacity
+                            onPress={() => Linking.openURL(att.previewUrl)}
+                            activeOpacity={0.85}
+                            style={styles.chipButton}
+                          >
+                            <Icon name="eye-outline" size={14} color={COLORS.accent.green} />
+                            <Text style={styles.chipButtonText}>바로보기</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
             {!!notice?.link && (
               <TouchableOpacity
-                onPress={() => Linking.openURL(convertToSubviewURL(notice?.link))}
+                //onPress={() => Linking.openURL(convertToSubviewURL(notice?.link))}
+                onPress={() => navigation.navigate('NoticeDetailWebView', { noticeId: noticeId })}
                 activeOpacity={0.8}
                 style={styles.linkCard}
               >
@@ -264,22 +265,21 @@ export const NoticeDetailScreen = () => {
               </TouchableOpacity>
             )}
 
-            {!!(notice as any)?.contentAttachments?.length && (
-              <View style={{ gap: 8 }}>
-                {(notice as any).contentAttachments.map((att: any, idx: number) => (
-                  <TouchableOpacity
-                    key={`${att.downloadUrl || att.previewUrl || idx}`}
-                    style={styles.linkCard}
-                    activeOpacity={0.8}
-                    onPress={() => Linking.openURL(att.previewUrl || att.downloadUrl)}
-                  >
-                    <Icon name="document-text-outline" size={18} color={COLORS.accent.green} />
-                    <Text numberOfLines={1} style={styles.linkText}>{att.name || '첨부파일'}</Text>
-                    <Icon name="open-outline" size={18} color={COLORS.accent.green} />
-                  </TouchableOpacity>
-                ))}
+            {/* 여기에 좋아요 / 댓글 기능 추가 */}
+            <View style={styles.likeCommentBlock}>
+              <View style={styles.likeBlock}>
+                <Icon name="heart-outline" size={18} color={COLORS.accent.green} />
+                <Text style={styles.likeText}>좋아요</Text>
               </View>
-            )}
+              <View style={styles.commentBlock}>
+                <Icon name="chatbubble-outline" size={18} color={COLORS.accent.green} />
+                <Text style={styles.commentText}>댓글</Text>
+              </View>
+              <View style={styles.viewBlock}>
+                <Icon name="eye-outline" size={18} color={COLORS.accent.green} />
+                <Text style={styles.viewText}>조회수</Text>
+              </View>
+            </View>
           </ScrollView>
         )}
     </SafeAreaView>
@@ -385,8 +385,144 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border.default,
   },
   linkText: {
-    ...TYPOGRAPHY.body2,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.accent.green,
     flex: 1,
+  },
+  attachmentsCard: {
+    backgroundColor: COLORS.background.card,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 12,
+    padding: 12,
+  },
+  attachmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  attachmentName: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    flex: 1,
+  },
+  chipButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.accent.green + '1A',
+    borderWidth: 1,
+    borderColor: COLORS.accent.green,
+  },
+  chipButtonText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.accent.green,
+    fontWeight: '700',
+  },
+  chipButtonAlt: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.background.primary,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  chipButtonAltText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    fontWeight: '600',
+  },
+  likeCommentBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  likeBlock: {
+    flex: 1,
+    backgroundColor: COLORS.background.card,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  commentBlock: {
+    flex: 1,
+    backgroundColor: COLORS.background.card,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  viewBlock: {
+    flex: 1,
+    backgroundColor: COLORS.background.card,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  likeText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  commentText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  viewText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  likeCount: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  commentCount: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  viewCount: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+  },
+  likeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  commentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  viewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
   },
 });

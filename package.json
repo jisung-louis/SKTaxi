@@ -37,6 +37,7 @@
     "react-native-safe-area-context": "^5.4.1",
     "react-native-screens": "^4.10.0",
     "react-native-vector-icons": "^10.2.0",
+    "react-native-webview": "^13.16.0",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {

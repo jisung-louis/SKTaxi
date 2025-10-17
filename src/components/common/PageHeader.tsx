@@ -12,20 +12,22 @@ interface PageHeaderProps {
   titleStyle?: StyleProp<TextStyle>;
   subTitle?: string;
   subTitleStyle?: StyleProp<TextStyle>;
+  subTitleNumberOfLines?: number;
   rightButton?: boolean;
+  rightButtonIcon?: string;
   onRightButtonPress?: () => void;
   borderBottom?: boolean;
 }
 
-const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, subTitleStyle, rightButton=false, onRightButtonPress, borderBottom=false }: PageHeaderProps) => {
+const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', onRightButtonPress, borderBottom=false }: PageHeaderProps) => {
   return (
     <View style={[styles.container, {paddingHorizontal: padding}, style, borderBottom && styles.borderBottom]}>
       <Icon name="chevron-back" size={36} color={COLORS.text.primary} onPress={onBack} />
       <View style={styles.titleContainer}>
         {title && <Text style={[styles.title, titleStyle]} numberOfLines={1}>{title}</Text>}
-        {subTitle && <Text style={[styles.subTitle, subTitleStyle]} numberOfLines={1}>{subTitle}</Text>}
+        {subTitle && <Text style={[styles.subTitle, subTitleStyle]} numberOfLines={subTitleNumberOfLines}>{subTitle}</Text>}
       </View>
-      {rightButton && <Icon name="ellipsis-vertical" size={28} color={COLORS.text.primary} onPress={onRightButtonPress} />}
+      {rightButton && <Icon name={rightButtonIcon} size={28} color={COLORS.text.primary} style={{ marginRight: 5 }} onPress={onRightButtonPress} />}
     </View>
   );
 };
