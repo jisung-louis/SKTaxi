@@ -5,7 +5,7 @@ import { TaxiStackParamList } from '../navigations/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
-import MapView from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import BottomSheet, {BottomSheetView, WINDOW_WIDTH, WINDOW_HEIGHT} from '@gorhom/bottom-sheet';
 import { PartyList } from '../components/section/TaxiTab/PartyList';
 import { useParties } from '../hooks/useParties'; // SKTaxi: Firestore parties 구독 훅 사용
@@ -18,6 +18,10 @@ import { useIsFocused } from '@react-navigation/native';
 import Button from '../components/common/Button';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useMyParty } from '../hooks/useMyParty'; // SKTaxi: 사용자 소속 파티 감지 훅
+import { useJoinRequestCount } from '../contexts/JoinRequestContext';
+import { TabBadge } from '../components/common/TabBadge';
+import { usePartyMemberLocations } from '../hooks/usePartyMemberLocations';
+import { useLocationTracking } from '../hooks/useLocationTracking';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,6 +33,8 @@ export const TaxiScreen = () => {
   const { location, loading } = useCurrentLocation();
   const { parties } = useParties(); // SKTaxi: 실시간 파티 목록 사용
   const { hasParty, partyId, loading: myPartyLoading } = useMyParty(); // SKTaxi: 소속 파티 여부로 CTA 분기
+  const { joinRequestCount } = useJoinRequestCount(); // SKTaxi: 동승 요청 개수
+  const { memberLocations } = usePartyMemberLocations(partyId); // SKTaxi: 파티원 위치 정보
   const { bottomSheetRef, bottomSheetIndex, snapPoints, handleChange, toggleBottomSheet, animatedPosition, animatedIndex, DEFAULT_SNAP_POINTS, FULL_SNAP_POINT} = useTaxiBottomSheet();
   const { selectedPartyId, handleCardPress } = usePartySelection(mapRef, location);
   const HANDLE_WIDTH = 48;
@@ -144,6 +150,58 @@ export const TaxiScreen = () => {
     Number.isFinite(location.longitude)
   );
 
+  // SKTaxi: 위치 추적
+  useLocationTracking(location, isLocationValid);
+
+  // SKTaxi: 파티원 위치가 변경될 때마다 지도 줌 조정
+  useEffect(() => {
+    if (memberLocations.length > 0 && mapRef.current) {
+      const coordinates = memberLocations.map(member => ({
+        latitude: member.latitude,
+        longitude: member.longitude,
+      }));
+
+      // 현재 사용자 위치도 포함
+      if (isLocationValid && location) {
+        coordinates.push({
+          latitude: location.latitude,
+          longitude: location.longitude,
+        });
+      }
+
+      // 모든 좌표를 포함하는 영역 계산
+      const latitudes = coordinates.map(coord => coord.latitude);
+      const longitudes = coordinates.map(coord => coord.longitude);
+
+      const minLat = Math.min(...latitudes);
+      const maxLat = Math.max(...latitudes);
+      const minLng = Math.min(...longitudes);
+      const maxLng = Math.max(...longitudes);
+
+      const latDelta = maxLat - minLat;
+      const lngDelta = maxLng - minLng;
+
+      // 최소 델타 값 설정 (너무 가까우면 확대)
+      const minDelta = 0.01;
+      const finalLatDelta = Math.max(latDelta, minDelta);
+      const finalLngDelta = Math.max(lngDelta, minDelta);
+
+      // 여백을 위해 20% 추가
+      const padding = 0.2;
+      const paddedLatDelta = finalLatDelta * (1 + padding);
+      const paddedLngDelta = finalLngDelta * (1 + padding);
+
+      const region = {
+        latitude: (minLat + maxLat) / 2,
+        longitude: (minLng + maxLng) / 2,
+        latitudeDelta: paddedLatDelta,
+        longitudeDelta: paddedLngDelta,
+      };
+
+      mapRef.current.animateToRegion(region, 1000);
+    }
+  }, [memberLocations, isLocationValid, location]);
+
   return (
     <Animated.View style={[styles.container, screenAnimatedStyle]}>
       {loading ? (
@@ -164,7 +222,26 @@ export const TaxiScreen = () => {
             }}
             showsUserLocation={isLocationValid}
             onMapReady={() => { mapOpacity.value = withTiming(1, { duration: 200 }); }}
-          />
+          >
+            {/* SKTaxi: 파티원 위치 마커들 */}
+            {memberLocations.map((memberLocation, index) => (
+              <Marker
+                key={memberLocation.userId}
+                coordinate={{
+                  latitude: memberLocation.latitude,
+                  longitude: memberLocation.longitude,
+                }}
+                title={memberLocation.displayName}
+                description={`${Math.round((new Date().getTime() - memberLocation.lastUpdated.getTime()) / 1000 / 60)}분 전`}
+              >
+                <View style={styles.memberMarker}>
+                  <Text style={styles.memberMarkerText}>
+                    {memberLocation.displayName.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              </Marker>
+            ))}
+          </MapView>
         </Animated.View>
       ) : (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -199,7 +276,10 @@ export const TaxiScreen = () => {
       </BottomSheet>
       {(!myPartyLoading && hasParty && partyId) ? (
         <TouchableOpacity style={[styles.floatingButtonContainer, { width: 'auto', paddingHorizontal: 16 }]} onPress={() => navigation.navigate('Chat', { partyId })}>
-          <Text style={styles.floatingButtonText}>내 파티 채팅방</Text>
+          <View style={{ position: 'relative' }}>
+            <Text style={styles.floatingButtonText}>내 파티 채팅방</Text>
+            <TabBadge count={joinRequestCount} style={{ position: 'absolute', top: -16, right: -8 }} />
+          </View>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.floatingButtonContainer} onPress={() => navigation.navigate('Recruit')}>
@@ -269,5 +349,30 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body1,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  // SKTaxi: 파티원 마커 스타일
+  memberMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.accent.blue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: COLORS.background.primary,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  memberMarkerText: {
+    color: COLORS.background.primary,
+    ...TYPOGRAPHY.caption,
+    fontWeight: '600',
+    fontSize: 16,
   },
 });

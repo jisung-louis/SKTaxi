@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
 import { COLORS } from '../../constants/colors';
@@ -44,6 +44,7 @@ export const AcceptancePendingScreen = () => {
         });
       } else if (data?.status === 'declined') {
         // SKTaxi: 거절당한 경우 이전 화면으로 돌아가기
+        Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.');
         navigation.popToTop();
       }
     });

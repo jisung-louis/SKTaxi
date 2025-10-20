@@ -16,16 +16,37 @@ import CustomImageRenderer from '../../components/htmlRender/CustomImageRenderer
 //import CustomTableRenderer from '../../components/htmlRender/CustomTableRenderer';
 import { WebView } from 'react-native-webview';
 import { domNodeToHTMLString } from 'react-native-render-html';
+import ToggleButton from '../../components/common/ToggleButton';
+import { useNoticeLike } from '../../hooks/useNoticeLike';
+import CommentInput from '../../components/common/CommentInput';
+import CommentList from '../../components/common/CommentList';
+import { useNoticeComments } from '../../hooks/useNoticeComments';
+import { useAuth } from '../../hooks/useAuth';
 
 export const NoticeDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const noticeId: string | undefined = route?.params?.noticeId;
   const { width } = useWindowDimensions();
+  const { user } = useAuth();
 
   const [notice, setNotice] = useState<Notice | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 좋아요 기능
+  const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
+  
+  // 댓글 기능
+  const { 
+    comments, 
+    loading: commentsLoading, 
+    submitting: commentsSubmitting,
+    addComment, 
+    addReply, 
+    updateComment, 
+    deleteComment 
+  } = useNoticeComments(noticeId || '');
 
   useEffect(() => {
     const load = async () => {
@@ -165,123 +186,147 @@ const TableToWebView = (props: any) => {
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.contentWrap} showsVerticalScrollIndicator={false}>
-            <View style={styles.headerBlock}>
-              <View style={styles.chipsRow}>
-                {!!notice?.department && (
-                  <View style={[styles.chip, styles.deptChip]}>
-                    <Text style={[styles.chipText, styles.deptChipText]}>{notice?.department}</Text>
-                  </View>
-                )}
-                {!!notice?.category && (
-                  <View style={styles.chip}>
-                    <Text style={styles.chipText}>{notice?.category}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.title}>{notice?.title}</Text>
-              <View style={styles.metaRow}>
-                {!!notice?.author && <Text style={styles.metaText}>{notice?.author}</Text>}
-                {!!formattedDate && (
-                  <View style={styles.metaDotRow}>
-                    <View style={styles.dot} />
-                    <Text style={styles.metaText}>{formattedDate}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-            {!!htmlSource ? (
-              <RenderHTML
-                contentWidth={width - 40}
-                source={htmlSource}
-                defaultTextProps={{ selectable: true }}
-                baseStyle={{ color: COLORS.text.primary, fontSize: 14, lineHeight: 20 }}
-                tagsStyles={{
-                  td: { fontSize: 10, lineHeight: 14 },
-                  th: { fontSize: 10, lineHeight: 14 },
-                }}
-                renderers={{ 
-                  img: CustomImageRenderer,
-                  //table: CustomTableRenderer,
-                  table: TableToWebView,
-                 }}
-                renderersProps={{
-                  a: {
-                    onPress: (_evt: any, href?: string) => {
-                      if (href) Linking.openURL(href);
-                      return Promise.resolve();
-                    }
-                  }
-                }}
-              />
-            ) : !!notice?.content && (
-              <Text style={styles.bodyText}>{notice?.content}</Text>
-            )}
-
-
-            {!!(notice as any)?.contentAttachments?.length && (
-              <View style={styles.attachmentsCard}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <Icon name="attach-outline" size={16} color={COLORS.text.secondary} />
-                  <Text style={{ ...TYPOGRAPHY.body2, color: COLORS.text.secondary }}>첨부파일</Text>
-                </View>
-                <View style={{ gap: 10 }}>
-                  {(notice as any).contentAttachments.map((att: any, idx: number) => (
-                    <View key={`${att.downloadUrl || idx}`} style={styles.attachmentRow}>
-                      <TouchableOpacity 
-                        onPress={() => Linking.openURL(att.downloadUrl)}
-                        activeOpacity={0.85}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
-                      >
-                        <Icon name="document-text-outline" size={18} color={COLORS.accent.green} />
-                        <Text numberOfLines={1} style={styles.attachmentName}>{att.name || '첨부파일'}</Text>
-                      </TouchableOpacity>
-                      <View style={{ flexDirection: 'row', gap: 8 }}>
-                        {!!att.previewUrl && (
-                          <TouchableOpacity
-                            onPress={() => Linking.openURL(att.previewUrl)}
-                            activeOpacity={0.85}
-                            style={styles.chipButton}
-                          >
-                            <Icon name="eye-outline" size={14} color={COLORS.accent.green} />
-                            <Text style={styles.chipButtonText}>바로보기</Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
+            <View style={styles.noticeContainer}>
+              <View style={styles.headerBlock}>
+                <View style={styles.chipsRow}>
+                  {!!notice?.department && (
+                    <View style={[styles.chip, styles.deptChip]}>
+                      <Text style={[styles.chipText, styles.deptChipText]}>{notice?.department}</Text>
                     </View>
-                  ))}
+                  )}
+                  {!!notice?.category && (
+                    <View style={styles.chip}>
+                      <Text style={styles.chipText}>{notice?.category}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.title}>{notice?.title}</Text>
+                <View style={styles.metaRow}>
+                  {!!notice?.author && <Text style={styles.metaText}>{notice?.author}</Text>}
+                  {!!formattedDate && (
+                    <View style={styles.metaDotRow}>
+                      <View style={styles.dot} />
+                      <Text style={styles.metaText}>{formattedDate}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
-            )}
-            {!!notice?.link && (
-              <TouchableOpacity
-                //onPress={() => Linking.openURL(convertToSubviewURL(notice?.link))}
-                onPress={() => navigation.navigate('NoticeDetailWebView', { noticeId: noticeId })}
-                activeOpacity={0.8}
-                style={styles.linkCard}
-              >
-                <Icon name="link-outline" size={18} color={COLORS.accent.green} />
-                <Text numberOfLines={1} style={styles.linkText}>{convertToSubviewURL(notice?.link)}</Text>
-                <Icon name="open-outline" size={18} color={COLORS.accent.green} />
-              </TouchableOpacity>
-            )}
+              {!!htmlSource ? (
+                <RenderHTML
+                  contentWidth={width - 40}
+                  source={htmlSource}
+                  defaultTextProps={{ selectable: true }}
+                  baseStyle={{ color: COLORS.text.primary, fontSize: 14, lineHeight: 20 }}
+                  tagsStyles={{
+                    td: { fontSize: 10, lineHeight: 14 },
+                    th: { fontSize: 10, lineHeight: 14 },
+                  }}
+                  renderers={{ 
+                    img: CustomImageRenderer,
+                    //table: CustomTableRenderer,
+                    table: TableToWebView,
+                  }}
+                  renderersProps={{
+                    a: {
+                      onPress: (_evt: any, href?: string) => {
+                        if (href) Linking.openURL(href);
+                        return Promise.resolve();
+                      }
+                    }
+                  }}
+                />
+              ) : !!notice?.content && (
+                <Text style={styles.bodyText}>{notice?.content}</Text>
+              )}
 
-            {/* 여기에 좋아요 / 댓글 기능 추가 */}
-            <View style={styles.likeCommentBlock}>
-              <View style={styles.likeBlock}>
-                <Icon name="heart-outline" size={18} color={COLORS.accent.green} />
-                <Text style={styles.likeText}>좋아요</Text>
+
+              {!!(notice as any)?.contentAttachments?.length && (
+                <View style={styles.attachmentsCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <Icon name="attach-outline" size={16} color={COLORS.text.secondary} />
+                    <Text style={{ ...TYPOGRAPHY.body2, color: COLORS.text.secondary }}>첨부파일</Text>
+                  </View>
+                  <View style={{ gap: 10 }}>
+                    {(notice as any).contentAttachments.map((att: any, idx: number) => (
+                      <View key={`${att.downloadUrl || idx}`} style={styles.attachmentRow}>
+                        <TouchableOpacity 
+                          onPress={() => Linking.openURL(att.downloadUrl)}
+                          activeOpacity={0.85}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}
+                        >
+                          <Icon name="document-text-outline" size={18} color={COLORS.accent.green} />
+                          <Text numberOfLines={1} style={styles.attachmentName} >{att.name || '첨부파일'}</Text>
+                        </TouchableOpacity>
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          {!!att.previewUrl && (
+                            <TouchableOpacity
+                              onPress={() => Linking.openURL(att.previewUrl)}
+                              activeOpacity={0.85}
+                              style={styles.chipButton}
+                            >
+                              <Icon name="eye-outline" size={14} color={COLORS.accent.green} />
+                              <Text style={styles.chipButtonText}>바로보기</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+              {!!notice?.link && (
+                <TouchableOpacity
+                  //onPress={() => Linking.openURL(convertToSubviewURL(notice?.link))}
+                  onPress={() => navigation.navigate('NoticeDetailWebView', { noticeId: noticeId })}
+                  activeOpacity={0.8}
+                  style={styles.linkCard}
+                >
+                  <Icon name="link-outline" size={18} color={COLORS.accent.green} />
+                  <Text numberOfLines={1} style={styles.linkText}>{convertToSubviewURL(notice?.link)}</Text>
+                  <Icon name="open-outline" size={18} color={COLORS.accent.green} />
+                </TouchableOpacity>
+              )}
+              <View style={styles.interactionRow}>
+                <ToggleButton
+                  type="like"
+                  isActive={isLiked}
+                  count={likeCount}
+                  onPress={toggleLike}
+                  loading={likeLoading}
+                  size="medium"
+                />
+                <ToggleButton
+                  type="comment"
+                  count={comments.length}
+                  onPress={() => {}}
+                  size="medium"
+                  disabled={true}
+                />
               </View>
-              <View style={styles.commentBlock}>
-                <Icon name="chatbubble-outline" size={18} color={COLORS.accent.green} />
-                <Text style={styles.commentText}>댓글</Text>
-              </View>
-              <View style={styles.viewBlock}>
-                <Icon name="eye-outline" size={18} color={COLORS.accent.green} />
-                <Text style={styles.viewText}>조회수</Text>
-              </View>
+              
             </View>
+            {/* 좋아요 / 댓글 기능 */}
+              <CommentList
+                comments={comments}
+                loading={commentsLoading}
+                onAddComment={(content) => addComment({ content })}
+                onAddReply={addReply}
+                onUpdateComment={updateComment}
+                onDeleteComment={deleteComment}
+                submitting={commentsSubmitting}
+                currentUserId={user?.uid}
+              />
+            
           </ScrollView>
         )}
+        
+        
+        {/* 댓글 섹션 */}
+        <CommentInput
+          onSubmit={(content) => addComment({ content })}
+          submitting={commentsSubmitting}
+          placeholder="댓글을 입력하세요..."
+        />
     </SafeAreaView>
   );
 };
@@ -309,9 +354,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contentWrap: {
-    paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 48,
+    paddingBottom: 30,
+    gap: 16,
+  },
+  noticeContainer: {
+    paddingHorizontal: 20,
     gap: 16,
   },
   headerBlock: {
@@ -406,6 +454,9 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
     flex: 1,
+    textDecorationLine: 'underline',
+    textDecorationStyle: 'solid',
+    textDecorationColor: COLORS.text.primary,
   },
   chipButton: {
     flexDirection: 'row',
@@ -439,90 +490,11 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     fontWeight: '600',
   },
-  likeCommentBlock: {
+  interactionContainer: {
+  },
+  interactionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  likeBlock: {
-    flex: 1,
-    backgroundColor: COLORS.background.card,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  commentBlock: {
-    flex: 1,
-    backgroundColor: COLORS.background.card,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  viewBlock: {
-    flex: 1,
-    backgroundColor: COLORS.background.card,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  likeText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  commentText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  viewText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  likeCount: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  commentCount: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  viewCount: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-  },
-  likeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  commentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  viewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+    gap: 12,
   },
 });

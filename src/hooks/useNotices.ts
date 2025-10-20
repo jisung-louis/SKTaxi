@@ -16,9 +16,11 @@ export interface Notice {
   source: string;
   contentDetail: string;
   contentAttachments: { name: string; downloadUrl: string; previewUrl: string }[];
+  likeCount?: number;
+  commentCount?: number;
 }
 
-export const useNotices = () => {
+export const useNotices = (selectedCategory: string = '전체') => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -30,22 +32,58 @@ export const useNotices = () => {
   const [readStatusLoading, setReadStatusLoading] = useState<boolean>(true);
   const [userJoinedAtLoaded, setUserJoinedAtLoaded] = useState<boolean>(false);
 
+  // 카테고리별 캐시
+  const [categoryCache, setCategoryCache] = useState<Record<string, {
+    items: Notice[];
+    lastVisible: any;
+    hasMore: boolean;
+    initialized: boolean;
+  }>>({});
+
   // SKTaxi: 초기 로드 (20개)
   useEffect(() => {
     const db = getFirestore();
+    const catKey = selectedCategory || '전체';
+
+    // 캐시에 있으면 즉시 반영
+    const cached = categoryCache[catKey];
+    if (cached && cached.initialized) {
+      setNotices(cached.items);
+      setLastVisible(cached.lastVisible);
+      setHasMore(cached.hasMore);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    setLoading(true);
     const noticesRef = collection(db, 'notices');
-    const q = query(noticesRef, orderBy('postedAt', 'desc'), limit(20));
-    
+    const baseQuery = catKey === '전체'
+      ? query(noticesRef, orderBy('postedAt', 'desc'), limit(20))
+      : query(noticesRef, where('category', '==', catKey), orderBy('postedAt', 'desc'), limit(20));
+
     const unsubscribe = onSnapshot(
-      q,
+      baseQuery,
       (snapshot) => {
-        const noticesData = snapshot.docs.map(doc => ({
-          id: doc.id, // SKTaxi: Firestore 문서 ID 사용
-          ...doc.data()
+        const noticesData = snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          likeCount: doc.data().likeCount || 0,
+          commentCount: doc.data().commentCount || 0,
         })) as Notice[];
-        
+
+        setCategoryCache(prev => ({
+          ...prev,
+          [catKey]: {
+            items: noticesData,
+            lastVisible: snapshot.docs[snapshot.docs.length - 1] || null,
+            hasMore: snapshot.docs.length === 20,
+            initialized: true,
+          },
+        }));
+
         setNotices(noticesData);
-        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1] || null);
         setHasMore(snapshot.docs.length === 20);
         setLoading(false);
         setError(null);
@@ -58,7 +96,7 @@ export const useNotices = () => {
     );
 
     return unsubscribe;
-  }, []);
+  }, [selectedCategory]);
 
   // SKTaxi: 현재 사용자의 읽음 상태 로드 (최적화됨)
   useEffect(() => {
@@ -182,6 +220,40 @@ export const useNotices = () => {
     loadUserJoinedAt();
   }, []); // SKTaxi: 컴포넌트 마운트 시 한 번만 실행
 
+  // SKTaxi: 읽음 상태 새로고침
+  const refreshReadStatus = async () => {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user || notices.length === 0) return;
+
+    try {
+      const db = getFirestore();
+      const readStatusMap: { [noticeId: string]: boolean } = {};
+
+      // 현재 로드된 공지사항들의 읽음 상태만 조회
+      const readPromises = notices.map(async (notice) => {
+        try {
+          const readRef = doc(db, 'notices', notice.id, 'readBy', user.uid);
+          const readDoc = await getDoc(readRef);
+          return { noticeId: notice.id, isRead: readDoc.exists() };
+        } catch (error) {
+          console.error(`공지사항 ${notice.id} 읽음 상태 조회 실패:`, error);
+          return { noticeId: notice.id, isRead: false };
+        }
+      });
+
+      const readResults = await Promise.all(readPromises);
+      readResults.forEach(({ noticeId, isRead }) => {
+        readStatusMap[noticeId] = isRead;
+      });
+
+      setReadStatus(readStatusMap);
+    } catch (error) {
+      console.error('읽음 상태 새로고침 실패:', error);
+    }
+  };
+
   // SKTaxi: 더 많은 공지사항 로드 (페이지네이션)
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -190,21 +262,44 @@ export const useNotices = () => {
     try {
       const db = getFirestore();
       const noticesRef = collection(db, 'notices');
-      const q = query(noticesRef, orderBy('postedAt', 'desc'), startAfter(lastVisible), limit(20));
+      const catKey = selectedCategory || '전체';
+      const q = catKey === '전체'
+        ? query(noticesRef, orderBy('postedAt', 'desc'), startAfter(lastVisible), limit(20))
+        : query(noticesRef, where('category', '==', catKey), orderBy('postedAt', 'desc'), startAfter(lastVisible), limit(20));
       const nextSnapshot = await getDocs(q);
 
       if (nextSnapshot.empty) {
         setHasMore(false);
+        // 캐시 갱신
+        setCategoryCache(prev => ({
+          ...prev,
+          [catKey]: { ...(prev[catKey] || { items: [], lastVisible: null, hasMore: false, initialized: true }), hasMore: false }
+        }));
         return;
       }
 
       const newNotices = nextSnapshot.docs.map(doc => ({
         id: doc.id, // SKTaxi: Firestore 문서 ID 사용
-        ...doc.data()
+        ...doc.data(),
+        likeCount: doc.data().likeCount || 0,
+        commentCount: doc.data().commentCount || 0,
       })) as Notice[];
 
-      setNotices(prev => [...prev, ...newNotices]);
-      setLastVisible(nextSnapshot.docs[nextSnapshot.docs.length - 1]);
+      setNotices(prev => {
+        const merged = [...prev, ...newNotices];
+        // 캐시 갱신
+        setCategoryCache(prevCache => ({
+          ...prevCache,
+          [catKey]: {
+            items: merged,
+            lastVisible: nextSnapshot.docs[nextSnapshot.docs.length - 1] || null,
+            hasMore: nextSnapshot.docs.length === 20,
+            initialized: true,
+          },
+        }));
+        return merged;
+      });
+      setLastVisible(nextSnapshot.docs[nextSnapshot.docs.length - 1] || null);
       setHasMore(nextSnapshot.docs.length === 20);
       
       // SKTaxi: 새로 로드된 공지들의 읽음 상태는 useEffect에서 자동으로 로드됨
@@ -355,6 +450,7 @@ export const useNotices = () => {
     markAsRead,
     markAllAsRead,
     loadMore,
+    refreshReadStatus,
     userJoinedAt,
     readStatusLoading,
     userJoinedAtLoaded

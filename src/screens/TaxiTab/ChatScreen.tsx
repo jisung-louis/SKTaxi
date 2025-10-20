@@ -9,7 +9,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TaxiStackParamList } from '../../navigations/types';
-import firestore, { collection, doc, getDoc, updateDoc, deleteDoc, arrayRemove, query, where, getDocs } from '@react-native-firebase/firestore';
+import firestore, { collection, doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion, query, where, getDocs, onSnapshot, orderBy } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useMessages, sendMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage } from '../../hooks/useMessages';
@@ -35,6 +35,11 @@ export const ChatScreen = () => {
   const seenPartyRef = useRef<boolean>(false); // SKTaxi: 해당 파티가 한번이라도 존재했는지
   const selfLeaveRef = useRef<boolean>(false); // SKTaxi: 사용자가 직접 나간 경우
   
+  // SKTaxi: 동승 요청 관련 상태
+  const [joinRequests, setJoinRequests] = useState<any[]>([]);
+  const [showJoinRequests, setShowJoinRequests] = useState(false);
+  const [joinRequestsLoading, setJoinRequestsLoading] = useState(false);
+  
   // SKTaxi: 실시간 메시지 구독
   const { messages, loading: messagesLoading, error: messagesError } = useMessages(partyId);
   
@@ -43,8 +48,12 @@ export const ChatScreen = () => {
   const currentParty = parties.find(p => p.id === partyId);
   const memberUids = currentParty?.members || [];
   
-  // SKTaxi: 멤버들의 displayName 가져오기
-  const { displayNameMap } = useUserDisplayNames(memberUids);
+  // SKTaxi: 동승 요청자들의 ID 추출
+  const requesterIds = joinRequests.map(request => request.requesterId).filter(Boolean);
+  
+  // SKTaxi: 멤버들과 동승 요청자들의 displayName 가져오기
+  const allUserIds = [...memberUids, ...requesterIds];
+  const { displayNameMap } = useUserDisplayNames(allUserIds);
 
   // SKTaxi: 현재 사용자가 리더인지 확인
   const currentUser = auth(getApp()).currentUser;
@@ -237,6 +246,16 @@ export const ChatScreen = () => {
     }
   }, [currentParty]);
 
+  // SKTaxi: 동승 요청 목록 로드 (리더만)
+  useEffect(() => {
+    if (!isLeader || !partyId) return;
+    
+    const unsubscribe = loadJoinRequests();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isLeader, partyId]);
+
 //   // SKTaxi: 파티 삭제 클라이언트 감지 - 이전에 존재했던 파티가 사라지면(리더가 아닌 경우) 방에서 나가기
 //   useEffect(() => {
 //     if (currentParty) { deleteHandledRef.current = false; return; }
@@ -308,6 +327,87 @@ export const ChatScreen = () => {
     } catch (error) {
       console.error('메시지 전송 실패:', error);
       Alert.alert('오류', '메시지 전송에 실패했습니다.');
+    }
+  };
+
+  // SKTaxi: 동승 요청 목록 가져오기
+  const loadJoinRequests = () => {
+    if (!partyId || !isLeader) return;
+    
+    setJoinRequestsLoading(true);
+    try {
+      const joinRequestsQuery = query(
+        collection(firestore(getApp()), 'joinRequests'),
+        where('partyId', '==', partyId),
+        where('status', '==', 'pending'),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const unsubscribe = onSnapshot(joinRequestsQuery, (snapshot) => {
+        try {
+          if (snapshot) {
+            const requests = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }));
+            setJoinRequests(requests);
+          } else {
+            setJoinRequests([]);
+          }
+        } catch (error) {
+          console.error('동승 요청 데이터 처리 실패:', error);
+          setJoinRequests([]);
+        }
+        setJoinRequestsLoading(false);
+      }, (error) => {
+        console.error('동승 요청 구독 실패:', error);
+        setJoinRequests([]);
+        setJoinRequestsLoading(false);
+      });
+      
+      return unsubscribe;
+    } catch (error) {
+      console.error('동승 요청 목록 로드 실패:', error);
+      setJoinRequestsLoading(false);
+    }
+  };
+
+  // SKTaxi: 동승 요청 승인
+  const handleAcceptJoin = async (requestId: string, requesterId: string) => {
+    try {
+      // joinRequests 상태를 accepted로 변경
+      await updateDoc(doc(collection(firestore(getApp()), 'joinRequests'), requestId), { 
+        status: 'accepted' 
+      });
+      
+      // parties 컬렉션의 members 배열에 requesterId 추가
+      await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+        members: arrayUnion(requesterId),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      // 시스템 메시지 전송
+      const requesterName = displayNameMap[requesterId] || '익명';
+      await sendSystemMessage(partyId, `${requesterName}님이 파티에 합류했어요.`);
+      
+      Alert.alert('성공', '동승 요청을 승인했습니다.');
+    } catch (error) {
+      console.error('동승 요청 승인 실패:', error);
+      Alert.alert('오류', '동승 요청 승인에 실패했습니다.');
+    }
+  };
+
+  // SKTaxi: 동승 요청 거절
+  const handleDeclineJoin = async (requestId: string) => {
+    try {
+      await updateDoc(doc(collection(firestore(getApp()), 'joinRequests'), requestId), { 
+        status: 'declined' 
+      });
+      
+      Alert.alert('성공', '동승 요청을 거절했습니다.');
+    } catch (error) {
+      console.error('동승 요청 거절 실패:', error);
+      Alert.alert('오류', '동승 요청 거절에 실패했습니다.');
     }
   };
 
@@ -1176,6 +1276,7 @@ export const ChatScreen = () => {
                     <Text style={styles.actionButtonText}>설정</Text>
                   </TouchableOpacity>
                 )} */}
+                {/* 동승요청 온 내역 볼 수 있는 기능 */}
                 <TouchableOpacity style={styles.actionButton} onPress={() => handleShareParty()}>
                   <Icon name="share" size={20} color={COLORS.accent.green} />
                   <Text style={styles.actionButtonText}>공유</Text>
@@ -1283,15 +1384,71 @@ export const ChatScreen = () => {
             <Text style={styles.errorText}>메시지를 불러올 수 없습니다.</Text>
           </View>
         ) : (
-      <FlatList
-            ref={flatListRef}
-        data={messages}
-        renderItem={renderMessage}
-            keyExtractor={item => item.id || ''}
-        contentContainerStyle={styles.messageList}
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-          />
+          <>
+            {/* SKTaxi: 동승 요청 섹션 (리더만) */}
+            {isLeader && joinRequests.length > 0 && (
+              <View style={styles.joinRequestsSection}>
+                <TouchableOpacity 
+                  style={styles.joinRequestsHeader}
+                  onPress={() => setShowJoinRequests(!showJoinRequests)}
+                >
+                  <View style={styles.joinRequestsHeaderLeft}>
+                    <Icon name="people" size={20} color={COLORS.accent.blue} />
+                    <Text style={styles.joinRequestsTitle}>
+                      동승 요청 ({joinRequests.length})
+                    </Text>
+                  </View>
+                  <Icon 
+                    name={showJoinRequests ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={COLORS.text.secondary} 
+                  />
+                </TouchableOpacity>
+                
+                {showJoinRequests && (
+                  <View style={styles.joinRequestsList}>
+                    {joinRequests.map((request) => {
+                      const requesterName = displayNameMap[request.requesterId] || '익명';
+                      return (
+                        <View key={request.id} style={styles.joinRequestItem}>
+                          <View style={styles.joinRequestInfo}>
+                            <Text style={styles.joinRequestName}>{requesterName} 님</Text>
+                            <Text style={styles.joinRequestTime}>
+                              {request.createdAt?.toDate?.()?.toLocaleString() || '방금 전'}
+                            </Text>
+                          </View>
+                          <View style={styles.joinRequestActions}>
+                            <TouchableOpacity
+                              style={[styles.joinRequestButton, styles.acceptButton]}
+                              onPress={() => handleAcceptJoin(request.id, request.requesterId)}
+                            >
+                              <Text style={styles.acceptButtonText}>승인</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.joinRequestButton, styles.declineButton]}
+                              onPress={() => handleDeclineJoin(request.id)}
+                            >
+                              <Text style={styles.declineButtonText}>거절</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
+              </View>
+            )}
+            
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={item => item.id || ''}
+              contentContainerStyle={styles.messageList}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            />
+          </>
         )}
                 {/* SKTaxi: 메뉴 표시 - 애니메이션 적용 */}
                 {showMenu && (
@@ -2508,6 +2665,87 @@ const styles = StyleSheet.create({
   },
   memberSelectionTextSelected: {
     color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  // SKTaxi: 동승 요청 섹션 스타일
+  joinRequestsSection: {
+    backgroundColor: COLORS.background.card,
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  joinRequestsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  joinRequestsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  joinRequestsTitle: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  joinRequestsList: {
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.default,
+  },
+  joinRequestItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.default,
+  },
+  joinRequestInfo: {
+    flex: 1,
+  },
+  joinRequestName: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  joinRequestTime: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.text.secondary,
+  },
+  joinRequestActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  joinRequestButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  acceptButton: {
+    backgroundColor: COLORS.accent.green + '20',
+    borderWidth: 1,
+    borderColor: COLORS.accent.green,
+  },
+  acceptButtonText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  declineButton: {
+    backgroundColor: COLORS.accent.red + '20',
+    borderWidth: 1,
+    borderColor: COLORS.accent.red,
+  },
+  declineButtonText: {
+    ...TYPOGRAPHY.caption,
+    color: COLORS.accent.red,
     fontWeight: '600',
   },
 }); 

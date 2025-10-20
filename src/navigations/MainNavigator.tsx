@@ -24,8 +24,10 @@ import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Animated } from 'react-native';
+import { Animated, View } from 'react-native';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
+import { TabBadge } from '../components/common/TabBadge';
+import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
 import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
 import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
 
@@ -74,7 +76,9 @@ const NoticeStackNavigator = () => {
   );
 };
 
-export const MainNavigator = () => {
+const MainNavigatorContent = () => {
+  const { joinRequestCount } = useJoinRequestCount();
+
   return (
     <Tab.Navigator
       tabBar={(props) => <AnimatedTabBar {...props} />}
@@ -113,7 +117,10 @@ export const MainNavigator = () => {
         component={TaxiStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <IconMaterial name="taxi" size={size} color={color} style={{ marginBottom: 4 }} />
+            <View style={{ position: 'relative' }}>
+              <IconMaterial name="taxi" size={size} color={color} style={{ marginBottom: 4 }} />
+              <TabBadge count={joinRequestCount} />
+            </View>
           ),
           // tabBarStyle: { display: 'none' } // 택시 화면에서 탭바 숨기기
         }}
@@ -194,5 +201,13 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
     >
       <BottomTabBar {...props} />
     </Animated.View>
+  );
+};
+
+export const MainNavigator = () => {
+  return (
+    <JoinRequestProvider>
+      <MainNavigatorContent />
+    </JoinRequestProvider>
   );
 };

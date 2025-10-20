@@ -10,9 +10,16 @@ import * as cheerio from 'cheerio';
 // SKTaxi: 모든 함수 기본 리전을 Firestore 리전과 동일하게 설정
 setGlobalOptions({ region: 'asia-northeast3' });
 
-admin.initializeApp();
+// SKTaxi: Firebase Admin SDK 초기화 (안전한 방식)
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
+
 const db = admin.firestore();
 const fcm = admin.messaging();
+
+// SKTaxi: FCM 서비스 확인
+console.log('🔍 FCM 서비스 초기화 확인:', !!fcm);
 
 // SKTaxi: RSS 파서 설정
 const parser = new Parser({
@@ -395,5 +402,196 @@ export async function crawlNoticeContent(noticeUrl: string): Promise<{ html: str
   } catch (error) {
     console.error(`❌ 공지 크롤링 실패 (${noticeUrl}):`, error);
     return { html: '', attachments: [] };
+  }
+}
+
+// SKTaxi: 새로운 공지사항이 추가될 때 push 알림 전송
+export const onNoticeCreated = onDocumentCreated(
+  {
+    document: 'notices/{noticeId}',
+    region: 'asia-northeast3'
+  },
+  async (event) => {
+    const noticeData = event.data?.data();
+    const noticeId = event.params.noticeId;
+    
+    if (!noticeData) {
+      console.error('❌ 공지사항 데이터가 없습니다:', noticeId);
+      return;
+    }
+
+    console.log(`📢 새로운 공지사항 감지: ${noticeData.title}`);
+
+    try {
+      // 1. 알림 설정이 활성화된 사용자들 조회
+      const usersSnapshot = await db.collection('users').get();
+      const targetUsers: string[] = [];
+
+      for (const userDoc of usersSnapshot.docs) {
+        const userData = userDoc.data();
+        const notificationSettings = userData.notificationSettings;
+        
+        // 공지사항 알림이 활성화된 사용자만 필터링
+        if (notificationSettings?.allNotifications && 
+            notificationSettings?.noticeNotifications) {
+          targetUsers.push(userDoc.id);
+        }
+      }
+
+      if (targetUsers.length === 0) {
+        console.log('📢 알림을 받을 사용자가 없습니다.');
+        return;
+      }
+
+      console.log(`📢 알림 대상 사용자 수: ${targetUsers.length}명`);
+
+      // 2. FCM 토큰이 있는 사용자들 조회 (유효성 검사 포함)
+      const fcmTokens: string[] = [];
+      for (const userId of targetUsers) {
+        try {
+          const userDoc = await db.collection('users').doc(userId).get();
+          const userData = userDoc.data();
+          if (userData?.fcmTokens && Array.isArray(userData.fcmTokens)) {
+            // FCM 토큰 유효성 기본 검사
+            const validTokens = userData.fcmTokens.filter((token: string) => 
+              token && 
+              typeof token === 'string' && 
+              token.length > 10 && 
+              !token.includes('undefined') &&
+              !token.includes('null')
+            );
+            fcmTokens.push(...validTokens);
+          }
+        } catch (error) {
+          console.error(`❌ 사용자 ${userId} FCM 토큰 조회 실패:`, error);
+        }
+      }
+
+      if (fcmTokens.length === 0) {
+        console.log('📢 유효한 FCM 토큰이 있는 사용자가 없습니다.');
+        return;
+      }
+
+      console.log(`📢 유효한 FCM 토큰 수: ${fcmTokens.length}개`);
+
+      // 3. Push 알림 메시지 구성 (사용하지 않음 - 단순화된 메시지 사용)
+
+      // 4. FCM으로 알림 전송 (운영 모드)
+      const BATCH_SIZE = 500; // FCM 배치 크기 제한
+      let totalSuccess = 0;
+      let totalFailure = 0;
+      const allFailedTokens: string[] = [];
+
+      // 실제 공지사항 알림 메시지 구성
+      const message = {
+        notification: {
+          title: `📢 새 성결대 ${noticeData.category} 공지`,
+          body: noticeData.title,
+        },
+        data: {
+          type: 'notice',
+          noticeId: noticeId,
+          category: noticeData.category || '일반',
+          title: noticeData.title || '',
+        },
+        android: {
+          notification: {
+            icon: 'ic_notification',
+            color: '#4CAF50',
+            sound: 'default',
+            channelId: 'notice_channel',
+          },
+        },
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              //badge: 1,
+            },
+          },
+        },
+      };
+
+      // 배치별로 FCM 전송
+      for (let i = 0; i < fcmTokens.length; i += BATCH_SIZE) {
+        const batchTokens = fcmTokens.slice(i, i + BATCH_SIZE);
+        const batchMessage = {
+          ...message,
+          tokens: batchTokens
+        };
+
+        try {
+          const response = await fcm.sendEachForMulticast(batchMessage);
+          
+          console.log(`📢 배치 ${Math.floor(i / BATCH_SIZE) + 1} 전송 완료:`);
+          console.log(`  - 성공: ${response.successCount}개`);
+          console.log(`  - 실패: ${response.failureCount}개`);
+
+          totalSuccess += response.successCount;
+          totalFailure += response.failureCount;
+
+          // 실패한 토큰들 수집
+          response.responses.forEach((resp, idx) => {
+            if (!resp.success) {
+              allFailedTokens.push(batchTokens[idx]);
+              console.error(`❌ FCM 전송 실패 (${batchTokens[idx].substring(0, 20)}...):`, resp.error?.code || 'Unknown error');
+            }
+          });
+
+        } catch (error: any) {
+          console.error(`❌ 배치 ${Math.floor(i / BATCH_SIZE) + 1} 전송 실패:`, error);
+          totalFailure += batchTokens.length;
+          allFailedTokens.push(...batchTokens);
+        }
+      }
+
+      console.log(`📢 전체 Push 알림 전송 완료:`);
+      console.log(`  - 총 성공: ${totalSuccess}개`);
+      console.log(`  - 총 실패: ${totalFailure}개`);
+
+      // 5. 실패한 토큰들 정리
+      if (allFailedTokens.length > 0) {
+        console.log(`🧹 실패한 토큰 ${allFailedTokens.length}개 정리 중...`);
+        await cleanupFailedTokens(allFailedTokens);
+      }
+
+    } catch (error) {
+      console.error('❌ Push 알림 전송 실패:', error);
+    }
+  }
+);
+
+// SKTaxi: 실패한 FCM 토큰들을 사용자 문서에서 제거
+async function cleanupFailedTokens(failedTokens: string[]) {
+  try {
+    console.log(`🧹 ${failedTokens.length}개의 실패한 토큰 정리 시작...`);
+    
+    const usersSnapshot = await db.collection('users').get();
+    let cleanedCount = 0;
+    
+    for (const userDoc of usersSnapshot.docs) {
+      const userData = userDoc.data();
+      const fcmTokens = userData?.fcmTokens;
+      
+      if (fcmTokens && Array.isArray(fcmTokens)) {
+        const validTokens = fcmTokens.filter(token => !failedTokens.includes(token));
+        
+        if (validTokens.length !== fcmTokens.length) {
+          try {
+            await userDoc.ref.update({
+              fcmTokens: validTokens
+            });
+            cleanedCount += fcmTokens.length - validTokens.length;
+            console.log(`🧹 사용자 ${userDoc.id}: ${fcmTokens.length - validTokens.length}개 토큰 제거 (${validTokens.length}개 남음)`);
+          } catch (updateError) {
+            console.error(`❌ 사용자 ${userDoc.id} 토큰 업데이트 실패:`, updateError);
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ 총 ${cleanedCount}개의 실패한 토큰 정리 완료`);
+  } catch (error) {
+    console.error('❌ 실패한 FCM 토큰 정리 실패:', error);
   }
 }

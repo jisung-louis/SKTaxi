@@ -15,6 +15,7 @@ import { useParties } from '../hooks/useParties'; // SKTaxi: Firestore parties �
 import { formatKoreanAmPmTime } from '../utils/datetime'; // SKTaxi: 시간 포맷 유틸
 import Button from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth'; // SKTaxi: 현재 사용자 정보
+import { useNotices } from '../hooks/useNotices'; // SKTaxi: 공지사항 훅 사용
 import { getFirestore, collection, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
 
 type Food = {
@@ -42,6 +43,7 @@ const dummyFoods: Food[] = [
 export const HomeScreen = () => {
   const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
   const { user } = useAuth(); // SKTaxi: 현재 사용자 정보
+  const { markAsRead } = useNotices('전체'); // SKTaxi: 공지사항 읽음 처리 함수
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
@@ -261,7 +263,10 @@ export const HomeScreen = () => {
             </View>
             {isNoticeDropdownOpen && (
               <View style={styles.dropdownMenu}>
-                {(['학교 공지사항', '내 과 공지사항'] as const).map(label => (
+                {([
+                  '학교 공지사항', 
+                  //'내 과 공지사항'
+                ] as const).map(label => (
                   <TouchableOpacity
                     key={label}
                     style={[styles.dropdownItem, noticeType === label && styles.dropdownItemSelected]}
@@ -282,7 +287,7 @@ export const HomeScreen = () => {
               onPress={() => navigation.navigate('공지', { screen: 'NoticeMain' })}
             >
               <Text style={styles.sectionAction}>모두 보기</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.accent.blue} />
+              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
           <FlatList
@@ -292,7 +297,10 @@ export const HomeScreen = () => {
             <TouchableOpacity 
               style={styles.noticeCard} 
               activeOpacity={0.8}
-              onPress={() => navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } })}
+              onPress={() => {
+                markAsRead(item.id);
+                navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } });
+              }}
             >
               <View style={styles.noticeCardHeader}>
                 <View style={styles.noticeHeaderLeft}>
@@ -353,7 +361,7 @@ export const HomeScreen = () => {
             </View>
             <TouchableOpacity style={styles.sectionActionButton}>
               <Text style={styles.sectionAction}>모두 보기</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.accent.red} />
+              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
           <FlatList
@@ -524,10 +532,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: COLORS.background.card,
+    // paddingHorizontal: 8,
+    // paddingVertical: 4,
+    // borderRadius: 8,
+    // backgroundColor: COLORS.background.card,
   },
   sectionAction: {
     ...TYPOGRAPHY.body2,
