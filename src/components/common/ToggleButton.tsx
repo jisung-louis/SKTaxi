@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -15,9 +15,10 @@ interface ToggleButtonProps {
   size?: 'small' | 'medium' | 'large';
   showCount?: boolean;
   disabled?: boolean;
+  style?: ViewStyle;
 }
 
-const ToggleButton: React.FC<ToggleButtonProps> = ({
+export const ToggleButton: React.FC<ToggleButtonProps> = ({
   type,
   isActive = false,
   count,
@@ -25,7 +26,8 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
   loading = false,
   size = 'medium',
   showCount = true,
-  disabled = false
+  disabled = false,
+  style
 }) => {
   const getSizeConfig = () => {
     switch (size) {
@@ -116,7 +118,8 @@ const ToggleButton: React.FC<ToggleButtonProps> = ({
           paddingVertical: padding / 2,
           backgroundColor: currentBgColor,
           borderColor: isActive ? currentColor : COLORS.border.default,
-        }
+        },
+        style
       ]}
       onPress={onPress}
       disabled={isDisabled}
@@ -168,4 +171,3 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ToggleButton;

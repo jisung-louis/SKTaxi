@@ -9,7 +9,7 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   홈: NavigatorScreenParams<HomeStackParamList>;
   택시: NavigatorScreenParams<TaxiStackParamList>;
-  게시판: undefined;
+  게시판: NavigatorScreenParams<BoardStackParamList>;
   공지: NavigatorScreenParams<NoticeStackParamList>;
 };
 
@@ -43,6 +43,13 @@ export type AuthStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
 }; 
+
+export type BoardStackParamList = {
+  BoardMain: undefined;
+  BoardDetail: { postId: string };
+  BoardWrite: undefined;
+  BoardEdit: { postId: string };
+};
 
 export type NoticeStackParamList = {
   NoticeMain: undefined;

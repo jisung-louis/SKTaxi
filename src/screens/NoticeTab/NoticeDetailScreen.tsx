@@ -16,10 +16,10 @@ import CustomImageRenderer from '../../components/htmlRender/CustomImageRenderer
 //import CustomTableRenderer from '../../components/htmlRender/CustomTableRenderer';
 import { WebView } from 'react-native-webview';
 import { domNodeToHTMLString } from 'react-native-render-html';
-import ToggleButton from '../../components/common/ToggleButton';
+import { ToggleButton } from '../../components/common/ToggleButton';
 import { useNoticeLike } from '../../hooks/useNoticeLike';
 import CommentInput from '../../components/common/CommentInput';
-import CommentList from '../../components/common/CommentList';
+import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { useNoticeComments } from '../../hooks/useNoticeComments';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -33,13 +33,14 @@ export const NoticeDetailScreen = () => {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // 좋아요 기능
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
   
   // 댓글 기능
   const { 
-    comments, 
+    comments: rawComments, 
     loading: commentsLoading, 
     submitting: commentsSubmitting,
     addComment, 
@@ -47,6 +48,28 @@ export const NoticeDetailScreen = () => {
     updateComment, 
     deleteComment 
   } = useNoticeComments(noticeId || '');
+
+  // Comment 타입을 UniversalComment 타입으로 변환
+  const comments = rawComments.map(comment => ({
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    updatedAt: comment.updatedAt,
+    isDeleted: comment.isDeleted,
+    parentId: comment.parentId,
+    authorId: comment.userId,
+    authorName: comment.userDisplayName,
+    replies: comment.replies?.map(reply => ({
+      id: reply.id,
+      content: reply.content,
+      createdAt: reply.createdAt,
+      updatedAt: reply.updatedAt,
+      isDeleted: reply.isDeleted,
+      parentId: reply.parentId,
+      authorId: reply.userId,
+      authorName: reply.userDisplayName,
+    })) || []
+  }));
 
   useEffect(() => {
     const load = async () => {
@@ -185,7 +208,12 @@ const TableToWebView = (props: any) => {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.contentWrap} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            contentContainerStyle={styles.contentWrap} 
+            showsVerticalScrollIndicator={false}
+            contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 - 20 }}
+            contentInsetAdjustmentBehavior="never"
+          >
             <View style={styles.noticeContainer}>
               <View style={styles.headerBlock}>
                 <View style={styles.chipsRow}>
@@ -306,7 +334,7 @@ const TableToWebView = (props: any) => {
               
             </View>
             {/* 좋아요 / 댓글 기능 */}
-              <CommentList
+              <UniversalCommentList
                 comments={comments}
                 loading={commentsLoading}
                 onAddComment={(content) => addComment({ content })}
@@ -326,6 +354,7 @@ const TableToWebView = (props: any) => {
           onSubmit={(content) => addComment({ content })}
           submitting={commentsSubmitting}
           placeholder="댓글을 입력하세요..."
+          onKeyboardHeightChange={setKeyboardHeight}
         />
     </SafeAreaView>
   );
@@ -496,5 +525,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    paddingBottom: 8,
   },
 });

@@ -11,11 +11,22 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { BoardComment } from '../../types/board';
 import CommentInput from './CommentInput';
 
-interface CommentListProps {
-  comments: (BoardComment & { replies: BoardComment[] })[];
+// 공통 댓글 인터페이스
+interface UniversalComment {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  isDeleted?: boolean;
+  parentId?: string;
+  authorId: string;
+  authorName: string;
+}
+
+interface UniversalCommentListProps {
+  comments: (UniversalComment & { replies: UniversalComment[] })[];
   loading: boolean;
   onAddComment: (content: string) => Promise<void>;
   onAddReply: (parentId: string, content: string) => Promise<void>;
@@ -25,7 +36,7 @@ interface CommentListProps {
   currentUserId?: string;
 }
 
-const CommentList: React.FC<CommentListProps> = ({
+const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
   comments,
   loading,
   onAddComment,
@@ -43,7 +54,7 @@ const CommentList: React.FC<CommentListProps> = ({
     setReplyingTo(commentId);
   };
 
-  const handleEdit = (comment: BoardComment) => {
+  const handleEdit = (comment: UniversalComment) => {
     setEditingComment(comment.id);
     setEditContent(comment.content);
   };
@@ -94,7 +105,7 @@ const CommentList: React.FC<CommentListProps> = ({
     return date.toLocaleDateString('ko-KR');
   };
 
-  const CommentItem: React.FC<{ comment: BoardComment; isReply?: boolean }> = ({ 
+  const CommentItem: React.FC<{ comment: UniversalComment; isReply?: boolean }> = ({ 
     comment, 
     isReply = false 
   }) => {
@@ -105,7 +116,7 @@ const CommentList: React.FC<CommentListProps> = ({
       <View style={[styles.commentItem, isReply && styles.replyItem]}>
         <View style={styles.commentHeader}>
           <Text style={styles.authorName}>{comment.authorName}</Text>
-          <Text style={styles.commentDate}>{formatDate(comment.createdAt.toDate())}</Text>
+          <Text style={styles.commentDate}>{formatDate(comment.createdAt)}</Text>
         </View>
         
         {isEditing ? (
@@ -169,7 +180,6 @@ const CommentList: React.FC<CommentListProps> = ({
 
   return (
     <View style={styles.container}>
-
       {comments.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="chatbubble-outline" size={48} color={COLORS.text.disabled} />
@@ -220,7 +230,6 @@ const CommentList: React.FC<CommentListProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    //backgroundColor: COLORS.background.card,
     borderTopWidth: 1,
     borderTopColor: COLORS.border.default,
     paddingHorizontal: 20,
@@ -350,4 +359,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CommentList;
+export default UniversalCommentList;

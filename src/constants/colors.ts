@@ -1,24 +1,30 @@
 export const COLORS = {
   background: {
     primary: '#18181B',   // 전체 배경
-    card: '#232326',      // 카드/컨테이너 배경
-    dropdown: '#303033',  // 드롭다운 배경
+    secondary: '#232326', // 카드/컨테이너 배경
+    tertiary: '#303033',  // 드롭다운 배경
     white: '#FFFFFF',     // 화이트 배경
     surface: '#27272A',   // 서피스 배경
+    card: '#232326',      // 카드/컨테이너 배경 (alias)
+    dropdown: '#303033',  // 드롭다운 배경 (alias)
   },
   text: {
     primary: '#F3F4F6',   // 주요 텍스트
     secondary: '#A1A1AA', // 보조 텍스트
+    tertiary: '#52525B',  // 보조 텍스트 (더 연한)
     disabled: '#52525B',  // 비활성화 텍스트
     buttonText: '#18181B', // 버튼 텍스트
+    white: '#FFFFFF',     // 흰색 텍스트
   },
   accent: {
     green: '#4ADE80',     // 포인트(버튼, 태그, 플로팅 버튼)
     blue: '#3B82F6',      // 파란색 포인트
     red: '#EF4444',       // 빨간색 포인트
+    orange: '#F59E0B',    // 오렌지 포인트
   },
   border: {
     default: '#27272A',   // 카드/입력창 등 경계선
+    primary: '#27272A',   // 주요 경계선
     light: '#9999A2',     // 연한 경계선
     dark: '#48484A',     // 어두운 경계선
   },

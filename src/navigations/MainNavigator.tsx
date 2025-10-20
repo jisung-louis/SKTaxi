@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList } from './types';
+import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
@@ -30,11 +30,15 @@ import { TabBadge } from '../components/common/TabBadge';
 import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
 import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
 import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
+import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
+import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
+import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
+const BoardStack = createNativeStackNavigator<BoardStackParamList>();
 
 const TaxiStackNavigator = () => {
   return (
@@ -63,6 +67,17 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
     </HomeStack.Navigator>
+  );
+};
+
+const BoardStackNavigator = () => {
+  return (
+    <BoardStack.Navigator screenOptions={{ headerShown: false }}>
+      <BoardStack.Screen name="BoardMain" component={BoardScreen} />
+      <BoardStack.Screen name="BoardDetail" component={BoardDetailScreen} />
+      <BoardStack.Screen name="BoardWrite" component={BoardWriteScreen} />
+      <BoardStack.Screen name="BoardEdit" component={BoardEditScreen} />
+    </BoardStack.Navigator>
   );
 };
 
@@ -127,7 +142,7 @@ const MainNavigatorContent = () => {
       />
       <Tab.Screen 
         name="게시판" 
-        component={BoardScreen}
+        component={BoardStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
@@ -158,7 +173,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
   const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
     '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy'],
-    '게시판': [],
+    '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
     '공지': ['NoticeDetail', 'NoticeDetailWebView'],
   };
 

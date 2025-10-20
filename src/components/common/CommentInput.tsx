@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   TextInput, 
@@ -6,9 +6,15 @@ import {
   Text, 
   StyleSheet, 
   ActivityIndicator,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform
 } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming,
+  runOnJS
+} from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -20,6 +26,7 @@ interface CommentInputProps {
   parentId?: string;
   onCancel?: () => void;
   showCancel?: boolean;
+  onKeyboardHeightChange?: (height: number) => void;
 }
 
 const CommentInput: React.FC<CommentInputProps> = ({
@@ -28,9 +35,43 @@ const CommentInput: React.FC<CommentInputProps> = ({
   placeholder = '댓글을 입력하세요...',
   parentId,
   onCancel,
-  showCancel = false
+  showCancel = false,
+  onKeyboardHeightChange
 }) => {
   const [content, setContent] = useState('');
+  const translateY = useSharedValue(0);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // 키보드 이벤트 처리
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        const keyboardHeight = event.endCoordinates.height;
+        setKeyboardHeight(keyboardHeight);
+        onKeyboardHeightChange?.(keyboardHeight);
+        translateY.value = withTiming(-keyboardHeight + 20, {
+          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+        });
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (event) => {
+        setKeyboardHeight(0);
+        onKeyboardHeightChange?.(0);
+        translateY.value = withTiming(0, {
+          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+        });
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [translateY]);
 
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return;
@@ -50,10 +91,16 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
   const isReply = !!parentId;
 
+  // 애니메이션 스타일
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
+    };
+  });
+
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+    <Animated.View 
+      style={[styles.container, animatedStyle]}
     >
       <View style={[styles.inputContainer, isReply && styles.replyContainer]}>
         <TextInput
@@ -90,7 +137,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
               <Icon 
                 name={isReply ? "return-up-forward" : "send"} 
                 size={16} 
-                color={COLORS.accent.green} 
+                color={(!content.trim() || submitting) ? COLORS.accent.green : COLORS.text.white} 
               />
             )}
           </TouchableOpacity>
@@ -99,7 +146,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
       <Text style={styles.characterCount}>
         {content.length}/500
       </Text>
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 };
 
@@ -110,6 +157,11 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border.default,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    position: 'absolute',
+    bottom: -20, //For KeyboardShow
+    left: 0,
+    right: 0,
+    height: 90 + 1 + 20 + 20, // 90: containerHeight, 1: inputContainerBorderHeight, 20: PaddingBottom, 20: For KeyboardShow
   },
   inputContainer: {
     flexDirection: 'row',
@@ -155,6 +207,8 @@ const styles = StyleSheet.create({
     minWidth: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    outlineWidth: 1,
+    outlineColor: COLORS.accent.green,
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.border.default,

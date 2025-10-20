@@ -24,6 +24,7 @@
     "@react-navigation/native-stack": "^7.3.13",
     "axios": "^1.12.2",
     "cheerio": "^1.1.2",
+    "date-fns": "^4.1.0",
     "dom-serializer": "^2.0.0",
     "firebase-admin": "^13.5.0",
     "htmlparser2": "^6.1.0",
