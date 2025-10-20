@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { 
   View, 
   TextInput, 
@@ -20,27 +20,38 @@ import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 
 interface CommentInputProps {
-  onSubmit: (content: string) => Promise<void>;
+  onSubmit: (content: string, isAnonymous?: boolean) => Promise<void>;
   submitting?: boolean;
   placeholder?: string;
   parentId?: string;
-  onCancel?: () => void;
-  showCancel?: boolean;
   onKeyboardHeightChange?: (height: number) => void;
+  onCancelReply?: () => void;
 }
 
-const CommentInput: React.FC<CommentInputProps> = ({
+export interface CommentInputRef {
+  focus: () => void;
+}
+
+const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
   onSubmit,
   submitting = false,
   placeholder = '댓글을 입력하세요...',
   parentId,
-  onCancel,
-  showCancel = false,
-  onKeyboardHeightChange
-}) => {
+  onKeyboardHeightChange,
+  onCancelReply
+}, ref) => {
   const [content, setContent] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(true); // 기본값 true
   const translateY = useSharedValue(0);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const textInputRef = useRef<TextInput>(null);
+
+  // ref를 통한 focus 메서드 노출
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      textInputRef.current?.focus();
+    }
+  }));
 
   // 키보드 이벤트 처리
   useEffect(() => {
@@ -64,6 +75,11 @@ const CommentInput: React.FC<CommentInputProps> = ({
         translateY.value = withTiming(0, {
           duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
         });
+        
+        // 답글 모드일 때 키보드가 내려가면 답글 모드 해제
+        if (parentId && onCancelReply) {
+          onCancelReply();
+        }
       }
     );
 
@@ -77,16 +93,15 @@ const CommentInput: React.FC<CommentInputProps> = ({
     if (!content.trim() || submitting) return;
 
     try {
-      await onSubmit(content.trim());
+      await onSubmit(content.trim(), isAnonymous);
       setContent('');
     } catch (error) {
       console.error('댓글 작성 실패:', error);
     }
   };
 
-  const handleCancel = () => {
-    setContent('');
-    onCancel?.();
+  const toggleAnonymous = () => {
+    setIsAnonymous(prev => !prev);
   };
 
   const isReply = !!parentId;
@@ -102,53 +117,73 @@ const CommentInput: React.FC<CommentInputProps> = ({
     <Animated.View 
       style={[styles.container, animatedStyle]}
     >
-      <View style={[styles.inputContainer, isReply && styles.replyContainer]}>
+      {/* 익명 토글 */}
+      <View style={styles.inputRow}>
+        <TouchableOpacity 
+          style={styles.anonymousToggle}
+          onPress={toggleAnonymous}
+          activeOpacity={0.7}
+        >
+          <View style={[
+            styles.checkbox,
+            isAnonymous && styles.checkboxChecked
+          ]}>
+            {isAnonymous && (
+              <Icon 
+                name="checkmark" 
+                size={12} 
+                color={COLORS.text.white} 
+              />
+            )}
+          </View>
+          <Text style={[
+            styles.anonymousLabel,
+            isAnonymous && styles.anonymousLabelChecked
+          ]}>
+            익명
+          </Text>
+        </TouchableOpacity>
         <TextInput
+          ref={textInputRef}
           style={styles.textInput}
           value={content}
           onChangeText={setContent}
           placeholder={placeholder}
           placeholderTextColor={COLORS.text.disabled}
-          multiline
+          multiline={false}
           maxLength={500}
           editable={!submitting}
+          onBlur={() => {
+            if (parentId && onCancelReply) {
+              onCancelReply();
+            }
+          }}
         />
-        <View style={styles.actions}>
-          {showCancel && (
-            <TouchableOpacity
-              onPress={handleCancel}
-              style={styles.cancelButton}
-              disabled={submitting}
-            >
-              <Text style={styles.cancelText}>취소</Text>
-            </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleSubmit}
+          style={[
+            styles.submitButton,
+            (!content.trim() || submitting) && styles.submitButtonDisabled
+          ]}
+          disabled={!content.trim() || submitting}
+        >
+          {submitting ? (
+            <ActivityIndicator size="small" color={COLORS.accent.green} />
+          ) : (
+            <Icon 
+              name={isReply ? "return-up-forward" : "send"} 
+              size={16} 
+              color={(!content.trim() || submitting) ? COLORS.accent.green : COLORS.text.white} 
+            />
           )}
-          <TouchableOpacity
-            onPress={handleSubmit}
-            style={[
-              styles.submitButton,
-              (!content.trim() || submitting) && styles.submitButtonDisabled
-            ]}
-            disabled={!content.trim() || submitting}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color={COLORS.accent.green} />
-            ) : (
-              <Icon 
-                name={isReply ? "return-up-forward" : "send"} 
-                size={16} 
-                color={(!content.trim() || submitting) ? COLORS.accent.green : COLORS.text.white} 
-              />
-            )}
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
       <Text style={styles.characterCount}>
         {content.length}/500
       </Text>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -158,46 +193,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     position: 'absolute',
-    bottom: -20, //For KeyboardShow
+    bottom: -30, //For KeyboardShow
     left: 0,
     right: 0,
     height: 90 + 1 + 20 + 20, // 90: containerHeight, 1: inputContainerBorderHeight, 20: PaddingBottom, 20: For KeyboardShow
   },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    minHeight: 40,
-  },
-  replyContainer: {
-    marginLeft: 20,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.accent.green,
-  },
   textInput: {
     flex: 1,
+    backgroundColor: COLORS.background.card,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    padding: 12,
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
-    maxHeight: 100,
-    paddingVertical: 4,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cancelButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  cancelText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
+    height: 44,
   },
   submitButton: {
     backgroundColor: COLORS.accent.green,
@@ -209,6 +219,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     outlineWidth: 1,
     outlineColor: COLORS.accent.green,
+    height: 36,
   },
   submitButtonDisabled: {
     backgroundColor: COLORS.border.default,
@@ -219,6 +230,42 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: 4,
   },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  anonymousToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 3,
+    borderWidth: 2,
+    borderColor: COLORS.border.primary,
+    backgroundColor: COLORS.background.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.accent.blue,
+    borderColor: COLORS.accent.blue,
+  },
+  anonymousLabel: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+    fontWeight: '500',
+  },
+  anonymousLabelChecked: {
+    color: COLORS.accent.blue,
+    fontWeight: '600',
+  },
 });
+
+CommentInput.displayName = 'CommentInput';
 
 export default CommentInput;

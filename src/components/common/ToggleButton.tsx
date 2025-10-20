@@ -46,18 +46,18 @@ export const ToggleButton: React.FC<ToggleButtonProps> = ({
         return {
           activeIcon: 'heart',
           inactiveIcon: 'heart-outline',
-          activeColor: COLORS.accent.green,
+          activeColor: COLORS.accent.red,
           inactiveColor: COLORS.text.secondary,
-          activeBgColor: COLORS.accent.green + '15',
+          activeBgColor: COLORS.accent.red + '15',
           inactiveBgColor: COLORS.background.card,
         };
       case 'comment':
         return {
           activeIcon: 'chatbubble',
           inactiveIcon: 'chatbubble-outline',
-          activeColor: COLORS.accent.blue || COLORS.accent.green,
+          activeColor: COLORS.accent.blue,
           inactiveColor: COLORS.text.secondary,
-          activeBgColor: (COLORS.accent.blue || COLORS.accent.green) + '15',
+          activeBgColor: COLORS.accent.blue + '15',
           inactiveBgColor: COLORS.background.card,
         };
       case 'view':
@@ -73,27 +73,27 @@ export const ToggleButton: React.FC<ToggleButtonProps> = ({
         return {
           activeIcon: 'share-social',
           inactiveIcon: 'share-outline',
-          activeColor: COLORS.accent.blue || COLORS.accent.green,
+          activeColor: COLORS.accent.blue,
           inactiveColor: COLORS.text.secondary,
-          activeBgColor: (COLORS.accent.blue || COLORS.accent.green) + '15',
+          activeBgColor: COLORS.accent.blue + '15',
           inactiveBgColor: COLORS.background.card,
         };
       case 'bookmark':
         return {
           activeIcon: 'bookmark',
           inactiveIcon: 'bookmark-outline',
-          activeColor: COLORS.accent.red,
+          activeColor: COLORS.accent.orange,
           inactiveColor: COLORS.text.secondary,
-          activeBgColor: COLORS.accent.red + '15',
+          activeBgColor: COLORS.accent.orange + '15',
           inactiveBgColor: COLORS.background.card,
         };
       default:
         return {
           activeIcon: 'heart',
           inactiveIcon: 'heart-outline',
-          activeColor: COLORS.accent.green,
+          activeColor: COLORS.accent.red,
           inactiveColor: COLORS.text.secondary,
-          activeBgColor: COLORS.accent.green + '15',
+          activeBgColor: COLORS.accent.red + '15',
           inactiveBgColor: COLORS.background.card,
         };
     }

@@ -8,7 +8,8 @@ import {
   TextInput,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -22,6 +23,8 @@ import { BOARD_CATEGORIES } from '../../constants/board';
 import { BoardFormData } from '../../types/board';
 import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../config/firebase';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import { ImageSelector } from '../../components/board/ImageSelector';
 
 export const BoardWriteScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -31,8 +34,20 @@ export const BoardWriteScreen: React.FC = () => {
     title: '',
     content: '',
     category: 'general',
+    isAnonymous: true,
   });
   const [submitting, setSubmitting] = useState(false);
+
+  // 이미지 업로드 훅
+  const {
+    selectedImages,
+    uploading: imageUploading,
+    pickImages,
+    removeImage,
+    reorderImages,
+    uploadImages,
+    clearImages,
+  } = useImageUpload({ maxImages: 10 });
 
   const handleTitleChange = useCallback((text: string) => {
     setFormData(prev => ({ ...prev, title: text }));
@@ -44,6 +59,10 @@ export const BoardWriteScreen: React.FC = () => {
 
   const handleCategoryChange = useCallback((category: string) => {
     setFormData(prev => ({ ...prev, category }));
+  }, []);
+
+  const toggleAnonymous = useCallback(() => {
+    setFormData(prev => ({ ...prev, isAnonymous: !prev.isAnonymous }));
   }, []);
 
 
@@ -66,6 +85,7 @@ export const BoardWriteScreen: React.FC = () => {
     try {
       setSubmitting(true);
 
+      // 먼저 게시글 문서 생성
       const postData = {
         title: formData.title.trim(),
         content: formData.content.trim(),
@@ -73,17 +93,57 @@ export const BoardWriteScreen: React.FC = () => {
         authorId: user.uid,
         authorName: user.displayName || '익명',
         authorProfileImage: user.photoURL || null,
+        isAnonymous: !!formData.isAnonymous,
         viewCount: 0,
         likeCount: 0,
         commentCount: 0,
         bookmarkCount: 0,
         isPinned: false,
         isDeleted: false,
+        images: [], // 초기에는 빈 배열
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
       const docRef = await addDoc(collection(db, 'boardPosts'), postData);
+      const postId = docRef.id;
+
+      // 익명 설정이면 anonId 업데이트
+      if (formData.isAnonymous) {
+        await docRef.update({
+          anonId: `${postId}:${user.uid}`,
+          isAnonymous: true,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // 이미지가 있으면 업로드
+      if (selectedImages.length > 0) {
+        try {
+          const uploadedImages = await uploadImages(postId);
+          
+          // 업로드된 이미지 정보로 게시글 업데이트
+          const imageData = uploadedImages.map(img => ({
+            url: img.remoteUrl!,
+            width: img.width,
+            height: img.height,
+            thumbUrl: img.thumbUrl,
+            size: img.size,
+            mime: img.mime,
+          }));
+
+          await docRef.update({
+            images: imageData,
+            updatedAt: serverTimestamp(),
+          });
+        } catch (imageError) {
+          console.error('이미지 업로드 실패:', imageError);
+          Alert.alert('경고', '이미지 업로드에 실패했지만 게시글은 작성되었습니다.');
+        }
+      }
+      
+      // 이미지 초기화
+      clearImages();
       
       Alert.alert(
         '성공', 
@@ -102,7 +162,7 @@ export const BoardWriteScreen: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [user, formData, navigation]);
+  }, [user, formData, navigation, selectedImages, uploadImages, clearImages]);
 
   const handleCancel = useCallback(() => {
     if (formData.title.trim() || formData.content.trim()) {
@@ -128,19 +188,31 @@ export const BoardWriteScreen: React.FC = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel}>
-            <Text style={styles.cancelText}>취소</Text>
+          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+            <Icon name="close" size={40} color={COLORS.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글쓰기</Text>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>글쓰기</Text>
+            <Text style={styles.headerSubtitle}>새로운 이야기를 공유해보세요</Text>
+          </View>
           <TouchableOpacity 
             onPress={handleSubmit} 
-            disabled={submitting || !formData.title.trim() || !formData.content.trim()}
+            disabled={submitting || imageUploading || !formData.title.trim() || !formData.content.trim()}
+            style={[
+              styles.submitButton,
+              (!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) && styles.submitButtonDisabled
+            ]}
           >
+            <Icon 
+              name={submitting || imageUploading ? "hourglass-outline" : "checkmark"} 
+              size={20} 
+              color={(!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) ? COLORS.text.disabled : COLORS.text.white} 
+            />
             <Text style={[
               styles.submitText,
-              (!formData.title.trim() || !formData.content.trim() || submitting) && styles.submitTextDisabled
+              (!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) && styles.submitTextDisabled
             ]}>
-              {submitting ? '작성중...' : '완료'}
+              {submitting || imageUploading ? '작성중...' : '완료'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -148,11 +220,18 @@ export const BoardWriteScreen: React.FC = () => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* 카테고리 선택 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>카테고리</Text>
-            <View style={styles.categoryContainer}>
-              {BOARD_CATEGORIES.map((category) => (
+            <View style={styles.sectionHeader}>
+              <Icon name="grid-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>카테고리</Text>
+            </View>
+            <FlatList
+              data={BOARD_CATEGORIES}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.categoryContainer}
+              renderItem={({ item: category }) => (
                 <TouchableOpacity
-                  key={category.id}
                   style={[
                     styles.categoryItem,
                     formData.category === category.id && styles.categoryItemSelected
@@ -164,43 +243,101 @@ export const BoardWriteScreen: React.FC = () => {
                     styles.categoryText,
                     formData.category === category.id && styles.categoryTextSelected
                   ]}>
-                    {category.name}
+                    {category.shortName}
                   </Text>
+                  {formData.category === category.id && (
+                    <Icon name="checkmark" size={16} color={COLORS.accent.blue} />
+                  )}
                 </TouchableOpacity>
-              ))}
-            </View>
+              )}
+            />
           </View>
 
           {/* 제목 입력 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>제목</Text>
-            <TextInput
-              style={styles.titleInput}
-              placeholder="제목을 입력하세요"
-              value={formData.title}
-              onChangeText={handleTitleChange}
-              placeholderTextColor={COLORS.text.secondary}
-              maxLength={100}
-            />
-            <Text style={styles.charCount}>{formData.title.length}/100</Text>
+            <View style={styles.sectionHeader}>
+              <Icon name="create-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>제목</Text>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.titleInput}
+                placeholder="제목을 입력하세요"
+                value={formData.title}
+                onChangeText={handleTitleChange}
+                placeholderTextColor={COLORS.text.secondary}
+                maxLength={100}
+              />
+              <View style={styles.charCountContainer}>
+                <Text style={styles.charCount}>{formData.title.length}/100</Text>
+              </View>
+            </View>
           </View>
-
 
           {/* 내용 입력 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>내용</Text>
-            <TextInput
-              style={styles.contentInput}
-              placeholder="내용을 입력하세요"
-              value={formData.content}
-              onChangeText={handleContentChange}
-              placeholderTextColor={COLORS.text.secondary}
-              multiline
-              textAlignVertical="top"
-              maxLength={2000}
-            />
-            <Text style={styles.charCount}>{formData.content.length}/2000</Text>
+            <View style={styles.sectionHeader}>
+              <Icon name="document-text-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>내용</Text>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.contentInput}
+                placeholder="내용을 입력하세요"
+                value={formData.content}
+                onChangeText={handleContentChange}
+                placeholderTextColor={COLORS.text.secondary}
+                multiline
+                textAlignVertical="top"
+                maxLength={2000}
+              />
+              <View style={styles.charCountContainer}>
+                <Text style={styles.charCount}>{formData.content.length}/2000</Text>
+              </View>
+            </View>
           </View>
+
+          {/* 이미지 선택 */}
+          <View style={styles.section}>
+            <View style={[styles.sectionHeader, { marginBottom: 2 }]}>
+              <Icon name="camera-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>이미지</Text>
+            </View>
+            <ImageSelector
+              selectedImages={selectedImages}
+              onPickImages={pickImages}
+              onRemoveImage={removeImage}
+              onReorderImages={reorderImages}
+              maxImages={10}
+              uploading={imageUploading}
+            />
+          </View>
+
+        {/* 익명 작성 */}
+        <View style={[styles.section, { marginTop: 16 }]}>
+          <View style={styles.anonymousToggleContainer}>
+            <View style={styles.anonymousToggleLeft}>
+              <Icon 
+                name="eye-off-outline" 
+                size={20} 
+                color={formData.isAnonymous ? COLORS.accent.blue : COLORS.text.secondary} 
+              />
+              <Text style={styles.anonymousToggleText}>익명으로 작성</Text>
+            </View>
+            <TouchableOpacity 
+              style={[
+                styles.toggleButton,
+                formData.isAnonymous && styles.toggleButtonActive
+              ]} 
+              onPress={toggleAnonymous}
+            >
+              <View style={[
+                styles.toggleCircle,
+                formData.isAnonymous && styles.toggleCircleActive
+              ]} />
+            </TouchableOpacity>
+          </View>
+        </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -216,145 +353,222 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: COLORS.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cancelText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
+  headerButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 16,
   },
   headerTitle: {
-    ...TYPOGRAPHY.subtitle1,
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+  },
+  submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accent.blue,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: COLORS.accent.blue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  submitButtonDisabled: {
+    backgroundColor: COLORS.background.secondary,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.accent.blue,
-    fontWeight: '600',
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.white,
+    fontWeight: 'bold',
+    marginLeft: 6,
   },
   submitTextDisabled: {
     color: COLORS.text.disabled,
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.subtitle2,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    marginBottom: 12,
-    fontWeight: '600',
+    marginLeft: 8,
+    fontWeight: 'bold',
+  },
+  inputContainer: {
+    position: 'relative',
+  },
+  charCountContainer: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: COLORS.background.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: 12,
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 16,
     backgroundColor: COLORS.background.secondary,
-    marginRight: 8,
-    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   categoryItemSelected: {
-    backgroundColor: COLORS.accent.blue + '20',
-    borderWidth: 1,
+    backgroundColor: COLORS.accent.blue + '15',
     borderColor: COLORS.accent.blue,
+    shadowColor: COLORS.accent.blue,
+    shadowOpacity: 0.2,
+    elevation: 2,
   },
   categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   categoryText: {
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
+    fontWeight: '500',
   },
   categoryTextSelected: {
     color: COLORS.accent.blue,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   titleInput: {
     backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: COLORS.border.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    minHeight: 56,
   },
   charCount: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  tagInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.primary,
-  },
-  tagInput: {
-    flex: 1,
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-  },
-  tagAddButton: {
-    padding: 4,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accent.blue + '20',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.accent.blue,
-    marginRight: 4,
-  },
-  tagRemoveButton: {
-    padding: 2,
-  },
-  tagHint: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
-    marginTop: 4,
+    fontWeight: '500',
   },
   contentInput: {
     backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: COLORS.border.primary,
     minHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  anonymousToggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.background.secondary,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.border.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  anonymousToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  anonymousToggleText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  toggleButton: {
+    width: 52,
+    height: 28,
+    borderRadius: 16,
+    backgroundColor: COLORS.background.primary,
+    borderWidth: 1.5,
+    borderColor: COLORS.border.dark,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  toggleButtonActive: {
+    backgroundColor: COLORS.accent.blue,
+    borderColor: COLORS.accent.blue,
+  },
+  toggleCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 12,
+    backgroundColor: COLORS.text.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  toggleCircleActive: {
+    alignSelf: 'flex-end',
   },
 });

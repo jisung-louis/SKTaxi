@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { BoardPost } from '../../types/board';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -34,7 +34,7 @@ export const PostCard: React.FC<PostCardProps> = ({
 
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress}>
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <View style={styles.categoryContainer}>
           <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(post.category) }]}>
             <Text style={styles.categoryText}>
@@ -50,43 +50,80 @@ export const PostCard: React.FC<PostCardProps> = ({
         <Text style={styles.timeText}>
           {formatDistanceToNow(post.createdAt, { addSuffix: true, locale: ko })}
         </Text>
+      </View> */}
+
+      <View style={styles.body}>
+        <View style={styles.bodyLeft}>
+          <View style={styles.titleContainer}>
+            {post.isPinned && (
+              <View style={styles.pinnedBadge}>
+                <Text style={styles.pinnedText}>📌</Text>
+              </View>
+            )}
+            <Text style={styles.title} numberOfLines={1}>
+              {post.title}
+            </Text>
+          </View>
+
+          <Text style={styles.content} numberOfLines={3}>
+            {post.content}
+          </Text>
+        </View>
+
+        {/* 이미지 썸네일 */}
+        {post.images && post.images.length > 0 && (
+          <View style={styles.imageContainer}>
+            <Image
+              source={{ uri: post.images[0].thumbUrl || post.images[0].url }}
+              style={styles.imageThumbnail}
+              resizeMode="cover"
+            />
+            {post.images.length > 1 && (
+              <View style={styles.moreImagesBadge}>
+                <Text style={styles.moreImagesText}>+{post.images.length - 1}</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
-
-      <Text style={styles.title} numberOfLines={2}>
-        {post.title}
-      </Text>
-
-      <Text style={styles.content} numberOfLines={3}>
-        {post.content}
-      </Text>
 
 
       <View style={styles.footer}>
         <View style={styles.authorContainer}>
-          <View style={styles.authorAvatar}>
+          {/* <View style={[styles.authorAvatar, post.isAnonymous && styles.anonymousAvatar]}>
             <Text style={styles.authorInitial}>
-              {post.authorName.charAt(0)}
+              {post.isAnonymous ? '익' : post.authorName.charAt(0)}
             </Text>
-          </View>
-          <Text style={styles.authorName}>{post.authorName}</Text>
+          </View> */}
+          <Text style={styles.authorName}>{post.isAnonymous ? '익명' : post.authorName}</Text>
+          <Text style={styles.separator}>•</Text>
+          <Text style={styles.timeText}>
+            {formatDistanceToNow(post.createdAt, { addSuffix: true, locale: ko })}
+          </Text>
         </View>
 
         <View style={styles.statsContainer}>
+          {post.likeCount > 0 && (
+            <View style={styles.statItem}>
+              <Icon name="heart-outline" size={12} color={COLORS.accent.red} />
+              <Text style={[styles.statText, { color: COLORS.accent.red }]}>{post.likeCount}</Text>
+            </View>
+          )}
+          {post.commentCount > 0 && (
+            <View style={styles.statItem}>
+              <Icon name="chatbubble-outline" size={12} color={COLORS.accent.blue} />
+              <Text style={[styles.statText, { color: COLORS.accent.blue }]}>{post.commentCount}</Text>
+            </View>
+          )}
+          {post.bookmarkCount > 0 && (
+            <View style={styles.statItem}>
+              <Icon name="bookmark-outline" size={12} color={COLORS.accent.orange} />
+              <Text style={[styles.statText, { color: COLORS.accent.orange }]}>{post.bookmarkCount}</Text>
+            </View>
+          )}
           <View style={styles.statItem}>
-            <Icon name="eye-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.statText}>{post.viewCount}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon name="heart-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.statText}>{post.likeCount}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon name="chatbubble-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.statText}>{post.commentCount}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon name="bookmark-outline" size={16} color={COLORS.text.secondary} />
-            <Text style={styles.statText}>{post.bookmarkCount}</Text>
+            <Icon name="eye-outline" size={12} color={COLORS.text.secondary} />
+            <Text style={[styles.statText, { color: COLORS.text.secondary }]}>{post.viewCount}</Text>
           </View>
         </View>
       </View>
@@ -110,7 +147,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   categoryContainer: {
     flexDirection: 'row',
@@ -123,30 +160,50 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryText: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.white,
     fontWeight: '600',
   },
   pinnedBadge: {
-    marginLeft: 4,
+    backgroundColor: COLORS.accent.orange + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: 24,
   },
   pinnedText: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.accent.orange,
+    fontWeight: '600',
   },
   timeText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.tertiary,
+  },
+  body: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  bodyLeft: {
+    gap: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
-    ...TYPOGRAPHY.subtitle1,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    marginBottom: 8,
+    fontWeight: 'bold',
     lineHeight: 22,
   },
   content: {
     ...TYPOGRAPHY.body2,
     color: COLORS.text.secondary,
-    marginBottom: 12,
     lineHeight: 20,
   },
   footer: {
@@ -157,6 +214,7 @@ const styles = StyleSheet.create({
   authorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
   },
   authorAvatar: {
     width: 24,
@@ -168,13 +226,17 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   authorInitial: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.white,
     fontWeight: '600',
   },
   authorName: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.tertiary,
+  },
+  separator: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.tertiary,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -183,12 +245,39 @@ const styles = StyleSheet.create({
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 10,
   },
   statText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
+    ...TYPOGRAPHY.caption1,
     marginLeft: 4,
+  },
+  imageContainer: {
+    position: 'relative',
+  },
+  imageThumbnail: {
+    width: 91,
+    height: 91,
+    borderRadius: 8,
+    backgroundColor: COLORS.background.secondary,
+  },
+  moreImagesBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreImagesText: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.white,
+    fontWeight: '600',
+  },
+  anonymousAvatar: {
+    backgroundColor: COLORS.text.secondary,
   },
 });
 

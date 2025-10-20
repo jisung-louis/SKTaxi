@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Share,
-  Linking
+  Linking,
+  Image
 } from 'react-native';
 import { doc, updateDoc, increment } from '@react-native-firebase/firestore';
 import { db } from '../../config/firebase';
@@ -29,9 +30,10 @@ import { useUserBoardInteractions } from '../../hooks/useUserBoardInteractions';
 import { ToggleButton } from '../../components/common/ToggleButton';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
-import CommentInput from '../../components/common/CommentInput';
+import CommentInput, { CommentInputRef } from '../../components/common/CommentInput';
 import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { HashTagText } from '../../components/common/HashTagText';
+import { ImageViewer } from '../../components/board/ImageViewer';
 
 interface BoardDetailScreenProps {
   route: {
@@ -48,6 +50,10 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
   const postId = route?.params?.postId;
   const hasIncrementedView = useRef(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
+  const commentInputRef = useRef<CommentInputRef>(null);
 
   const {
     post,
@@ -78,7 +84,9 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     isDeleted: comment.isDeleted,
     parentId: comment.parentId,
     authorId: comment.authorId,
+    isAnonymous: comment.isAnonymous,
     authorName: comment.authorName,
+    anonymousOrder: comment.anonymousOrder,
     replies: comment.replies?.map(reply => ({
       id: reply.id,
       content: reply.content,
@@ -87,7 +95,9 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
       isDeleted: reply.isDeleted,
       parentId: reply.parentId,
       authorId: reply.authorId,
+      isAnonymous: reply.isAnonymous,
       authorName: reply.authorName,
+      anonymousOrder: reply.anonymousOrder,
     })) || []
   }));
 
@@ -170,6 +180,23 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     });
   }, [navigation]);
 
+  const handleImagePress = useCallback((index: number) => {
+    setSelectedImageIndex(index);
+    setImageViewerVisible(true);
+  }, []);
+
+  const handleReply = useCallback((commentId: string, authorName: string, isAnonymous: boolean) => {
+    setReplyingTo({ commentId, authorName, isAnonymous });
+    // 답글 모드로 전환 후 TextInput에 포커싱
+    setTimeout(() => {
+      commentInputRef.current?.focus();
+    }, 100);
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+  }, []);
+
   const handleEdit = useCallback(() => {
     if (!post || !user || post.authorId !== user.uid) return;
     
@@ -218,8 +245,8 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={COLORS.text.primary} />
+          <TouchableOpacity onPress={() => navigation.popToTop()}>
+            <Icon name="chevron-back" size={36} color={COLORS.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>게시글</Text>
           <View style={styles.headerRight} />
@@ -233,8 +260,8 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Icon name="arrow-back" size={24} color={COLORS.text.primary} />
+          <TouchableOpacity onPress={() => navigation.popToTop()}>
+            <Icon name="chevron-back" size={36} color={COLORS.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>게시글</Text>
           <View style={styles.headerRight} />
@@ -247,17 +274,24 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={24} color={COLORS.text.primary} />
+        <TouchableOpacity onPress={() => navigation.popToTop()}>
+          <Icon name="chevron-back" size={36} color={COLORS.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>게시글</Text>
+        <View style={styles.headerCenter} pointerEvents="none">
+          <Text style={styles.headerTitle}>게시글</Text>
+        </View>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
-            <Icon name="share-outline" size={20} color={COLORS.text.primary} />
+            <Icon name="share-outline" size={28} color={COLORS.text.primary} />
           </TouchableOpacity>
           {isAuthor && (
             <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
-              <Icon name="create-outline" size={20} color={COLORS.text.primary} />
+              <Icon name="create-outline" size={28} color={COLORS.text.primary} />
+            </TouchableOpacity>
+          )}
+          {isAuthor && (
+            <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
+              <Icon name="trash-outline" size={28} color={COLORS.accent.red} />
             </TouchableOpacity>
           )}
         </View>
@@ -269,54 +303,75 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
         contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 + 20 }}
         contentInsetAdjustmentBehavior="never"
       >
-        <View style={styles.postContainer}>
+        <View style={[styles.postContainer, 
+          { margin: post.isPinned ? 5 : 0, 
+            outlineWidth: post.isPinned ? 1 : 0, 
+            outlineColor: post.isPinned ? COLORS.accent.orange : undefined, 
+            borderRadius: post.isPinned ? 12 : 0,
+            borderWidth: post.isPinned ? 1 : 0,
+            shadowOffset: post.isPinned ? { width: 0, height: 0 } : undefined,
+            shadowColor: post.isPinned ? COLORS.accent.orange : undefined,
+            shadowOpacity: post.isPinned ? 0.5 : undefined,
+            shadowRadius: post.isPinned ? 4 : undefined,
+            elevation: post.isPinned ? 3 : undefined,
+            backgroundColor: post.isPinned ? COLORS.background.primary : undefined,
+          }]}>
           {/* 카테고리 및 고정 배지 */}
-          <View style={styles.categoryRow}>
+          {/* <View style={styles.categoryRow}>
             <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(post.category) }]}>
               <Text style={styles.categoryText}>
                 {POST_CATEGORY_LABELS[post.category]}
               </Text>
             </View>
-            {post.isPinned && (
-              <View style={styles.pinnedBadge}>
-                <Text style={styles.pinnedText}>📌 고정</Text>
-              </View>
-            )}
-          </View>
-
-          {/* 제목 */}
-          <Text style={styles.title}>{post.title}</Text>
+          </View> */}
+          {post.isPinned && (
+            <View style={styles.pinnedBadge}>
+              <Text style={styles.pinnedText}>📌 고정</Text>
+            </View>
+          )}
 
           {/* 작성자 정보 및 작성일 */}
-          <View style={styles.authorRow}>
             <View style={styles.authorInfo}>
-              <View style={styles.authorAvatar}>
+              <View style={[styles.authorAvatar, post.isAnonymous && styles.anonymousAvatar]}>
                 <Text style={styles.authorInitial}>
-                  {post.authorName.charAt(0)}
+                  {post.isAnonymous ? '익' : post.authorName.charAt(0)}
                 </Text>
               </View>
               <View>
-                <Text style={styles.authorName}>{post.authorName}</Text>
+                <Text style={styles.authorName}>{post.isAnonymous ? '익명' : post.authorName}</Text>
                 <Text style={styles.postDate}>
                   {formatDistanceToNow(post.createdAt, { addSuffix: true, locale: ko })}
                 </Text>
               </View>
             </View>
-            {isAuthor && (
-              <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-                <Icon name="trash-outline" size={18} color={COLORS.accent.red} />
-              </TouchableOpacity>
-            )}
-          </View>
 
+          {/* 제목 */}
+          <Text style={styles.title}>{post.title}</Text>
 
-          {/* 내용 */}
+          {/* 내용 + 이미지 (이미지를 본문 아래 세로로 풀폭 표시) */}
           <View style={styles.contentContainer}>
             <HashTagText 
               text={post.content}
               onHashtagPress={handleHashtagPress}
               style={styles.contentText}
             />
+
+            {post.images && post.images.length > 0 && (
+              <View style={{ gap: 10, marginTop: 12 }}>
+                {post.images.map((image, index) => (
+                  <TouchableOpacity key={index} onPress={() => handleImagePress(index)}>
+                    <Image
+                      source={{ uri: image.url }}
+                      style={[
+                        styles.contentImage,
+                        { aspectRatio: image.width && image.height ? image.width / image.height : undefined },
+                      ]}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* 통계 및 액션 버튼 */}
@@ -355,23 +410,47 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
             <UniversalCommentList
                 comments={comments}
                 loading={commentsLoading}
-                onAddComment={async (content: string) => addComment(content)}
-                onAddReply={async (parentId: string, content: string) => addComment(content, parentId)}
+                onAddComment={async (content: string, isAnonymous?: boolean) => addComment(content, undefined, isAnonymous)}
+                onAddReply={async (parentId: string, content: string, isAnonymous?: boolean) => addComment(content, parentId, isAnonymous)}
                 onUpdateComment={updateComment}
                 onDeleteComment={deleteComment}
+                onReply={handleReply}
                 submitting={commentsSubmitting}
                 currentUserId={user?.uid}
+                postAuthorId={post?.authorId}
+                borderTop={!post.isPinned}
+                replyingToCommentId={replyingTo?.commentId}
             />
         </View>
       </ScrollView>
 
       {/* 댓글 입력 */}
       <CommentInput
-        onSubmit={async (content: string) => addComment(content)}
+        ref={commentInputRef}
+        onSubmit={async (content: string, isAnonymous?: boolean) => {
+          if (replyingTo) {
+            await addComment(content, replyingTo.commentId, isAnonymous);
+            setReplyingTo(null);
+          } else {
+            await addComment(content, undefined, isAnonymous);
+          }
+        }}
         submitting={commentsSubmitting}
-        placeholder="댓글을 입력하세요..."
+        placeholder={replyingTo ? `${replyingTo.isAnonymous ? '익명' : replyingTo.authorName}님에게 답글...` : "댓글을 입력하세요..."}
+        parentId={replyingTo?.commentId}
         onKeyboardHeightChange={setKeyboardHeight}
+        onCancelReply={handleCancelReply}
       />
+
+      {/* 이미지 뷰어 */}
+      {post?.images && (
+        <ImageViewer
+          visible={imageViewerVisible}
+          images={post.images}
+          initialIndex={selectedImageIndex}
+          onClose={() => setImageViewerVisible(false)}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -385,23 +464,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.primary,
   },
+  headerCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
   headerTitle: {
-    ...TYPOGRAPHY.subtitle1,
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
-    fontWeight: '600',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   headerButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: 4,
+    marginLeft: 6,
   },
   loading: {
     flex: 1,
@@ -412,7 +496,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   postContainer: {
-    padding: 16,
+    padding: 20,
   },
   categoryRow: {
     flexDirection: 'row',
@@ -426,7 +510,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   categoryText: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.white,
     fontWeight: '600',
   },
@@ -435,9 +519,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
   },
   pinnedText: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.accent.orange,
     fontWeight: '600',
   },
@@ -447,15 +533,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 28,
   },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
+  // authorRow: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'space-between',
+  //   marginBottom: 16,
+  // },
   authorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 16,
   },
   authorAvatar: {
     width: 32,
@@ -477,17 +564,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   postDate: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
     marginTop: 2,
   },
-  deleteButton: {
-    padding: 8,
-  },
   contentContainer: {
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 12,
-    padding: 16,
+    // backgroundColor: COLORS.background.secondary,
+    // borderRadius: 12,
+    // padding: 16,
     marginBottom: 20,
   },
   contentText: {
@@ -495,11 +579,15 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     lineHeight: 24,
   },
+  contentImage: {
+    width: '100%',
+    borderRadius: 12,
+    backgroundColor: COLORS.background.secondary,
+  },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
   },
   statsLeft: {
     flexDirection: 'row',
@@ -520,6 +608,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  imagesContainer: {
+    marginBottom: 20,
+  },
+  imagesTitle: {
+    ...TYPOGRAPHY.subtitle2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  imagesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  imageItem: {
+    position: 'relative',
+    width: '30%',
+    aspectRatio: 1,
+  },
+  imageThumbnail: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
+    backgroundColor: COLORS.background.secondary,
+  },
+  moreImagesOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  moreImagesText: {
+    ...TYPOGRAPHY.title2,
+    color: COLORS.text.white,
+    fontWeight: '700',
+  },
   commentsSection: {
     
   },
@@ -527,5 +656,8 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.subtitle2,
     color: COLORS.text.primary,
     fontWeight: '600',
+  },
+  anonymousAvatar: {
+    backgroundColor: COLORS.text.secondary,
   },
 });

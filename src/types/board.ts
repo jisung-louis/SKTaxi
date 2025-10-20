@@ -1,3 +1,12 @@
+export interface BoardImage {
+  url: string;
+  width: number;
+  height: number;
+  thumbUrl?: string;
+  size?: number;
+  mime?: string;
+}
+
 export interface BoardPost {
   id: string;
   title: string;
@@ -5,6 +14,8 @@ export interface BoardPost {
   authorId: string;
   authorName: string;
   authorProfileImage?: string;
+  isAnonymous?: boolean;
+  anonId?: string; // 글 단위 익명 사용자 식별자(동일 글 내 일관성)
   category: 'general' | 'question' | 'review' | 'announcement';
   viewCount: number;
   likeCount: number;
@@ -12,6 +23,7 @@ export interface BoardPost {
   bookmarkCount: number;
   isPinned: boolean;
   isDeleted: boolean;
+  images?: BoardImage[];
   createdAt: Date;
   updatedAt: Date;
   lastCommentAt?: Date;
@@ -24,6 +36,9 @@ export interface BoardComment {
   authorId: string;
   authorName: string;
   authorProfileImage?: string;
+  isAnonymous?: boolean;
+  anonId?: string;
+  anonymousOrder?: number; // 익명 댓글 순서 (익명1, 익명2, ...)
   parentId?: string; // 대댓글용
   isDeleted: boolean;
   createdAt: Date;
@@ -33,6 +48,7 @@ export interface BoardComment {
 export interface BoardCategory {
   id: string;
   name: string;
+  shortName: string;
   description: string;
   postCount: number;
   color: string;
@@ -53,5 +69,6 @@ export interface BoardFormData {
   title: string;
   content: string;
   category: string;
+  isAnonymous?: boolean;
 }
 

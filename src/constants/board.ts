@@ -4,6 +4,7 @@ export const BOARD_CATEGORIES: BoardCategory[] = [
   {
     id: 'general',
     name: '자유게시판',
+    shortName: '자유',
     description: '자유롭게 이야기해요',
     postCount: 0,
     color: '#4A90E2',
@@ -11,6 +12,7 @@ export const BOARD_CATEGORIES: BoardCategory[] = [
   {
     id: 'question',
     name: '질문게시판',
+    shortName: '질문',
     description: '궁금한 것을 물어보세요',
     postCount: 0,
     color: '#7ED321',
@@ -18,6 +20,7 @@ export const BOARD_CATEGORIES: BoardCategory[] = [
   {
     id: 'review',
     name: '후기게시판',
+    shortName: '후기',
     description: '경험을 공유해보세요',
     postCount: 0,
     color: '#F5A623',
@@ -25,6 +28,7 @@ export const BOARD_CATEGORIES: BoardCategory[] = [
   {
     id: 'announcement',
     name: '공지사항',
+    shortName: '공지',
     description: '중요한 소식을 전해드려요',
     postCount: 0,
     color: '#D0021B',

@@ -11,7 +11,6 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import CommentInput from './CommentInput';
 
 // 공통 댓글 인터페이스
 interface UniversalComment {
@@ -23,17 +22,24 @@ interface UniversalComment {
   parentId?: string;
   authorId: string;
   authorName: string;
+  isAnonymous?: boolean;
+  anonId?: string;
+  anonymousOrder?: number;
 }
 
 interface UniversalCommentListProps {
   comments: (UniversalComment & { replies: UniversalComment[] })[];
   loading: boolean;
-  onAddComment: (content: string) => Promise<void>;
-  onAddReply: (parentId: string, content: string) => Promise<void>;
+  onAddComment: (content: string, isAnonymous?: boolean) => Promise<void>;
+  onAddReply: (parentId: string, content: string, isAnonymous?: boolean) => Promise<void>;
   onUpdateComment: (commentId: string, content: string) => Promise<void>;
   onDeleteComment: (commentId: string) => Promise<void>;
+  onReply: (commentId: string, authorName: string, isAnonymous: boolean) => void;
   submitting?: boolean;
   currentUserId?: string;
+  postAuthorId?: string; // 게시글 작성자 ID
+  borderTop?: boolean;
+  replyingToCommentId?: string;
 }
 
 const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
@@ -43,15 +49,18 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
   onAddReply,
   onUpdateComment,
   onDeleteComment,
+  onReply,
   submitting = false,
-  currentUserId
+  currentUserId,
+  postAuthorId,
+  borderTop = true,
+  replyingToCommentId,
 }) => {
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [editingComment, setEditingComment] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
 
-  const handleReply = (commentId: string) => {
-    setReplyingTo(commentId);
+  const handleReply = (commentId: string, authorName: string, isAnonymous: boolean) => {
+    onReply(commentId, authorName, isAnonymous);
   };
 
   const handleEdit = (comment: UniversalComment) => {
@@ -105,66 +114,117 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
     return date.toLocaleDateString('ko-KR');
   };
 
-  const CommentItem: React.FC<{ comment: UniversalComment; isReply?: boolean }> = ({ 
+  const CommentItem: React.FC<{ 
+    comment: UniversalComment; 
+    isReply?: boolean; 
+  }> = ({ 
     comment, 
-    isReply = false 
+    isReply = false
   }) => {
     const isOwner = currentUserId === comment.authorId;
+    const isAuthor = postAuthorId === comment.authorId;
     const isEditing = editingComment === comment.id;
+    const isReplyingTo = replyingToCommentId === comment.id;
+    const displayName = comment.isAnonymous 
+      ? (comment.anonymousOrder ? `익명${comment.anonymousOrder}` : '익명')
+      : comment.authorName;
 
     return (
-      <View style={[styles.commentItem, isReply && styles.replyItem]}>
-        <View style={styles.commentHeader}>
-          <Text style={styles.authorName}>{comment.authorName}</Text>
-          <Text style={styles.commentDate}>{formatDate(comment.createdAt)}</Text>
-        </View>
+      <View style={[
+        styles.commentItem, 
+        isReply && styles.replyItem,
+      ]}>
+        {/* 답글 아이콘 */}
+        {isReply && 
+          <View style={styles.replyIconContainer}>
+            <Icon name="return-down-forward" size={20} color={COLORS.text.secondary} />
+          </View>
+        }
         
-        {isEditing ? (
-          <View style={styles.editContainer}>
-            <TextInput
-              style={styles.editInput}
-              value={editContent}
-              onChangeText={setEditContent}
-              multiline
-              maxLength={500}
-            />
-            <View style={styles.editActions}>
-              <TouchableOpacity onPress={handleCancelEdit} style={styles.editButton}>
-                <Text style={styles.editButtonText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={handleSaveEdit} 
-                style={[styles.editButton, styles.saveButton]}
-                disabled={!editContent.trim() || submitting}
-              >
-                <Text style={[styles.editButtonText, styles.saveButtonText]}>저장</Text>
-              </TouchableOpacity>
+        <View style={[styles.commentContent, isReply && styles.replyContent, isReplyingTo && styles.replyingToItem]}>
+          <View style={styles.commentHeader}>
+            <View style={[styles.authorAvatar, comment.isAnonymous && styles.anonymousAvatar]}>
+              <Text style={styles.authorInitial}>
+                {comment.isAnonymous ? '익' : comment.authorName.charAt(0)}
+              </Text>
+            </View>
+            <View style={styles.authorNameContainer}>
+              <Text style={[
+                styles.authorName,
+                isAuthor && styles.authorNameHighlight
+              ]}>
+                {displayName}
+              </Text>
+              {isAuthor && (
+                <Text style={styles.authorLabel}>(작성자)</Text>
+              )}
+            </View>
+            <View style={styles.actionsRow}>
+              {isOwner && (
+                <View style={styles.ownerActions}>
+                  <TouchableOpacity 
+                    onPress={() => handleEdit(comment)}
+                    style={styles.actionButton}
+                  >
+                    <Icon name="create-outline" size={14} color={COLORS.text.secondary} />
+                    <Text style={styles.actionText}>수정</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => handleDelete(comment.id)}
+                    style={styles.actionButton}
+                  >
+                    <Icon name="trash-outline" size={14} color={COLORS.text.secondary} />
+                    <Text style={styles.actionText}>삭제</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
-        ) : (
-          <>
-            <Text style={styles.commentContent}>{comment.content}</Text>
-            
-            {isOwner && (
-              <View style={styles.commentActions}>
-                <TouchableOpacity 
-                  onPress={() => handleEdit(comment)}
-                  style={styles.actionButton}
-                >
-                  <Icon name="create-outline" size={14} color={COLORS.text.secondary} />
-                  <Text style={styles.actionText}>수정</Text>
+          
+          {isEditing ? (
+            <View style={styles.editContainer}>
+              <TextInput
+                style={styles.editInput}
+                value={editContent}
+                onChangeText={setEditContent}
+                multiline
+                maxLength={500}
+              />
+              <View style={styles.editActions}>
+                <TouchableOpacity onPress={handleCancelEdit} style={styles.editButton}>
+                  <Text style={styles.editButtonText}>취소</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  onPress={() => handleDelete(comment.id)}
-                  style={styles.actionButton}
+                  onPress={handleSaveEdit} 
+                  style={[styles.editButton, styles.saveButton]}
+                  disabled={!editContent.trim() || submitting}
                 >
-                  <Icon name="trash-outline" size={14} color={COLORS.accent.red} />
-                  <Text style={[styles.actionText, { color: COLORS.accent.red }]}>삭제</Text>
+                  <Text style={[styles.editButtonText, styles.saveButtonText]}>저장</Text>
                 </TouchableOpacity>
               </View>
-            )}
-          </>
-        )}
+            </View>
+          ) : (
+            <>
+              <Text style={styles.commentText}>{comment.content}</Text>
+              <View style={styles.metaRow}>
+                <Text style={styles.commentDate}>{formatDate(comment.createdAt)}</Text>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => handleReply(
+                    comment.id, 
+                    comment.isAnonymous 
+                      ? (comment.anonymousOrder ? `익명${comment.anonymousOrder}` : '익명')
+                      : comment.authorName, 
+                    !!comment.isAnonymous
+                  )}
+                >
+                  <Icon name="return-down-forward" size={14} color={COLORS.text.secondary} />
+                  <Text style={styles.actionText}>답글</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
       </View>
     );
   };
@@ -179,7 +239,7 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderTopWidth: borderTop ? 1 : 0, borderTopColor: COLORS.border.default }]}>
       {comments.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Icon name="chatbubble-outline" size={48} color={COLORS.text.disabled} />
@@ -195,30 +255,13 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
               {comment.replies.length > 0 && (
                 <View style={styles.repliesContainer}>
                   {comment.replies.map((reply) => (
-                    <CommentItem key={reply.id} comment={reply} isReply />
+                    <CommentItem 
+                      key={reply.id} 
+                      comment={reply} 
+                      isReply 
+                    />
                   ))}
                 </View>
-              )}
-              
-              {/* 답글 버튼 */}
-              <TouchableOpacity 
-                style={styles.replyButton}
-                onPress={() => handleReply(comment.id)}
-              >
-                <Icon name="return-up-forward" size={14} color={COLORS.accent.green} />
-                <Text style={styles.replyText}>답글</Text>
-              </TouchableOpacity>
-              
-              {/* 답글 입력 */}
-              {replyingTo === comment.id && (
-                <CommentInput
-                  onSubmit={(content) => onAddReply(comment.id, content)}
-                  submitting={submitting}
-                  placeholder={`${comment.authorName}님에게 답글...`}
-                  parentId={comment.id}
-                  onCancel={() => setReplyingTo(null)}
-                  showCancel
-                />
               )}
             </View>
           ))}
@@ -230,9 +273,7 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.default,
-    paddingHorizontal: 20,
+    marginHorizontal: 16,
   },
   loadingContainer: {
     padding: 32,
@@ -255,43 +296,109 @@ const styles = StyleSheet.create({
   commentsList: {
   },
   commentGroup: {
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.default,
   },
   commentItem: {
-    marginBottom: 8,
+    flexDirection: 'row',
+    flex:1,
+    gap: 8,
+    alignItems: 'flex-start',
   },
   replyItem: {
-    marginLeft: 20,
-    paddingLeft: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.accent.green + '40',
+    marginTop: -4,
+    marginBottom: 6,
+  },
+  replyContent: {
+    paddingHorizontal: 12,
+    backgroundColor: COLORS.background.card,
+    outlineWidth: 1,
+    outlineColor: COLORS.border.default,
+    borderRadius: 8,
+  },
+  replyIconContainer: {
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  commentContent: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    marginVertical: 4,
   },
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
+  authorAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.accent.blue,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  authorInitial: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.white,
+    fontWeight: '600',
+  },
+  anonymousAvatar: {
+    backgroundColor: COLORS.text.secondary,
+  },
+  authorNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   authorName: {
-    ...TYPOGRAPHY.caption1,
+    ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
     fontWeight: '600',
+  },
+  authorNameHighlight: {
+    color: COLORS.accent.blue,
+    fontWeight: '700',
+  },
+  authorLabel: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.accent.blue,
+    fontWeight: '600',
+    backgroundColor: COLORS.accent.blue + '12',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 6,
   },
   commentDate: {
     ...TYPOGRAPHY.caption2,
     color: COLORS.text.disabled,
-    marginLeft: 8,
+    marginTop: 4,
   },
-  commentContent: {
+  commentText: {
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
     lineHeight: 20,
   },
-  commentActions: {
+  actionsRow: {
     flexDirection: 'row',
-    marginTop: 8,
-    gap: 16,
+    alignItems: 'center',
+    gap: 12,
+    marginLeft: 'auto',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  ownerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   actionButton: {
     flexDirection: 'row',
@@ -343,19 +450,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   repliesContainer: {
-    marginTop: 8,
+    marginTop: 0,
   },
-  replyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    alignSelf: 'flex-start',
-  },
-  replyText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.accent.green,
-    fontWeight: '500',
+  replyingToItem: {
+    backgroundColor: COLORS.accent.blue + '10',
+    borderRadius: 8,
+    outlineWidth: 1,
+    outlineColor: COLORS.accent.blue + '30',
   },
 });
 

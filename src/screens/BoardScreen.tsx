@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 32 + 40,
   },
   loadingMore: {
     marginVertical: 16,

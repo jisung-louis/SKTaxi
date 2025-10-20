@@ -50,6 +50,7 @@ export const useBoardComments = (postId: string) => {
             updatedAt: data.updatedAt?.toDate() || new Date(),
           } as BoardComment;
           
+          
           if (comment.parentId) {
             // 대댓글인 경우
             if (!repliesMap[comment.parentId]) {
@@ -62,10 +63,36 @@ export const useBoardComments = (postId: string) => {
           }
         });
         
-        // 댓글에 대댓글 추가
+        // 익명 댓글 순서 계산 (댓글과 대댓글 통합)
+        const anonymousOrderMap: { [key: string]: number } = {};
+        let anonymousCounter = 1;
+        
+        // 댓글과 대댓글을 시간순으로 정렬하여 익명 순서 계산
+        const allComments = [...commentsData];
+        commentsData.forEach(comment => {
+          const replies = repliesMap[comment.id] || [];
+          allComments.push(...replies);
+        });
+        
+        allComments
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+          .forEach(comment => {
+            if (comment.isAnonymous) {
+              const anonKey = `${comment.postId}:${comment.authorId}`;
+              if (!anonymousOrderMap[anonKey]) {
+                anonymousOrderMap[anonKey] = anonymousCounter++;
+              }
+            }
+          });
+
+        // 댓글에 대댓글 추가 (대댓글에도 익명 순서 적용)
         const commentsWithReplies = commentsData.map(comment => ({
           ...comment,
-          replies: repliesMap[comment.id] || []
+          replies: (repliesMap[comment.id] || []).map(reply => ({
+            ...reply,
+            anonymousOrder: reply.isAnonymous ? anonymousOrderMap[`${reply.postId}:${reply.authorId}`] : undefined
+          })),
+          anonymousOrder: comment.isAnonymous ? anonymousOrderMap[`${comment.postId}:${comment.authorId}`] : undefined
         }));
         
         setComments(commentsWithReplies);
@@ -84,23 +111,29 @@ export const useBoardComments = (postId: string) => {
     }
   }, [postId]);
 
-  const addComment = useCallback(async (content: string, parentId?: string) => {
+  const addComment = useCallback(async (content: string, parentId?: string, isAnonymous?: boolean) => {
     if (!postId || !user || !content.trim()) return;
 
     try {
       setSubmitting(true);
 
-      const commentData = {
+      const commentData: any = {
         postId,
         content: content.trim(),
         authorId: user.uid,
         authorName: user.displayName || '익명',
         authorProfileImage: user.photoURL || null,
+        isAnonymous: !!isAnonymous,
         parentId: parentId || null,
         isDeleted: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
+
+      // 익명 댓글이면 anonId 추가
+      if (isAnonymous) {
+        commentData.anonId = `${postId}:${user.uid}`;
+      }
 
       await addDoc(collection(db, 'boardComments'), commentData);
 

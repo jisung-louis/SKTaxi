@@ -243,13 +243,13 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 16,
   },
   sectionTitle: {
     ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: 10,
   },
   settingItem: {
     flexDirection: 'row',

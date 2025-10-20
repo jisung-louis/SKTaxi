@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, Pressable } from 'react-native';
 import { collection, query, where, getCountFromServer } from '@react-native-firebase/firestore';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { BOARD_CATEGORIES, SORT_OPTIONS } from '../../constants/board';
@@ -105,79 +106,127 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
 
   const renderCategoryItem = ({ item }: { item: BoardCategory }) => {
     const count = loadingCounts ? '...' : (categoryCounts[item.id] || 0);
+    const isSelected = selectedCategory === item.id;
     
     return (
       <TouchableOpacity
         style={[
           styles.modalItem,
-          selectedCategory === item.id && styles.modalItemSelected
+          isSelected && styles.modalItemSelected
         ]}
         onPress={() => handleCategorySelect(item)}
       >
-        <View style={[styles.categoryDot, { backgroundColor: item.color }]} />
-        <Text style={[
-          styles.modalItemText,
-          selectedCategory === item.id && styles.modalItemTextSelected
-        ]}>
-          {item.name}
-        </Text>
-        <Text style={styles.modalItemCount}>({count})</Text>
+        <View style={styles.modalItemLeft}>
+          <View style={[styles.categoryIndicator, { backgroundColor: item.color }]} />
+          <Text style={[
+            styles.modalItemText,
+            isSelected && styles.modalItemTextSelected
+          ]}>
+            {item.name}
+          </Text>
+        </View>
+        <View style={[styles.modalItemCount, isSelected && styles.modalItemCountSelected]}>
+          <Text style={[styles.modalItemCountText, isSelected && styles.modalItemCountTextSelected]}>
+            {count}
+          </Text>
+        </View>
       </TouchableOpacity>
     );
   };
 
-  const renderSortItem = ({ item }: { item: { value: string; label: string } }) => (
-    <TouchableOpacity
-      style={[
-        styles.modalItem,
-        sortBy === item.value && styles.modalItemSelected
-      ]}
-      onPress={() => handleSortSelect(item.value)}
-    >
-      <Text style={[
-        styles.modalItemText,
-        sortBy === item.value && styles.modalItemTextSelected
-      ]}>
-        {item.label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderSortItem = ({ item }: { item: { value: string; label: string } }) => {
+    const isSelected = sortBy === item.value;
+    const getSortIcon = (value: string) => {
+      switch (value) {
+        case 'latest': return 'time-outline';
+        case 'popular': return 'flame-outline';
+        case 'comments': return 'chatbubble-outline';
+        case 'views': return 'eye-outline';
+        default: return 'swap-vertical-outline';
+      }
+    };
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.modalItem,
+          isSelected && styles.modalItemSelected
+        ]}
+        onPress={() => handleSortSelect(item.value)}
+      >
+        <View style={styles.modalItemLeft}>
+          <Icon 
+            name={getSortIcon(item.value)} 
+            size={16} 
+            color={isSelected ? COLORS.accent.blue : COLORS.text.secondary} 
+          />
+          <Text style={[
+            styles.modalItemText,
+            isSelected && styles.modalItemTextSelected
+          ]}>
+            {item.label}
+          </Text>
+        </View>
+        {isSelected && (
+          <Icon name="checkmark" size={16} color={COLORS.accent.blue} />
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <Text style={styles.title}>게시판</Text>
+        <TouchableOpacity style={styles.titleContainer} onPress={() => setShowCategoryModal(true)}>
+          <Text style={styles.title}>{selectedCategoryData?.name || '전체 게시판'}</Text>
+          <Icon name="chevron-down" size={28} color={COLORS.text.primary} />
+        </TouchableOpacity>
         <View style={styles.actionButtons}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => setShowSortModal(true)}>
+            <Icon name="swap-vertical-outline" size={30} color={COLORS.text.primary} />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onSearchPress}>
-            <Text style={styles.actionButtonText}>🔍</Text>
+            <Icon name="search-outline" size={30} color={COLORS.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onWritePress}>
-            <Text style={styles.actionButtonText}>✏️</Text>
+            <Icon name="create-outline" size={30} color={COLORS.accent.blue} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.filterRow}>
+      {/* <View style={styles.filterRow}>
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, selectedCategory && styles.filterButtonActive]}
           onPress={() => setShowCategoryModal(true)}
         >
-          <Text style={styles.filterButtonText}>
-            {selectedCategoryData ? selectedCategoryData.name : '전체'}
-          </Text>
-          <Text style={styles.filterButtonIcon}>▼</Text>
+          <View style={styles.filterButtonContent}>
+            <View style={styles.filterButtonLeft}>
+              {selectedCategoryData && (
+                <View style={[styles.categoryIndicator, { backgroundColor: selectedCategoryData.color }]} />
+              )}
+              <Text style={[styles.filterButtonText, selectedCategory && styles.filterButtonTextActive]}>
+                {selectedCategoryData ? selectedCategoryData.name : '전체'}
+              </Text>
+            </View>
+            <Icon name="chevron-down" size={16} color={selectedCategory ? COLORS.accent.blue : COLORS.text.secondary} />
+          </View>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.filterButton}
+          style={[styles.filterButton, styles.sortButton]}
           onPress={() => setShowSortModal(true)}
         >
-          <Text style={styles.filterButtonText}>
-            {selectedSortData?.label || '최신순'}
-          </Text>
-          <Text style={styles.filterButtonIcon}>▼</Text>
+          <View style={styles.filterButtonContent}>
+            <View style={styles.filterButtonLeft}>
+              <Icon name="swap-vertical-outline" size={16} color={COLORS.text.secondary} />
+              <Text style={styles.filterButtonText}>
+                {selectedSortData?.label || '최신순'}
+              </Text>
+            </View>
+            <Icon name="chevron-down" size={16} color={COLORS.text.secondary} />
+          </View>
         </TouchableOpacity>
-      </View>
+      </View> */}
 
       {/* 카테고리 선택 모달 */}
       <Modal
@@ -195,7 +244,15 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           }}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>카테고리 선택</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>카테고리 선택</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowCategoryModal(false)}
+              >
+                <Icon name="close" size={20} color={COLORS.text.secondary} />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity
               style={[
                 styles.modalItem,
@@ -203,20 +260,26 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
               ]}
               onPress={() => handleCategorySelect(null)}
             >
-              <Text style={[
-                styles.modalItemText,
-                !selectedCategory && styles.modalItemTextSelected
-              ]}>
-                전체
-              </Text>
-              <Text style={styles.modalItemCount}>
-                ({loadingCounts ? '...' : (categoryCounts['all'] || 0)})
-              </Text>
+              <View style={styles.modalItemLeft}>
+                <View style={styles.allCategoryIndicator} />
+                <Text style={[
+                  styles.modalItemText,
+                  !selectedCategory && styles.modalItemTextSelected
+                ]}>
+                  전체
+                </Text>
+              </View>
+              <View style={styles.modalItemCount}>
+                <Text style={styles.modalItemCountText}>
+                  {loadingCounts ? '...' : (categoryCounts['all'] || 0)}
+                </Text>
+              </View>
             </TouchableOpacity>
             <FlatList
               data={BOARD_CATEGORIES}
               renderItem={renderCategoryItem}
               keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
             />
           </View>
         </Pressable>
@@ -238,11 +301,20 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
           }}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>정렬 기준</Text>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>정렬 기준</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setShowSortModal(false)}
+              >
+                <Icon name="close" size={20} color={COLORS.text.secondary} />
+              </TouchableOpacity>
+            </View>
             <FlatList
               data={SORT_OPTIONS}
               renderItem={renderSortItem}
               keyExtractor={(item) => item.value}
+              showsVerticalScrollIndicator={false}
             />
           </View>
         </Pressable>
@@ -255,7 +327,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.background.primary,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.primary,
   },
@@ -263,95 +335,158 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   title: {
     ...TYPOGRAPHY.title1,
     color: COLORS.text.primary,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   actionButtons: {
     flexDirection: 'row',
+    gap: 12,
   },
   actionButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.background.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-  },
-  actionButtonText: {
-    fontSize: 16,
   },
   filterRow: {
     flexDirection: 'row',
+    gap: 12,
   },
   filterButton: {
+    flex: 1,
+    backgroundColor: COLORS.background.secondary,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.accent.blue + '10',
+    borderColor: COLORS.accent.blue + '30',
+  },
+  sortButton: {
+    flex: 0.8,
+  },
+  filterButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
+    justifyContent: 'space-between',
+  },
+  filterButtonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
   },
   filterButtonText: {
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
-    marginRight: 4,
+    fontWeight: '500',
   },
-  filterButtonIcon: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
+  filterButtonTextActive: {
+    color: COLORS.accent.blue,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   modalContent: {
     backgroundColor: COLORS.background.primary,
-    borderRadius: 12,
-    padding: 20,
-    width: '80%',
-    maxHeight: '60%',
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    // borderBottomWidth: 1,
+    // borderBottomColor: COLORS.border.primary,
   },
   modalTitle: {
     ...TYPOGRAPHY.subtitle1,
     color: COLORS.text.primary,
-    marginBottom: 16,
-    textAlign: 'center',
+    fontWeight: '700',
+  },
+  modalCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.primary,
   },
   modalItemSelected: {
-    backgroundColor: COLORS.accent.blue + '20',
+    backgroundColor: COLORS.accent.blue + '08',
   },
-  categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 12,
+  modalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  categoryIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  allCategoryIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.text.secondary,
   },
   modalItemText: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    flex: 1,
+    fontWeight: '500',
   },
   modalItemTextSelected: {
     color: COLORS.accent.blue,
     fontWeight: '600',
   },
   modalItemCount: {
-    ...TYPOGRAPHY.caption,
+    backgroundColor: COLORS.background.secondary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    minWidth: 32,
+    alignItems: 'center',
+  },
+  modalItemCountSelected: {
+    backgroundColor: COLORS.accent.blue + '15',
+  },
+  modalItemCountText: {
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
+    fontWeight: '600',
+  },
+  modalItemCountTextSelected: {
+    color: COLORS.accent.blue,
   },
 });

@@ -8,7 +8,8 @@ import {
   TextInput,
   Alert,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -24,6 +25,8 @@ import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../config/firebase';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import { ImageSelector } from '../../components/board/ImageSelector';
 
 interface BoardEditScreenProps {
   route: {
@@ -49,6 +52,17 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
     content: '',
     category: 'general',
   });
+
+  const {
+    selectedImages,
+    uploading: imageUploading,
+    pickImages,
+    removeImage,
+    reorderImages,
+    uploadImages,
+    clearImages,
+    setImages,
+  } = useImageUpload({ maxImages: 10 });
 
   // 게시글 로드
   useEffect(() => {
@@ -85,6 +99,25 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
               content: postData.content,
               category: postData.category,
             });
+
+            // 기존 이미지가 있으면 편집용 상태에 주입
+            if (postData.images && postData.images.length > 0) {
+              const existing = postData.images.map((img, idx) => ({
+                id: `existing-${idx}`,
+                localUri: img.url,
+                width: img.width,
+                height: img.height,
+                size: img.size || 0,
+                mime: img.mime || 'image/jpeg',
+                status: 'uploaded' as const,
+                progress: 100,
+                remoteUrl: img.url,
+                thumbUrl: img.thumbUrl || img.url,
+              }));
+              setImages(existing);
+            } else {
+              setImages([]);
+            }
           }
         } else {
           setError('게시글을 찾을 수 없습니다.');
@@ -130,10 +163,35 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
       setSubmitting(true);
 
       const postRef = doc(db, 'boardPosts', postId);
+
+      // 1) 업로드 수행 후 결과를 사용해 최종 메타 구성 (순서 유지, 상태 타이밍 이슈 방지)
+      let uploadedImagesAll = [] as typeof selectedImages;
+      if (selectedImages.length > 0) {
+        try {
+          uploadedImagesAll = await uploadImages(postId);
+        } catch (imageError) {
+          console.error('이미지 업로드 실패:', imageError);
+          Alert.alert('경고', '이미지 업로드에 실패했지만 텍스트 수정은 반영됩니다.');
+        }
+      }
+
+      const sourceList = uploadedImagesAll.length > 0 ? uploadedImagesAll : selectedImages;
+      const finalImages = sourceList
+        .filter(img => (img.status === 'uploaded' && (img.remoteUrl || img.localUri)))
+        .map(img => ({
+          url: img.remoteUrl || img.localUri,
+          width: img.width,
+          height: img.height,
+          thumbUrl: img.thumbUrl,
+          size: img.size,
+          mime: img.mime,
+        }));
+
       await updateDoc(postRef, {
         title: formData.title.trim(),
         content: formData.content.trim(),
         category: formData.category,
+        images: finalImages,
         updatedAt: serverTimestamp(),
       });
 
@@ -153,8 +211,9 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
       Alert.alert('오류', '게시글 수정에 실패했습니다.');
     } finally {
       setSubmitting(false);
+      clearImages();
     }
-  }, [postId, user, formData, navigation]);
+  }, [postId, user, formData, navigation, selectedImages, uploadImages, clearImages]);
 
   const handleCancel = useCallback(() => {
     const hasChanges = 
@@ -180,11 +239,14 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.cancelText}>취소</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+            <Icon name="close" size={40} color={COLORS.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글 수정</Text>
-          <View style={styles.headerRight} />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>글 수정</Text>
+            <Text style={styles.headerSubtitle}>게시글을 불러오는 중...</Text>
+          </View>
+          <View style={styles.headerButton} />
         </View>
         <LoadingSpinner style={styles.loading} />
       </SafeAreaView>
@@ -195,11 +257,14 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.cancelText}>취소</Text>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
+            <Icon name="close" size={40} color={COLORS.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글 수정</Text>
-          <View style={styles.headerRight} />
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>글 수정</Text>
+            <Text style={styles.headerSubtitle}>오류가 발생했습니다</Text>
+          </View>
+          <View style={styles.headerButton} />
         </View>
         <ErrorMessage message={error || '게시글을 찾을 수 없습니다.'} />
       </SafeAreaView>
@@ -215,19 +280,31 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleCancel}>
-            <Text style={styles.cancelText}>취소</Text>
+          <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
+            <Icon name="close" size={40} color={COLORS.text.secondary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>글 수정</Text>
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>글 수정</Text>
+            <Text style={styles.headerSubtitle}>게시글을 수정해보세요</Text>
+          </View>
           <TouchableOpacity 
             onPress={handleSubmit} 
-            disabled={submitting || !formData.title.trim() || !formData.content.trim()}
+            disabled={submitting || imageUploading || !formData.title.trim() || !formData.content.trim()}
+            style={[
+              styles.submitButton,
+              (!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) && styles.submitButtonDisabled
+            ]}
           >
+            <Icon 
+              name={submitting || imageUploading ? "hourglass-outline" : "checkmark"} 
+              size={20} 
+              color={(!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) ? COLORS.text.disabled : COLORS.text.white} 
+            />
             <Text style={[
               styles.submitText,
-              (!formData.title.trim() || !formData.content.trim() || submitting) && styles.submitTextDisabled
+              (!formData.title.trim() || !formData.content.trim() || submitting || imageUploading) && styles.submitTextDisabled
             ]}>
-              {submitting ? '수정중...' : '완료'}
+              {submitting || imageUploading ? '수정중...' : '완료'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -235,11 +312,18 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* 카테고리 선택 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>카테고리</Text>
-            <View style={styles.categoryContainer}>
-              {BOARD_CATEGORIES.map((category) => (
+            <View style={styles.sectionHeader}>
+              <Icon name="grid-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>카테고리</Text>
+            </View>
+            <FlatList
+              data={BOARD_CATEGORIES}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={styles.categoryContainer}
+              renderItem={({ item: category }) => (
                 <TouchableOpacity
-                  key={category.id}
                   style={[
                     styles.categoryItem,
                     formData.category === category.id && styles.categoryItemSelected
@@ -251,42 +335,74 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
                     styles.categoryText,
                     formData.category === category.id && styles.categoryTextSelected
                   ]}>
-                    {category.name}
+                    {category.shortName}
                   </Text>
+                  {formData.category === category.id && (
+                    <Icon name="checkmark" size={16} color={COLORS.accent.blue} />
+                  )}
                 </TouchableOpacity>
-              ))}
-            </View>
+              )}
+            />
           </View>
 
           {/* 제목 입력 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>제목</Text>
-            <TextInput
-              style={styles.titleInput}
-              placeholder="제목을 입력하세요"
-              value={formData.title}
-              onChangeText={handleTitleChange}
-              placeholderTextColor={COLORS.text.secondary}
-              maxLength={100}
-            />
-            <Text style={styles.charCount}>{formData.title.length}/100</Text>
+            <View style={styles.sectionHeader}>
+              <Icon name="create-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>제목</Text>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.titleInput}
+                placeholder="제목을 입력하세요"
+                value={formData.title}
+                onChangeText={handleTitleChange}
+                placeholderTextColor={COLORS.text.secondary}
+                maxLength={100}
+              />
+              <View style={styles.charCountContainer}>
+                <Text style={styles.charCount}>{formData.title.length}/100</Text>
+              </View>
+            </View>
           </View>
-
 
           {/* 내용 입력 */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>내용</Text>
-            <TextInput
-              style={styles.contentInput}
-              placeholder="내용을 입력하세요"
-              value={formData.content}
-              onChangeText={handleContentChange}
-              placeholderTextColor={COLORS.text.secondary}
-              multiline
-              textAlignVertical="top"
-              maxLength={2000}
+            <View style={styles.sectionHeader}>
+              <Icon name="document-text-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>내용</Text>
+            </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.contentInput}
+                placeholder="내용을 입력하세요"
+                value={formData.content}
+                onChangeText={handleContentChange}
+                placeholderTextColor={COLORS.text.secondary}
+                multiline
+                textAlignVertical="top"
+                maxLength={2000}
+              />
+              <View style={styles.charCountContainer}>
+                <Text style={styles.charCount}>{formData.content.length}/2000</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* 이미지 선택 */}
+          <View style={styles.section}>
+            <View style={[styles.sectionHeader, { marginBottom: 2 }]}>
+              <Icon name="camera-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.sectionTitle}>이미지</Text>
+            </View>
+            <ImageSelector
+              selectedImages={selectedImages}
+              onPickImages={pickImages}
+              onRemoveImage={removeImage}
+              onReorderImages={reorderImages}
+              maxImages={10}
+              uploading={imageUploading}
             />
-            <Text style={styles.charCount}>{formData.content.length}/2000</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -303,27 +419,59 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: COLORS.background.primary,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  cancelText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
+  headerButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 16,
   },
   headerTitle: {
-    ...TYPOGRAPHY.subtitle1,
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginBottom: 2,
   },
-  headerRight: {
-    width: 40,
+  headerSubtitle: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
+  },
+  submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accent.blue,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: COLORS.accent.blue,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  submitButtonDisabled: {
+    backgroundColor: COLORS.background.secondary,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   submitText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.accent.blue,
-    fontWeight: '600',
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.white,
+    fontWeight: 'bold',
+    marginLeft: 6,
   },
   submitTextDisabled: {
     color: COLORS.text.disabled,
@@ -335,75 +483,108 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.subtitle2,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    marginBottom: 12,
-    fontWeight: '600',
+    marginLeft: 8,
+    fontWeight: 'bold',
+  },
+  inputContainer: {
+    position: 'relative',
+  },
+  charCountContainer: {
+    position: 'absolute',
+    bottom: 6,
+    right: 6,
+    backgroundColor: COLORS.background.primary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   categoryContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    gap: 12,
   },
   categoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 16,
     backgroundColor: COLORS.background.secondary,
-    marginRight: 8,
-    marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   categoryItemSelected: {
-    backgroundColor: COLORS.accent.blue + '20',
-    borderWidth: 1,
+    backgroundColor: COLORS.accent.blue + '15',
     borderColor: COLORS.accent.blue,
+    shadowColor: COLORS.accent.blue,
+    shadowOpacity: 0.2,
+    elevation: 2,
   },
   categoryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   categoryText: {
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
+    fontWeight: '500',
   },
   categoryTextSelected: {
     color: COLORS.accent.blue,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   titleInput: {
     backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: COLORS.border.primary,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   charCount: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
-    textAlign: 'right',
-    marginTop: 4,
+    fontWeight: '500',
   },
   contentInput: {
     backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: COLORS.border.primary,
     minHeight: 200,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });

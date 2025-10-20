@@ -11,7 +11,7 @@ export const COLORS = {
   text: {
     primary: '#F3F4F6',   // 주요 텍스트
     secondary: '#A1A1AA', // 보조 텍스트
-    tertiary: '#52525B',  // 보조 텍스트 (더 연한)
+    tertiary: '#606069',  // 보조 텍스트 (더 연한)
     disabled: '#52525B',  // 비활성화 텍스트
     buttonText: '#18181B', // 버튼 텍스트
     white: '#FFFFFF',     // 흰색 텍스트

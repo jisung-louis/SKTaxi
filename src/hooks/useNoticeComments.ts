@@ -45,16 +45,62 @@ export const useNoticeComments = (noticeId: string) => {
       q,
       (snapshot) => {
         const commentsData: Comment[] = [];
+        const repliesMap: { [key: string]: Comment[] } = {};
+        
         snapshot.forEach((doc) => {
           const data = doc.data();
-          commentsData.push({
+          const comment = {
             id: doc.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate(),
-          } as Comment);
+          } as Comment;
+          
+          if (comment.parentId) {
+            // 대댓글인 경우
+            if (!repliesMap[comment.parentId]) {
+              repliesMap[comment.parentId] = [];
+            }
+            repliesMap[comment.parentId].push(comment);
+          } else {
+            // 댓글인 경우
+            commentsData.push(comment);
+          }
         });
-        setComments(commentsData);
+        
+        // 익명 댓글 순서 계산
+        const anonymousOrderMap: { [key: string]: number } = {};
+        let anonymousCounter = 1;
+        
+        // 댓글과 대댓글을 시간순으로 정렬하여 익명 순서 계산
+        const allComments = [...commentsData];
+        commentsData.forEach(comment => {
+          const replies = repliesMap[comment.id] || [];
+          allComments.push(...replies);
+        });
+        
+        allComments
+          .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+          .forEach(comment => {
+            if (comment.isAnonymous) {
+              const anonKey = `${comment.noticeId}:${comment.userId}`;
+              if (!anonymousOrderMap[anonKey]) {
+                anonymousOrderMap[anonKey] = anonymousCounter++;
+              }
+            }
+          });
+
+        // 댓글에 대댓글 추가 (대댓글에도 익명 순서 적용)
+        const commentsWithReplies = commentsData.map(comment => ({
+          ...comment,
+          replies: (repliesMap[comment.id] || []).map(reply => ({
+            ...reply,
+            anonymousOrder: reply.isAnonymous ? anonymousOrderMap[`${reply.noticeId}:${reply.userId}`] : undefined
+          })),
+          anonymousOrder: comment.isAnonymous ? anonymousOrderMap[`${comment.noticeId}:${comment.userId}`] : undefined
+        }));
+        
+        setComments(commentsWithReplies);
         setLoading(false);
       },
       (error) => {
@@ -78,6 +124,9 @@ export const useNoticeComments = (noticeId: string) => {
       setError(null);
 
       const commentsRef = collection(db, 'comments');
+      const isAnonymous = formData.isAnonymous ?? true; // 기본값 true
+      const anonId = isAnonymous ? `${noticeId}:${user.uid}` : undefined;
+      
       const newComment = {
         noticeId,
         userId: user.uid,
@@ -87,6 +136,8 @@ export const useNoticeComments = (noticeId: string) => {
         isDeleted: false,
         parentId: formData.parentId || null,
         replyCount: 0,
+        isAnonymous,
+        anonId,
       };
 
       await addDoc(commentsRef, newComment);
@@ -164,31 +215,12 @@ export const useNoticeComments = (noticeId: string) => {
   };
 
   // 대댓글 작성
-  const addReply = async (parentId: string, content: string) => {
-    return addComment({ content, parentId });
+  const addReply = async (parentId: string, content: string, isAnonymous?: boolean) => {
+    return addComment({ content, parentId, isAnonymous });
   };
 
-  // 댓글과 대댓글을 그룹화
-  const groupedComments = comments.reduce((acc, comment) => {
-    if (!comment.parentId) {
-      // 부모 댓글
-      acc[comment.id] = {
-        ...comment,
-        replies: []
-      };
-    } else {
-      // 대댓글
-      if (acc[comment.parentId]) {
-        acc[comment.parentId].replies.push(comment);
-      }
-    }
-    return acc;
-  }, {} as Record<string, Comment & { replies: Comment[] }>);
-
-  const topLevelComments = Object.values(groupedComments);
-
   return {
-    comments: topLevelComments,
+    comments,
     loading,
     submitting,
     error,

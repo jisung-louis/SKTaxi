@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Image, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
@@ -18,7 +18,7 @@ import { WebView } from 'react-native-webview';
 import { domNodeToHTMLString } from 'react-native-render-html';
 import { ToggleButton } from '../../components/common/ToggleButton';
 import { useNoticeLike } from '../../hooks/useNoticeLike';
-import CommentInput from '../../components/common/CommentInput';
+import CommentInput, { CommentInputRef } from '../../components/common/CommentInput';
 import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { useNoticeComments } from '../../hooks/useNoticeComments';
 import { useAuth } from '../../hooks/useAuth';
@@ -34,6 +34,8 @@ export const NoticeDetailScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
+  const commentInputRef = useRef<CommentInputRef>(null);
 
   // 좋아요 기능
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
@@ -49,6 +51,18 @@ export const NoticeDetailScreen = () => {
     deleteComment 
   } = useNoticeComments(noticeId || '');
 
+  const handleReply = useCallback((commentId: string, authorName: string, isAnonymous: boolean) => {
+    setReplyingTo({ commentId, authorName, isAnonymous });
+    // 답글 모드로 전환 후 TextInput에 포커싱
+    setTimeout(() => {
+      commentInputRef.current?.focus();
+    }, 100);
+  }, []);
+
+  const handleCancelReply = useCallback(() => {
+    setReplyingTo(null);
+  }, []);
+
   // Comment 타입을 UniversalComment 타입으로 변환
   const comments = rawComments.map(comment => ({
     id: comment.id,
@@ -59,6 +73,9 @@ export const NoticeDetailScreen = () => {
     parentId: comment.parentId,
     authorId: comment.userId,
     authorName: comment.userDisplayName,
+    isAnonymous: comment.isAnonymous,
+    anonId: comment.anonId,
+    anonymousOrder: comment.anonymousOrder,
     replies: comment.replies?.map(reply => ({
       id: reply.id,
       content: reply.content,
@@ -68,6 +85,9 @@ export const NoticeDetailScreen = () => {
       parentId: reply.parentId,
       authorId: reply.userId,
       authorName: reply.userDisplayName,
+      isAnonymous: reply.isAnonymous,
+      anonId: reply.anonId,
+      anonymousOrder: reply.anonymousOrder,
     })) || []
   }));
 
@@ -343,6 +363,8 @@ const TableToWebView = (props: any) => {
                 onDeleteComment={deleteComment}
                 submitting={commentsSubmitting}
                 currentUserId={user?.uid}
+                onReply={handleReply}
+                replyingToCommentId={replyingTo?.commentId}
               />
             
           </ScrollView>
@@ -351,10 +373,20 @@ const TableToWebView = (props: any) => {
         
         {/* 댓글 섹션 */}
         <CommentInput
-          onSubmit={(content) => addComment({ content })}
+          ref={commentInputRef}
+          onSubmit={async (content: string, isAnonymous?: boolean) => {
+            if (replyingTo) {
+              await addReply(replyingTo.commentId, content, isAnonymous);
+              setReplyingTo(null);
+            } else {
+              await addComment({ content, isAnonymous });
+            }
+          }}
           submitting={commentsSubmitting}
-          placeholder="댓글을 입력하세요..."
+          placeholder={replyingTo ? `${replyingTo.isAnonymous ? '익명' : replyingTo.authorName}님에게 답글...` : "댓글을 입력하세요..."}
+          parentId={replyingTo?.commentId}
           onKeyboardHeightChange={setKeyboardHeight}
+          onCancelReply={handleCancelReply}
         />
     </SafeAreaView>
   );
