@@ -17,6 +17,8 @@ import Button from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth'; // SKTaxi: 현재 사용자 정보
 import { useNotices } from '../hooks/useNotices'; // SKTaxi: 공지사항 훅 사용
 import { getFirestore, collection, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
+import { CafeteriaSection } from '../components/cafeteria/CafeteriaSection';
+import { AcademicCalendarSection } from '../components/academic/AcademicCalendarSection';
 
 type Food = {
   id: string;
@@ -26,19 +28,6 @@ type Food = {
 };
 
 type SimpleNotice = { id: string; title: string; content?: string; postedAt?: any; category?: string };
-
-const dummyFoods: Food[] = [
-  { id: 'f1', date: '11/03', dateTitle: '월', title: ['아침', '점심', '저녁'] },
-  { id: 'f2', date: '11/04', dateTitle: '화', title: ['아침', '점심', '저녁'] },
-  { id: 'f3', date: '11/05', dateTitle: '수', title: ['아침', '점심', '저녁'] },
-  { id: 'f4', date: '11/06', dateTitle: '목', title: ['아침', '점심', '저녁'] },
-  { id: 'f5', date: '11/07', dateTitle: '금', title: ['아침', '점심', '저녁'] },
-  { id: 'f6', date: '11/10', dateTitle: '월', title: ['아침', '점심', '저녁'] },
-  { id: 'f7', date: '11/11', dateTitle: '화', title: ['아침', '점심', '저녁'] },
-  { id: 'f8', date: '11/12', dateTitle: '수', title: ['아침', '점심', '저녁'] },
-  { id: 'f9', date: '11/13', dateTitle: '목', title: ['아침', '점심', '저녁'] },
-  { id: 'f10', date: '11/14', dateTitle: '금', title: ['아침', '점심', '저녁'] },
-];
 
 export const HomeScreen = () => {
   const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
@@ -352,60 +341,18 @@ export const HomeScreen = () => {
 
         <Surface color={COLORS.background.surface} height={1} margin={24} />
 
-        {/* 학식 Segment */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Icon name="restaurant" size={20} color={COLORS.accent.red} />
-              <Text style={styles.sectionTitle}>학식</Text>
-            </View>
-            <TouchableOpacity style={styles.sectionActionButton}>
-              <Text style={styles.sectionAction}>모두 보기</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={dummyFoods}
-            keyExtractor={(it) => it.id}
-            renderItem={({ item }) => 
-            <TouchableOpacity style={styles.foodCard} activeOpacity={0.8} key={item.id}>
-              <View style={styles.foodCardHeader}>
-                <View style={styles.foodDateContainer}>
-                  <Text style={styles.foodDate}>{item.date}</Text>
-                  <Text style={styles.foodDay}>{item.dateTitle}요일</Text>
-                </View>
-                <View style={styles.foodIconContainer}>
-                  <Icon name="restaurant" size={20} color={COLORS.accent.red} />
-                </View>
-              </View>
-              <View style={styles.foodMenuContainer}>
-                {item.title.map((title, idx) => (
-                  <View key={`${item.id}-${idx}`} style={styles.foodMenuItem}>
-                    <View style={styles.foodMenuDot} />
-                    <Text style={styles.foodMenuText}>{title}</Text>
-                  </View>
-                ))}
-              </View>
-            </TouchableOpacity>
-          }
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            ListEmptyComponent={() => 
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyTextContainer}>
-                <Text style={styles.emptyText}>현재 학식 정보가 없습니다.</Text>
-                <Text style={styles.emptyText}>서비스 준비중이에요!</Text>
-              </View>
-            </View>
-            }
-          />
-        </View>
+        {/* 학식 섹션 */}
+        <CafeteriaSection />
+
+        <Surface color={COLORS.background.surface} height={1} margin={24} />
+
+        {/* 학사일정 섹션 */}
+        <AcademicCalendarSection />
 
         <Surface color={COLORS.background.surface} height={1} margin={24} />
 
         {/* Academic Calendar */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>학사일정</Text>
             <TouchableOpacity>
@@ -428,7 +375,7 @@ export const HomeScreen = () => {
           </View>
         </View>
 
-        <Surface color={COLORS.background.surface} height={1} margin={24} />
+        <Surface color={COLORS.background.surface} height={1} margin={24} /> */}
 
         {/* My Timetable */}
         <View style={styles.section}>

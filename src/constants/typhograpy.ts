@@ -39,4 +39,9 @@ export const TYPOGRAPHY : {[key: string]: TextStyle} = {
         fontWeight: 'normal',
         lineHeight: 12,
     },
+    caption3: {
+        fontSize: 8,
+        fontWeight: 'normal',
+        lineHeight: 10,
+    },
 };

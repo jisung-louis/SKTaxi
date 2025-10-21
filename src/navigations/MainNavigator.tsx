@@ -11,11 +11,14 @@ import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { SettingScreen } from '../screens/HomeTab/SettingScreen';
 import { ProfileEditScreen } from '../screens/HomeTab/SettingScreen/ProfileEditScreen';
 import { AppNoticeScreen } from '../screens/HomeTab/SettingScreen/AppNoticeScreen';
+import { AppNoticeDetailScreen } from '../screens/HomeTab/SettingScreen/AppNoticeDetailScreen';
 import { AccountModificationScreen } from '../screens/HomeTab/SettingScreen/AccountModificationScreen';
 import { NofiticationSettingScreen } from '../screens/HomeTab/SettingScreen/NofiticationSettingScreen';
 import { InquiriesScreen } from '../screens/HomeTab/SettingScreen/InquiriesScreen';
 import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScreen';
 import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
+import { CafeteriaDetailScreen } from '../screens/HomeTab/CafeteriaDetailScreen';
+import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalendarDetailScreen';
 import { NoticeScreen } from '../screens/NoticeScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
@@ -61,11 +64,14 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="Profile" component={ProfileScreen} />
       <HomeStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       <HomeStack.Screen name="AppNotice" component={AppNoticeScreen} />
+      <HomeStack.Screen name="AppNoticeDetail" component={AppNoticeDetailScreen} />
       <HomeStack.Screen name="AccountModification" component={AccountModificationScreen} />
       <HomeStack.Screen name="NotificationSetting" component={NofiticationSettingScreen} />
       <HomeStack.Screen name="Inquiries" component={InquiriesScreen} />
       <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+      <HomeStack.Screen name="CafeteriaDetail" component={CafeteriaDetailScreen} />
+      <HomeStack.Screen name="AcademicCalendarDetail" component={AcademicCalendarDetailScreen} />
     </HomeStack.Navigator>
   );
 };
@@ -172,7 +178,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
   // 탭별로 숨길 내부 스택 스크린 이름들
   const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
-    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy'],
+    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy', 'CafeteriaDetail', 'AcademicCalendarDetail'],
     '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
     '공지': ['NoticeDetail', 'NoticeDetailWebView'],
   };

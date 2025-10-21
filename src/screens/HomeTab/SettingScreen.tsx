@@ -19,8 +19,8 @@ export const SettingScreen = () => {
     navigation.navigate('NotificationSetting');
   };
 
-  const handleInquiry = () => {
-    navigation.navigate('Inquiries');
+  const handleInquiry = (type?: string) => {
+    navigation.navigate('Inquiries', { type });
   };
 
   const handleTerms = () => {
@@ -82,14 +82,44 @@ export const SettingScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>지원</Text>
           <View style={styles.sectionCard}>
-            <TouchableOpacity style={styles.menuItem} onPress={handleInquiry}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleInquiry('feature')}>
               <View style={styles.menuLeft}>
                 <View style={styles.iconContainer}>
-                  <Icon name="help-circle" size={20} color={COLORS.accent.red} />
+                  <Icon name="bulb" size={20} color={COLORS.accent.orange} />
                 </View>
                 <View style={styles.menuTextContainer}>
-                  <Text style={styles.menuText}>문의사항</Text>
-                  <Text style={styles.menuSubtext}>궁금한 점이 있으시면 문의해주세요</Text>
+                  <Text style={styles.menuText}>앱 기능 아이디어 제안</Text>
+                  <Text style={styles.menuSubtext}>SKTaxi에 추가됐으면 하는 기능을 제안해주세요</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+            
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleInquiry('bug')}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="bug" size={20} color={COLORS.accent.red} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>버그 신고</Text>
+                  <Text style={styles.menuSubtext}>발견하셨다면 커피쿠폰 쏴 드릴 수도.. ㅎㅎ</Text>
+                </View>
+              </View>
+              <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity style={styles.menuItem} onPress={() => handleInquiry()}>
+              <View style={styles.menuLeft}>
+                <View style={styles.iconContainer}>
+                  <Icon name="chatbubble" size={20} color={COLORS.accent.blue} />
+                </View>
+                <View style={styles.menuTextContainer}>
+                  <Text style={styles.menuText}>기타 문의</Text>
+                  <Text style={styles.menuSubtext}>계정 관련, 서비스 관련 문의사항을 보내주세요</Text>
                 </View>
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
@@ -223,15 +253,15 @@ const styles = StyleSheet.create({
   },
   menuTextContainer: {
     flex: 1,
+    gap: 4,
   },
   menuText: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
     fontWeight: '600',
-    marginBottom: 2,
   },
   menuSubtext: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
   },
   divider: {

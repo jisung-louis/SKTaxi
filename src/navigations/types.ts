@@ -31,11 +31,14 @@ export type HomeStackParamList = {
   Profile: undefined;
   ProfileEdit: undefined;
   AppNotice: undefined;
+  AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;
   NotificationSetting: undefined;
-  Inquiries: undefined;
+  Inquiries: { type?: string };
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;
+  CafeteriaDetail: { scrollToCategory?: string };
+  AcademicCalendarDetail: undefined;
 };
 
 export type AuthStackParamList = {
