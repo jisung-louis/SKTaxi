@@ -11,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { CourseSearchProvider } from './src/contexts/CourseSearchContext';
 import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
 import auth from '@react-native-firebase/auth';
@@ -31,9 +32,11 @@ const App = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <NavigationContainer>
-            <RootNavigator />
-          </NavigationContainer>
+          <CourseSearchProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </CourseSearchProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

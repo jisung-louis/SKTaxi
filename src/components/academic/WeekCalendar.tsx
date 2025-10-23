@@ -4,7 +4,7 @@ import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { AcademicScheduleWithColor } from '../../types/academic';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-import { isDateRangeOverlapping } from '../../utils/dateUtils';
+import { isDateRangeOverlapping, normalizeDate, isSameDate } from '../../utils/dateUtils';
 
 interface WeekCalendarProps {
   schedules: AcademicScheduleWithColor[];
@@ -35,12 +35,13 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
   // 이번 주의 날짜들 계산 (일요일 시작)
   const getWeekDates = () => {
     const dates: Date[] = [];
-    const today = new Date(currentDate);
-    const dayOfWeek = today.getDay();
+    // currentDate를 정규화하여 시간대 문제 방지
+    const normalizedCurrentDate = normalizeDate(currentDate.toISOString().split('T')[0]);
+    const dayOfWeek = normalizedCurrentDate.getDay();
     const diff = -dayOfWeek; // 일요일로 이동
     
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() + diff);
+    const sunday = new Date(normalizedCurrentDate);
+    sunday.setDate(normalizedCurrentDate.getDate() + diff);
     
     for (let i = 0; i < 7; i++) {
       const date = new Date(sunday);
@@ -60,8 +61,8 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
   const getEventPosition = (schedule: AcademicScheduleWithColor, weekDates: Date[]) => {
     const weekStart = weekDates[0];
     const weekEnd = weekDates[6];
-    const scheduleStart = new Date(schedule.startDate);
-    const scheduleEnd = new Date(schedule.endDate);
+    const scheduleStart = normalizeDate(schedule.startDate);
+    const scheduleEnd = normalizeDate(schedule.endDate);
     
     // 이벤트가 주차 내에서 시작하는 날짜 계산
     const eventStartInWeek = scheduleStart > weekStart ? scheduleStart : weekStart;
@@ -129,7 +130,7 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
       <View style={styles.weekHeader}>
         {weekDays.map((day, index) => {
           const date = weekDates[index];
-          const isToday = date.toISOString().split('T')[0] === today.toISOString().split('T')[0];
+          const isToday = isSameDate(date, today);
           
           return (
             <View key={index} style={styles.dayColumn}>
@@ -169,14 +170,14 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
                 const position = getEventPosition(schedule, weekDates);
                 
                 // 지난 일정인지 확인
-                const scheduleEndDate = new Date(schedule.endDate);
+                const scheduleEndDate = normalizeDate(schedule.endDate);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const isPastSchedule = scheduleEndDate < today;
                 
                 // 이벤트가 두 주 이상에 걸치는지 확인
-                const scheduleStart = new Date(schedule.startDate);
-                const scheduleEnd = new Date(schedule.endDate);
+                const scheduleStart = normalizeDate(schedule.startDate);
+                const scheduleEnd = normalizeDate(schedule.endDate);
                 const weekStart = weekDates[0];
                 const weekEnd = weekDates[6];
                 const isMultiWeek = scheduleStart < weekStart || scheduleEnd > weekEnd;
@@ -280,7 +281,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 2,
+    marginVertical: 4,
   },
   dateCircleToday: {
     backgroundColor: COLORS.accent.green,

@@ -19,6 +19,7 @@ import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScr
 import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
 import { CafeteriaDetailScreen } from '../screens/HomeTab/CafeteriaDetailScreen';
 import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalendarDetailScreen';
+import { TimetableDetailScreen } from '../screens/HomeTab/TimetableDetailScreen';
 import { NoticeScreen } from '../screens/NoticeScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
@@ -72,6 +73,7 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       <HomeStack.Screen name="CafeteriaDetail" component={CafeteriaDetailScreen} />
       <HomeStack.Screen name="AcademicCalendarDetail" component={AcademicCalendarDetailScreen} />
+      <HomeStack.Screen name="TimetableDetail" component={TimetableDetailScreen} />
     </HomeStack.Navigator>
   );
 };
@@ -178,7 +180,9 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
   // 탭별로 숨길 내부 스택 스크린 이름들
   const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
-    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy', 'CafeteriaDetail', 'AcademicCalendarDetail'],
+    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 
+      'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy', 
+      'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail'],
     '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
     '공지': ['NoticeDetail', 'NoticeDetailWebView'],
   };

@@ -203,11 +203,11 @@ export const AcademicCalendarSection = () => {
       {/* 기간 이동 */}
       <View style={styles.navRow}>
         <TouchableOpacity style={styles.navButton} onPress={movePrev}>
-          <Icon name="chevron-back" size={18} color={COLORS.text.primary} />
+          <Icon name="chevron-back" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <Text style={styles.navLabel}>{formatLabel()}</Text>
         <TouchableOpacity style={styles.navButton} onPress={moveNext}>
-          <Icon name="chevron-forward" size={18} color={COLORS.text.primary} />
+          <Icon name="chevron-forward" size={24} color={COLORS.text.primary} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.todayButton} onPress={moveToday}>
           <Text style={styles.todayText}>오늘</Text>
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   navLabel: {
-    ...TYPOGRAPHY.body1,
+    ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
     fontWeight: '600',
     flex: 1,
@@ -396,9 +396,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: COLORS.background.secondary,
     marginLeft: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border.dark,
   },
   todayText: {
-    ...TYPOGRAPHY.caption,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.primary,
     fontWeight: '600',
   },

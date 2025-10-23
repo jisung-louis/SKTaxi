@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, collection, query, orderBy, getDocs } from '@react-native-firebase/firestore';
-import { AcademicSchedule, AcademicScheduleWithColor, SCHEDULE_COLORS, ScheduleMessage } from '../types/academic';
+import { AcademicSchedule, AcademicScheduleWithColor, ScheduleMessage } from '../types/academic';
 import { normalizeDate, isDateAfterOrEqual, isDateBeforeOrEqual, isDateRangeOverlapping } from '../utils/dateUtils';
+import { ACADEMIC_SCHEDULE_COLORS, assignColor } from '../constants/colorPalettes';
 
 export const useAcademicSchedules = () => {
   const [schedules, setSchedules] = useState<AcademicScheduleWithColor[]>([]);
@@ -38,7 +39,7 @@ export const useAcademicSchedules = () => {
         // 전역 색상 할당 (날짜순으로 순환)
         const schedulesWithColors = schedulesData.map((schedule, index) => ({
           ...schedule,
-          color: SCHEDULE_COLORS[index % SCHEDULE_COLORS.length]
+          color: assignColor(index, ACADEMIC_SCHEDULE_COLORS)
         }));
 
         setSchedules(schedulesWithColors);
@@ -115,8 +116,11 @@ export const useAcademicSchedules = () => {
     const schedule = todaySchedules[0]; // 우선순위가 높은 일정 선택
     const startDate = new Date(schedule.startDate);
     const endDate = new Date(schedule.endDate);
-    const isFirstDay = todayStr === schedule.startDate;
-    const isLastDay = todayStr === schedule.endDate;
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const normalizedStartDate = normalizeDate(schedule.startDate);
+    const normalizedEndDate = normalizeDate(schedule.endDate);
+    const isFirstDay = todayDate.getTime() === normalizedStartDate.getTime();
+    const isLastDay = todayDate.getTime() === normalizedEndDate.getTime();
     const isMultiDay = schedule.type === 'multi';
 
     if (!isMultiDay) {

@@ -76,7 +76,7 @@ export const CafeteriaSection = () => {
         {CAFETERIA_CATEGORIES.map((category) => {
           const items = menu[category.id as keyof typeof menu] as string[];
           return (
-            <TouchableOpacity key={category.id} style={styles.categoryItem} onPress={() => handleCategoryPress(category.id)}>
+            <TouchableOpacity key={category.id} style={styles.categoryItem} activeOpacity={0.7} onPress={() => handleCategoryPress(category.id)}>
               <View style={styles.categoryHeader}>
                 {category.id === 'theBab' ? 
                 <IconFA6 name={category.icon} size={16} color={category.color} /> : 

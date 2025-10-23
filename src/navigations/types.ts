@@ -39,6 +39,7 @@ export type HomeStackParamList = {
   PrivacyPolicy: undefined;
   CafeteriaDetail: { scrollToCategory?: string };
   AcademicCalendarDetail: undefined;
+  TimetableDetail: { mode?: 'edit' };
 };
 
 export type AuthStackParamList = {

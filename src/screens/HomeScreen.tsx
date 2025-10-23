@@ -19,13 +19,7 @@ import { useNotices } from '../hooks/useNotices'; // SKTaxi: 공지사항 훅 �
 import { getFirestore, collection, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
 import { CafeteriaSection } from '../components/cafeteria/CafeteriaSection';
 import { AcademicCalendarSection } from '../components/academic/AcademicCalendarSection';
-
-type Food = {
-  id: string;
-  date: string;
-  dateTitle: '월' | '화' | '수' | '목' | '금' ;
-  title: string[];
-};
+import { TimetableSection } from '../components/timetable/TimetableSection';
 
 type SimpleNotice = { id: string; title: string; content?: string; postedAt?: any; category?: string };
 
@@ -150,256 +144,209 @@ export const HomeScreen = () => {
           }} 
           showsVerticalScrollIndicator={false}
         >
-        {/* Taxi Segment */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionTitleContainer}>
-              <Icon name="car" size={20} color={COLORS.accent.green} />
-              <Text style={styles.sectionTitle}>현재 모집중인 택시 파티</Text>
+          {/* Taxi Segment */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <Icon name="car" size={20} color={COLORS.accent.green} />
+                <Text style={styles.sectionTitle}>현재 모집중인 택시 파티</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.sectionActionButton}
+                onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })}
+              >
+                <Text style={styles.sectionAction}>모두 보기</Text>
+                <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              style={styles.sectionActionButton}
-              onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })}
-            >
-              <Text style={styles.sectionAction}>모두 보기</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={parties}
-            keyExtractor={(it) => it.id as string}
-            renderItem={({ item }) => 
-            <TouchableOpacity 
-              style={[styles.card, (item.status === 'arrived' || item.status === 'closed') && styles.cardDisabled]} 
-              activeOpacity={0.8} 
-              key={item.id as string}
-              onPress={() => handlePartyCardPress(item)}
-            >
-              <View style={styles.cardHeader}>
-                <View style={styles.cardTitleContainer}>
-                  <View style={styles.routeContainer}>
-                    <View style={styles.locationDot} />
-                    <Text style={styles.cardTitle}>{item.departure.name}</Text>
-                  </View>
-                  <Icon name="arrow-forward" size={16} color={COLORS.text.secondary} />
-                  <View style={styles.routeContainer}>
-                    <View style={[styles.locationDot, styles.destinationDot]} />
-                    <Text style={styles.cardTitle}>{item.destination.name}</Text>
+            <FlatList
+              data={parties}
+              keyExtractor={(it) => it.id as string}
+              renderItem={({ item }) => 
+              <TouchableOpacity 
+                style={[styles.card, (item.status === 'arrived' || item.status === 'closed') && styles.cardDisabled]} 
+                activeOpacity={0.8} 
+                key={item.id as string}
+                onPress={() => handlePartyCardPress(item)}
+              >
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardTitleContainer}>
+                    <View style={styles.routeContainer}>
+                      <View style={styles.locationDot} />
+                      <Text style={styles.cardTitle}>{item.departure.name}</Text>
+                    </View>
+                    <Icon name="arrow-forward" size={16} color={COLORS.text.secondary} />
+                    <View style={styles.routeContainer}>
+                      <View style={[styles.locationDot, styles.destinationDot]} />
+                      <Text style={styles.cardTitle}>{item.destination.name}</Text>
+                    </View>
                   </View>
                 </View>
+                <View style={styles.cardBodyContainer}>
+                  {item.detail ? (
+                    <View style={styles.detailContainer}>
+                      <Icon name="chatbubble-outline" size={14} color={COLORS.text.secondary} style={{ flex:1 }} />
+                      <Text style={[styles.cardSubtitle, { flex: 12 }]} numberOfLines={1}>{item.detail}</Text>
+                    </View>
+                  ) : null}
+                  <View style={styles.statusBadgeContainer}>
+                    <View style={styles.timeContainer}>
+                      <Icon name="time-outline" size={14} color={COLORS.accent.green} />
+                      <Text style={styles.cardTimeText}>{formatKoreanAmPmTime(item.departureTime)} 출발</Text>
+                    </View>
+                    <View style={[styles.statusBadge, (item.status === 'arrived' || item.status === 'closed') && styles.statusBadgeDisabled]}>
+                      <Text style={[styles.statusText, (item.status === 'arrived' || item.status === 'closed') && styles.statusTextDisabled]}>
+                        {item.status === 'arrived' ? '도착완료' : item.status === 'closed' ? '모집마감' : `${(item.members.length)}/${item.maxMembers}명`}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            }
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              ListEmptyComponent={() => 
+                <View style={styles.emptyContainer}>
+                  <Image source={require('../../assets/images/empty_taxi_party.png')} style={styles.emptyImage} />
+                  <View style={styles.emptyTextContainer}>
+                    <Text style={styles.emptyText}>모집 중인 파티가 없어요</Text>
+                    <Text style={styles.emptyText}>첫 번째 파티를 만들어보세요!</Text>
+                    <Button 
+                      title="파티 만들기" 
+                      onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })} 
+                      size="small"
+                      style={styles.emptyButton}
+                    />
+                  </View>
+                </View>
+                }
+            />
+          </View>
+
+          <Surface color={COLORS.background.surface} height={1} margin={24} />
+
+          {/* Notice Segment */}
+          <View style={styles.section}>
+            <View style={[styles.sectionHeader, { position: 'relative' }]}>
+              <View style={styles.sectionTitleContainer}>
+                <Icon name="megaphone" size={20} color={COLORS.accent.blue} />
+                <TouchableOpacity
+                  style={styles.sectionDropdownContainer}
+                  activeOpacity={0.8}
+                  onPress={() => setIsNoticeDropdownOpen(v => !v)}
+                >
+                  <Text style={styles.sectionTitle}>{noticeType}</Text>
+                  <Icon
+                    name={isNoticeDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+                    size={18}
+                    color={COLORS.text.primary}
+                  />
+                </TouchableOpacity>
               </View>
-              <View style={styles.cardBodyContainer}>
-                {item.detail ? (
-                  <View style={styles.detailContainer}>
-                    <Icon name="chatbubble-outline" size={14} color={COLORS.text.secondary} style={{ flex:1 }} />
-                    <Text style={[styles.cardSubtitle, { flex: 12 }]} numberOfLines={1}>{item.detail}</Text>
+              {isNoticeDropdownOpen && (
+                <View style={styles.dropdownMenu}>
+                  {([
+                    '학교 공지사항', 
+                    //'내 과 공지사항'
+                  ] as const).map(label => (
+                    <TouchableOpacity
+                      key={label}
+                      style={[styles.dropdownItem, noticeType === label && styles.dropdownItemSelected]}
+                      onPress={() => {
+                        setNoticeType(label);
+                        setIsNoticeDropdownOpen(false);
+                      }}
+                    >
+                      <Text style={[styles.dropdownItemText, noticeType === label && styles.dropdownItemTextSelected]}>
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              <TouchableOpacity 
+                style={styles.sectionActionButton}
+                onPress={() => navigation.navigate('공지', { screen: 'NoticeMain' })}
+              >
+                <Text style={styles.sectionAction}>모두 보기</Text>
+                <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={recentNotices}
+              keyExtractor={(it) => it.id}
+              renderItem={({ item }) => 
+              <TouchableOpacity 
+                style={styles.noticeCard} 
+                activeOpacity={0.8}
+                onPress={() => {
+                  markAsRead(item.id);
+                  navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } });
+                }}
+              >
+                <View style={styles.noticeCardHeader}>
+                  <View style={styles.noticeHeaderLeft}>
+                    <View style={styles.noticeIconContainer}>
+                      <Icon name="document-text" size={16} color={COLORS.accent.blue} />
+                    </View>
+                    {!!item.category && (
+                      <View style={styles.noticeChip}>
+                        <Text style={styles.noticeChipText}>{item.category}</Text>
+                      </View>
+                    )}
                   </View>
-                ) : null}
-                <View style={styles.statusBadgeContainer}>
-                  <View style={styles.timeContainer}>
-                    <Icon name="time-outline" size={14} color={COLORS.accent.green} />
-                    <Text style={styles.cardTimeText}>{formatKoreanAmPmTime(item.departureTime)} 출발</Text>
-                  </View>
-                  <View style={[styles.statusBadge, (item.status === 'arrived' || item.status === 'closed') && styles.statusBadgeDisabled]}>
-                    <Text style={[styles.statusText, (item.status === 'arrived' || item.status === 'closed') && styles.statusTextDisabled]}>
-                      {item.status === 'arrived' ? '도착완료' : item.status === 'closed' ? '모집마감' : `${(item.members.length)}/${item.maxMembers}명`}
+                  <Icon name="chevron-forward" size={16} color={COLORS.text.secondary} />
+                </View>
+
+                <Text style={styles.noticeCardTitle} numberOfLines={2}>{item.title}</Text>
+                {!!item.content && (
+                  <Text style={styles.noticeCardSubtitle} numberOfLines={3}>{item.content}</Text>
+                )}
+
+                <View style={styles.noticeMetaRow}>
+                  <View style={styles.noticeMetaLeft}>
+                    <Icon name="time-outline" size={12} color={COLORS.text.secondary} />
+                    <Text style={styles.noticeTimeText} numberOfLines={1}>
+                      {(() => {
+                        try {
+                          const d: any = (item as any)?.postedAt;
+                          const dt = d?.toDate ? d.toDate() : (d? new Date(d): null);
+                          return dt ? dt.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit'}) + ' ' + dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit'}) : '';
+                        } catch { return ''; }
+                      })()}
                     </Text>
                   </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          }
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            ListEmptyComponent={() => 
+              </TouchableOpacity>
+            }
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              ListEmptyComponent={() => 
               <View style={styles.emptyContainer}>
-                <Image source={require('../../assets/images/empty_taxi_party.png')} style={styles.emptyImage} />
                 <View style={styles.emptyTextContainer}>
-                  <Text style={styles.emptyText}>모집 중인 파티가 없어요</Text>
-                  <Text style={styles.emptyText}>첫 번째 파티를 만들어보세요!</Text>
-                  <Button 
-                    title="파티 만들기" 
-                    onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })} 
-                    size="small"
-                    style={styles.emptyButton}
-                  />
+                  <Text style={styles.emptyText}>{loadingNotices ? '공지사항을 불러오는 중...' : '현재 공지 정보가 없습니다.'}</Text>
                 </View>
               </View>
               }
-          />
-        </View>
-
-        <Surface color={COLORS.background.surface} height={1} margin={24} />
-
-        {/* Notice Segment */}
-        <View style={styles.section}>
-          <View style={[styles.sectionHeader, { position: 'relative' }]}>
-            <View style={styles.sectionTitleContainer}>
-              <Icon name="megaphone" size={20} color={COLORS.accent.blue} />
-              <TouchableOpacity
-                style={styles.sectionDropdownContainer}
-                activeOpacity={0.8}
-                onPress={() => setIsNoticeDropdownOpen(v => !v)}
-              >
-                <Text style={styles.sectionTitle}>{noticeType}</Text>
-                <Icon
-                  name={isNoticeDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-                  size={18}
-                  color={COLORS.text.primary}
-                />
-              </TouchableOpacity>
-            </View>
-            {isNoticeDropdownOpen && (
-              <View style={styles.dropdownMenu}>
-                {([
-                  '학교 공지사항', 
-                  //'내 과 공지사항'
-                ] as const).map(label => (
-                  <TouchableOpacity
-                    key={label}
-                    style={[styles.dropdownItem, noticeType === label && styles.dropdownItemSelected]}
-                    onPress={() => {
-                      setNoticeType(label);
-                      setIsNoticeDropdownOpen(false);
-                    }}
-                  >
-                    <Text style={[styles.dropdownItemText, noticeType === label && styles.dropdownItemTextSelected]}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-            <TouchableOpacity 
-              style={styles.sectionActionButton}
-              onPress={() => navigation.navigate('공지', { screen: 'NoticeMain' })}
-            >
-              <Text style={styles.sectionAction}>모두 보기</Text>
-              <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
-            </TouchableOpacity>
+            />
           </View>
-          <FlatList
-            data={recentNotices}
-            keyExtractor={(it) => it.id}
-            renderItem={({ item }) => 
-            <TouchableOpacity 
-              style={styles.noticeCard} 
-              activeOpacity={0.8}
-              onPress={() => {
-                markAsRead(item.id);
-                navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } });
-              }}
-            >
-              <View style={styles.noticeCardHeader}>
-                <View style={styles.noticeHeaderLeft}>
-                  <View style={styles.noticeIconContainer}>
-                    <Icon name="document-text" size={16} color={COLORS.accent.blue} />
-                  </View>
-                  {!!item.category && (
-                    <View style={styles.noticeChip}>
-                      <Text style={styles.noticeChipText}>{item.category}</Text>
-                    </View>
-                  )}
-                </View>
-                <Icon name="chevron-forward" size={16} color={COLORS.text.secondary} />
-              </View>
 
-              <Text style={styles.noticeCardTitle} numberOfLines={2}>{item.title}</Text>
-              {!!item.content && (
-                <Text style={styles.noticeCardSubtitle} numberOfLines={3}>{item.content}</Text>
-              )}
+          <Surface color={COLORS.background.surface} height={1} margin={24} />
 
-              <View style={styles.noticeMetaRow}>
-                <View style={styles.noticeMetaLeft}>
-                  <Icon name="time-outline" size={12} color={COLORS.text.secondary} />
-                  <Text style={styles.noticeTimeText} numberOfLines={1}>
-                    {(() => {
-                      try {
-                        const d: any = (item as any)?.postedAt;
-                        const dt = d?.toDate ? d.toDate() : (d? new Date(d): null);
-                        return dt ? dt.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit'}) + ' ' + dt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit'}) : '';
-                      } catch { return ''; }
-                    })()}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          }
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-            ListEmptyComponent={() => 
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyTextContainer}>
-                <Text style={styles.emptyText}>{loadingNotices ? '공지사항을 불러오는 중...' : '현재 공지 정보가 없습니다.'}</Text>
-              </View>
-            </View>
-            }
-          />
-        </View>
+          {/* 학식 섹션 */}
+          <CafeteriaSection />
 
-        <Surface color={COLORS.background.surface} height={1} margin={24} />
+          <Surface color={COLORS.background.surface} height={1} margin={24} />
 
-        {/* 학식 섹션 */}
-        <CafeteriaSection />
+          {/* 학사일정 섹션 */}
+          <AcademicCalendarSection />
 
-        <Surface color={COLORS.background.surface} height={1} margin={24} />
-
-        {/* 학사일정 섹션 */}
-        <AcademicCalendarSection />
-
-        <Surface color={COLORS.background.surface} height={1} margin={24} />
-
-        {/* Academic Calendar */}
-        {/* <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>학사일정</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionAction}>자세히</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.calendarCard}>
-            <View style={styles.calendarRow}>
-              <Text style={styles.calendarDot}>•</Text>
-              <Text style={styles.calendarText}>수강신청 정정 기간 (9/2 ~ 9/6)</Text>
-            </View>
-            <View style={styles.calendarRow}>
-              <Text style={styles.calendarDot}>•</Text>
-              <Text style={styles.calendarText}>중간고사 (10/21 ~ 10/25)</Text>
-            </View>
-            <View style={styles.calendarRow}>
-              <Text style={styles.calendarDot}>•</Text>
-              <Text style={styles.calendarText}>축제 주간 (9/27)</Text>
-            </View>
-          </View>
-        </View>
-
-        <Surface color={COLORS.background.surface} height={1} margin={24} /> */}
+          <Surface color={COLORS.background.surface} height={1} margin={24} />
 
         {/* My Timetable */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>내 시간표</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionAction}>편집</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.timetableCard}>
-            <View style={styles.timetableRow}>
-              <Text style={styles.timetableTime}>09:00</Text>
-              <Text style={styles.timetableCourse}>자료구조 (공학관 302)</Text>
-            </View>
-            <View style={styles.timetableRow}>
-              <Text style={styles.timetableTime}>13:00</Text>
-              <Text style={styles.timetableCourse}>모바일프로그래밍 (IT관 201)</Text>
-            </View>
-            <View style={styles.timetableRow}>
-              <Text style={styles.timetableTime}>16:00</Text>
-              <Text style={styles.timetableCourse}>캡스톤디자인 (공학관 101)</Text>
-            </View>
-          </View>
-        </View>
+        <TimetableSection />
         </ScrollView>
       </Animated.View>
     </SafeAreaView>

@@ -21,6 +21,7 @@ export const AcademicCalendarDetailScreen = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const scrollViewRef = useRef<ScrollView>(null);
   const scheduleRefs = useRef<{ [key: string]: View | null }>({});
+  const hasScrolledToSchedule = useRef<boolean>(false);
 
   // Route params에서 scheduleId와 initialDate 가져오기
   const { scheduleId, initialDate } = (route.params as any) || {};
@@ -132,11 +133,12 @@ export const AcademicCalendarDetailScreen = () => {
     }
   }, [currentMonthSchedules]);
 
-  // scheduleId가 있으면 해당 일정으로 자동 스크롤
+  // scheduleId가 있으면 해당 일정으로 자동 스크롤 (한 번만 실행)
   useEffect(() => {
-    if (scheduleId && currentMonthSchedules.length > 0) {
+    if (scheduleId && currentMonthSchedules.length > 0 && !hasScrolledToSchedule.current) {
       const targetSchedule = currentMonthSchedules.find(schedule => schedule.id === scheduleId);
       if (targetSchedule) {
+        hasScrolledToSchedule.current = true; // 스크롤 실행 플래그 설정
         // 약간의 지연을 두고 스크롤 (렌더링 완료 후)
         setTimeout(() => {
           handleSchedulePress(targetSchedule);
