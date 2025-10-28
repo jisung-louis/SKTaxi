@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
 import https from 'https';
@@ -56,6 +56,147 @@ const NOTICE_CATEGORIES = {
 const RSS_BASE_URL = 'https://www.sungkyul.ac.kr/bbs/skukr';
 const BASE_URL = 'https://www.sungkyul.ac.kr';
 
+// SKTaxi: userNotifications 생성 헬퍼 함수
+async function createUserNotification(userId: string, notificationData: {
+  type: string;
+  title: string;
+  message: string;
+  data?: any;
+}) {
+  try {
+    const notificationRef = db.collection('userNotifications')
+      .doc(userId)
+      .collection('notifications')
+      .doc();
+    
+    await notificationRef.set({
+      id: notificationRef.id,
+      type: notificationData.type,
+      title: notificationData.title,
+      message: notificationData.message,
+      data: notificationData.data || {},
+      isRead: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    
+    console.log(`✅ userNotification 생성 완료: ${userId} - ${notificationData.type}`);
+  } catch (error) {
+    console.error(`❌ userNotification 생성 실패 (${userId}):`, error);
+  }
+}
+
+// SKTaxi: 파티 생성 알림 (모든 유저에게 전송)
+export const onPartyCreate = onDocumentCreated('parties/{partyId}', async (event) => {
+  const snap = event.data;
+  if (!snap) return;
+  const partyData = snap.data() as any;
+  const leaderId = partyData?.leaderId as string | undefined;
+  const partyId = String(event.params.partyId || '');
+  
+  if (!leaderId || !partyData) return;
+  
+  try {
+    // 모든 유저의 FCM 토큰 수집 (리더 제외, 택시 알림 해제 유저 제외)
+    const tokens: string[] = [];
+    const allUsersSnapshot = await db.collection('users').get();
+    
+    for (const userDoc of allUsersSnapshot.docs) {
+      const userId = userDoc.id;
+      
+      // 리더는 제외
+      if (userId === leaderId) continue;
+      
+      // 택시 알림 설정 확인
+      const notificationSettings = userDoc.get('notificationSettings') || {};
+      const partyNotificationsEnabled = notificationSettings.partyNotifications !== false; // 기본값 true
+      
+      // 파티 알림이 해제된 유저는 제외
+      if (!partyNotificationsEnabled) continue;
+      
+      const userTokens: string[] = (userDoc.get('fcmTokens') || []) as string[];
+      tokens.push(...userTokens);
+    }
+    
+    if (tokens.length === 0) return;
+    
+    // Push 알림 메시지 구성
+    const departureName = partyData.departure?.name || '출발지';
+    const destinationName = partyData.destination?.name || '목적지';
+    
+    // 시간 포맷팅 (UTC에서 한국 시간으로 변환: +9시간)
+    let departureTimeStr = '출발 시간';
+    if (partyData.departureTime) {
+      const date = new Date(partyData.departureTime);
+      // UTC 시간에 9시간 추가
+      const kstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+      
+      let hours = kstDate.getUTCHours();
+      const minutes = kstDate.getUTCMinutes().toString().padStart(2, '0');
+      
+      // 오전/오후 판단
+      const isAM = hours < 12;
+      if (hours > 12) hours -= 12;
+      if (hours === 0) hours = 12;
+      
+      const ampm = isAM ? '오전' : '오후';
+      const hoursStr = hours.toString();
+      
+      departureTimeStr = `${ampm} ${hoursStr}시 ${minutes}분`;
+    }
+    
+    const titleText = `${departureName} → ${destinationName} 택시 파티 등장`;
+    const bodyText = `${departureTimeStr}에 ${departureName}에서 ${destinationName}로 가는 파티가 등장했어요.\n동승 요청 해보세요!`;
+    
+    const message = {
+      tokens,
+      notification: {
+        title: titleText,
+        body: bodyText,
+      },
+      data: {
+        type: 'party_created',
+        partyId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 새 파티 생성 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      // 각 유저 문서에서 죽은 토큰 제거
+      for (const userDoc of allUsersSnapshot.docs) {
+        const userId = userDoc.id;
+        if (userId === leaderId) continue; // 리더는 제외
+        
+        const notificationSettings = userDoc.get('notificationSettings') || {};
+        const partyNotificationsEnabled = notificationSettings.partyNotifications !== false;
+        if (!partyNotificationsEnabled) continue;
+        
+        try {
+          const userRef = db.doc(`users/${userId}`);
+          const cur: string[] = (userDoc.get('fcmTokens') || []) as string[];
+          const next = cur.filter((t) => !failedTokens.includes(t));
+          if (next.length !== cur.length) {
+            await userRef.update({ fcmTokens: next });
+          }
+        } catch (error) {
+          console.error(`❌ 사용자 ${userId} 토큰 업데이트 실패:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ 새 파티 생성 알림 전송 실패:', error);
+  }
+});
+
 export const onJoinRequestCreate = onDocumentCreated('joinRequests/{requestId}', async (event) => {
   const snap = event.data;
   if (!snap) return;
@@ -98,6 +239,530 @@ export const onJoinRequestCreate = onDocumentCreated('joinRequests/{requestId}',
       tx.update(ref, { fcmTokens: next });
     });
   }
+  
+  // SKTaxi: userNotification 생성
+  await createUserNotification(leaderId, {
+    type: 'party_join_request',
+    title: '동승 요청이 도착했어요',
+    message: '앱에서 확인하고 수락/거절을 선택해주세요.',
+    data: {
+      partyId: String(req?.partyId || ''),
+      requestId: String(event.params.requestId || ''),
+      requesterId: String(req?.requesterId || ''),
+    },
+  });
+});
+
+// SKTaxi: 동승 요청 승인/거절 알림
+export const onJoinRequestUpdate = onDocumentUpdated('joinRequests/{requestId}', async (event) => {
+  if (!event.data) return;
+  
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+  
+  // status가 변경되지 않았으면 무시
+  if (beforeData.status === afterData.status) return;
+  
+  const status = afterData.status;
+  const requesterId = afterData.requesterId;
+  const partyId = afterData.partyId;
+  
+  if (!requesterId || !partyId) return;
+  
+  try {
+    // 요청자의 FCM 토큰 가져오기
+    const userDoc = await db.doc(`users/${requesterId}`).get();
+    const tokens: string[] = (userDoc.get('fcmTokens') || []) as string[];
+    
+    if (tokens.length === 0) {
+      console.log('📢 동승 요청 알림: FCM 토큰이 없습니다.');
+      return;
+    }
+    
+    let notification;
+    let dataType;
+    
+    if (status === 'accepted') {
+      notification = {
+        title: '동승 요청이 승인되었어요',
+        body: '파티에 합류하세요!',
+      };
+      dataType = 'party_join_accepted';
+    } else if (status === 'declined') {
+      notification = {
+        title: '동승 요청이 거절되었어요',
+        body: '다른 파티를 찾아보세요.',
+      };
+      dataType = 'party_join_rejected';
+    } else {
+      return;
+    }
+    
+    const message = {
+      tokens,
+      notification,
+      data: {
+        type: dataType,
+        partyId: String(partyId),
+        requestId: String(event.params.requestId || ''),
+        requesterId: String(requesterId),
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 동승 요청 ${status} 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      await db.runTransaction(async (tx) => {
+        const ref = db.doc(`users/${requesterId}`);
+        const snapUser = await tx.get(ref);
+        const cur: string[] = (snapUser.get('fcmTokens') || []) as string[];
+        const next = cur.filter((t) => !failedTokens.includes(t));
+        tx.update(ref, { fcmTokens: next });
+      });
+    }
+    
+    // SKTaxi: userNotification 생성
+    await createUserNotification(requesterId, {
+      type: dataType,
+      title: notification.title,
+      message: notification.body,
+      data: {
+        partyId: String(partyId),
+        requestId: String(event.params.requestId || ''),
+        requesterId: String(requesterId),
+      },
+    });
+  } catch (error) {
+    console.error('❌ 동승 요청 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 채팅 메시지 생성 시 알림
+export const onChatMessageCreated = onDocumentCreated('chats/{partyId}/messages/{messageId}', async (event) => {
+  if (!event.data) return;
+  
+  const messageData = event.data.data();
+  const partyId = event.params.partyId;
+  const senderId = messageData?.senderId;
+  
+  if (!senderId || !partyId) return;
+  
+  try {
+    // 파티 정보 조회
+    const partyDoc = await db.doc(`parties/${partyId}`).get();
+    const partyData = partyDoc.data();
+    
+    if (!partyData) return;
+    
+    const members = Array.isArray(partyData.members) ? partyData.members : [];
+    
+    // 리더를 포함한 모든 멤버 중 본인을 제외한 멤버들에게 알림
+    const targetMembers = members.filter((memberId: string) => memberId !== senderId);
+    
+    if (targetMembers.length === 0) return;
+    
+    // FCM 토큰 수집 및 채팅방 음소거 체크
+    const tokens: string[] = [];
+    const notificationType = messageData.type || 'message';
+    const senderName = messageData.senderName || '익명';
+    const messageText = messageData.text || '';
+    
+    // userNotification은 항상 생성 (앱 내부 알림용)
+    for (const memberId of targetMembers) {
+      try {
+        // 채팅방 음소거 체크
+        const settingsDoc = await db.doc(`chats/${partyId}/notificationSettings/${memberId}`).get();
+        const settingsData = settingsDoc.data();
+        const isMuted = settingsData?.muted || false;
+        
+        if (isMuted) {
+          // 음소거된 경우 Push 전송 스킵
+          continue;
+        }
+        
+        const userDoc = await db.doc(`users/${memberId}`).get();
+        const userTokens = (userDoc.get('fcmTokens') || []) as string[];
+        tokens.push(...userTokens);
+      } catch (error) {
+        console.error(`Error processing member ${memberId}:`, error);
+      }
+    }
+    
+    // 시스템 메시지는 Push 전송하지 않음
+    if (notificationType === 'system' || notificationType === 'account') {
+      return;
+    }
+    
+    if (tokens.length === 0) return;
+    
+    // Push 알림 메시지 구성
+    const message = {
+      tokens,
+      notification: {
+        title: `${senderName}님의 메시지`,
+        body: messageText.length > 50 ? messageText.substring(0, 50) + '...' : messageText,
+      },
+      data: {
+        type: 'chat_message',
+        partyId,
+        messageId: event.params.messageId,
+        senderId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 채팅 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      await Promise.all(targetMembers.map(async (uid) => {
+        try {
+          const userRef = db.doc(`users/${uid}`);
+          const userSnap = await userRef.get();
+          const cur: string[] = (userSnap.get('fcmTokens') || []) as string[];
+          const next = cur.filter((t) => !failedTokens.includes(t));
+          if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+        } catch {}
+      }));
+    }
+  } catch (error) {
+    console.error('❌ 채팅 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 파티 상태 변경 알림
+export const onPartyStatusUpdate = onDocumentUpdated('parties/{partyId}', async (event) => {
+  if (!event.data) return;
+  
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+  
+  // status가 변경되지 않았으면 무시
+  if (beforeData.status === afterData.status) return;
+  
+  const beforeStatus = beforeData.status;
+  const afterStatus = afterData.status;
+  
+  // 알림을 보낼 상태 변경만 허용
+  // 1. open -> closed (모집 마감)
+  // 2. any -> arrived (도착) - 어떤 상태에서든 도착이면 알림
+  // 3. closed -> open (모집 재개) - 이 경우는 리더만 하므로 알림 불필요
+  const shouldNotify = (beforeStatus === 'open' && afterStatus === 'closed') || 
+                       (afterStatus === 'arrived');
+  
+  if (!shouldNotify) {
+    return;
+  }
+  
+  const status = afterStatus;
+  const members = Array.isArray(afterData.members) ? afterData.members : [];
+  const leaderId = afterData.leaderId;
+  
+  // 리더를 제외한 멤버들에게만 알림 전송
+  const memberIds = members.filter((memberId: string) => memberId !== leaderId);
+  if (memberIds.length === 0) return;
+  
+  try {
+    // 멤버들의 FCM 토큰 수집
+    const tokens: string[] = [];
+    for (const memberId of memberIds) {
+      try {
+        const userDoc = await db.doc(`users/${memberId}`).get();
+        const userTokens = (userDoc.get('fcmTokens') || []) as string[];
+        tokens.push(...userTokens);
+        
+        // userNotification은 항상 생성 (앱 내부 알림용)
+        if (status === 'arrived') {
+          await createUserNotification(memberId, {
+            type: 'party_arrived',
+            title: '택시가 목적지에 도착했어요',
+            message: '정산을 진행해주세요.',
+            data: { partyId: String(event.params.partyId || '') },
+          });
+        }
+        // party_closed는 userNotification 생성하지 않음 (NotificationScreen에 표시하지 않음)
+      } catch (error) {
+        console.error(`Error getting tokens for user ${memberId}:`, error);
+      }
+    }
+    
+    if (tokens.length === 0) return;
+    
+    // Push 알림 메시지 구성
+    let message: any;
+    if (status === 'closed') {
+      message = {
+        tokens,
+        notification: {
+          title: '파티 모집이 마감되었어요',
+          body: '리더가 파티 모집을 마감했습니다.',
+        },
+        data: {
+          type: 'party_closed',
+          partyId: String(event.params.partyId || ''),
+        },
+        apns: { payload: { aps: { sound: 'default' } } },
+        android: { priority: 'high' as const },
+      };
+    } else if (status === 'arrived') {
+      message = {
+        tokens,
+        notification: {
+          title: '택시가 목적지에 도착했어요',
+          body: '정산을 진행해주세요.',
+        },
+        data: {
+          type: 'party_arrived',
+          partyId: String(event.params.partyId || ''),
+        },
+        apns: { payload: { aps: { sound: 'default' } } },
+        android: { priority: 'high' as const },
+      };
+    } else {
+      return;
+    }
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 파티 상태 변경 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      await Promise.all(memberIds.map(async (uid) => {
+        try {
+          const userRef = db.doc(`users/${uid}`);
+          const userSnap = await userRef.get();
+          const cur: string[] = (userSnap.get('fcmTokens') || []) as string[];
+          const next = cur.filter((t) => !failedTokens.includes(t));
+          if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+        } catch {}
+      }));
+    }
+  } catch (error) {
+    console.error('❌ 파티 상태 변경 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 정산 완료 감지 및 알림 전송
+export const onSettlementComplete = onDocumentUpdated('parties/{partyId}', async (event) => {
+  if (!event.data) return;
+  
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+  
+  // arrived 상태가 아니면 무시
+  if (afterData.status !== 'arrived') return;
+  
+  // settlement가 없으면 무시
+  if (!afterData.settlement || !afterData.settlement.members) return;
+  
+  const beforeSettlement = beforeData.settlement;
+  const afterSettlement = afterData.settlement;
+  
+  // settlement.members가 있는지 확인
+  if (!beforeSettlement || !beforeSettlement.members || !afterSettlement.members) return;
+  
+  const beforeMembers = Object.keys(beforeSettlement.members);
+  const afterMembers = Object.keys(afterSettlement.members);
+  
+  // 모든 멤버가 settled가 되었는지 확인
+  const allSettled = afterMembers.every((memberId: string) => {
+    return afterSettlement.members[memberId]?.settled === true;
+  });
+  
+  // 모든 멤버가 정산 완료되었는지, 그리고 이전에는 완료되지 않았는지 확인
+  const wasIncomplete = beforeMembers.some((memberId: string) => {
+    return !beforeSettlement.members[memberId]?.settled;
+  });
+  
+  // 이미 완료된 상태였다면 무시
+  if (!wasIncomplete) return;
+  
+  // 모든 멤버가 정산 완료된 경우에만 알림 전송
+  if (!allSettled) return;
+  
+  const members = Array.isArray(afterData.members) ? afterData.members : [];
+  if (members.length === 0) return;
+  
+  // 모든 멤버에게 알림 (리더 포함)
+  const memberIds = members;
+  
+  try {
+    const tokens: string[] = [];
+    for (const memberId of memberIds) {
+      try {
+        const userDoc = await db.doc(`users/${memberId}`).get();
+        const userTokens = (userDoc.get('fcmTokens') || []) as string[];
+        tokens.push(...userTokens);
+        
+        // userNotification 생성
+        await createUserNotification(memberId, {
+          type: 'settlement_completed',
+          title: '모든 정산이 완료되었어요',
+          message: '동승 파티 종료 준비가 되었습니다.',
+          data: { partyId: String(event.params.partyId || '') },
+        });
+      } catch (error) {
+        console.error(`Error processing member ${memberId}:`, error);
+      }
+    }
+    
+    if (tokens.length === 0) return;
+    
+    const message = {
+      tokens,
+      notification: {
+        title: '모든 정산이 완료되었어요',
+        body: '동승 파티 종료 준비가 되었습니다.',
+      },
+      data: {
+        type: 'settlement_completed',
+        partyId: String(event.params.partyId || ''),
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 정산 완료 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      await Promise.all(memberIds.map(async (uid) => {
+        try {
+          const userRef = db.doc(`users/${uid}`);
+          const userSnap = await userRef.get();
+          const cur: string[] = (userSnap.get('fcmTokens') || []) as string[];
+          const next = cur.filter((t) => !failedTokens.includes(t));
+          if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+        } catch {}
+      }));
+    }
+  } catch (error) {
+    console.error('❌ 정산 완료 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 멤버 강퇴 감지 및 알림
+export const onPartyMemberKicked = onDocumentUpdated('parties/{partyId}', async (event) => {
+  if (!event.data) return;
+  
+  const beforeData = event.data.before.data();
+  const afterData = event.data.after.data();
+  
+  const beforeMembers = Array.isArray(beforeData.members) ? beforeData.members : [];
+  const afterMembers = Array.isArray(afterData.members) ? afterData.members : [];
+  
+  // members에서 사라진 멤버 찾기
+  const kickedMembers = beforeMembers.filter((memberId: string) => !afterMembers.includes(memberId));
+  
+  if (kickedMembers.length === 0) return;
+  
+  const leaderId = afterData.leaderId;
+  const partyId = String(event.params.partyId || '');
+  const selfLeaveMemberId = afterData._selfLeaveMemberId;
+  
+  // 자가 나가기한 멤버인 경우 알림 전송하지 않음
+  if (kickedMembers.length === 1 && kickedMembers[0] === selfLeaveMemberId) {
+    console.log('🔔 자가 나가기 감지 - 알림 전송하지 않음');
+    return;
+  }
+  
+  // 강퇴당한 멤버에게 알림 전송
+  for (const kickedMemberId of kickedMembers) {
+    // 리더는 제외 (자신을 강퇴할 수 없음)
+    if (kickedMemberId === leaderId) continue;
+    
+    try {
+      // SKTaxi: 해당 파티와 관련된 userNotifications 삭제
+      const notificationsRef = db.collection('userNotifications').doc(kickedMemberId).collection('notifications');
+      const snapshot = await notificationsRef.where('data.partyId', '==', partyId).get();
+      
+      // 배치 삭제
+      const batch = db.batch();
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      console.log(`✅ 강퇴된 ${kickedMemberId}의 파티 관련 알림 ${snapshot.size}개 삭제 완료`);
+      
+      // FCM 토큰 가져오기
+      const userDoc = await db.doc(`users/${kickedMemberId}`).get();
+      const tokens: string[] = (userDoc.get('fcmTokens') || []) as string[];
+      
+      // userNotification 생성 (강퇴 알림은 남김, 다른 파티 알림만 삭제)
+      await createUserNotification(kickedMemberId, {
+        type: 'member_kicked',
+        title: '파티에서 강퇴되었어요',
+        message: '리더가 당신을 파티에서 나가게 했습니다.',
+        data: { partyId },
+      });
+      
+      if (tokens.length === 0) continue;
+      
+      const message = {
+        tokens,
+        notification: {
+          title: '파티에서 강퇴되었어요',
+          body: '리더가 당신을 파티에서 나가게 했습니다.',
+        },
+        data: {
+          type: 'member_kicked',
+          partyId: String(event.params.partyId || ''),
+        },
+        apns: { payload: { aps: { sound: 'default' } } },
+        android: { priority: 'high' as const },
+      };
+      
+      const resp = await fcm.sendEachForMulticast(message as any);
+      console.log(`📢 멤버 강퇴 알림 전송 (${kickedMemberId}): 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+      
+      // 실패한 토큰 정리
+      const failedTokens: string[] = [];
+      resp.responses.forEach((r, idx) => {
+        if (!r.success) failedTokens.push((message as any).tokens[idx]);
+      });
+      
+      if (failedTokens.length) {
+        try {
+          const userRef = db.doc(`users/${kickedMemberId}`);
+          const userSnap = await userRef.get();
+          const cur: string[] = (userSnap.get('fcmTokens') || []) as string[];
+          const next = cur.filter((t) => !failedTokens.includes(t));
+          if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+        } catch (error) {
+          console.error(`Failed to cleanup tokens for user ${kickedMemberId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing kicked member ${kickedMemberId}:`, error);
+    }
+  }
 });
 
 // SKTaxi: 파티 삭제 시 멤버들에게 알림 전송
@@ -107,12 +772,38 @@ export const onPartyDelete = onDocumentDeleted('parties/{partyId}', async (event
   const partyData = snap.data() as any;
   const members = partyData?.members as string[] | undefined;
   const leaderId = partyData?.leaderId as string | undefined;
+  const partyId = String(event.params.partyId || '');
   
   if (!members || !Array.isArray(members) || members.length <= 1) return; // 리더만 있으면 알림 불필요
 
   // SKTaxi: 리더를 제외한 멤버들에게만 알림 전송
   const memberIds = members.filter((memberId: string) => memberId !== leaderId);
   if (memberIds.length === 0) return;
+  
+  // SKTaxi: 해당 파티와 관련된 userNotifications 삭제 (모든 멤버 + 리더)
+  const allMembers = [...members];
+  if (leaderId) {
+    allMembers.push(leaderId);
+  }
+  
+  for (const memberId of allMembers) {
+    try {
+      // 해당 파티와 관련된 알림 삭제
+      const notificationsRef = db.collection('userNotifications').doc(memberId).collection('notifications');
+      const snapshot = await notificationsRef.where('data.partyId', '==', partyId).get();
+      
+      // 배치 삭제
+      const batch = db.batch();
+      snapshot.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+      
+      console.log(`✅ ${memberId}의 파티 관련 알림 ${snapshot.size}개 삭제 완료`);
+    } catch (error) {
+      console.error(`❌ ${memberId}의 파티 관련 알림 삭제 실패:`, error);
+    }
+  }
 
   // SKTaxi: 멤버들의 FCM 토큰 수집
   const tokens: string[] = [];
@@ -121,6 +812,16 @@ export const onPartyDelete = onDocumentDeleted('parties/{partyId}', async (event
       const userDoc = await db.doc(`users/${memberId}`).get();
       const userTokens = (userDoc.get('fcmTokens') || []) as string[];
       tokens.push(...userTokens);
+      
+      // userNotification은 항상 생성 (앱 내부 알림용)
+      await createUserNotification(memberId, {
+        type: 'party_deleted',
+        title: '파티가 해체되었어요',
+        message: '리더가 파티를 해체했습니다.',
+        data: {
+          partyId: String(event.params.partyId || ''),
+        },
+      });
     } catch (error) {
       console.error(`Error getting tokens for user ${memberId}:`, error);
     }
@@ -237,7 +938,7 @@ async function processSingleCategory(category: string, categoryId: number, rowCo
 
 // SKTaxi: 10분마다 자동으로 새/변경된 공지사항만 반영 (개별 처리)
 export const scheduledRSSFetch = onSchedule({
-  schedule: '*/10 * * * *',
+  schedule: '*/10 8-20 * * 1-5',
   timeZone: 'Asia/Seoul',
   timeoutSeconds: 540
 }, async (event) => {
@@ -429,11 +1130,40 @@ export const onNoticeCreated = onDocumentCreated(
 
       for (const userDoc of usersSnapshot.docs) {
         const userData = userDoc.data();
-        const notificationSettings = userData.notificationSettings;
-        
-        // 공지사항 알림이 활성화된 사용자만 필터링
-        if (notificationSettings?.allNotifications && 
-            notificationSettings?.noticeNotifications) {
+        const notificationSettings = userData.notificationSettings || {};
+        const noticeOn = notificationSettings.allNotifications !== false && notificationSettings.noticeNotifications !== false;
+
+        if (!noticeOn) {
+          continue; // 전체/공지 알림이 꺼져 있으면 스킵
+        }
+
+        // 카테고리별 필터링: 상세 설정이 존재하면 그 값을 우선 사용, 없으면 기본 허용
+        const details = (notificationSettings.noticeNotificationsDetail || {}) as any;
+        const categoryKey = String(noticeData.category || '').trim();
+        let allow = true;
+        if (categoryKey) {
+          // 카테고리 라벨 → 내부 키 매핑(클라이언트와 동일 규칙)
+          const key = categoryKey === '새소식' ? 'news'
+            : categoryKey === '학사' ? 'academy'
+            : categoryKey === '학생' ? 'student'
+            : categoryKey === '장학/등록/학자금' ? 'scholarship'
+            : categoryKey === '입학' ? 'admission'
+            : categoryKey === '취업/진로개발/창업' ? 'career'
+            : categoryKey === '공모/행사' ? 'event'
+            : categoryKey === '교육/글로벌' ? 'education'
+            : categoryKey === '일반' ? 'general'
+            : categoryKey === '입찰구매정보' ? 'procurement'
+            : categoryKey === '사회봉사센터' ? 'volunteer'
+            : categoryKey === '장애학생지원센터' ? 'accessibility'
+            : categoryKey === '생활관' ? 'dormitory'
+            : categoryKey === '비교과' ? 'extracurricular'
+            : 'general';
+          if (Object.prototype.hasOwnProperty.call(details, key)) {
+            allow = details[key] !== false;
+          }
+        }
+
+        if (allow) {
           targetUsers.push(userDoc.id);
         }
       }
@@ -555,6 +1285,20 @@ export const onNoticeCreated = onDocumentCreated(
         await cleanupFailedTokens(allFailedTokens);
       }
 
+      // 6. SKTaxi: 각 사용자에게 userNotification 생성
+      await Promise.all(targetUsers.map(async (userId) => {
+        await createUserNotification(userId, {
+          type: 'notice',
+          title: `📢 새 성결대 ${noticeData.category} 공지`,
+          message: noticeData.title,
+          data: {
+            noticeId: noticeId,
+            category: noticeData.category || '일반',
+            title: noticeData.title || '',
+          },
+        });
+      }));
+
     } catch (error) {
       console.error('❌ Push 알림 전송 실패:', error);
     }
@@ -595,3 +1339,294 @@ async function cleanupFailedTokens(failedTokens: string[]) {
     console.error('❌ 실패한 FCM 토큰 정리 실패:', error);
   }
 }
+
+// SKTaxi: 게시판 댓글 생성 시 알림 전송
+export const onBoardCommentCreated = onDocumentCreated('boardComments/{commentId}', async (event) => {
+  const commentData = event.data?.data();
+  const commentId = event.params.commentId;
+  
+  if (!commentData || commentData.isDeleted) return;
+  
+  const { postId, authorId, parentId, content } = commentData;
+  
+  try {
+    // 1. 게시글 정보 조회
+    const postDoc = await db.doc(`boardPosts/${postId}`).get();
+    const postData = postDoc.data();
+    
+    if (!postData) return;
+    
+    // 2. 본인 댓글에는 알림 전송하지 않음
+    if (authorId === postData.authorId) return;
+    
+    // 3. targetUserId 결정 (답글인 경우 부모 댓글 작성자, 댓글인 경우 게시글 작성자)
+    let targetUserId = postData.authorId;
+    
+    if (parentId) {
+      // 답글인 경우: 부모 댓글 작성자 조회
+      const parentDoc = await db.doc(`boardComments/${parentId}`).get();
+      const parentData = parentDoc.data();
+      
+      if (parentData) {
+        targetUserId = parentData.authorId;
+        
+        // 부모 댓글 작성자가 본인인 경우 알림 전송하지 않음
+        if (authorId === targetUserId) return;
+      }
+    }
+    
+    // 4. 알림 타입 결정
+    const notificationType = parentId ? 'board_comment_reply' : 'board_post_comment';
+    
+    // 5. 사용자 알림 설정 확인
+    const userDoc = await db.doc(`users/${targetUserId}`).get();
+    const userData = userDoc.data();
+    const notificationSettings = userData?.notificationSettings || {};
+    
+    // 게시판 댓글 알림이 해제된 유저는 제외
+    const boardCommentNotificationsEnabled = notificationSettings.boardCommentNotifications !== false;
+    
+    if (!boardCommentNotificationsEnabled) {
+      console.log(`📢 ${targetUserId}의 게시판 댓글 알림이 해제되어 있음`);
+      return;
+    }
+    
+    // 6. userNotification 생성
+    await createUserNotification(targetUserId, {
+      type: notificationType,
+      title: parentId 
+        ? '내 댓글에 답글이 달렸어요'
+        : '내 게시글에 댓글이 달렸어요',
+      message: content,
+      data: { postId, commentId },
+    });
+    
+    // 7. FCM 토큰 조회 및 Push 전송
+    const tokens: string[] = (userData?.fcmTokens || []) as string[];
+    
+    if (tokens.length === 0) return;
+    
+    const message = {
+      tokens,
+      notification: {
+        title: parentId 
+          ? '내 댓글에 답글이 달렸어요'
+          : '내 게시글에 댓글이 달렸어요',
+        body: content.length > 50 ? content.substring(0, 50) + '...' : content,
+      },
+      data: {
+        type: notificationType,
+        postId,
+        commentId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 게시판 댓글 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      try {
+        const userRef = db.doc(`users/${targetUserId}`);
+        const cur: string[] = (userData?.fcmTokens || []) as string[];
+        const next = cur.filter((t) => !failedTokens.includes(t));
+        if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+      } catch (error) {
+        console.error(`❌ 사용자 ${targetUserId} 토큰 업데이트 실패:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ 게시판 댓글 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 공지사항 댓글 생성 시 알림 전송
+export const onNoticeCommentCreated = onDocumentCreated('noticeComments/{commentId}', async (event) => {
+  const commentData = event.data?.data();
+  
+  if (!commentData) return;
+  
+  const { userId, content, parentId, noticeId } = commentData;
+  
+  try {
+    // 1. 공지사항 정보 조회
+    const noticeDoc = await db.doc(`notices/${noticeId}`).get();
+    const noticeData = noticeDoc.data();
+    
+    if (!noticeData) return;
+    
+    // 2. 본인 댓글/답글에는 알림 전송하지 않음
+    if (userId === (parentId ? (await db.doc(`noticeComments/${parentId}`).get()).data()?.userId : noticeData.authorId)) return;
+    
+    // 3. 대상 사용자 결정
+    const targetUserId = parentId 
+      ? (await db.doc(`noticeComments/${parentId}`).get()).data()?.userId
+      : noticeData.authorId;
+    
+    if (!targetUserId || targetUserId === userId) return;
+    
+    // 4. 댓글 타입 결정
+    const notificationType = parentId ? 'notice_comment_reply' : 'notice_post_comment';
+    
+    // 5. 사용자 알림 설정 확인
+    const userDoc = await db.doc(`users/${targetUserId}`).get();
+    const userData = userDoc.data();
+    const notificationSettings = userData?.notificationSettings || {};
+    
+    // 게시판 댓글 알림이 해제된 유저는 제외 (공지사항 댓글도 동일한 설정 사용)
+    const boardCommentNotificationsEnabled = notificationSettings.boardCommentNotifications !== false;
+    
+    if (!boardCommentNotificationsEnabled) {
+      console.log(`📢 ${targetUserId}의 댓글 알림이 해제되어 있음 (게시판/공지사항 댓글/답글 모두 포함)`);
+      return;
+    }
+    
+    // 7. userNotification 생성
+    await createUserNotification(targetUserId, {
+      type: notificationType,
+      title: parentId 
+        ? '내 댓글에 답글이 달렸어요'
+        : '내 게시글에 댓글이 달렸어요',
+      message: content,
+      data: { noticeId, commentId: event.params.commentId },
+    });
+    
+    // 8. FCM 토큰 조회 및 Push 전송
+    const tokens: string[] = (userData?.fcmTokens || []) as string[];
+    
+    if (tokens.length === 0) return;
+    
+    const message = {
+      tokens,
+      notification: {
+        title: parentId 
+          ? '내 댓글에 답글이 달렸어요'
+          : '내 게시글에 댓글이 달렸어요',
+        body: content.length > 50 ? content.substring(0, 50) + '...' : content,
+      },
+      data: {
+        type: notificationType,
+        noticeId,
+        commentId: event.params.commentId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 공지사항 댓글 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      try {
+        const userRef = db.doc(`users/${targetUserId}`);
+        const cur: string[] = (userData?.fcmTokens || []) as string[];
+        const next = cur.filter((t) => !failedTokens.includes(t));
+        if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+      } catch (error) {
+        console.error(`❌ 사용자 ${targetUserId} 토큰 업데이트 실패:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ 공지사항 댓글 알림 전송 실패:', error);
+  }
+});
+
+// SKTaxi: 게시판 좋아요 시 알림 전송
+export const onBoardLikeCreated = onDocumentCreated('userBoardInteractions/{interactionId}', async (event) => {
+  const interactionData = event.data?.data();
+  
+  if (!interactionData) return;
+  
+  const { postId, userId, isLiked } = interactionData;
+  
+  // 좋아요가 아닌 경우 무시
+  if (!isLiked) return;
+  
+  try {
+    // 1. 게시글 정보 조회
+    const postDoc = await db.doc(`boardPosts/${postId}`).get();
+    const postData = postDoc.data();
+    
+    if (!postData) return;
+    
+    // 2. 본인 게시글에는 알림 전송하지 않음
+    if (userId === postData.authorId) return;
+    
+    const targetUserId = postData.authorId;
+    
+    // 3. 사용자 알림 설정 확인
+    const userDoc = await db.doc(`users/${targetUserId}`).get();
+    const userData = userDoc.data();
+    const notificationSettings = userData?.notificationSettings || {};
+    
+    // 게시판 좋아요 알림이 해제된 유저는 제외
+    const boardLikeNotificationsEnabled = notificationSettings.boardLikeNotifications !== false;
+    
+    if (!boardLikeNotificationsEnabled) {
+      console.log(`📢 ${targetUserId}의 게시판 좋아요 알림이 해제되어 있음`);
+      return;
+    }
+    
+    // 4. userNotification 생성
+    await createUserNotification(targetUserId, {
+      type: 'board_post_like',
+      title: '누군가가 내 게시글에 좋아요를 눌렀어요',
+      message: postData.title || '',
+      data: { postId },
+    });
+    
+    // 5. FCM 토큰 조회 및 Push 전송
+    const tokens: string[] = (userData?.fcmTokens || []) as string[];
+    
+    if (tokens.length === 0) return;
+    
+    const message = {
+      tokens,
+      notification: {
+        title: '누군가가 내 게시글에 좋아요를 눌렀어요',
+        body: postData.title || '',
+      },
+      data: {
+        type: 'board_post_like',
+        postId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    const resp = await fcm.sendEachForMulticast(message as any);
+    console.log(`📢 게시판 좋아요 알림 전송: 성공 ${resp.successCount}, 실패 ${resp.failureCount}`);
+    
+    // 실패한 토큰 정리
+    const failedTokens: string[] = [];
+    resp.responses.forEach((r, idx) => {
+      if (!r.success) failedTokens.push((message as any).tokens[idx]);
+    });
+    
+    if (failedTokens.length) {
+      try {
+        const userRef = db.doc(`users/${targetUserId}`);
+        const cur: string[] = (userData?.fcmTokens || []) as string[];
+        const next = cur.filter((t) => !failedTokens.includes(t));
+        if (next.length !== cur.length) await userRef.update({ fcmTokens: next });
+      } catch (error) {
+        console.error(`❌ 사용자 ${targetUserId} 토큰 업데이트 실패:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('❌ 게시판 좋아요 알림 전송 실패:', error);
+  }
+});

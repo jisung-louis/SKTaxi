@@ -6,8 +6,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useTimetable } from '../../hooks/useTimetable';
-import { TimableViewMode, TimetableCourse } from '../../types/timetable';
-import { coursesToTimetableBlocks, arrangeBlocksInRows, getWeekdayName, formatCourseTime, generatePeriods, getCurrentSemester, getPeriodTimeInfo, getCurrentTimeInfo } from '../../utils/timetableUtils';
+import { TimableViewMode, TimetableCourse, CourseSchedule } from '../../types/timetable';
+import { getWeekdayName, generatePeriods, getCurrentSemester, getPeriodTimeInfo, getCurrentTimeInfo, coursesToTimetableBlocks, arrangeBlocksInRows } from '../../utils/timetableUtils';
+import { TimetableGrid } from './TimetableGrid';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { DAY_CELL_HEIGHT } from '../../constants/constants';
 
@@ -42,90 +43,121 @@ export const TimetableSection = () => {
 
   // 전체 시간표 그리드 렌더링
   const renderTimetableGrid = () => {
-    const weekdays = [1, 2, 3, 4, 5]; // 월-금
-    const periods = generatePeriods();
-    
-    // 수업을 시간표 블록으로 변환
-    const timetableBlocks = coursesToTimetableBlocks(courses as TimetableCourse[]);
-    const arrangedBlocks = arrangeBlocksInRows(timetableBlocks);
-
-    return (
-      <View style={styles.gridContainer}>
-        {/* 헤더 */}
-        <View style={styles.gridHeader}>
-          <View style={styles.timeColumn}>
-            <Text style={styles.timeHeaderText}>교시</Text>
-          </View>
-          {weekdays.map(day => (
-            <View key={day} style={[styles.dayColumn, {borderRightWidth: day === weekdays.length ? 0 : 1}]}>
-              <Text style={styles.dayHeaderText}>{getWeekdayName(day)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* 시간표 그리드 */}
-        <View style={styles.gridBody}>
-          {periods.map((period) => (
-            <View key={period} style={[styles.timeRow, { borderBottomWidth: period === periods.length ? 0 : 1 }]}>
-              {/* 교시 표시 */}
-              <View style={styles.timeCell}>
-                <Text style={styles.timeText}>{period}</Text>
-              </View>
-              
-              {/* 요일별 셀 */}
-              {weekdays.map(day => {
-                // 해당 교시에 시작하는 블록 찾기
-                const block = arrangedBlocks.find(b => 
-                  b.dayOfWeek === day && b.startPeriod === period
-                );
-                
-                return (
-                  <View key={`${day}-${period}`} style={[styles.dayCell, {borderRightWidth: day === weekdays.length ? 1 : 1}]}>
-                    {block ? (
-                      <View 
-                        style={[
-                          styles.courseBlock, 
-                          { 
-                            backgroundColor: block.course.color || COLORS.accent.blue,
-                            height: (block.endPeriod - block.startPeriod + 1) * DAY_CELL_HEIGHT + ( (block.endPeriod - block.startPeriod) * 1 ) - 4,
-                          }
-                        ]}
-                      >
-                        <Text style={styles.courseText} numberOfLines={1}>
-                          {block.course.name}
-                        </Text>
-                        <Text style={styles.courseLocation} numberOfLines={1}>
-                          {block.course.location}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View style={styles.emptyCell} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </View>
-    );
+    return <TimetableGrid courses={courses} paddingHorizontal={20} />;
   };
 
   // 오늘 시간표 그리드 렌더링 (오늘 요일만)
+  const renderCourseBlock = (block: any, isInClass: boolean, blockPeriodLength: number) => {
+    const blockStyle = {
+      backgroundColor: block.course.color || COLORS.accent.blue,
+      height: (() => {
+        // showNightClasses가 false일 때 주간/야간에 걸친 수업의 높이 조정
+        if (!showNightClasses && block.endPeriod >= 10) {
+          // 야간 부분을 제외하고 주간 부분만의 높이 계산 (최대 9교시까지)
+          const visibleEndPeriod = Math.min(block.endPeriod, 9);
+          const visibleStartPeriod = Math.max(block.startPeriod, 1);
+
+          const visiblePeriodLength = visibleEndPeriod - visibleStartPeriod + 1;
+
+          return visiblePeriodLength * TODAY_CELL_HEIGHT + ((visiblePeriodLength - 1) * TODAY_CELL_MARGIN_BOTTOM);
+        }
+        // 일반적인 경우
+        return blockPeriodLength * TODAY_CELL_HEIGHT + ((blockPeriodLength - 1) * TODAY_CELL_MARGIN_BOTTOM);
+      })(),
+      padding: isInClass ? 10 : 12,
+    };
+
+    // 교시 수에 따른 UI 분기
+    if (blockPeriodLength === 1 || blockStyle.height === TODAY_CELL_HEIGHT) {
+      // 1교시: 교시명, 위치만 표시
+      return (
+        <View style={[styles.todayCourseBlock, isInClass && styles.inClassCourseBlock, blockStyle, { alignItems: 'center', justifyContent: 'center', paddingVertical: 0 }]}>
+          <View style={[styles.courseHeader, {marginBottom: 0}]}>
+            <View style={styles.courseHeaderRow}>
+              <Text style={[styles.courseName, {flex: 2, marginRight: 2}]} numberOfLines={1}>
+                {block.course.name}
+              </Text>
+              <Text style={[styles.courseBodyText, {flex: 1}]} numberOfLines={1}>
+                {block.course.location}
+              </Text>
+            </View>
+            <View style={styles.courseBadgeContainer}>
+              {isInClass && (
+                <View style={styles.inClassBadge}>
+                  <Text style={styles.inClassBadgeText}>수업중</Text>
+                </View>
+              )}
+              <View style={styles.courseBadge}>
+                <Text style={styles.courseBadgeText}>
+                  {block.course.category.slice(0, 2)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      );
+    } else {
+      // 2교시 이상: 모든 정보 표시
+      return (
+        <View style={[styles.todayCourseBlock, isInClass && styles.inClassCourseBlock, blockStyle]}>
+          <View style={styles.courseHeader}>
+            <Text style={styles.courseName} numberOfLines={blockPeriodLength < 3 ? 1 : 2}>
+              {block.course.name}
+            </Text>
+            <View style={styles.courseBadgeContainer}>
+              {isInClass && (
+                <View style={styles.inClassBadge}>
+                  <Text style={styles.inClassBadgeText}>수업중</Text>
+                </View>
+              )}
+              <View style={styles.courseBadge}>
+                <Text style={styles.courseBadgeText}>
+                  {block.course.category.slice(0, 2)}
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.courseBody}>
+            <View style={styles.courseBodyRow}>
+              <Icon name="location-sharp" size={14} color={COLORS.text.buttonText}/>
+              <Text style={styles.courseBodyText} numberOfLines={1}>
+                {block.course.location}
+              </Text>
+            </View>
+            {block.course.professor && (
+              <View style={styles.courseBodyRow}>
+                <Icon name="person-sharp" size={14} color={COLORS.text.buttonText}/>
+                <Text style={styles.courseBodyText} numberOfLines={1}>
+                  {block.course.professor} 교수
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      );
+    }
+  };
+
   const renderTodayGrid = () => {
     const today = new Date();
     const todayDayOfWeek = today.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
     const periods = generatePeriods();
     const currentTimeInfo = getCurrentTimeInfo();
     
-    // 오늘 요일이 주말이면 빈 그리드 표시
-    if (todayDayOfWeek === 0 || todayDayOfWeek === 6) {
+    // 오늘 수업 목록 가져오기
+    const todayCourses = getTodayCourses() || [];
+    
+    // 오늘 수업이 없으면 빈 그리드 표시
+    if (todayCourses.length === 0) {
+      // todayDayOfWeek가 0 또는 6인지 확인
+      const isWeekend = (todayDayOfWeek as number) === 0 || (todayDayOfWeek as number) === 6;
+      const weekendMessage = isWeekend ? '주말에는 휴식을 취하세요! 😊' : '꿀 같은 공강을 즐기세요! 😊';
       return (
         <View style={styles.todayGridContainer}>
           <View style={styles.weekendContainer}>
             <Icon name="calendar-outline" size={48} color={COLORS.text.secondary} />
             <Text style={styles.weekendTitle}>오늘은 수업이 없어요</Text>
-            <Text style={styles.weekendSubtext}>주말에는 휴식을 취하세요! 😊</Text>
+            <Text style={styles.weekendSubtext}>{weekendMessage}</Text>
           </View>
         </View>
       );
@@ -157,10 +189,11 @@ export const TimetableSection = () => {
             .map((period) => {
             const periodTime = getPeriodTimeInfo(period);
             const isNightClass = period >= 10;
-            const block = arrangedBlocks.find(b => 
+            const block = arrangedBlocks.find((b: any) => 
               b.dayOfWeek === todayDayOfWeek && b.startPeriod === period
             );
             const isCurrentPeriod = currentTimeInfo.currentPeriod === period;
+            const blockPeriodLength = block ? block.endPeriod - block.startPeriod + 1 : 0;
             
             // 현재 교시가 수업 시간 범위에 포함되는지 확인
             // 현재 교시가 수업의 시작~종료 교시 범위에 포함되는지 체크
@@ -195,59 +228,7 @@ export const TimetableSection = () => {
                 {/* 수업 블록 */}
                 <View style={styles.todayCourseColumn}>
                   {block ? (
-                    <View 
-                      style={[
-                        styles.todayCourseBlock, 
-                        isInClass && styles.inClassCourseBlock,
-                        { 
-                          backgroundColor: block.course.color || COLORS.accent.blue,
-                          height: (() => {
-                            // showNightClasses가 false일 때 주간/야간에 걸친 수업의 높이 조정
-                            if (!showNightClasses && block.endPeriod >= 10) {
-                              // 야간 부분을 제외하고 주간 부분만의 높이 계산 (최대 9교시까지)
-                              const visibleEndPeriod = Math.min(block.endPeriod, 9);
-                              const visibleStartPeriod = Math.max(block.startPeriod, 1);
-                              return (visibleEndPeriod - visibleStartPeriod + 1) * TODAY_CELL_HEIGHT + ((visibleEndPeriod - visibleStartPeriod) * TODAY_CELL_MARGIN_BOTTOM);
-                            }
-                            // 일반적인 경우
-                            return (block.endPeriod - block.startPeriod + 1) * TODAY_CELL_HEIGHT + ((block.endPeriod - block.startPeriod) * TODAY_CELL_MARGIN_BOTTOM);
-                          })(),
-                          padding: isInClass ? 10 : 12,
-                        }
-                      ]}
-                    >
-                      <View style={styles.courseHeader}>
-                        <Text style={styles.courseName} numberOfLines={1}>
-                          {block.course.name}
-                        </Text>
-                        <View style={styles.courseBadgeContainer}>
-                          {isInClass && (
-                            <View style={styles.inClassBadge}>
-                              <Text style={styles.inClassBadgeText}>수업중</Text>
-                            </View>
-                          )}
-                          <View style={styles.courseBadge}>
-                            <Text style={styles.courseBadgeText}>
-                              {/* 첫 두 글자 추출 ('전공필수', '전공선택' : '전공', '교양필수', '교양선택' : '교양') */}
-                              {block.course.category.slice(0, 2)}
-                            </Text>
-                          </View>
-                        </View>
-                      </View>
-                      <View style={styles.courseBody}>
-                        <Text style={styles.courseTime} numberOfLines={1}>
-                          {block.course.schedule.map(schedule => formatCourseTime(schedule)).join(', ')}
-                        </Text>
-                        <Text style={styles.courseLocationToday} numberOfLines={1}>
-                          📍 {block.course.location}
-                        </Text>
-                        {block.course.professor && (
-                          <Text style={styles.courseProfessor} numberOfLines={1}>
-                            👨‍🏫 {block.course.professor}
-                          </Text>
-                        )}
-                      </View>
-                    </View>
+                    renderCourseBlock(block, !!isInClass, blockPeriodLength)
                   ) : (
                     <View style={styles.todayEmptyCell}>
                       <Text style={styles.emptyCellText}>-</Text>
@@ -682,7 +663,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inClassCourseBlock: {
-    borderColor: COLORS.accent.green + '80',
+    borderColor: COLORS.accent.blue,
     borderWidth: 2,
   },
   courseHeader: {
@@ -691,20 +672,26 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  courseHeaderRow: {
+    flexDirection: 'row',
+    flex: 1,
+    marginRight: 4,
+    alignItems: 'flex-end',
+  },
   courseBadgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   inClassBadge: {
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: COLORS.accent.blue,
     borderRadius: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   inClassBadgeText: {
     ...TYPOGRAPHY.caption3,
-    color: COLORS.text.buttonText,
+    color: COLORS.text.white,
     fontWeight: '700',
   },
   courseName: {
@@ -729,20 +716,16 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     gap: 4,
   },
-  courseTime: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.buttonText,
+  courseBodyRow: {
+    flexDirection: 'row',
+    gap: 4,
     opacity: 0.8,
   },
-  courseLocationToday: {
+  courseBodyText: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.buttonText,
-    opacity: 0.9,
-  },
-  courseProfessor: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.buttonText,
-    opacity: 0.8,
+    fontWeight: '400',
+    flex: 1,
   },
   todayEmptyCell: {
     backgroundColor: COLORS.background.secondary,
@@ -791,5 +774,48 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.primary,
     fontWeight: '600',
+  },
+  gridFooter: {
+    backgroundColor: COLORS.background.card,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.dark,
+    padding: 10,
+  },
+  gridFooterText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  footerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerHeaderText: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+  },
+  footerCourseItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.dark,
+  },
+  footerCourseName: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  footerCourseInfo: {
+    marginTop: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    alignItems: 'center',
+  },
+  footerCourseDetail: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
   },
 });

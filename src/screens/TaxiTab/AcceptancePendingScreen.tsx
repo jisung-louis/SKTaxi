@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
+import firestore, { collection, doc, updateDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { TaxiStackParamList } from '../../navigations/types';
-import firestore, { collection, doc, onSnapshot } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
+
+const firestoreInstance = firestore();
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -26,6 +28,36 @@ export const AcceptancePendingScreen = () => {
   const { displayNameMap } = useUserDisplayNames([party?.leaderId]);
   const onBack = () => {
     navigation.goBack();
+  };
+
+  // SKTaxi: 동승 요청 취소 핸들러
+  const handleCancelRequest = async () => {
+    Alert.alert(
+      '동승 요청 취소',
+      '동승 요청을 취소하시겠어요?',
+      [
+        {
+          text: '아니오',
+          style: 'cancel',
+        },
+        {
+          text: '네, 취소할게요',
+          style: 'destructive',
+          onPress: async () => {
+            if (!requestId) return;
+            
+            try {
+              const requestRef = doc(collection(firestoreInstance, 'joinRequests'), requestId);
+              await updateDoc(requestRef, { status: 'canceled' });
+              navigation.goBack();
+            } catch (error) {
+              console.error('동승 요청 취소 실패:', error);
+              Alert.alert('오류', '동승 요청 취소에 실패했습니다.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   // SKTaxi: 요청 상태 구독 - accepted 시 채팅 화면으로 이동, declined 시 이전 화면으로
@@ -67,8 +99,7 @@ export const AcceptancePendingScreen = () => {
               파티장의 동승 요청 수락을{'\n'}
               기다리고 있습니다
             </Text>
-            <Button title="취소하기" onPress={onBack} style={styles.button} />
-            <Button title="방장과 1:1 채팅" onPress={onBack} style={styles.button} />
+            <Button title="취소하기" onPress={handleCancelRequest} style={styles.button} />
           </View>
 
           {/* 파티 정보 카드 */}

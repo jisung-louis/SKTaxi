@@ -36,7 +36,7 @@ export const getPeriodTimeInfo = (period: number): { startTime: string; endTime:
  * 요일 이름 가져오기
  */
 export const getWeekdayName = (dayOfWeek: number): string => {
-  const weekdays = ['', '월', '화', '수', '목', '금'];
+  const weekdays = ['', '월', '화', '수', '목', '금', '토', '일'];
   return weekdays[dayOfWeek] || '';
 };
 
@@ -172,7 +172,7 @@ export const isCourseOverlapping = (course1: Course, course2: Course): boolean =
   return course1.schedule.some(schedule1 => 
     course2.schedule.some(schedule2 => 
       schedule1.dayOfWeek === schedule2.dayOfWeek &&
-      !(schedule1.endPeriod <= schedule2.startPeriod || schedule1.startPeriod >= schedule2.endPeriod)
+      schedule1.endPeriod >= schedule2.startPeriod && schedule1.startPeriod <= schedule2.endPeriod
     )
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback, Image, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -13,7 +13,7 @@ import { Party } from '../../../types/party';
 // SKTaxi: 동승 요청 생성 핸들러 구현을 위한 Firebase 의존성 추가 (모듈식)
 import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
-import firestore, { addDoc, collection, serverTimestamp } from '@react-native-firebase/firestore';
+import firestore, { addDoc, collection, doc, updateDoc, serverTimestamp } from '@react-native-firebase/firestore';
 import Button from '../../common/Button';
 import { useUserDisplayNames } from '../../../hooks/useUserDisplayNames'; // SKTaxi: uid->displayName 매핑 훅 추가
 import { formatKoreanAmPmTime } from '../../../utils/datetime'; // SKTaxi: 시간 포맷 유틸
@@ -21,6 +21,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TaxiStackParamList } from '../../../navigations/types';
 import { useMyParty } from '../../../hooks/useMyParty'; // SKTaxi: 사용자 파티 소속 여부 확인
+import { usePendingJoinRequest } from '../../../hooks/usePendingJoinRequest'; // SKTaxi: pending 동승 요청 조회
 
 
 interface PartyListProps {
@@ -53,6 +54,9 @@ export const PartyList: React.FC<PartyListProps> = ({
 
   // SKTaxi: 사용자 파티 소속 여부 확인
   const { hasParty, partyId: myPartyId } = useMyParty();
+  
+  // SKTaxi: 현재 사용자의 pending 동승 요청 조회
+  const { pendingRequest } = usePendingJoinRequest();
 
   const sortOptions = [
     { label: '최신순', value: 'latest' },
@@ -228,7 +232,9 @@ export const PartyList: React.FC<PartyListProps> = ({
                           : party.status === 'arrived'
                             ? '도착 완료된 파티'
                             : party.id === myPartyId 
-                              ? '내가 속한 파티' 
+                              ? '내가 속한 파티'
+                              : pendingRequest.partyId === party.id
+                                ? '동승 요청중...'
                               : Array.isArray(party.members) && party.members.length >= party.maxMembers
                                 ? '파티가 가득 찼어요'
                                 : '동승 요청'
@@ -269,6 +275,44 @@ export const PartyList: React.FC<PartyListProps> = ({
                           return;
                         }
 
+                        // SKTaxi: 현재 파티에 pending 요청이 있으면 AcceptancePendingScreen으로 이동
+                        if (pendingRequest.partyId === party.id && pendingRequest.requestId) {
+                          navigation.navigate('AcceptancePending', { party, requestId: pendingRequest.requestId });
+                          return;
+                        }
+
+                        // SKTaxi: 다른 파티에 pending 요청이 있는 경우 확인 Alert
+                        if (pendingRequest.partyId && pendingRequest.requestId) {
+                          const confirmCancel = await new Promise<boolean>((resolve) => {
+                            Alert.alert(
+                              '동승 요청 취소',
+                              '이미 동승을 요청한 파티가 있어요. 그 요청을 취소하고 이 파티에 동승요청을 할까요?',
+                              [
+                                {
+                                  text: '취소',
+                                  style: 'cancel',
+                                  onPress: () => resolve(false),
+                                },
+                                {
+                                  text: '확인',
+                                  onPress: () => resolve(true),
+                                },
+                              ]
+                            );
+                          });
+
+                          if (!confirmCancel) return;
+
+                          // SKTaxi: 기존 요청 취소
+                          try {
+                            const cancelRequestRef = collection(firestore(getApp()), 'joinRequests');
+                            const cancelDocRef = doc(cancelRequestRef, pendingRequest.requestId);
+                            await updateDoc(cancelDocRef, { status: 'canceled' });
+                          } catch (e) {
+                            console.warn('기존 요청 취소 실패:', e);
+                          }
+                        }
+
                         try {
                         const ref = await addDoc(collection(firestore(getApp()), 'joinRequests'), {
                             partyId: party.id,
@@ -277,10 +321,7 @@ export const PartyList: React.FC<PartyListProps> = ({
                             status: 'pending',
                             createdAt: serverTimestamp(),
                           });
-                          // SKTaxi: UX 피드백
-                          // eslint-disable-next-line no-alert
-                          (globalThis as any)?.alert?.('방장에게 요청을 보냈어요.');
-                        // SKTaxi: 수락 대기 화면으로 이동 (requestId 전달)
+                          // SKTaxi: 수락 대기 화면으로 이동 (requestId 전달)
                         navigation.navigate('AcceptancePending', { party, requestId: ref.id });
                         } catch (e) {
                           console.warn('requestJoin failed', e);

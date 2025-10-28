@@ -9,7 +9,7 @@ import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TaxiStackParamList } from '../../navigations/types';
-import firestore, { collection, doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion, query, where, getDocs, onSnapshot, orderBy } from '@react-native-firebase/firestore';
+import firestore, { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion, query, where, getDocs, onSnapshot, orderBy, writeBatch } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useMessages, sendMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage } from '../../hooks/useMessages';
@@ -39,6 +39,9 @@ export const ChatScreen = () => {
   const [joinRequests, setJoinRequests] = useState<any[]>([]);
   const [showJoinRequests, setShowJoinRequests] = useState(false);
   const [joinRequestsLoading, setJoinRequestsLoading] = useState(false);
+  
+  // SKTaxi: 채팅방 알림 음소거 상태
+  const [isChatMuted, setIsChatMuted] = useState(false);
   
   // SKTaxi: 실시간 메시지 구독
   const { messages, loading: messagesLoading, error: messagesError } = useMessages(partyId);
@@ -174,6 +177,49 @@ export const ChatScreen = () => {
     })();
   }, [route.params?.partyId]);
 
+  // SKTaxi: 채팅방 알림 음소거 상태 로드
+  useEffect(() => {
+    if (!partyId || !currentUser?.uid) return;
+    
+    const loadNotificationSettings = async () => {
+      try {
+        const settingsDoc = await getDoc(
+          doc(collection(firestore(getApp()), 'chats', partyId, 'notificationSettings'), currentUser.uid)
+        );
+        
+        if (settingsDoc.exists()) {
+          const data = settingsDoc.data();
+          setIsChatMuted(data?.muted || false);
+        }
+      } catch (error) {
+        console.error('알림 설정 로드 실패:', error);
+      }
+    };
+    
+    loadNotificationSettings();
+  }, [partyId, currentUser?.uid]);
+
+  // SKTaxi: 알림 음소거 토글
+  const handleToggleMute = async () => {
+    if (!partyId || !currentUser?.uid) return;
+    
+    try {
+      const settingsRef = doc(collection(firestore(getApp()), 'chats', partyId, 'notificationSettings'), currentUser.uid);
+      const newMutedState = !isChatMuted;
+      
+      await setDoc(settingsRef, {
+        muted: newMutedState,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      
+      setIsChatMuted(newMutedState);
+    } catch (error) {
+      console.error('알림 설정 업데이트 실패:', error);
+      Alert.alert('오류', '알림 설정 변경에 실패했습니다.');
+    }
+  };
+
   // SKTaxi: 파티 상태가 "arrived"일 때 정산 현황 초기화
   useEffect(() => {
     if (currentParty?.status === 'arrived' && memberUids.length > 0) {
@@ -230,6 +276,10 @@ export const ChatScreen = () => {
   // SKTaxi: 강퇴 클라이언트 감지 - 내 uid가 members에서 사라지면 방에서 나가기
   useEffect(() => {
     if (!currentParty || !currentUser?.uid) return;
+    
+    // SKTaxi: 파티가 한 번도 보인 적이 없으면 (초기 로딩) 체크하지 않음
+    if (!seenPartyRef.current) return;
+    
     const members: string[] = Array.isArray(currentParty.members) ? currentParty.members : [];
     const stillMember = members.includes(currentUser.uid);
     if (!stillMember && !kickHandledRef.current && !selfLeaveRef.current) {
@@ -1083,10 +1133,39 @@ export const ChatScreen = () => {
       await sendSystemMessage(partyId, `${displayName}님이 파티를 나갔어요.`);
 
       // SKTaxi: parties.members 배열에서 현재 사용자 제거
+      // 자가 나가기 표시를 위한 임시 플래그 추가
       await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
         members: arrayRemove(currentUser.uid),
+        _selfLeaveMemberId: currentUser.uid,
         updatedAt: firestore.FieldValue.serverTimestamp(),
       });
+      
+      // 플래그 즉시 제거 (Cloud Function 트리거 전에)
+      setTimeout(async () => {
+        try {
+          await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+            _selfLeaveMemberId: firestore.FieldValue.delete(),
+          });
+        } catch (error) {
+          console.error('자가 나가기 플래그 제거 실패:', error);
+        }
+      }, 1000);
+
+      // SKTaxi: 해당 파티와 관련된 userNotifications 삭제
+      try {
+        const notificationsRef = collection(firestore(getApp()), 'userNotifications', currentUser.uid, 'notifications');
+        const q = query(notificationsRef, where('data.partyId', '==', partyId));
+        const snapshot = await getDocs(q);
+        
+        // 배치 삭제
+        const batch = writeBatch(firestore(getApp()));
+        snapshot.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+      } catch (error) {
+        console.error('파티 관련 알림 삭제 실패:', error);
+      }
 
       Alert.alert('알림', '파티에서 나갔습니다.');
       navigation.popToTop();
@@ -1269,13 +1348,17 @@ export const ChatScreen = () => {
               </View>
               <Surface color={COLORS.background.card} height={1} margin={16} />
               <View style={styles.actionSection}>
-                {/* SKTaxi: 리더만 설정 버튼 표시 */}
-                {/* {isLeader && (
-                  <TouchableOpacity style={styles.actionButton}>
-                    <Icon name="settings" size={20} color={COLORS.accent.green} />
-                    <Text style={styles.actionButtonText}>설정</Text>
-                  </TouchableOpacity>
-                )} */}
+                {/* SKTaxi: 채팅 알림 토글 */}
+                <TouchableOpacity style={styles.actionButton} onPress={handleToggleMute}>
+                  <Icon 
+                    name={isChatMuted ? "notifications-off" : "notifications"} 
+                    size={20} 
+                    color={isChatMuted ? COLORS.text.secondary : COLORS.accent.green} 
+                  />
+                  <Text style={[styles.actionButtonText, isChatMuted && styles.mutedText]}>
+                    채팅 알림 {isChatMuted ? '해제됨' : '켜기'}
+                  </Text>
+                </TouchableOpacity>
                 {/* 동승요청 온 내역 볼 수 있는 기능 */}
                 <TouchableOpacity style={styles.actionButton} onPress={() => handleShareParty()}>
                   <Icon name="share" size={20} color={COLORS.accent.green} />
@@ -2301,6 +2384,9 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
     marginLeft: 12,
+  },
+  mutedText: {
+    color: COLORS.text.secondary,
   },
   systemMessageContainer: {
     alignItems: 'center',

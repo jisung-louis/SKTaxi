@@ -33,7 +33,7 @@ export const useNoticeComments = (noticeId: string) => {
     setLoading(true);
     setError(null);
 
-    const commentsRef = collection(db, 'comments');
+    const commentsRef = collection(db, 'noticeComments');
     const q = query(
       commentsRef,
       where('noticeId', '==', noticeId),
@@ -123,11 +123,10 @@ export const useNoticeComments = (noticeId: string) => {
       setSubmitting(true);
       setError(null);
 
-      const commentsRef = collection(db, 'comments');
+      const commentsRef = collection(db, 'noticeComments');
       const isAnonymous = formData.isAnonymous ?? true; // 기본값 true
-      const anonId = isAnonymous ? `${noticeId}:${user.uid}` : undefined;
       
-      const newComment = {
+      const newComment: any = {
         noticeId,
         userId: user.uid,
         userDisplayName: user.displayName || '익명',
@@ -137,8 +136,12 @@ export const useNoticeComments = (noticeId: string) => {
         parentId: formData.parentId || null,
         replyCount: 0,
         isAnonymous,
-        anonId,
       };
+      
+      // 익명인 경우에만 anonId 추가
+      if (isAnonymous) {
+        newComment.anonId = `${noticeId}:${user.uid}`;
+      }
 
       await addDoc(commentsRef, newComment);
 
@@ -167,7 +170,7 @@ export const useNoticeComments = (noticeId: string) => {
       setSubmitting(true);
       setError(null);
 
-      const commentRef = doc(db, 'comments', commentId);
+      const commentRef = doc(db, 'noticeComments', commentId);
       await updateDoc(commentRef, {
         content: content.trim(),
         updatedAt: new Date(),
@@ -192,7 +195,7 @@ export const useNoticeComments = (noticeId: string) => {
       setSubmitting(true);
       setError(null);
 
-      const commentRef = doc(db, 'comments', commentId);
+      const commentRef = doc(db, 'noticeComments', commentId);
       await updateDoc(commentRef, {
         isDeleted: true,
         content: '[삭제된 댓글입니다]',

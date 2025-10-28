@@ -345,7 +345,7 @@ const TableToWebView = (props: any) => {
                 />
                 <ToggleButton
                   type="comment"
-                  count={comments.length}
+                  count={comments.length + comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)}
                   onPress={() => {}}
                   size="medium"
                   disabled={true}

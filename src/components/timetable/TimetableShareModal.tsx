@@ -47,25 +47,27 @@ export const TimetableShareModal: React.FC<TimetableShareModalProps> = ({
   };
 
   const handleCopyCode = () => {
-    if (!shareCode) {
-      const code = generateShareCode();
-      Alert.alert('공유 코드 생성', `공유 코드: ${code}\n\n이 코드를 다른 사용자에게 알려주세요.`);
-    } else {
-      Alert.alert('공유 코드', `공유 코드: ${shareCode}\n\n이 코드를 다른 사용자에게 알려주세요.`);
-    }
+    Alert.alert('기능 준비 중입니다.' , '조금만 기다려주세요!');
+    // if (!shareCode) {
+    //   const code = generateShareCode();
+    //   Alert.alert('공유 코드 생성', `공유 코드: ${code}\n\n이 코드를 다른 사용자에게 알려주세요.`);
+    // } else {
+    //   Alert.alert('공유 코드', `공유 코드: ${shareCode}\n\n이 코드를 다른 사용자에게 알려주세요.`);
+    // }
   };
 
   const handleImportCode = () => {
-    Alert.prompt(
-      '시간표 가져오기',
-      '공유 코드를 입력하세요:',
-      (text) => {
-        if (text && text.trim()) {
-          // TODO: 공유 코드로 시간표 가져오기
-          Alert.alert('가져오기', `공유 코드 "${text}"로 시간표를 가져옵니다.`);
-        }
-      }
-    );
+    Alert.alert('기능 준비 중입니다.' , '조금만 기다려주세요!');
+    // Alert.prompt(
+    //   '시간표 가져오기',
+    //   '공유 코드를 입력하세요:',
+    //   (text) => {
+    //     if (text && text.trim()) {
+    //       // TODO: 공유 코드로 시간표 가져오기
+    //       Alert.alert('가져오기', `공유 코드 "${text}"로 시간표를 가져옵니다.`);
+    //     }
+    //   }
+    // );
   };
 
   return (

@@ -48,8 +48,8 @@ export const CafeteriaSection = () => {
           </View>
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>이번 주 학식 메뉴가 없습니다.</Text>
-          <Text style={styles.emptySubtext}>서비스 준비중이에요!</Text>
+          <Text style={styles.emptyText}>이번 주 학식 메뉴 정보가 아직 없어요.</Text>
+          <Text style={styles.emptySubtext}>조금만 기다려주세요!</Text>
         </View>
       </View>
     );

@@ -12,12 +12,12 @@ import PageHeader from '../../components/common/PageHeader';
 import { SemesterDropdown } from '../../components/common/SemesterDropdown';
 import { TimetableEditBottomSheet } from '../../components/timetable/TimetableEditBottomSheet';
 import { TimetableShareModal } from '../../components/timetable/TimetableShareModal';
-import { generatePeriods, getWeekdayName, coursesToTimetableBlocks, arrangeBlocksInRows, getCurrentSemester, generateSemesterOptions } from '../../utils/timetableUtils';
-import { TimetableCourse, Course, TimetableBlock } from '../../types/timetable';
+import { TimetableGrid } from '../../components/timetable/TimetableGrid';
+import { getCurrentSemester, generateSemesterOptions, generatePeriods } from '../../utils/timetableUtils';
+import { Course } from '../../types/timetable';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { DAY_CELL_HEIGHT } from '../../constants/constants';
 
-const DAYCELL_WIDTH = ( WINDOW_WIDTH - ( (8 * 2) + 36 ) ) / 5
 
 export const TimetableDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -92,74 +92,7 @@ export const TimetableDetailScreen = () => {
   };
 
   const renderTimetableGrid = () => {
-    const weekdays = [1, 2, 3, 4, 5]; // 월-금
-    
-    // 수업을 시간표 블록으로 변환
-    const timetableBlocks = coursesToTimetableBlocks(courses as TimetableCourse[]);
-    const arrangedBlocks = arrangeBlocksInRows(timetableBlocks);
-
-    return (
-      <View style={styles.gridContainer}>
-        {/* 헤더 */}
-        <View style={styles.gridHeader}>
-          <View style={styles.timeColumn}>
-            <Text style={styles.timeHeaderText}>교시</Text>
-          </View>
-          {weekdays.map(day => (
-            <View key={day} style={[styles.dayColumn, {borderRightWidth: day === weekdays.length ? 0 : 1}]}>
-              <Text style={styles.dayHeaderText}>{getWeekdayName(day)}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* 시간표 그리드 */}
-        <View style={styles.gridBody}>
-          {periods.map((period) => (
-            <View key={period} style={[styles.timeRow, { borderBottomWidth: period === periods.length ? 0 : 1 }]}>
-              {/* 교시 표시 */}
-              <View style={styles.timeCell}>
-                <Text style={styles.timeText}>{period}</Text>
-              </View>
-              
-              {/* 요일별 셀 */}
-              {weekdays.map(day => {
-                // 해당 교시에 시작하는 블록 찾기
-                const block = arrangedBlocks.find(b => 
-                  b.dayOfWeek === day && b.startPeriod === period
-                );
-                
-                return (
-                  <View key={`${day}-${period}`} style={[styles.dayCell, {borderRightWidth: day === weekdays.length ? 0 : 1}]}>
-                    {block ? (
-                      <TouchableOpacity 
-                        style={[
-                          styles.courseBlock, 
-                          { 
-                            backgroundColor: block.course.color || COLORS.accent.blue,
-                            height: (block.endPeriod - block.startPeriod + 1) * DAY_CELL_HEIGHT + ( (block.endPeriod - block.startPeriod) * 1 ) - 4, // 교시 수에 따른 높이
-                          }
-                        ]}
-                        onPress={() => handleCourseRemove(block.course)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.courseText} numberOfLines={1}>
-                          {block.course.name}
-                        </Text>
-                        <Text style={styles.courseLocation} numberOfLines={1}>
-                          {block.course.location}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={styles.emptyCell} />
-                    )}
-                  </View>
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </View>
-    );
+    return <TimetableGrid courses={courses} onBlockPress={handleCourseRemove} onFooterItemPress={handleCourseRemove} />;
   };
 
   if (loading) {
@@ -347,7 +280,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   dayColumn: {
-    width: DAYCELL_WIDTH,
     paddingVertical: 4,
     borderRightWidth: 1,
     borderRightColor: COLORS.border.dark,
@@ -380,12 +312,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   dayCell: {
-    width: DAYCELL_WIDTH,
     paddingVertical: 4,
     paddingHorizontal: 4,
     borderRightWidth: 1,
     borderRightColor: COLORS.border.dark,
-    height: DAY_CELL_HEIGHT,
   },
   courseBlock: {
     position: 'absolute',
@@ -444,5 +374,48 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body2,
     color: COLORS.text.buttonText,
     fontWeight: '600',
+  },
+  gridFooter: {
+    backgroundColor: COLORS.background.card,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border.dark,
+    padding: 10,
+  },
+  gridFooterText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  footerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  footerHeaderText: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+  },
+  footerCourseItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border.dark,
+  },
+  footerCourseName: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
+  },
+  footerCourseInfo: {
+    marginTop: 6,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    alignItems: 'center',
+  },
+  footerCourseDetail: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
   },
 });

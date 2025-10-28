@@ -16,10 +16,14 @@ import { formatKoreanAmPmTime } from '../utils/datetime'; // SKTaxi: 시간 포�
 import Button from '../components/common/Button';
 import { useAuth } from '../hooks/useAuth'; // SKTaxi: 현재 사용자 정보
 import { useNotices } from '../hooks/useNotices'; // SKTaxi: 공지사항 훅 사용
-import { getFirestore, collection, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
+import { getFirestore, collection, addDoc, doc, updateDoc, serverTimestamp, query as fsQuery, orderBy, limit as fsLimit, getDocs } from '@react-native-firebase/firestore';
 import { CafeteriaSection } from '../components/cafeteria/CafeteriaSection';
 import { AcademicCalendarSection } from '../components/academic/AcademicCalendarSection';
 import { TimetableSection } from '../components/timetable/TimetableSection';
+import { useNotifications } from '../hooks/useNotifications';
+import { TabBadge } from '../components/common/TabBadge';
+import { usePendingJoinRequest } from '../hooks/usePendingJoinRequest';
+import { useMyParty } from '../hooks/useMyParty';
 
 type SimpleNotice = { id: string; title: string; content?: string; postedAt?: any; category?: string };
 
@@ -27,6 +31,9 @@ export const HomeScreen = () => {
   const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
   const { user } = useAuth(); // SKTaxi: 현재 사용자 정보
   const { markAsRead } = useNotices('전체'); // SKTaxi: 공지사항 읽음 처리 함수
+  const { unreadCount } = useNotifications(); // SKTaxi: 읽지 않은 알림 개수
+  const { pendingRequest } = usePendingJoinRequest(); // SKTaxi: 현재 사용자의 pending 동승 요청 조회
+  const { hasParty, partyId: myPartyId } = useMyParty(); // SKTaxi: 사용자 파티 소속 여부 확인
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
@@ -75,34 +82,94 @@ export const HomeScreen = () => {
   }, []);
 
   // SKTaxi: 파티 카드 클릭 핸들러
-  const handlePartyCardPress = (party: any) => {
-    // SKTaxi: 현재 사용자가 이미 다른 파티에 참여 중인지 확인 (자신의 파티 포함)
-    const isUserInAnyParty = parties.some(p => 
-      p.members.includes(user?.uid || '') && p.id !== party.id
-    );
-
-    // SKTaxi: 현재 사용자가 이 파티에 속해 있는지 확인
-    const isUserInThisParty = party.members.includes(user?.uid || '');
-
-    if (isUserInAnyParty) {
+  const handlePartyCardPress = async (party: any) => {
+    // SKTaxi: 이미 다른 파티에 소속되어 있는지 확인
+    if (hasParty && party.id !== myPartyId) {
       Alert.alert('알림', '이미 다른 파티에 소속되어 있어요. 파티를 탈퇴하고 다시 요청해주세요.');
       return;
     }
 
-    if (isUserInThisParty) {
+    // SKTaxi: 현재 사용자가 이 파티에 속해 있는지 확인
+    if (party.id === myPartyId) {
+      // TODO: 채팅 화면으로 이동 또는 처리
       Alert.alert('알림', '이미 이 파티에 참여하고 있어요.');
       return;
     }
 
+    // SKTaxi: 현재 파티에 pending 요청이 있으면 AcceptancePendingScreen으로 이동
+    if (pendingRequest.partyId === party.id && pendingRequest.requestId) {
+      navigation.navigate('택시', {
+        screen: 'AcceptancePending',
+        params: { party, requestId: pendingRequest.requestId }
+      });
+      return;
+    }
+
+    // SKTaxi: 다른 파티에 pending 요청이 있는 경우 확인 Alert
+    if (pendingRequest.partyId && pendingRequest.requestId) {
+      const confirmCancel = await new Promise<boolean>((resolve) => {
+        Alert.alert(
+          '동승 요청 취소',
+          '이미 동승을 요청한 파티가 있어요. 그 요청을 취소하고 이 파티에 동승요청을 할까요?',
+          [
+            {
+              text: '취소',
+              style: 'cancel',
+              onPress: () => resolve(false),
+            },
+            {
+              text: '확인',
+              onPress: () => resolve(true),
+            },
+          ]
+        );
+      });
+
+      if (!confirmCancel) return;
+
+      // SKTaxi: 기존 요청 취소
+      try {
+        const cancelRequestRef = collection(getFirestore(), 'joinRequests');
+        const cancelDocRef = doc(cancelRequestRef, pendingRequest.requestId);
+        await updateDoc(cancelDocRef, { status: 'canceled' });
+      } catch (e) {
+        console.warn('기존 요청 취소 실패:', e);
+      }
+    }
+
     if (party.status === 'open') {
+      if (!user?.uid) {
+        Alert.alert('오류', '로그인이 필요합니다.');
+        return;
+      }
+
+      // SKTaxi: 동승 요청 확인 Alert
       Alert.alert(
         '동승 요청',
-        `${party.departure.name} → ${party.destination.name} 파티에 동승 요청을 보낼까요?`,
+        `${party.departure.name} → ${party.destination.name}로 가는 ${formatKoreanAmPmTime(party.departureTime)} 출발 파티에 동승 요청을 할까요?`,
         [
           { text: '취소', style: 'cancel' },
-          { text: '요청 보내기', onPress: () => {
-            // TODO: 동승 요청 로직 구현
-            console.log('동승 요청 보내기:', party.id);
+          { text: '요청 보내기', onPress: async () => {
+            try {
+              const ref = await addDoc(collection(getFirestore(), 'joinRequests'), {
+                partyId: party.id,
+                leaderId: party.leaderId,
+                requesterId: user.uid,
+                status: 'pending',
+                createdAt: serverTimestamp(),
+              });
+              
+              Alert.alert('요청 전송', '방장에게 요청을 보냈어요.');
+              
+              // SKTaxi: 수락 대기 화면으로 이동
+              navigation.navigate('택시', {
+                screen: 'AcceptancePending',
+                params: { party, requestId: ref.id }
+              });
+            } catch (error) {
+              console.error('동승 요청 전송 실패:', error);
+              Alert.alert('오류', '동승 요청 전송에 실패했습니다.');
+            }
           }}
         ]
       );
@@ -124,7 +191,10 @@ export const HomeScreen = () => {
           </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Notification' })}>
-              <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
+              <View style={{ position: 'relative' }}>
+                <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
+                <TabBadge count={unreadCount} />
+              </View>
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Setting' })}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />

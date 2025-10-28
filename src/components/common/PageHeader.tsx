@@ -15,11 +15,13 @@ interface PageHeaderProps {
   subTitleNumberOfLines?: number;
   rightButton?: boolean;
   rightButtonIcon?: string;
+  rightButtons?: React.ReactNode[];
   onRightButtonPress?: () => void;
+  onRightButtonsPress?: (index: number | undefined) => void;
   borderBottom?: boolean;
 }
 
-const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', onRightButtonPress, borderBottom=false }: PageHeaderProps) => {
+const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', rightButtons, onRightButtonPress, onRightButtonsPress, borderBottom=false }: PageHeaderProps) => {
   return (
     <View style={[styles.container, {paddingHorizontal: padding}, style, borderBottom && styles.borderBottom]}>
       <Icon name="chevron-back" size={36} color={COLORS.text.primary} onPress={onBack} />
@@ -28,6 +30,11 @@ const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, 
         {subTitle && <Text style={[styles.subTitle, subTitleStyle]} numberOfLines={subTitleNumberOfLines}>{subTitle}</Text>}
       </View>
       {rightButton && <Icon name={rightButtonIcon} size={28} color={COLORS.text.primary} style={{ marginRight: 5 }} onPress={onRightButtonPress} />}
+      {rightButtons && rightButtons.map((button, index) => (
+        <TouchableOpacity style={{ marginRight: index === rightButtons.length - 1 ? 10 : 20 }} key={index} onPress={() => onRightButtonsPress?.(index as number)}>
+          {button}
+        </TouchableOpacity>
+      ))}
     </View>
   );
 };

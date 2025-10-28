@@ -14,6 +14,8 @@ interface NotificationSettings {
   allNotifications: boolean;
   partyNotifications: boolean;
   noticeNotifications: boolean;
+  boardLikeNotifications: boolean;
+  boardCommentNotifications: boolean;
   systemNotifications: boolean;
   marketingNotifications: boolean;
 }
@@ -25,6 +27,8 @@ export const NofiticationSettingScreen = () => {
     allNotifications: true,
     partyNotifications: true,
     noticeNotifications: true,
+    boardLikeNotifications: true,
+    boardCommentNotifications: true,
     systemNotifications: true,
     marketingNotifications: false,
   });
@@ -70,6 +74,8 @@ export const NofiticationSettingScreen = () => {
     if (key === 'allNotifications' && !value) {
       newSettings.partyNotifications = false;
       newSettings.noticeNotifications = false;
+      newSettings.boardLikeNotifications = false;
+      newSettings.boardCommentNotifications = false;
       newSettings.systemNotifications = false;
       newSettings.marketingNotifications = false;
     }
@@ -78,6 +84,8 @@ export const NofiticationSettingScreen = () => {
     if (key === 'allNotifications' && value) {
       newSettings.partyNotifications = true;
       newSettings.noticeNotifications = true;
+      newSettings.boardLikeNotifications = true;
+      newSettings.boardCommentNotifications = true;
       newSettings.systemNotifications = true;
       newSettings.marketingNotifications = true;
     }
@@ -184,6 +192,27 @@ export const NofiticationSettingScreen = () => {
             icon="document-text"
             value={settings.noticeNotifications}
             onValueChange={(value) => updateSetting('noticeNotifications', value)}
+            disabled={!settings.allNotifications}
+          />
+        </View>
+
+        {/* 게시판 알림 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>게시판</Text>
+          <SettingItem
+            title="좋아요 알림"
+            description="내 게시물에 좋아요가 눌렸을 때 알림"
+            icon="heart"
+            value={settings.boardLikeNotifications}
+            onValueChange={(value) => updateSetting('boardLikeNotifications', value)}
+            disabled={!settings.allNotifications}
+          />
+          <SettingItem
+            title="댓글/답글 알림"
+            description="내 게시물에 댓글이나 답글이 달렸을 때 알림"
+            icon="chatbubble-ellipses"
+            value={settings.boardCommentNotifications}
+            onValueChange={(value) => updateSetting('boardCommentNotifications', value)}
             disabled={!settings.allNotifications}
           />
         </View>

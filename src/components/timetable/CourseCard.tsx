@@ -81,15 +81,18 @@ export const CourseCard: React.FC<CourseCardProps> = ({
         </View>
         {(isSelected && onAddToTimetable) ? (
         <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Icon name="person" size={14} color={COLORS.text.secondary} />
-            <Text style={styles.detailText}>{course.professor} 교수</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Icon name="location" size={14} color={COLORS.text.secondary} />
-            <Text style={styles.detailText}>{course.location}</Text>
-          </View>
+          {course.professor !== '' && (
+            <View style={styles.detailRow}>
+              <Icon name="person" size={14} color={COLORS.text.secondary} />
+              <Text style={styles.detailText}>{course.professor} 교수</Text>
+            </View>
+          )}
+          {course.location !== '' && (
+            <View style={styles.detailRow}>
+              <Icon name="location" size={14} color={COLORS.text.secondary} />
+              <Text style={styles.detailText}>{course.location}</Text>
+            </View>
+          )}
 
           <View style={styles.detailRow}>
             <Icon name="time" size={14} color={COLORS.text.secondary} />
@@ -109,10 +112,18 @@ export const CourseCard: React.FC<CourseCardProps> = ({
         ) : (
           <View style={styles.details}>
             <View style={styles.detailSimpleTextRow}>
-              <Text style={styles.detailSimplifiedText}>{course.professor}</Text>
-              <Text style={styles.detailSimplifiedText}>•</Text>
-              <Text style={styles.detailSimplifiedText}>{course.location}</Text>
-              <Text style={styles.detailSimplifiedText}>•</Text>
+              {course.professor !== '' && (
+                <>
+                  <Text style={styles.detailSimplifiedText}>{course.professor}</Text>
+                  <Text style={styles.detailSimplifiedText}> • </Text>
+                </>
+              )}
+              {course.location !== '' && (
+                <>
+                  <Text style={styles.detailSimplifiedText}>{course.location}</Text>
+                  <Text style={styles.detailSimplifiedText}> • </Text>
+                </>
+              )}
               <Text style={styles.detailSimplifiedText}>{formatSchedule()}</Text>
             </View>
             <View style={styles.detailSimpleTextRow}>
@@ -230,7 +241,7 @@ const styles = StyleSheet.create({
   detailSimpleTextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 2,
   },
   detailText: {
     ...TYPOGRAPHY.caption1,

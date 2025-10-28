@@ -9,7 +9,7 @@
       ]
     },
     {
-      "collectionGroup": "comments",
+      "collectionGroup": "noticeComments",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "noticeId", "order": "ASCENDING" },

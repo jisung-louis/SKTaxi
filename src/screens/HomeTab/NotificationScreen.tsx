@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
@@ -7,142 +7,212 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
+import { useNotifications, Notification } from '../../hooks/useNotifications';
 
-// SKTaxi: 임시 알림 데이터 (추후 실제 데이터로 교체)
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'party_join',
-    title: '파티 참여 승인',
-    message: '홍길동님이 당신의 택시 파티 참여를 승인했어요!',
-    time: '2분 전',
-    isRead: false,
-    icon: 'checkmark-circle',
-    iconColor: COLORS.accent.green,
-  },
-  {
-    id: '2',
-    type: 'party_created',
-    title: '새로운 파티 생성',
-    message: '김철수님이 새로운 택시 파티를 만들었어요. 참여해보세요!',
-    time: '1시간 전',
-    isRead: true,
-    icon: 'car',
-    iconColor: COLORS.accent.blue,
-  },
-  {
-    id: '3',
-    type: 'system',
-    title: '앱 업데이트',
-    message: '새로운 기능이 추가되었어요. 지금 업데이트해보세요!',
-    time: '3시간 전',
-    isRead: true,
-    icon: 'download',
-    iconColor: COLORS.text.secondary,
-  },
-  {
-    id: '4',
-    type: 'party_reminder',
-    title: '파티 출발 알림',
-    message: '10분 후에 출발하는 택시 파티가 있어요. 준비해주세요!',
-    time: '1일 전',
-    isRead: true,
-    icon: 'time',
-    iconColor: COLORS.accent.red,
-  },
-  {
-    id: '5',
-    type: 'payment',
-    title: '정산 완료',
-    message: '택시비 정산이 완료되었어요. 감사합니다!',
-    time: '2일 전',
-    isRead: true,
-    icon: 'card',
-    iconColor: COLORS.accent.green,
-  },
-];
+const formatTimeAgo = (timestamp: any) => {
+  if (!timestamp) return '방금 전';
+  
+  const now = new Date();
+  const createdAt = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  const diffMs = now.getTime() - createdAt.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  
+  if (diffDays > 0) return `${diffDays}일 전`;
+  if (diffHours > 0) return `${diffHours}시간 전`;
+  if (diffMinutes > 0) return `${diffMinutes}분 전`;
+  return '방금 전';
+};
+
+const getNotificationIcon = (type: string) => {
+  const iconMap: { [key: string]: { icon: string; color: string } } = {
+    'party_join_request': { icon: 'person-add', color: COLORS.accent.blue },
+    'party_join_accepted': { icon: 'checkmark-circle', color: COLORS.accent.green },
+    'party_join_rejected': { icon: 'close-circle', color: COLORS.accent.red },
+    'party_deleted': { icon: 'car', color: COLORS.text.secondary },
+    'party_closed': { icon: 'lock-closed', color: COLORS.accent.red },
+    'party_arrived': { icon: 'checkmark-circle', color: COLORS.accent.green },
+    'chat_message': { icon: 'chatbubble', color: COLORS.accent.blue },
+    'notice': { icon: 'notifications', color: COLORS.accent.green },
+    'settlement_completed': { icon: 'receipt', color: COLORS.accent.green },
+    'member_kicked': { icon: 'exit', color: COLORS.accent.red },
+    'board_post_comment': { icon: 'chatbubble', color: COLORS.accent.blue },
+    'board_comment_reply': { icon: 'chatbubble-ellipses', color: COLORS.accent.green },
+    'board_post_like': { icon: 'heart', color: COLORS.accent.red },
+    'notice_post_comment': { icon: 'chatbubble', color: COLORS.accent.blue },
+    'notice_comment_reply': { icon: 'chatbubble-ellipses', color: COLORS.accent.green },
+  };
+  
+  return iconMap[type] || { icon: 'notifications', color: COLORS.text.secondary };
+};
 
 export const NotificationScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { notifications, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, unreadCount } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    // SKTaxi: 실제로는 서버에서 새 알림을 가져옴
     setTimeout(() => {
       setRefreshing(false);
     }, 1000);
   };
 
-  const handleNotificationPress = (notification: any) => {
-    // SKTaxi: 알림을 읽음 처리
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === notification.id 
-          ? { ...notif, isRead: true }
-          : notif
-      )
-    );
+  const handleNotificationPress = async (notification: Notification) => {
+    // 읽음 처리
+    await markAsRead(notification.id);
+    // HomeTab 스택을 HomeScreen으로 우선 초기화
+    navigation.popToTop();
     
-    // SKTaxi: 알림 타입에 따른 네비게이션 처리
+    
+    // 알림 타입에 따른 네비게이션
     switch (notification.type) {
-      case 'party_join':
-      case 'party_created':
-        // 파티 관련 알림은 택시 탭으로 이동
+      case 'party_join_request':
+      case 'party_join_accepted':
+      case 'party_deleted':
+      case 'party_closed':
+      case 'party_arrived':
+      case 'chat_message':
+      case 'settlement_completed':
+        // 택시 탭으로 이동하고 채팅 화면으로 이동
+        if (notification.data?.partyId) {
+          (navigation as any).navigate('택시', {
+            screen: 'Chat',
+            params: { partyId: notification.data.partyId },
+          });
+        } else {
+          (navigation as any).navigate('택시');
+        }
         break;
-      case 'system':
-        // 시스템 알림은 설정으로 이동
-        navigation.navigate('Setting');
+      case 'member_kicked':
+        // 강퇴 알림은 클릭해도 아무 동작 안함 (읽음 처리만)
+        break;
+      case 'notice':
+        // 공지사항 상세 화면으로 이동
+        (navigation as any).navigate('공지', {
+          screen: 'NoticeDetail',
+          params: {
+            noticeId: notification.data?.noticeId,
+          },
+        });
+        break;
+      case 'board_post_comment':
+      case 'board_comment_reply':
+      case 'board_post_like':
+        // 게시판 상세 화면으로 이동
+        if (notification.data?.postId) {
+          (navigation as any).navigate('게시판', {
+            screen: 'BoardDetail',
+            params: {
+              postId: notification.data.postId,
+            },
+          });
+        }
+        break;
+      case 'notice_post_comment':
+      case 'notice_comment_reply':
+        // 공지사항 상세 화면으로 이동
+        if (notification.data?.noticeId) {
+          (navigation as any).navigate('공지', {
+            screen: 'NoticeDetail',
+            params: {
+              noticeId: notification.data.noticeId,
+            },
+          });
+        }
         break;
       default:
         break;
     }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, isRead: true }))
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead();
+  };
+
+  const handleDeleteNotification = async (notification: Notification) => {
+    try {
+      await deleteNotification(notification.id);
+    } catch (error) {
+      console.error('알림 삭제 실패:', error);
+      Alert.alert('오류', '알림 삭제에 실패했습니다.');
+    }
+  };
+  const handleDeleteAllNotifications = async () => {
+    Alert.alert(
+      '모든 알림 삭제',
+      '모든 알림을 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAllNotifications();
+            } catch (error) {
+              console.error('알림 삭제 실패:', error);
+              Alert.alert('오류', '알림 삭제에 실패했습니다.');
+            }
+          }
+        }
+      ]
     );
   };
 
-  const unreadCount = notifications.filter(notif => !notif.isRead).length;
-
-  const renderNotificationItem = (notification: any) => (
-    <TouchableOpacity
-      key={notification.id}
-      style={[
-        styles.notificationItem,
-        !notification.isRead && styles.unreadNotification
-      ]}
-      onPress={() => handleNotificationPress(notification)}
-    >
-      <View style={styles.notificationLeft}>
-        <View style={[styles.iconContainer, { backgroundColor: notification.iconColor + '20' }]}>
-          <Icon name={notification.icon} size={20} color={notification.iconColor} />
+  const renderNotificationItem = (notification: Notification) => {
+    const { icon, color } = getNotificationIcon(notification.type);
+    const timeAgo = formatTimeAgo(notification.createdAt);
+    
+    return (
+      <TouchableOpacity
+        key={notification.id}
+        style={[
+          styles.notificationItem,
+          !notification.isRead && styles.unreadNotification
+        ]}
+        onPress={() => handleNotificationPress(notification)}
+      >
+        <View style={styles.notificationLeft}>
+          <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+            <Icon name={icon} size={20} color={color} />
+          </View>
+          <View style={styles.notificationContent}>
+            <Text style={[styles.notificationTitle, !notification.isRead && styles.unreadText]}>
+              {notification.title}
+            </Text>
+            <Text style={styles.notificationMessage} numberOfLines={2}>
+              {notification.message}
+            </Text>
+            <Text style={styles.notificationTime}>{timeAgo}</Text>
+          </View>
         </View>
-        <View style={styles.notificationContent}>
-          <Text style={[styles.notificationTitle, !notification.isRead && styles.unreadText]}>
-            {notification.title}
-          </Text>
-          <Text style={styles.notificationMessage} numberOfLines={2}>
-            {notification.message}
-          </Text>
-          <Text style={styles.notificationTime}>{notification.time}</Text>
-        </View>
-      </View>
-      {!notification.isRead && <View style={styles.unreadDot} />}
-    </TouchableOpacity>
-  );
+        {!notification.isRead && <View style={styles.unreadDot} />}
+        <TouchableOpacity style={styles.notificationDeleteButton} onPress={() => handleDeleteNotification(notification)}>
+          <Icon name="trash" size={20} color={COLORS.text.tertiary} />
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <PageHeader 
         onBack={() => navigation.goBack()} 
         title="알림" 
-        borderBottom 
-        rightButton
-        onRightButtonPress={handleMarkAllAsRead}
+        borderBottom
+        rightButtons={[
+            <Icon name="checkmark-circle" size={30} color={COLORS.text.primary} />,
+            <Icon name="trash" size={30} color={COLORS.text.primary} />,
+        ]}
+        onRightButtonsPress={(index) => {
+          if (index === 0) {
+            handleMarkAllAsRead();
+          } else if (index === 1) {
+            handleDeleteAllNotifications();
+          }
+        }}
       />
       
       <ScrollView 
@@ -156,7 +226,11 @@ export const NotificationScreen = () => {
           />
         }
       >
-        {notifications.length === 0 ? (
+        {loading ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyMessage}>알림을 불러오는 중...</Text>
+          </View>
+        ) : notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Icon name="notifications-off" size={64} color={COLORS.text.disabled} />
             <Text style={styles.emptyTitle}>알림이 없어요</Text>
@@ -229,8 +303,7 @@ const styles = StyleSheet.create({
   notificationItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    padding: 16,
     backgroundColor: COLORS.background.card,
     borderRadius: 16,
     marginBottom: 12,
@@ -287,5 +360,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent.green,
     marginTop: 8,
     marginLeft: 8,
+  },
+  notificationDeleteButton: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    padding: 16,
   },
 });
