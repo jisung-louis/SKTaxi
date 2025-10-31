@@ -11,6 +11,7 @@ import {
   where,
   increment
 } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { useAuth } from './useAuth';
 import { Comment, CommentFormData } from '../types/comment';
 
@@ -43,14 +44,14 @@ export const useNoticeComments = (noticeId: string) => {
 
     const unsubscribe = onSnapshot(
       q,
-      (snapshot) => {
+      (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         const commentsData: Comment[] = [];
         const repliesMap: { [key: string]: Comment[] } = {};
         
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          const data: any = docSnap.data();
           const comment = {
-            id: doc.id,
+            id: docSnap.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate(),

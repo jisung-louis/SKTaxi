@@ -35,6 +35,7 @@ const getNotificationIcon = (type: string) => {
     'party_arrived': { icon: 'checkmark-circle', color: COLORS.accent.green },
     'chat_message': { icon: 'chatbubble', color: COLORS.accent.blue },
     'notice': { icon: 'notifications', color: COLORS.accent.green },
+    'app_notice': { icon: 'information-circle', color: COLORS.accent.blue },
     'settlement_completed': { icon: 'receipt', color: COLORS.accent.green },
     'member_kicked': { icon: 'exit', color: COLORS.accent.red },
     'board_post_comment': { icon: 'chatbubble', color: COLORS.accent.blue },
@@ -96,6 +97,15 @@ export const NotificationScreen = () => {
             noticeId: notification.data?.noticeId,
           },
         });
+        break;
+      case 'app_notice':
+        // 앱 공지 상세 화면으로 이동
+        if (notification.data?.appNoticeId) {
+          (navigation as any).navigate('홈', {
+            screen: 'AppNoticeDetail',
+            params: { noticeId: notification.data.appNoticeId },
+          });
+        }
         break;
       case 'board_post_comment':
       case 'board_comment_reply':
@@ -179,7 +189,7 @@ export const NotificationScreen = () => {
             <Icon name={icon} size={20} color={color} />
           </View>
           <View style={styles.notificationContent}>
-            <Text style={[styles.notificationTitle, !notification.isRead && styles.unreadText]}>
+            <Text style={[styles.notificationTitle, !notification.isRead && styles.unreadText]} numberOfLines={1} ellipsizeMode="tail">
               {notification.title}
             </Text>
             <Text style={styles.notificationMessage} numberOfLines={2}>
@@ -218,6 +228,7 @@ export const NotificationScreen = () => {
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -262,6 +273,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,

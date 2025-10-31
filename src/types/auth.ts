@@ -1,17 +1,20 @@
 export interface User {
   uid: string;
   email: string | null;
-  displayName: string | null;
+  displayName: string | null; // 회원가입 닉네임
   studentId: string | null;
   photoURL: string | null;
   linkedAccounts?: LinkedAccount[];
   account?: UserAccountInfo | null;
-  realname?: string | null;
+  realname?: string | null; // 계좌 예금주 이름
+  onboarding?: {
+    permissionsComplete: boolean;
+  };
   joinedAt?: any;
 }
 
 export interface LinkedAccount {
-  provider: 'kakao' | 'naver' | 'apple';
+  provider: 'google';
   providerId: string;
   email: string;
   displayName: string | null;
@@ -23,29 +26,7 @@ export interface AuthState {
   loading: boolean;
 }
 
-export interface SignUpData {
-  email: string;
-  password: string;
-  displayName: string;
-  studentId: string;
-}
-
-export interface SignInData {
-  email: string;
-  password: string;
-}
-
-export interface ResetPasswordData {
-  email: string;
-}
-
-export interface SocialSignInData {
-  provider: 'kakao' | 'naver' | 'apple';
-  token: string;
-  email: string;
-  displayName?: string;
-  photoURL?: string;
-} 
+// email/password 관련 타입 제거
 
 export interface UserAccountInfo {
   bankName?: string;

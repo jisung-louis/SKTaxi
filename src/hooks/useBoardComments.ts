@@ -11,6 +11,7 @@ import {
   increment,
   serverTimestamp
 } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { BoardComment } from '../types/board';
 import { db } from '../config/firebase';
 import { useAuth } from './useAuth';
@@ -37,14 +38,14 @@ export const useBoardComments = (postId: string) => {
         orderBy('createdAt', 'asc')
       );
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         const commentsData: BoardComment[] = [];
         const repliesMap: { [key: string]: BoardComment[] } = {};
         
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          const data: any = docSnap.data();
           const comment = {
-            id: doc.id,
+            id: docSnap.id,
             ...data,
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate() || new Date(),

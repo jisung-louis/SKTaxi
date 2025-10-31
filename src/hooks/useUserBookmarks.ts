@@ -9,6 +9,7 @@ import {
   doc,
   getDocs
 } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './useAuth';
 
@@ -35,10 +36,10 @@ export const useUserBookmarks = () => {
         where('userId', '==', user.uid)
       );
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         const bookmarkIds: string[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          const data: any = docSnap.data();
           if (data.postId) {
             bookmarkIds.push(data.postId);
           }
@@ -88,8 +89,8 @@ export const useUserBookmarks = () => {
       );
 
       const snapshot = await getDocs(q);
-      snapshot.forEach((doc) => {
-        deleteDoc(doc.ref);
+      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        deleteDoc(docSnap.ref);
       });
     } catch (err) {
       console.error('북마크 제거 실패:', err);

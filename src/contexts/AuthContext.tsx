@@ -1,12 +1,10 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { AuthState, SignUpData, SignInData, ResetPasswordData } from '../types/auth';
+import { AuthState } from '../types/auth';
 
 interface AuthContextType extends AuthState {
-  signUp: (data: SignUpData) => Promise<void>;
-  signIn: (data: SignInData) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (data: ResetPasswordData) => Promise<void>;
+  signInWithGoogle: () => Promise<{ firstLogin: boolean }>; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

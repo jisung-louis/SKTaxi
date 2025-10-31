@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, doc, getDoc, setDoc, writeBatch, serverTimestamp, startAfter, getDocs, where, collectionGroup } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getAuth } from '@react-native-firebase/auth';
 import { getUserProfile } from '../libs/firebase';
 
@@ -64,7 +65,7 @@ export const useNotices = (selectedCategory: string = '전체') => {
 
     const unsubscribe = onSnapshot(
       baseQuery,
-      (snapshot) => {
+      (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         const noticesData = snapshot.docs.map(doc => ({ 
           id: doc.id, 
           ...doc.data(),
@@ -163,7 +164,7 @@ export const useNotices = (selectedCategory: string = '전체') => {
                where('noticeId', 'in', ids)
              );
              const snap = await getDocs(q);
-             snap.forEach((d) => {
+            snap.forEach((d: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
                const data = d.data();
                const noticeId = data?.noticeId;
                if (typeof noticeId === 'string' && noticeId) {
@@ -278,12 +279,15 @@ export const useNotices = (selectedCategory: string = '전체') => {
         return;
       }
 
-      const newNotices = nextSnapshot.docs.map(doc => ({
-        id: doc.id, // SKTaxi: Firestore 문서 ID 사용
-        ...doc.data(),
-        likeCount: doc.data().likeCount || 0,
-        commentCount: doc.data().commentCount || 0,
-      })) as Notice[];
+      const newNotices = nextSnapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          likeCount: data?.likeCount || 0,
+          commentCount: data?.commentCount || 0,
+        } as Notice;
+      });
 
       setNotices(prev => {
         const merged = [...prev, ...newNotices];

@@ -203,7 +203,7 @@ export const NoticeScreen = () => {
               </Animated.View>
             )}
             <TouchableOpacity style={styles.menuButtonContainer} onPress={openPanel}>
-              <Icon name="settings-outline" size={32} color={COLORS.text.primary} />
+              <Icon name="notifications-circle-outline" size={32} color={COLORS.text.primary} />
             </TouchableOpacity>
           </View>
         </View>

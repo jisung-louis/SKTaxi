@@ -32,11 +32,11 @@ export const SettingScreen = () => {
   };
 
   const handleAppVersion = () => {
-    Alert.alert('앱 버전', 'SKTaxi v1.0.0');
+    Alert.alert('앱 버전', 'SKTaxi v0.1.0');
   };
 
   const handleAbout = () => {
-    Alert.alert('앱 정보', 'SKTaxi\n성결대학교 택시 동승 서비스');
+    Alert.alert('앱 정보', 'SKURI Taxi\n성결대 학생들을 위한 스마트한 캠퍼스 라이프');
   };
 
   return (
@@ -89,7 +89,7 @@ export const SettingScreen = () => {
                 </View>
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuText}>앱 기능 아이디어 제안</Text>
-                  <Text style={styles.menuSubtext}>SKTaxi에 추가됐으면 하는 기능을 제안해주세요</Text>
+                  <Text style={styles.menuSubtext}>SKURI에 추가됐으면 하는 기능을 제안해주세요</Text>
                 </View>
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
@@ -172,7 +172,7 @@ export const SettingScreen = () => {
                 </View>
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuText}>앱 버전</Text>
-                  <Text style={styles.menuSubtext}>현재 버전: v1.0.0</Text>
+                  <Text style={styles.menuSubtext}>현재 버전: v0.1.0</Text>
                 </View>
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
@@ -187,7 +187,7 @@ export const SettingScreen = () => {
                 </View>
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuText}>앱 정보</Text>
-                  <Text style={styles.menuSubtext}>SKTaxi에 대해 알아보세요</Text>
+                  <Text style={styles.menuSubtext}>SKURI Taxi에 대해 알아보세요</Text>
                 </View>
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />

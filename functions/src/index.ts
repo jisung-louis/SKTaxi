@@ -35,6 +35,46 @@ const parser = new Parser({
   },
 });
 
+// SKTaxi: 4시간마다 12시간 초과 파티 자동 삭제
+export const cleanupOldParties = onSchedule({ schedule: 'every 4 hours', timeZone: 'Asia/Seoul' }, async () => {
+  try {
+    const twelveHoursMs = 12 * 60 * 60 * 1000;
+    const cutoffDate = new Date(Date.now() - twelveHoursMs);
+    const cutoffTs = admin.firestore.Timestamp.fromDate(cutoffDate);
+
+    console.log(`🧹 CleanupOldParties 시작 - 기준시각: ${cutoffDate.toISOString()}`);
+
+    // 페이지네이션으로 반복 삭제 (배치 400개 단위)
+    const pageSize = 400;
+    let totalDeleted = 0;
+
+    while (true) {
+      const snap = await db
+        .collection('parties')
+        .where('createdAt', '<', cutoffTs)
+        .orderBy('createdAt', 'asc')
+        .limit(pageSize)
+        .get();
+
+      if (snap.empty) break;
+
+      const batch = db.batch();
+      snap.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+
+      totalDeleted += snap.size;
+      console.log(`🗑️ 삭제 진행: ${snap.size}건 (누적 ${totalDeleted})`);
+
+      // 다음 루프에서 추가 삭제 계속
+      if (snap.size < pageSize) break;
+    }
+
+    console.log(`✅ CleanupOldParties 완료 - 총 삭제: ${totalDeleted}건`);
+  } catch (error) {
+    console.error('❌ CleanupOldParties 실패:', error);
+  }
+});
+
 // SKTaxi: 공지사항 카테고리별 RSS 설정
 const NOTICE_CATEGORIES = {
   '새소식': 97,
@@ -1236,7 +1276,6 @@ export const onNoticeCreated = onDocumentCreated(
           payload: {
             aps: {
               sound: 'default',
-              //badge: 1,
             },
           },
         },
@@ -1301,6 +1340,77 @@ export const onNoticeCreated = onDocumentCreated(
 
     } catch (error) {
       console.error('❌ Push 알림 전송 실패:', error);
+    }
+  }
+);
+
+// SKTaxi: 새로운 앱 공지(appNotices) 생성 시 시스템 알림 허용 유저에게 푸시 전송
+export const onAppNoticeCreated = onDocumentCreated(
+  {
+    document: 'appNotices/{appNoticeId}',
+    region: 'asia-northeast3'
+  },
+  async (event) => {
+    const appNotice = event.data?.data();
+    const appNoticeId = event.params.appNoticeId;
+    if (!appNotice) return;
+
+    try {
+      // 1) 알림 설정 필터: allNotifications !== false && systemNotifications !== false
+      const usersSnapshot = await db.collection('users').get();
+      const targetUserIds: string[] = [];
+      for (const userDoc of usersSnapshot.docs) {
+        const settings = (userDoc.data().notificationSettings || {}) as any;
+        const allow = settings.allNotifications !== false && settings.systemNotifications !== false;
+        if (allow) targetUserIds.push(userDoc.id);
+      }
+      if (!targetUserIds.length) return;
+
+      // 2) FCM 토큰 수집(기본 유효성 검사)
+      const tokens: string[] = [];
+      for (const uid of targetUserIds) {
+        try {
+          const u = await db.collection('users').doc(uid).get();
+          const list = (u.data()?.fcmTokens || []) as string[];
+          const valid = list.filter((t) => t && typeof t === 'string' && t.length > 10 && !t.includes('undefined') && !t.includes('null'));
+          tokens.push(...valid);
+        } catch {}
+      }
+      if (!tokens.length) return;
+
+      // 3) 메시지 구성 및 전송
+      const title = String(appNotice.title || '새 앱 공지');
+      const body = String(appNotice.content || title);
+      const messageBase: any = {
+        notification: { title, body },
+        data: {
+          type: 'app_notice',
+          appNoticeId: String(appNoticeId || ''),
+          title,
+        },
+        apns: { payload: { aps: { sound: 'default' } } },
+        android: { priority: 'high' as const },
+      };
+
+      const BATCH = 500;
+      const failed: string[] = [];
+      for (let i = 0; i < tokens.length; i += BATCH) {
+        const chunk = tokens.slice(i, i + BATCH);
+        const resp = await fcm.sendEachForMulticast({ ...messageBase, tokens: chunk });
+        resp.responses.forEach((r, idx) => { if (!r.success) failed.push(chunk[idx]); });
+      }
+
+      if (failed.length) await cleanupFailedTokens(failed);
+
+      // 4) 내부 userNotification 생성
+      await Promise.all(targetUserIds.map((uid) => createUserNotification(uid, {
+        type: 'app_notice',
+        title,
+        message: body,
+        data: { appNoticeId: String(appNoticeId || '') },
+      })));
+    } catch (e) {
+      console.error('❌ 앱 공지 푸시 전송 실패:', e);
     }
   }
 );

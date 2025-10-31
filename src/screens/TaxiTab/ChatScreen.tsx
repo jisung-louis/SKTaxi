@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Modal, ScrollView, Clipboard, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Modal, ScrollView, Clipboard, TouchableWithoutFeedback, Keyboard, Linking, Image } from 'react-native';
 //import { Text } from '../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +57,66 @@ export const ChatScreen = () => {
   // SKTaxi: 멤버들과 동승 요청자들의 displayName 가져오기
   const allUserIds = [...memberUids, ...requesterIds];
   const { displayNameMap } = useUserDisplayNames(allUserIds);
+
+  // SKURI: 택시 호출 앱 모달
+  const [showTaxiAppModal, setShowTaxiAppModal] = useState(false);
+  const taxiApps = [
+    {
+      id: 'kakaot',
+      name: '카카오 T',
+      scheme: (party: any) => {
+        const lat = party?.destination?.lat;
+        const lng = party?.destination?.lng;
+        const name = party?.destination?.name;
+        if (lat && lng) {
+          let url = `kakaot://taxi?&dest_lat=${lat}&dest_lng=${lng}`;
+          if (name) url += `&dest_name=${encodeURIComponent(name)}`;
+          return url;
+        }
+        return 'kakaot://taxi';
+      },
+      iosStore: 'https://apps.apple.com/app/id981110422',
+      androidStore: 'market://details?id=com.kakao.taxi',
+      icon: require('../../../assets/images/kakaot_icon.png'),
+    },
+    {
+      id: 'tmoneygo',
+      name: '티머니 GO',
+      scheme: () => 'tmoneygo://',
+      iosStore: 'https://apps.apple.com/app/id1483433931',
+      androidStore: 'market://details?id=com.tmoney.tmoneygo',
+      icon: require('../../../assets/images/tmoneygo_icon.png'),
+    },
+    {
+      id: 'uber',
+      name: 'Uber',
+      scheme: () => 'uber://',
+      iosStore: 'https://apps.apple.com/app/id368677368',
+      androidStore: 'market://details?id=com.ubercab',
+      icon: require('../../../assets/images/uber_icon.png'),
+    },
+  ] as const;
+
+  const openExternalApp = async (
+    urlBuilder: (party?: any) => string,
+    iosStore: string,
+    androidStore: string
+  ) => {
+    const scheme = urlBuilder(currentParty);
+    try {
+      const canOpen = await Linking.canOpenURL(scheme);
+      if (canOpen) {
+        await Linking.openURL(scheme);
+      } else {
+        const storeUrl = Platform.OS === 'ios' ? iosStore : androidStore;
+        await Linking.openURL(storeUrl);
+      }
+    } catch (e) {
+      const storeUrl = Platform.OS === 'ios' ? iosStore : androidStore;
+      Alert.alert('안내', '앱을 열 수 없어요. 스토어로 이동합니다.');
+      Linking.openURL(storeUrl).catch(() => {});
+    }
+  };
 
   // SKTaxi: 현재 사용자가 리더인지 확인
   const currentUser = auth(getApp()).currentUser;
@@ -188,8 +248,8 @@ export const ChatScreen = () => {
         );
         
         if (settingsDoc.exists()) {
-          const data = settingsDoc.data();
-          setIsChatMuted(data?.muted || false);
+          const data = settingsDoc.data() as { muted?: boolean } | undefined;
+          setIsChatMuted(!!data?.muted);
         }
       } catch (error) {
         console.error('알림 설정 로드 실패:', error);
@@ -393,12 +453,12 @@ export const ChatScreen = () => {
         orderBy('createdAt', 'desc')
       );
       
-      const unsubscribe = onSnapshot(joinRequestsQuery, (snapshot) => {
+      const unsubscribe = onSnapshot(joinRequestsQuery, (snapshot: any) => {
         try {
           if (snapshot) {
-            const requests = snapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
+            const requests = snapshot.docs.map((docSnap: any) => ({
+              id: docSnap.id,
+              ...docSnap.data()
             }));
             setJoinRequests(requests);
           } else {
@@ -495,7 +555,7 @@ export const ChatScreen = () => {
     setAccountLoading(true);
     try {
       const userDoc = await getDoc(doc(collection(firestore(getApp()), 'users'), currentUser.uid));
-      const userData = userDoc.data();
+      const userData = userDoc.data() as { account?: any } | undefined;
       const account = userData?.account;
       
       if (account && (account.bankName || account.accountNumber || account.accountHolder)) {
@@ -700,8 +760,8 @@ export const ChatScreen = () => {
         settlementMembers[memberId] = memberData;
       });
 
-      // SKTaxi: 파티 상태를 "arrived"로 변경하고 정산 현황 저장
-      await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
+      // SKTaxi: 파티 상태를 "arrived"로 변경하고 정산 현황 저장 (merge로 전체 구조 안전 갱신)
+      await setDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
         status: 'arrived',
         settlement: {
           status: 'pending',
@@ -709,7 +769,7 @@ export const ChatScreen = () => {
           members: settlementMembers
         },
         updatedAt: firestore.FieldValue.serverTimestamp(),
-      });
+      }, { merge: true });
 
         setSettlementStatus(initialSettlementStatus);
         setIsNoticeBarMinimized(false);
@@ -856,6 +916,8 @@ export const ChatScreen = () => {
         setEditingAccountInline(false); // SKTaxi: 모달 열 때 상태 초기화
         await loadUserAccount();
         setShowAccountModal(true);
+      } else if (type === 'taxi') {
+        setShowTaxiAppModal(true);
       } else if (type === 'arrive') {
         // 도착 확인
         handleArrivalConfirm();
@@ -1126,7 +1188,7 @@ export const ChatScreen = () => {
 
       // SKTaxi: 사용자 정보 조회하여 시스템 메시지 전송
       const userDoc = await getDoc(doc(collection(firestore(getApp()), 'users'), currentUser.uid));
-      const userData = userDoc.data();
+      const userData = userDoc.data() as { displayName?: string | null } | undefined;
       const displayName = userData?.displayName || '익명';
 
       // SKTaxi: 시스템 메시지 전송 (나가기 전에 전송)
@@ -1159,8 +1221,8 @@ export const ChatScreen = () => {
         
         // 배치 삭제
         const batch = writeBatch(firestore(getApp()));
-        snapshot.forEach((doc) => {
-          batch.delete(doc.ref);
+        snapshot.forEach((docSnap: any) => {
+          batch.delete(docSnap.ref);
         });
         await batch.commit();
       } catch (error) {
@@ -1207,7 +1269,7 @@ export const ChatScreen = () => {
       const joinRequestsSnapshot = await getDocs(joinRequestsQuery);
       
       // SKTaxi: 모든 관련 joinRequests 삭제
-      const deletePromises = joinRequestsSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      const deletePromises = joinRequestsSnapshot.docs.map((docSnap: any) => deleteDoc(docSnap.ref));
       await Promise.all(deletePromises);
 
       // SKTaxi: 동승 종료 메시지 전송
@@ -1720,7 +1782,7 @@ export const ChatScreen = () => {
                         <TextInput
                           style={[styles.textInput, {...TYPOGRAPHY.body2}]}
                           value={tempAccountNumber}
-                          onChangeText={(text) => setTempAccountNumber(text.replace(/[^0-9]/g, ''))}
+                          onChangeText={(text) => setTempAccountNumber((text ?? '').replace(/[^0-9]/g, ''))}
                           placeholder="계좌번호를 입력하세요"
                           placeholderTextColor={COLORS.text.disabled}
                           keyboardType="number-pad"
@@ -1821,7 +1883,7 @@ export const ChatScreen = () => {
                           ref={arrivalTaxiFareRef}
                           style={styles.textInput}
                           value={taxiFare}
-                          onChangeText={(text) => setTaxiFare(text.replace(/[^0-9]/g, ''))}
+                          onChangeText={(text) => setTaxiFare((text ?? '').replace(/[^0-9]/g, ''))}
                           placeholder="택시비"
                           placeholderTextColor={COLORS.text.disabled}
                           keyboardType="number-pad"
@@ -1894,7 +1956,7 @@ export const ChatScreen = () => {
                         <TextInput
                           style={styles.textInput}
                           value={arrivalAccountNumber}
-                          onChangeText={(text) => setArrivalAccountNumber(text.replace(/[^0-9]/g, ''))}
+                          onChangeText={(text) => setArrivalAccountNumber((text ?? '').replace(/[^0-9]/g, ''))}
                           placeholder="계좌번호를 입력하세요"
                           placeholderTextColor={COLORS.text.disabled}
                           keyboardType="number-pad"
@@ -2012,6 +2074,51 @@ export const ChatScreen = () => {
                       );
                     })}
                   </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        {/* SKURI: 택시 호출 앱 선택 모달 */}
+        <Modal
+          visible={showTaxiAppModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setShowTaxiAppModal(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setShowTaxiAppModal(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.taxiModalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>택시 앱으로 이동</Text>
+                    <TouchableOpacity onPress={() => setShowTaxiAppModal(false)}>
+                      <Icon name="close" size={24} color={COLORS.text.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.modalBody}>
+                    <Text style={styles.taxiAppHint}>원하는 앱을 선택하면 해당 앱으로 이동해요</Text>
+                    <View style={styles.taxiAppGrid}>
+                      {taxiApps.map(app => (
+                        <TouchableOpacity
+                        key={app.id}
+                        style={styles.taxiAppItem}
+                        onPress={() =>
+                          openExternalApp(app.scheme, app.iosStore, app.androidStore)
+                        }
+                        accessibilityLabel={`${app.name} 열기`}
+                      >
+                        <View style={styles.taxiAppIconContainer}>
+                          <Image source={app.icon} style={styles.taxiAppIcon} />
+                        </View>
+                        <Text style={styles.taxiAppName}>{app.name}</Text>
+                      </TouchableOpacity>
+                      ))}
+                    </View>
+                    <TouchableOpacity style={[styles.modalButton, styles.fullWidthButton, styles.modalEditButton]} onPress={() => setShowTaxiAppModal(false)}>
+                      <Text style={styles.modalEditButtonText}>취소</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -2426,9 +2533,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
+    paddingTop: 16,
   },
   modalTitle: {
     ...TYPOGRAPHY.title3,
@@ -2464,8 +2569,6 @@ const styles = StyleSheet.create({
   },
   modalEditButton: {
     backgroundColor: COLORS.background.card,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
   },
   modalEditButtonText: {
     ...TYPOGRAPHY.body1,
@@ -2478,6 +2581,56 @@ const styles = StyleSheet.create({
   modalSendButtonText: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.buttonText,
+    fontWeight: '600',
+  },
+  taxiModalContent: {
+    backgroundColor: COLORS.background.primary,
+    borderRadius: 16,
+    width: '100%',
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  taxiAppHint: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    marginBottom: 24,
+  },
+  taxiAppGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 12,
+  },
+  taxiAppItem: {
+    width: (WINDOW_WIDTH - (20 * 4) - (12 * 2) ) / 3, // modalOverlay padding 좌우 20, modalbody padding 좌우 20, gap 12 기준 3열
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: COLORS.background.card,
+  },
+  taxiAppIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    backgroundColor: COLORS.background.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+    overflow: 'hidden',
+  },
+  taxiAppIcon: {
+    width: '100%',
+    height: '100%',
+  },
+  taxiAppName: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.primary,
+    textAlign: 'center',
     fontWeight: '600',
   },
   fullWidthButton: {

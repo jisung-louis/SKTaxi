@@ -188,7 +188,7 @@ export const NofiticationSettingScreen = () => {
           <Text style={styles.sectionTitle}>공지사항</Text>
           <SettingItem
             title="공지사항 알림"
-            description="새로운 공지사항, 중요한 공지사항 알림"
+            description="학교 공지사항 실시간 알림"
             icon="document-text"
             value={settings.noticeNotifications}
             onValueChange={(value) => updateSetting('noticeNotifications', value)}

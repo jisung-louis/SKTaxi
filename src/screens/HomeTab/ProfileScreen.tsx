@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Animated } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +13,7 @@ import Button from '../../components/common/Button';
 export const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, signOut, loading } = useAuthContext();
+  const fadeOverlay = React.useRef(new Animated.Value(0)).current;
   
   const handleEditProfile = () => {
     navigation.navigate('ProfileEdit');
@@ -33,6 +34,20 @@ export const ProfileScreen = () => {
     );
   };
 
+  const handleConfirmSignOut = async () => {
+    // 화면을 부드럽게 덮는 페이드 인 후 로그아웃 실행
+    await new Promise<void>((resolve) => {
+      Animated.timing(fadeOverlay, { toValue: 1, duration: 220, useNativeDriver: true }).start(() => resolve());
+    });
+    try {
+      await signOut();
+    } catch (e) {
+      // 실패 시 페이드 되돌림
+      Animated.timing(fadeOverlay, { toValue: 0, duration: 180, useNativeDriver: true }).start();
+      Alert.alert('오류', '로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.');
+    }
+  };
+
   const handleSignOut = () => {
     Alert.alert(
       '로그아웃',
@@ -45,7 +60,7 @@ export const ProfileScreen = () => {
         {
           text: '로그아웃',
           style: 'destructive',
-          onPress: signOut,
+          onPress: handleConfirmSignOut,
         },
       ],
     );
@@ -98,6 +113,8 @@ export const ProfileScreen = () => {
         </TouchableOpacity>
       </View>
       </ScrollView>
+      {/* 페이드 오버레이: 항상 렌더, opacity로 시각 제어 */}
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { backgroundColor: COLORS.background.primary, opacity: fadeOverlay }]} />
     </SafeAreaView>
   );
 };

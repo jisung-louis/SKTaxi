@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import firestore, { collection, getDocs, query, where } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 
 // SKTaxi: 여러 uid에 대한 users 프로필을 한번에 읽어 displayName 맵을 제공하는 훅
@@ -43,10 +44,10 @@ export function useUserDisplayNames(uids: string[]) {
         );
         if (isCancelled) return;
         const next: Record<string, string> = {};
-        results.forEach((snap) => {
-          snap.docs.forEach((doc) => {
-            const data = doc.data() as any;
-            next[doc.id] = data?.displayName || data?.email || doc.id;
+        results.forEach((snap: FirebaseFirestoreTypes.QuerySnapshot) => {
+          snap.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+            const data: any = docSnap.data();
+            next[docSnap.id] = data?.displayName || data?.email || docSnap.id;
           });
         });
         setMap(next);

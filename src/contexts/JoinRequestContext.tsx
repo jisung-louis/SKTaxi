@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import firestore, { collection, query, where, onSnapshot } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 
 interface JoinRequestContextType {
@@ -37,13 +38,13 @@ export const JoinRequestProvider: React.FC<{ children: React.ReactNode }> = ({ c
       where('leaderId', '==', user.uid)
     );
 
-    unsubscribeParties = onSnapshot(partiesQuery, (partiesSnapshot) => {
+    unsubscribeParties = onSnapshot(partiesQuery, (partiesSnapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
       if (partiesSnapshot.empty) {
         setJoinRequestCount(0);
         return;
       }
 
-      const partyIds = partiesSnapshot.docs.map(doc => doc.id);
+      const partyIds = partiesSnapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.id);
       
       // 모든 파티의 동승 요청을 한 번에 조회
       if (partyIds.length === 0) {
@@ -57,7 +58,7 @@ export const JoinRequestProvider: React.FC<{ children: React.ReactNode }> = ({ c
         where('status', '==', 'pending')
       );
 
-      unsubscribeJoinRequests = onSnapshot(joinRequestsQuery, (joinRequestsSnapshot) => {
+      unsubscribeJoinRequests = onSnapshot(joinRequestsQuery, (joinRequestsSnapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         setJoinRequestCount(joinRequestsSnapshot.size);
       }, (error) => {
         console.error('동승 요청 개수 조회 실패:', error);

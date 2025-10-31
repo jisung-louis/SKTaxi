@@ -3,7 +3,9 @@ export const COLORS = {
     primary: '#18181B',   // 전체 배경
     secondary: '#232326', // 카드/컨테이너 배경
     tertiary: '#303033',  // 드롭다운 배경
+    quaternary: '#48484A',  // 더 옅은 배경
     white: '#FFFFFF',     // 화이트 배경
+    whiteSecondary: '#E4E4E7', // 흰색 보조 배경
     surface: '#27272A',   // 서피스 배경
     card: '#232326',      // 카드/컨테이너 배경 (alias)
     dropdown: '#303033',  // 드롭다운 배경 (alias)
@@ -15,6 +17,8 @@ export const COLORS = {
     disabled: '#52525B',  // 비활성화 텍스트
     buttonText: '#18181B', // 버튼 텍스트
     white: '#FFFFFF',     // 흰색 텍스트
+    black: '#000000',     // 블랙 텍스트
+    blackSecondary: '#18181B', // 블랙 보조 텍스트
   },
   accent: {
     green: '#4ADE80',     // 포인트(버튼, 태그, 플로팅 버튼)

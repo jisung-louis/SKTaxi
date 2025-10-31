@@ -8,8 +8,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getFirestore, collection, query, orderBy, onSnapshot } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { ja, ko } from 'date-fns/locale';
 
 interface AppNotice {
   id: string;
@@ -18,6 +19,7 @@ interface AppNotice {
   category: 'update' | 'service' | 'event' | 'policy';
   priority: 'urgent' | 'normal' | 'info';
   publishedAt: Date;
+  updatedAt?: Date;
   imageUrl?: string;
   actionUrl?: string;
 }
@@ -52,14 +54,15 @@ export const AppNoticeScreen = () => {
     const noticesRef = collection(db, 'appNotices');
     const q = query(noticesRef, orderBy('publishedAt', 'desc'));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
       const noticesData: AppNotice[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
         noticesData.push({
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           publishedAt: data.publishedAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt ? data.updatedAt.toDate?.() || new Date(data.updatedAt) : undefined,
         } as AppNotice);
       });
       setNotices(noticesData);
@@ -88,11 +91,19 @@ export const AppNoticeScreen = () => {
           </View>
           <Text style={styles.categoryText}>{CATEGORY_LABELS[notice.category]}</Text>
         </View>
-        <Text style={styles.dateText}>
-          {formatDistanceToNow(notice.publishedAt, { addSuffix: true, locale: ko })}
-        </Text>
+        <View style={styles.dateContainer}>
+          <Text style={styles.dateText}>
+            {formatDistanceToNow(notice.publishedAt, { addSuffix: true, locale: ko })}
+          </Text>
+          {!!notice.updatedAt && notice.updatedAt > notice.publishedAt && (
+            <>
+              <Text style={styles.dateText}>•</Text>
+              <Text style={styles.dateText}>수정됨</Text>
+            </>
+          )}
+        </View>
       </View>
-      <Text style={styles.noticeTitle}>{notice.title}</Text>
+      <Text style={styles.noticeTitle} numberOfLines={1} ellipsizeMode="tail">{notice.title}</Text>
       <Text style={styles.noticeContent} numberOfLines={2}>
         {notice.content}
       </Text>
@@ -239,16 +250,23 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
   },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   dateText: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.disabled,
   },
   noticeTitle: {
-    ...TYPOGRAPHY.subtitle2,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
     fontWeight: '600',
     marginBottom: 8,
     lineHeight: 22,
+    flex: 1,
+    minWidth: 0,
   },
   noticeContent: {
     ...TYPOGRAPHY.body2,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
@@ -18,6 +18,7 @@ interface AppNotice {
   category: 'update' | 'service' | 'event' | 'policy';
   priority: 'urgent' | 'normal' | 'info';
   publishedAt: Date;
+  updatedAt?: Date;
   imageUrl?: string;
   actionUrl?: string;
 }
@@ -50,6 +51,10 @@ export const AppNoticeDetailScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const isEdited = useMemo(() => {
+    return notice?.updatedAt && notice?.updatedAt > notice?.publishedAt;
+  }, [notice]);
+
   useEffect(() => {
     const loadNotice = async () => {
       if (!noticeId) {
@@ -70,6 +75,7 @@ export const AppNoticeDetailScreen = () => {
             id: noticeDoc.id,
             ...data,
             publishedAt: data?.publishedAt?.toDate() || new Date(),
+            updatedAt: data?.updatedAt ? data?.updatedAt.toDate?.() || new Date(data?.updatedAt) : undefined,
           } as AppNotice);
         }
       } catch (err) {
@@ -115,7 +121,6 @@ export const AppNoticeDetailScreen = () => {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <PageHeader onBack={() => navigation.goBack()} title="공지사항" borderBottom />
@@ -133,7 +138,13 @@ export const AppNoticeDetailScreen = () => {
             <View style={styles.noticeRight}>
                 <Text style={styles.dateText}>운영자</Text>
                 <Text style={styles.dateText}>•</Text>
-                <Text style={styles.dateText}>{format(notice.publishedAt, 'yyyy.MM.dd')}</Text>
+                <Text style={styles.dateText}>{format(isEdited ? notice.updatedAt! : notice.publishedAt!, 'yyyy.MM.dd')}</Text>
+                {isEdited && (
+                  <>
+                    <Text style={styles.dateText}>•</Text>
+                    <Text style={styles.dateText}>수정됨</Text>
+                  </>
+                )}
             </View>
           </View>
           

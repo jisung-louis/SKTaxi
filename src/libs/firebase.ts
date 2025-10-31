@@ -76,6 +76,9 @@ export const createUserProfile = async (uid: string, data: User): Promise<void> 
       doc(db, 'users', uid),
       {
         ...data,
+        onboarding: {
+          permissionsComplete: (data as any)?.onboarding?.permissionsComplete ?? false,
+        },
         joinedAt: (data as any).joinedAt ?? serverTimestamp(),
         updatedAt: serverTimestamp(),
       },

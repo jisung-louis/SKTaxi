@@ -9,9 +9,12 @@ interface Location {
   longitude: number;
 }
 
-export const useLocationTracking = (location: Location | null, isLocationValid: boolean) => {
+export const useLocationTracking = (location: Location | null, isLocationValid: boolean, shareMyLocation: boolean = true) => {
   const { user } = useAuth();
   const { hasParty, partyId } = useMyParty();
+
+  let lastLat: number | null = null;
+  let lastLng: number | null = null;
 
   useEffect(() => {
     if (!user?.uid) {
@@ -48,12 +51,26 @@ export const useLocationTracking = (location: Location | null, isLocationValid: 
 
     // 10초마다 위치 업데이트
     const updateLocation = async () => {
+      if (location) {
+        // 유의미한 변화만 업로드(10^-5 미만 무시)
+        if (
+          lastLat !== null &&
+          Math.abs(location.latitude - lastLat) < 0.00001 &&
+          lastLng !== null &&
+          Math.abs(location.longitude - lastLng) < 0.00001
+        ) {
+          return;
+        }
+        lastLat = location.latitude;
+        lastLng = location.longitude;
+      }
       try {
         await setDoc(doc(firestore(getApp()), 'userLocations', user.uid), {
           partyId: partyId,
           displayName: user.displayName || '익명',
           latitude: location.latitude,
           longitude: location.longitude,
+          share: !!shareMyLocation,
           lastUpdated: firestore.FieldValue.serverTimestamp(),
         });
       } catch (error) {
@@ -70,5 +87,5 @@ export const useLocationTracking = (location: Location | null, isLocationValid: 
     return () => {
       clearInterval(interval);
     };
-  }, [user?.uid, isLocationValid, location, hasParty, partyId]);
+  }, [user?.uid, isLocationValid, location, hasParty, partyId, shareMyLocation]);
 };

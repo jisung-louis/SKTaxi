@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import firestore, { collection, onSnapshot, orderBy, query } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { Party } from '../types/party';
 
@@ -14,10 +15,10 @@ export function useParties() {
     const q = query(collection(firestore(getApp()), 'parties'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(
       q,
-      (snap) => {
-          const next: Party[] = snap.docs.map((doc) => ({
-            id: doc.id,
-            ...(doc.data() as Omit<Party, 'id'>),
+      (snap: FirebaseFirestoreTypes.QuerySnapshot) => {
+          const next: Party[] = snap.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+            id: docSnap.id,
+            ...(docSnap.data() as Omit<Party, 'id'>),
           }));
           setParties(next);
           setLoading(false);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, collection, query, orderBy, getDocs } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { AcademicSchedule, AcademicScheduleWithColor, ScheduleMessage } from '../types/academic';
 import { normalizeDate, isDateAfterOrEqual, isDateBeforeOrEqual, isDateRangeOverlapping } from '../utils/dateUtils';
 import { ACADEMIC_SCHEDULE_COLORS, assignColor } from '../constants/colorPalettes';
@@ -21,10 +22,10 @@ export const useAcademicSchedules = () => {
         const querySnapshot = await getDocs(q);
 
         const schedulesData: AcademicSchedule[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
+        querySnapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          const data: any = docSnap.data();
           schedulesData.push({
-            id: doc.id,
+            id: docSnap.id,
             title: data.title,
             startDate: data.startDate,
             endDate: data.endDate,

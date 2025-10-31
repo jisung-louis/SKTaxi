@@ -29,8 +29,10 @@ export const RecruitScreen = () => {
   const [departure, setDeparture] = useState('');
   const [destination, setDestination] = useState('');
   const [customDeparture, setCustomDeparture] = useState('');
+  const [customDepartureCoord, setCustomDepartureCoord] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [customDestination, setCustomDestination] = useState('');
+  const [customDestinationCoord, setCustomDestinationCoord] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isCustomDestination, setIsCustomDestination] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -58,17 +60,31 @@ export const RecruitScreen = () => {
       return;
     }
     // 좌표 가져오기
-    let departureCoord = null;
-    let destinationCoord = null;
+    let departureCoord: { latitude: number; longitude: number } | null = null;
+    let destinationCoord: { latitude: number; longitude: number } | null = null;
     
     if (!isCustom) {
       // 미리 정의된 출발지의 좌표
       departureCoord = DEPARTURE_LOCATION[departureLocation.row][departureLocation.col];
+    } else {
+      departureCoord = customDepartureCoord;
     }
     
     if (!isCustomDestination) {
       // 미리 정의된 도착지의 좌표
       destinationCoord = DESTINATION_LOCATION[destinationLocation.row][destinationLocation.col];
+    } else {
+      destinationCoord = customDestinationCoord;
+    }
+
+    // 커스텀 선택인데 좌표가 없는 경우 방어
+    if (isCustom && !departureCoord) {
+      Alert.alert('알림', '출발지 좌표가 없습니다. 지도를 통해 위치를 선택해주세요.');
+      return;
+    }
+    if (isCustomDestination && !destinationCoord) {
+      Alert.alert('알림', '도착지 좌표가 없습니다. 지도를 통해 위치를 선택해주세요.');
+      return;
     }
     
     const user = auth(getApp()).currentUser;
@@ -105,7 +121,8 @@ export const RecruitScreen = () => {
       }
       
       Alert.alert('알림', '택시 모집이 시작되었습니다.');
-      navigation.navigate('Chat', { partyId: ref.id });
+      // 스택에서 RecruitScreen을 제거하고 Chat으로 대체하여 뒤로가기로 중복 생성 방지
+      navigation.replace('Chat', { partyId: ref.id });
     } catch (e) {
       Alert.alert('오류', '파티 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
       console.warn('create party failed', e); // SKTaxi: 디버깅 로그
@@ -215,9 +232,10 @@ export const RecruitScreen = () => {
                    navigation.navigate('MapSearch', {
                      type: 'departure',
                      onLocationSelect: (location) => {
-                       // 지도에서 입력받은 지역 명칭(또는 좌표 문자열)을 표시
+                       // 지도에서 입력받은 지역 명칭과 좌표 저장
                        setCustomDeparture(location.address);
                        setDeparture(location.address);
+                       setCustomDepartureCoord({ latitude: location.latitude, longitude: location.longitude });
                      }
                    });
                  }} 
@@ -284,6 +302,7 @@ export const RecruitScreen = () => {
                      onLocationSelect: (location) => {
                        setCustomDestination(location.address);
                        setDestination(location.address);
+                       setCustomDestinationCoord({ latitude: location.latitude, longitude: location.longitude });
                      }
                    });
                  }} 

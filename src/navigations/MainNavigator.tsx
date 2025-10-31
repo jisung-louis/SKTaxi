@@ -28,7 +28,9 @@ import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Animated, View } from 'react-native';
+import { Animated, View, Linking, AppState, Text } from 'react-native';
+import messaging from '@react-native-firebase/messaging';
+import PermissionBubble from '../components/common/PermissionBubble';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
 import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
@@ -37,6 +39,8 @@ import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewS
 import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
 import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
 import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
+import { useMyParty } from '../hooks/useMyParty';
+import { TYPOGRAPHY } from '../constants/typhograpy';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -101,9 +105,59 @@ const NoticeStackNavigator = () => {
 
 const MainNavigatorContent = () => {
   const { joinRequestCount } = useJoinRequestCount();
+  const [bubbleVisible, setBubbleVisible] = React.useState(false);
+  const [checking, setChecking] = React.useState(true);
+  const { hasParty } = useMyParty();
+  React.useEffect(() => {
+    let mounted = true;
+
+    const checkPermission = async () => {
+      try {
+        const status = await messaging().hasPermission();
+        const granted = status === messaging.AuthorizationStatus.AUTHORIZED;
+        if (mounted) setBubbleVisible(!granted);
+      } catch {
+        if (mounted) setBubbleVisible(true);
+      } finally {
+        if (mounted) setChecking(false);
+      }
+    };
+
+    // 최초 1회 체크
+    checkPermission();
+
+    // 포그라운드 복귀 시 재체크
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        checkPermission();
+      }
+    });
+
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
+
+  const handleAllowNotification = React.useCallback(async () => {
+    try {
+      const req = await messaging().requestPermission();
+      const ok = req === messaging.AuthorizationStatus.AUTHORIZED;
+      if (ok) {
+        setBubbleVisible(false);
+        return;
+      }
+      // 권한이 여전히 허용되지 않은 경우(이전에 거절로 더 이상 팝업이 안 뜨는 케이스 포함): 설정으로 이동
+      try { await Linking.openSettings(); } catch {}
+    } catch {
+      // 요청 자체가 실패한 경우에도 설정으로 이동 시도
+      try { await Linking.openSettings(); } catch {}
+    }
+  }, []);
 
   return (
-    <Tab.Navigator
+    <>
+      <Tab.Navigator
       tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
         tabBarStyle: {
@@ -142,7 +196,13 @@ const MainNavigatorContent = () => {
           tabBarIcon: ({ color, size }) => (
             <View style={{ position: 'relative' }}>
               <IconMaterial name="taxi" size={size} color={color} style={{ marginBottom: 4 }} />
-              <TabBadge count={joinRequestCount} />
+              <TabBadge count={joinRequestCount} location="bottom" size="small" />
+              {/* 파티 소속중일경우 여기에 absolute로 표시하는 뷰 띄우기 */}
+              {hasParty && (
+                <View style={{ position: 'absolute', top: 0, right: -8, backgroundColor: COLORS.accent.green, borderRadius: 10, padding: 2, borderWidth: 1, borderColor: COLORS.border.default }}>
+                  <Text style={{ color: COLORS.text.buttonText, ...TYPOGRAPHY.caption3, fontWeight: 'bold' }}>파티</Text>
+                </View>
+              )}
             </View>
           ),
           // tabBarStyle: { display: 'none' } // 택시 화면에서 탭바 숨기기
@@ -168,7 +228,15 @@ const MainNavigatorContent = () => {
           lazy: false,
         }}
       />
-    </Tab.Navigator>
+      </Tab.Navigator>
+      {!checking && (
+        <PermissionBubble
+          visible={bubbleVisible}
+          onAllowNotification={handleAllowNotification}
+          onClose={() => setBubbleVisible(false)}
+        />
+      )}
+    </>
   );
 }; 
 

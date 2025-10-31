@@ -4,6 +4,8 @@ import { Party } from '../types/party';
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
   Auth: undefined;
+  CompleteProfile: undefined;
+  PermissionOnboarding: undefined;
 };
 
 export type MainTabParamList = {
@@ -44,8 +46,6 @@ export type HomeStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
 }; 
 
 export type BoardStackParamList = {

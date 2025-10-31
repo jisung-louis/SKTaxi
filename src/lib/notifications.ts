@@ -1,6 +1,7 @@
 // SKTaxi: FCM 포그라운드 메시지 처리 및 join 요청 수락/거절 유틸 추가
 import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import firestore, { collection, doc, serverTimestamp, setDoc, updateDoc, arrayUnion, getDoc, query, where, getDocs, writeBatch } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { sendSystemMessage } from '../hooks/useMessages';
 
@@ -8,6 +9,7 @@ export function initForegroundMessageHandler(
   showModal: (data: any) => void, 
   onPartyDeleted?: () => void,
   onNoticeReceived?: (noticeId: string, noticeTitle?: string, noticeCategory?: string) => void,
+  onAppNoticeNotificationReceived?: (data: { appNoticeId: string; title: string }) => void,
   onJoinRequestAccepted?: (partyId: string) => void,
   onJoinRequestRejected?: () => void,
       onChatMessageReceived?: (data: { senderName: string; messageText: string; partyId: string }) => void,
@@ -58,6 +60,12 @@ export function initForegroundMessageHandler(
           noticeId: data.noticeId,
           noticeIdType: typeof data.noticeId
         });
+      }
+    } else if (data.type === 'app_notice') {
+      // 앱 공지(운영 공지)
+      if (onAppNoticeNotificationReceived && data.appNoticeId && typeof data.appNoticeId === 'string') {
+        const title = typeof data.title === 'string' ? data.title : '새 앱 공지';
+        onAppNoticeNotificationReceived({ appNoticeId: data.appNoticeId, title });
       }
     } else if (data.type === 'chat_message') {
       console.log('🔔 채팅 메시지 처리:', data.partyId);
@@ -133,7 +141,7 @@ export async function acceptJoin(requestId: string, partyId: string, requesterId
   try {
     // SKTaxi: 현재 요청 상태 확인
     const requestDoc = await getDoc(doc(collection(firestore(getApp()), 'joinRequests'), requestId));
-    const requestData = requestDoc.data();
+    const requestData = requestDoc.data() as { status?: string } | undefined;
     
     // SKTaxi: 이미 취소되었거나 처리된 요청은 무시
     if (requestData?.status !== 'pending') {
@@ -153,7 +161,7 @@ export async function acceptJoin(requestId: string, partyId: string, requesterId
     // SKTaxi: 사용자 정보 조회하여 시스템 메시지 전송
     try {
       const userDoc = await getDoc(doc(collection(firestore(getApp()), 'users'), requesterId));
-      const userData = userDoc.data();
+      const userData = userDoc.data() as { displayName?: string | null } | undefined;
       const displayName = userData?.displayName || '익명';
       
       await sendSystemMessage(partyId, `${displayName}님이 파티에 합류했어요.`);
@@ -170,7 +178,7 @@ export async function declineJoin(requestId: string) {
   try {
     // SKTaxi: 현재 요청 상태 확인
     const requestDoc = await getDoc(doc(collection(firestore(getApp()), 'joinRequests'), requestId));
-    const requestData = requestDoc.data();
+    const requestData = requestDoc.data() as { status?: string } | undefined;
     
     // SKTaxi: 이미 취소되었거나 처리된 요청은 무시
     if (requestData?.status !== 'pending') {
@@ -193,8 +201,8 @@ export async function deleteJoinRequestNotifications(requesterId: string, partyI
     
     // 배치 삭제
     const batch = writeBatch(firestore(getApp()));
-    snapshot.forEach((doc) => {
-      batch.delete(doc.ref);
+    snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+      batch.delete(docSnap.ref);
     });
     await batch.commit();
     console.log(`✅ 요청자(${requesterId})의 동승 요청 알림 ${snapshot.size}개 삭제 완료`);
@@ -239,6 +247,12 @@ export function initNotificationOpenedAppHandler(
       navigation.navigate('공지', { 
         screen: 'NoticeDetail', 
         params: { noticeId: data.noticeId } 
+      });
+    } else if (data.type === 'app_notice' && data.appNoticeId) {
+      // 앱 공지 상세 페이지로 이동 (홈 스택의 AppNoticeDetail)
+      navigation.navigate('홈', {
+        screen: 'AppNoticeDetail',
+        params: { noticeId: data.appNoticeId },
       });
     } else if (data.type === 'join_request' && onJoinRequestReceived) {
       // 동승 요청 모달 표시
@@ -310,6 +324,11 @@ export async function checkInitialNotification(
       navigation.navigate('공지', { 
         screen: 'NoticeDetail', 
         params: { noticeId: data.noticeId } 
+      });
+    } else if (data.type === 'app_notice' && data.appNoticeId) {
+      navigation.navigate('홈', {
+        screen: 'AppNoticeDetail',
+        params: { noticeId: data.appNoticeId }
       });
     } else if (data.type === 'join_request' && onJoinRequestReceived) {
       // 동승 요청 모달 표시

@@ -7,11 +7,25 @@ export interface Coordinates {
   longitude: number;
 }
 
+export const requestLocationPermission = async () => {
+  if (Platform.OS === 'ios') {
+    const auth = await Geolocation.requestAuthorization('whenInUse');
+    return auth === 'granted';
+  }
+  if (Platform.OS === 'android') {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+    );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  }
+  return false;
+};
+
 export const useCurrentLocation = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const requestLocationPermission = useCallback(async () => {
+  const requestLocationPermissionInternal = useCallback(async () => {
     if (Platform.OS === 'ios') {
       const auth = await Geolocation.requestAuthorization('whenInUse');
       return auth === 'granted';
@@ -27,8 +41,10 @@ export const useCurrentLocation = () => {
 
   const getLocation = useCallback(async () => {
     try {
-      const hasPermission = await requestLocationPermission();
+      const hasPermission = await requestLocationPermissionInternal();
       if (!hasPermission) {
+        // 권한이 없으면 기존 위치값을 비우고 로딩 종료
+        setLocation(null);
         setLoading(false);
         return;
       }
@@ -50,7 +66,7 @@ export const useCurrentLocation = () => {
       console.error('위치 권한 요청 실패:', error);
       setLoading(false);
     }
-  }, [requestLocationPermission]);
+  }, [requestLocationPermissionInternal]);
 
   useEffect(() => {
     getLocation();

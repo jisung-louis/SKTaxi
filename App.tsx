@@ -10,17 +10,21 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef } from '@react-navigation/native';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { CourseSearchProvider } from './src/contexts/CourseSearchContext';
 import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
 import auth from '@react-native-firebase/auth';
+import { configureGoogleSignin } from './src/config/google';
+import { logScreenView } from './src/lib/analytics';
 
 const App = () => {
   // SKTaxi: 모달 상태는 RootNavigator로 이동
 
 
   useEffect(() => {
+    configureGoogleSignin();
     // SKTaxi: 간소화 정책 - 앱 시작 즉시 저장 로직은 제거하고 로그인 성공 시점에서만 저장
     // SKTaxi: 포그라운드 메시지 처리 핸들러는 RootNavigator에서 등록
     // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제
@@ -28,12 +32,30 @@ const App = () => {
     const unsubAuth = auth().onAuthStateChanged(() => {});
     return () => { unsubAuth(); };
   }, []);
+  const navigationRef = createNavigationContainerRef();
+  const routeNameRef = React.useRef<string | undefined>(undefined);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
           <CourseSearchProvider>
-            <NavigationContainer>
+            <NavigationContainer
+              ref={navigationRef as any}
+              onReady={() => {
+                routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+                const current = routeNameRef.current;
+                if (current) logScreenView(current);
+              }}
+              onStateChange={() => {
+                const previousRouteName = routeNameRef.current;
+                const currentRouteName = navigationRef.getCurrentRoute()?.name;
+                if (currentRouteName && previousRouteName !== currentRouteName) {
+                  logScreenView(currentRouteName);
+                }
+                routeNameRef.current = currentRouteName;
+              }}
+            >
               <RootNavigator />
             </NavigationContainer>
           </CourseSearchProvider>

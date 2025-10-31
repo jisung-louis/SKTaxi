@@ -69,7 +69,7 @@ export const HomeScreen = () => {
         const ref = collection(db, 'notices');
         const q = fsQuery(ref, orderBy('postedAt', 'desc'), fsLimit(10));
         const snap = await getDocs(q);
-        const items: SimpleNotice[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+        const items: SimpleNotice[] = snap.docs.map((d: any) => ({ id: d.id, ...(d.data() as any) }));
         setRecentNotices(items);
       } catch (e) {
         console.log('최근 공지 로드 실패:', e);
@@ -186,15 +186,15 @@ export const HomeScreen = () => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerLeft} onPress={scrollToTop} activeOpacity={1}>
-            <View style={styles.logoPlaceholder} />
-            <Text style={styles.appName}>SKTaxi</Text>
+            <View style={styles.logoPlaceholder}>
+              <Image source={require('../../assets/icons/skuri_icon.png')} style={{ width: '100%', height: '100%' }} />
+            </View>
+            <Text style={styles.appName}>SKURI Taxi</Text>
           </TouchableOpacity>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Notification' })}>
-              <View style={{ position: 'relative' }}>
-                <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
-                <TabBadge count={unreadCount} />
-              </View>
+              <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
+              <TabBadge count={unreadCount} size="small" style={{ top: 1, right: 1 }} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Setting' })}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
@@ -445,10 +445,12 @@ const styles = StyleSheet.create({
     paddingRight: 30,
   },
   logoPlaceholder: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: 8,
-    backgroundColor: COLORS.accent.green,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   appName: {
     ...TYPOGRAPHY.title3,

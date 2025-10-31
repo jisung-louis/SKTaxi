@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import firestore, { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import { Message } from '../types/firestore';
@@ -23,10 +24,10 @@ export function useMessages(partyId: string | undefined) {
     const messagesRef = collection(firestore(getApp()), 'chats', partyId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const fetchedMessages: Message[] = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data() as Message
+    const unsubscribe = onSnapshot(q, (querySnapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
+      const fetchedMessages: Message[] = querySnapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+        id: docSnap.id,
+        ...docSnap.data() as Message
       }));
       setMessages(fetchedMessages);
       setLoading(false);

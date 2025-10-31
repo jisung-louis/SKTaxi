@@ -4,21 +4,25 @@ import { RootStackParamList } from './types';
 import { MainNavigator } from './MainNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { useAuthContext } from '../contexts/AuthContext';
-import { JoinRequestProvider } from '../contexts/JoinRequestContext';
 import { AuthState } from '../types/auth';
-import { Alert, AppState, TouchableOpacity, Text } from 'react-native';
+import { useProfileCompletion } from '../hooks/useProfileCompletion';
+import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
+import { PermissionOnboardingScreen } from '../screens/PermissionOnboardingScreen';
+import { Alert } from 'react-native';
 import { initForegroundMessageHandler, initBackgroundMessageHandler, initNotificationOpenedAppHandler, checkInitialNotification } from '../lib/notifications';
 import { ensureFcmTokenSaved, subscribeFcmTokenRefresh } from '../lib/fcm';
 import { JoinRequestModal } from '../components/common/JoinRequestModal';
 import { ForegroundNotification } from '../components/common/ForegroundNotification';
 import { acceptJoin, declineJoin, deleteJoinRequestNotifications } from '../lib/notifications';
 import firestore, { doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
-import { useNavigation, useNavigationState, CommonActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
   const { user, loading }: AuthState = useAuthContext();
+  const { needsProfile } = useProfileCompletion();
+  const permissionsComplete = !!(user as any)?.onboarding?.permissionsComplete;
   const [joinData, setJoinData] = useState<any | null>(null);
   const [requesterName, setRequesterName] = useState<string>('');
   const [foregroundNotification, setForegroundNotification] = useState<{
@@ -28,7 +32,7 @@ export const RootNavigator = () => {
     noticeId?: string;
     partyId?: string;
     postId?: string;
-    type?: 'notice' | 'chat' | 'settlement' | 'kicked' | 'party_created' | 'board_notification' | 'notice_notification';
+    type?: 'notice' | 'chat' | 'settlement' | 'kicked' | 'party_created' | 'board_notification' | 'notice_notification' | 'app_notice';
   }>({
     visible: false,
     title: '',
@@ -161,6 +165,15 @@ export const RootNavigator = () => {
           params: { noticeId: foregroundNotification.noticeId }
         }
       });
+    } else if (foregroundNotification.type === 'app_notice' && foregroundNotification.noticeId) {
+      // 앱 공지 알림 클릭 시 앱 공지 상세 화면으로 이동
+      (navigation as any).navigate('Main', {
+        screen: '홈',
+        params: {
+          screen: 'AppNoticeDetail',
+          params: { noticeId: foregroundNotification.noticeId }
+        }
+      });
     }
     setForegroundNotification(prev => ({ ...prev, visible: false }));
   };
@@ -262,16 +275,27 @@ export const RootNavigator = () => {
       type: 'notice_notification',
     });
   };
+  // SKTaxi: 앱 공지 알림 핸들러
+  const handleAppNoticeNotificationReceived = (data: { appNoticeId: string; title: string }) => {
+    setForegroundNotification({
+      visible: true,
+      title: '새 앱 공지',
+      body: data.title,
+      noticeId: data.appNoticeId,
+      type: 'app_notice',
+    });
+  };
 
   // SKTaxi: FCM 메시지 핸들러 등록
   useEffect(() => {
     let unsubscribeTokenRefresh: (() => void) | undefined;
-    if (user) {
+    if (user && !needsProfile && permissionsComplete) {
       // 포그라운드 알림 처리
       initForegroundMessageHandler(
         setJoinData, 
         handlePartyDeleted, 
         handleNoticeReceived,
+        handleAppNoticeNotificationReceived,
         handleJoinRequestAccepted,
         handleJoinRequestRejected,
         handleChatMessageReceived,
@@ -292,7 +316,7 @@ export const RootNavigator = () => {
       // 앱이 완전히 종료된 상태에서 알림을 클릭했을 때 처리
       checkInitialNotification(navigation, setJoinData);
       
-      // SKTaxi: 앱 시작(로그인된 상태)마다 토큰 확인+저장
+      // SKTaxi: 프로필 완료 + 권한 온보딩 완료 후에만 토큰 확인+저장
       ensureFcmTokenSaved().catch(() => {});
       // SKTaxi: 토큰 회전 즉시 저장
       unsubscribeTokenRefresh = subscribeFcmTokenRefresh();
@@ -300,7 +324,7 @@ export const RootNavigator = () => {
     return () => {
       if (unsubscribeTokenRefresh) unsubscribeTokenRefresh();
     };
-  }, [user, navigation]);
+  }, [user, needsProfile, permissionsComplete, navigation]);
 
   // SKTaxi: 요청자 displayName 조회 (모달용)
   useEffect(() => {
@@ -340,10 +364,14 @@ export const RootNavigator = () => {
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        ) : (
+        {!user ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
+        ) : needsProfile ? (
+          <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
+        ) : !permissionsComplete ? (
+          <Stack.Screen name="PermissionOnboarding" component={PermissionOnboardingScreen} />
+        ) : (
+          <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
       {/* SKTaxi: 포그라운드 푸시 → 동승요청 모달 (네비게이터 바깥에 위치) */}

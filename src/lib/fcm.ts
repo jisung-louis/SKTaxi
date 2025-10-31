@@ -20,7 +20,6 @@ export async function ensureFcmTokenSaved(): Promise<void> {
   try {
     // SKTaxi: iOS에서 원격 메시지 등록 보장 (안드로이드는 무시됨)
     try { await messaging().registerDeviceForRemoteMessages(); } catch {}
-    await messaging().requestPermission().catch(() => {}); // SKTaxi: 권한 거부는 무시
     const token = await getFcmTokenWithRetry();
     console.log('token:', token);
     if (!token) return;
@@ -47,21 +46,6 @@ export function subscribeFcmTokenRefresh() {
     }
   });
   return unsubscribe;
-}
-
-// SKTaxi: 로그아웃 시 현재 기기의 FCM 토큰을 users 문서에서 제거
-export async function removeCurrentFcmToken(): Promise<void> {
-  const user = auth().currentUser;
-  if (!user) return;
-  try {
-    try { await messaging().registerDeviceForRemoteMessages(); } catch {}
-    const token = await messaging().getToken().catch(() => null);
-    if (!token) return;
-    await firestore().collection('users').doc(user.uid)
-      .update({ fcmTokens: firestore.FieldValue.arrayRemove(token) });
-  } catch (e) {
-    console.warn('removeCurrentFcmToken failed:', e);
-  }
 }
 
 

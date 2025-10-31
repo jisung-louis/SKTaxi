@@ -94,21 +94,21 @@ export const useTimetable = (semester: string) => {
       for (const courseId of courseIds) {
         const courseDoc = await getDoc(doc(coursesRef, courseId));
         if (courseDoc.exists()) {
-          const data = courseDoc.data();
+          const data: any = courseDoc.data();
           if (data) {
             coursesData.push({
               id: courseDoc.id,
-              grade: data.grade || 1,
-              category: data.category || '',
-              code: data.code || '',
-              division: data.division || '',
-              name: data.name || '',
-              credits: data.credits || 0,
-              professor: data.professor || '',
-              schedule: data.schedule || [],
-              location: data.location || '',
+              grade: data.grade ?? 1,
+              category: data.category ?? '',
+              code: data.code ?? '',
+              division: data.division ?? '',
+              name: data.name ?? '',
+              credits: data.credits ?? 0,
+              professor: data.professor ?? '',
+              schedule: data.schedule ?? [],
+              location: data.location ?? '',
               note: data.note,
-              semester: data.semester || '',
+              semester: data.semester ?? '',
               department: data.department,
               createdAt: (data.createdAt as any)?.toDate?.() || new Date(),
               updatedAt: (data.updatedAt as any)?.toDate?.() || new Date(),

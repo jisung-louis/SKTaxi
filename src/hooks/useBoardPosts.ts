@@ -67,10 +67,10 @@ export const useBoardPosts = (filters: BoardSearchFilters = { sortBy: 'latest' }
       const snapshot = await getDocs(q);
       
       const postsData: BoardPost[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
         postsData.push({
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
@@ -120,10 +120,10 @@ export const useBoardPosts = (filters: BoardSearchFilters = { sortBy: 'latest' }
       const snapshot = await getDocs(q);
       const newPosts: BoardPost[] = [];
       
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
         newPosts.push({
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
@@ -180,12 +180,12 @@ export const useBoardPosts = (filters: BoardSearchFilters = { sortBy: 'latest' }
     if (!filters) return;
 
     const q = buildQuery();
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
       const postsData: BoardPost[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
         postsData.push({
-          id: doc.id,
+          id: docSnap.id,
           ...data,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),

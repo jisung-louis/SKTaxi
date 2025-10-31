@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import firestore, { collection, query, where, onSnapshot, Timestamp } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 
 interface MemberLocation {
@@ -7,6 +8,7 @@ interface MemberLocation {
   displayName: string;
   latitude: number;
   longitude: number;
+  share?: boolean;
   lastUpdated: Date;
 }
 
@@ -32,21 +34,19 @@ export const usePartyMemberLocations = (partyId: string | null) => {
       where('lastUpdated', '>=', fiveMinutesAgo)
     );
 
-    const unsubscribe = onSnapshot(locationsQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(locationsQuery, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
       try {
-        const locations: MemberLocation[] = snapshot.docs.map(doc => {
-          const data = doc.data();
+        const locations: MemberLocation[] = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          const data: any = docSnap.data();
           return {
-            userId: doc.id,
+            userId: docSnap.id,
             displayName: data.displayName || '익명',
             latitude: data.latitude || 0,
             longitude: data.longitude || 0,
+            share: data.share,
             lastUpdated: data.lastUpdated?.toDate() || new Date(),
           };
-        }).filter(location => 
-          location.latitude !== 0 && 
-          location.longitude !== 0
-        );
+        });
 
         setMemberLocations(locations);
       } catch (error) {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { getFirestore, collection, query, where, orderBy, getDocs } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { Course } from '../types/timetable';
 
 interface CourseSearchContextType {
@@ -48,10 +49,10 @@ export const CourseSearchProvider: React.FC<CourseSearchProviderProps> = ({ chil
       const querySnapshot = await getDocs(q);
       const coursesData: Course[] = [];
       
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
+      querySnapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        const data: any = docSnap.data();
         coursesData.push({
-          id: doc.id,
+          id: docSnap.id,
           grade: data.grade || 1,
           category: data.category || '',
           code: data.code || '',

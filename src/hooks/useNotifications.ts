@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, collection, query, orderBy, limit, onSnapshot, doc, updateDoc, Timestamp, deleteDoc, getDocs, writeBatch } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { useAuth } from './useAuth';
 
 export interface Notification {
@@ -33,7 +34,7 @@ export const useNotifications = () => {
 
     const unsubscribe = onSnapshot(
       q,
-      (snapshot) => {
+      (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
         const notificationsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
@@ -105,8 +106,8 @@ export const useNotifications = () => {
       
       // 배치로 모든 문서 삭제
       const batch = writeBatch(db);
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
+      snapshot.docs.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+        batch.delete(docSnap.ref);
       });
       
       await batch.commit();
