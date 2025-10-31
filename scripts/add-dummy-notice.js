@@ -16,11 +16,12 @@ async function addDummyNotice() {
     
     const now = admin.firestore.Timestamp.now();
     const dummyNotice = {
-      title: `[테스트] 더미 공지사항 - ${now.toDate().toLocaleString('ko-KR')}`,
+      //title: `[테스트] 더미 공지사항 - ${now.toDate().toLocaleString('ko-KR')}`,
+      title: '2025 성결대학교 코딩 공모전 안내',
       content: '이것은 실시간 업데이트 테스트를 위한 더미 공지사항입니다. 앱에서 실시간으로 나타나는지 확인해보세요!',
       link: 'https://www.sungkyul.ac.kr',
       postedAt: now,
-      category: '새소식',
+      category: '학사',
       author: '성결대학교',
       guid: `dummy_${Date.now()}`,
       source: 'TEST',

@@ -127,7 +127,7 @@ export const getTodayCourses = (courses: TimetableCourse[]): TimetableCourse[] =
   if (dayOfWeek === 0) return [];
   
   // 월요일(1)부터 금요일(5)까지만 처리
-  if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+  if (dayOfWeek >= 1 && dayOfWeek <= 6) {
     return courses.filter(course => 
       course.schedule.some(schedule => schedule.dayOfWeek === dayOfWeek)
     );
