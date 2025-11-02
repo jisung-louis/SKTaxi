@@ -7,6 +7,7 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import PageHeader from '../../components/common/PageHeader';
 import { useCurrentLocation } from '../../components/section/TaxiTab/hooks/useCurrentLocation';
+import { useScreenView } from '../../hooks/useScreenView';
 
 interface MapSearchScreenProps {
   navigation: any;
@@ -19,6 +20,7 @@ interface MapSearchScreenProps {
 }
 
 export const MapSearchScreen: React.FC<MapSearchScreenProps> = ({ navigation, route }) => {
+  useScreenView();
   const { type, onLocationSelect } = route.params;
   const mapRef = useRef<MapView>(null);
   const insets = useSafeAreaInsets();

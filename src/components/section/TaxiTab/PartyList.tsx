@@ -24,6 +24,7 @@ import { TaxiStackParamList } from '../../../navigations/types';
 import { useMyParty } from '../../../hooks/useMyParty'; // SKTaxi: 사용자 파티 소속 여부 확인
 import { usePendingJoinRequest } from '../../../hooks/usePendingJoinRequest'; // SKTaxi: pending 동승 요청 조회
 import { useCurrentLocation } from './hooks/useCurrentLocation';
+import { logEvent } from '../../../lib/analytics';
 
 
 interface PartyListProps {
@@ -380,6 +381,13 @@ export const PartyList: React.FC<PartyListProps> = ({
                               status: 'pending',
                               createdAt: serverTimestamp(),
                             });
+                            
+                            // Analytics: 동승 요청 이벤트 로깅
+                            await logEvent('party_join_requested', {
+                              party_id: party.id,
+                              request_id: ref.id,
+                            });
+                            
                             // SKTaxi: 수락 대기 화면으로 이동 (requestId 전달)
                           navigation.navigate('AcceptancePending', { party, requestId: ref.id });
                           } catch (e) {

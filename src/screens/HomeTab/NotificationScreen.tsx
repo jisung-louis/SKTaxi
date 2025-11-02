@@ -8,6 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useNotifications, Notification } from '../../hooks/useNotifications';
+import { useScreenView } from '../../hooks/useScreenView';
 
 const formatTimeAgo = (timestamp: any) => {
   if (!timestamp) return '방금 전';
@@ -49,6 +50,7 @@ const getNotificationIcon = (type: string) => {
 };
 
 export const NotificationScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { notifications, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, unreadCount } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);

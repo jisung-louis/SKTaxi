@@ -6,8 +6,10 @@ import { TYPOGRAPHY } from '../../../constants/typhograpy';
 import PageHeader from '../../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 export const PrivacyPolicyScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   return (
     <SafeAreaView style={styles.container}>

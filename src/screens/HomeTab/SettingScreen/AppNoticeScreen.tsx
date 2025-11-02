@@ -11,6 +11,7 @@ import { getFirestore, collection, query, orderBy, onSnapshot } from '@react-nat
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ja, ko } from 'date-fns/locale';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 interface AppNotice {
   id: string;
@@ -44,6 +45,7 @@ const PRIORITY_COLORS = {
 };
 
 export const AppNoticeScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const [notices, setNotices] = useState<AppNotice[]>([]);
   const [loading, setLoading] = useState(true);

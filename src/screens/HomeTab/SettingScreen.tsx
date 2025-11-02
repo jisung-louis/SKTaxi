@@ -7,8 +7,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const SettingScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
 
   const handleNotice = () => {

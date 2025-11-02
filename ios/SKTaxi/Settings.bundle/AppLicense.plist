@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>StringsTable</key>
+	<string>AppLicense</string>
+	<key>PreferenceSpecifiers</key>
+	<array>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>SKURI Taxi</string>
+			<key>FooterText</key>
+			<string>Copyright © 2025 SKURI Taxi. All rights reserved.
+
+이 소프트웨어 및 관련 문서 파일(이하 "소프트웨어")의 사본을 취득하는 모든 사람은 소프트웨어를 제한 없이 다룰 수 있는 권한이 무료로 부여됩니다. 여기에는 소프트웨어를 사용, 복사, 수정, 병합, 게시, 배포 및/또는 판매할 권리와 소프트웨어를 제공받은 사람이 그렇게 할 수 있도록 권한을 부여하는 권리가 포함되며, 다음 조건에 따릅니다:
+
+위 저작권 고지 및 이 권한 고지는 소프트웨어의 모든 사본 또는 주요 부분에 포함되어야 합니다.
+
+소프트웨어는 "있는 그대로" 제공되며, 상품성, 특정 목적에의 적합성 및 비침해에 대한 보증을 포함하되 이에 국한되지 않는 어떤 종류의 명시적이거나 암묵적인 보증 없이 제공됩니다. 어떤 경우에도 저자 또는 저작권 보유자는 계약, 불법 행위 또는 기타 행위로 인해 발생하는 청구, 손해 또는 기타 책임에 대해 책임을 지지 않습니다.</string>
+		</dict>
+	</array>
+</dict>
+</plist>
+

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -10,8 +10,10 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialIcons';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 export const AccountModificationScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const user = auth().currentUser;
 
@@ -31,6 +33,9 @@ export const AccountModificationScreen = () => {
   const [errors, setErrors] = useState<{holder?: string; bank?: string; number?: string}>({});
   const [open, setOpen] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [hasAccount, setHasAccount] = useState(false);
 
   const onlyDigits = (v: string) => v.replace(/[^0-9]/g, '');
 
@@ -45,6 +50,12 @@ export const AccountModificationScreen = () => {
         const data = snap.data() as any;
         const account = data?.account || {};
         if (cancelled) return;
+        
+        // Firestore에 account 필드가 존재하는지 확인
+        const accountExists = !!data?.account && 
+          (account.bankName || account.accountNumber || account.accountHolder);
+        setHasAccount(accountExists);
+        
         setBankName(account.bankName || '');
         setAccountNumber(account.accountNumber || '');
         setAccountHolder(account.accountHolder || '');
@@ -82,12 +93,19 @@ export const AccountModificationScreen = () => {
       return;
     }
     try {
+      setSaving(true);
       await firestore().collection('users').doc(user.uid).set({
         account: { accountHolder: accountHolder.trim(), bankName, accountNumber: accountNumber.trim(), hideName },
       }, { merge: true });
+      
+      // 저장 성공 후 hasAccount 업데이트
+      setHasAccount(true);
+      
       Alert.alert('완료', '계좌 정보가 저장되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
     } catch (e) {
       Alert.alert('오류', '저장 중 오류가 발생했어요.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -107,7 +125,7 @@ export const AccountModificationScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              setFetching(true);
+              setDeleting(true);
               await firestore().collection('users').doc(user.uid).update({
                 account: firestore.FieldValue.delete()
               });
@@ -119,11 +137,14 @@ export const AccountModificationScreen = () => {
               setHideName(false);
               setErrors({});
               
+              // 삭제 성공 후 hasAccount 업데이트
+              setHasAccount(false);
+              
               Alert.alert('완료', '계좌 정보가 삭제되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
             } catch (e) {
               Alert.alert('오류', '삭제 중 오류가 발생했어요.');
             } finally {
-              setFetching(false);
+              setDeleting(false);
             }
           }
         }
@@ -139,7 +160,7 @@ export const AccountModificationScreen = () => {
               <View style={styles.bankInputContainer}>
                 <View style={[styles.inputContainer, { flex: 3.3, position: 'relative' }]}>
                   <Text style={styles.label}>은행명</Text>
-                  <TouchableOpacity style={[styles.select, fetching && { opacity: 0.6 }]} disabled={fetching} onPress={() => setOpen(!open)}>
+                  <TouchableOpacity style={[styles.select, (fetching || saving) && { opacity: 0.6 }]} disabled={fetching || saving} onPress={() => setOpen(!open)}>
                     <Text style={styles.selectText}>{fetching ? '...' : (bankName || '은행 선택')}</Text>
                     <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.text.secondary} />
                   </TouchableOpacity>
@@ -161,11 +182,11 @@ export const AccountModificationScreen = () => {
                   <Text style={styles.label}>계좌번호</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder={fetching ? '불러오는 중...' : '숫자만 입력'}
+                    placeholder={fetching ? '불러오는 중...' : saving ? '저장 중...' : '숫자만 입력'}
                     placeholderTextColor={COLORS.text.disabled}
                     value={accountNumber}
                     onChangeText={(v) => { const f = onlyDigits(v); setAccountNumber(f); if (errors.number) setErrors({ ...errors, number: '' }); }}
-                    editable={!fetching}
+                    editable={!fetching && !saving}
                     keyboardType="number-pad"
                   />
                   {errors.number ? <Text style={styles.errorText}>{errors.number}</Text> : null}
@@ -179,14 +200,14 @@ export const AccountModificationScreen = () => {
                 <View style={styles.nameInputContainer}>
                   <TextInput
                     style={[styles.input, { flex: 1, height: '100%' }]}
-                    placeholder={fetching ? '불러오는 중...' : '이름'}
+                    placeholder={fetching ? '불러오는 중...' : saving ? '저장 중...' : '이름'}
                     placeholderTextColor={COLORS.text.disabled}
                     value={accountHolder}
                     onChangeText={(v) => { setAccountHolder(v); if (errors.holder) setErrors({ ...errors, holder: '' }); }}
-                    editable={!fetching}
+                    editable={!fetching && !saving}
                   />
                   <View style={styles.toggleContainer}>
-                      <TouchableOpacity style={styles.toggleButton} disabled={fetching} onPress={() => setHideName(prev => !prev)}>
+                      <TouchableOpacity style={styles.toggleButton} disabled={fetching || saving} onPress={() => setHideName(prev => !prev)}>
                         <Icon name={hideName ? 'checkbox' : 'square-outline'} size={20} color={hideName ? COLORS.accent.green : COLORS.text.secondary} />
                       <Text style={[styles.toggleButtonText, hideName && { color: COLORS.accent.green }]}>이름 일부만 공개</Text>
                     </TouchableOpacity>
@@ -197,19 +218,35 @@ export const AccountModificationScreen = () => {
 
               {errors.holder ? <Text style={styles.errorText}>{errors.holder}</Text> : null}
 
-            <TouchableOpacity style={[styles.saveButton, fetching && { opacity: 0.6 }]} disabled={fetching} onPress={handleSave}>
-                <Text style={styles.saveButtonText}>저장하기</Text>
+            <TouchableOpacity style={[styles.saveButton, (fetching || saving) && styles.saveButtonDisabled]} disabled={fetching || saving} onPress={handleSave}>
+                {saving ? (
+                  <View style={styles.saveButtonContent}>
+                    <ActivityIndicator size="small" color={COLORS.text.buttonText} style={{ marginRight: 8 }} />
+                    <Text style={styles.saveButtonText}>저장 중...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.saveButtonText}>저장하기</Text>
+                )}
               </TouchableOpacity>
 
-              {/* 계좌정보가 있을 때만 삭제 버튼 표시 */}
-              {(bankName || accountNumber || accountHolder) && (
+              {/* Firestore에 account 필드가 존재할 때만 삭제 버튼 표시 */}
+              {hasAccount && (
                 <TouchableOpacity 
-                  style={[styles.deleteButton, fetching && { opacity: 0.6 }]} 
-                  disabled={fetching} 
+                  style={[styles.deleteButton, (fetching || saving || deleting) && styles.deleteButtonDisabled]} 
+                  disabled={fetching || saving || deleting} 
                   onPress={handleDelete}
                 >
-                  <Icon name="trash-outline" size={20} color={COLORS.accent.red} />
-                  <Text style={styles.deleteButtonText}>계좌정보 삭제하기</Text>
+                  {deleting ? (
+                    <View style={styles.deleteButtonContent}>
+                      <ActivityIndicator size="small" color={COLORS.accent.red} style={{ marginRight: 8 }} />
+                      <Text style={styles.deleteButtonText}>삭제 중...</Text>
+                    </View>
+                  ) : (
+                    <>
+                      <Icon name="trash-outline" size={20} color={COLORS.accent.red} />
+                      <Text style={styles.deleteButtonText}>계좌정보 삭제하기</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               )}
             </View>
@@ -330,6 +367,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 24,
   },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   saveButtonText: {
     color: COLORS.text.buttonText,
     fontSize: 16,
@@ -345,6 +390,14 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: COLORS.accent.red,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.6,
+  },
+  deleteButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   deleteButtonText: {
     color: COLORS.accent.red,

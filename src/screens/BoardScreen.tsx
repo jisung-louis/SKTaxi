@@ -18,8 +18,10 @@ import { PostCard } from '../components/board/PostCard';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { TYPOGRAPHY } from '../constants/typhograpy';
+import { useScreenView } from '../hooks/useScreenView';
 
 export const BoardScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const isFocused = useIsFocused();

@@ -12,8 +12,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { Linking } from 'react-native';
+import { useScreenView } from '../../hooks/useScreenView';
 
 const NoticeDetailWebViewScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
   const route = useRoute<NativeStackScreenProps<NoticeStackParamList, 'NoticeDetailWebView'>['route']>();
   const noticeId: string | undefined = route?.params?.noticeId;

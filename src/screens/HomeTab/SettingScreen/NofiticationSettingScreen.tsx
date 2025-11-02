@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../../hooks/useAuth';
 import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 interface NotificationSettings {
   allNotifications: boolean;
@@ -21,6 +22,7 @@ interface NotificationSettings {
 }
 
 export const NofiticationSettingScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user } = useAuth();
   const [settings, setSettings] = useState<NotificationSettings>({

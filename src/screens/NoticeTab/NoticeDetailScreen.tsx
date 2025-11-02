@@ -22,8 +22,10 @@ import CommentInput, { CommentInputRef } from '../../components/common/CommentIn
 import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { useNoticeComments } from '../../hooks/useNoticeComments';
 import { useAuth } from '../../hooks/useAuth';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const NoticeDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const noticeId: string | undefined = route?.params?.noticeId;

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>StringsTable</key>
+	<string>License</string>
+	<key>PreferenceSpecifiers</key>
+	<array>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>SKURI Taxi</string>
+			<key>File</key>
+			<string>AppLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React</string>
+			<key>File</key>
+			<string>ReactLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Native</string>
+			<key>File</key>
+			<string>ReactNativeLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Navigation</string>
+			<key>File</key>
+			<string>ReactNavigationLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Native Firebase</string>
+			<key>File</key>
+			<string>ReactNativeFirebaseLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>Axios</string>
+			<key>File</key>
+			<string>AxiosLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Native Maps</string>
+			<key>File</key>
+			<string>ReactNativeMapsLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Native Vector Icons</string>
+			<key>File</key>
+			<string>ReactNativeVectorIconsLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>Bottom Sheet</string>
+			<key>File</key>
+			<string>BottomSheetLicense</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSChildPaneSpecifier</string>
+			<key>Title</key>
+			<string>React Native Reanimated</string>
+			<key>File</key>
+			<string>ReactNativeReanimatedLicense</string>
+		</dict>
+	</array>
+</dict>
+</plist>

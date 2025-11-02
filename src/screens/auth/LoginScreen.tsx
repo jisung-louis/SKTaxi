@@ -10,8 +10,10 @@ import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import Modal from 'react-native-modal';
 import { authInstance } from '../../libs/firebase';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const LoginScreen = ({ navigation }: any) => {
+  useScreenView();
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
   const [adminVisible, setAdminVisible] = useState(false);

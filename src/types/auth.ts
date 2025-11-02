@@ -3,6 +3,7 @@ export interface User {
   email: string | null;
   displayName: string | null; // 회원가입 닉네임
   studentId: string | null;
+  department: string | null;
   photoURL: string | null;
   linkedAccounts?: LinkedAccount[];
   account?: UserAccountInfo | null;

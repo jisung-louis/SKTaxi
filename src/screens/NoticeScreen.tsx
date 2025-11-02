@@ -14,8 +14,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Button from '../components/common/Button';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
+import { useScreenView } from '../hooks/useScreenView';
 
 export const NoticeScreen = () => {
+  useScreenView();
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);

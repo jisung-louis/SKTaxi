@@ -136,7 +136,16 @@ export const useBoardComments = (postId: string) => {
         commentData.anonId = `${postId}:${user.uid}`;
       }
 
-      await addDoc(collection(db, 'boardComments'), commentData);
+      const commentRef = await addDoc(collection(db, 'boardComments'), commentData);
+
+      // Analytics: 댓글 작성 이벤트 로깅
+      await logEvent('board_comment_created', {
+        post_id: postId,
+        comment_id: commentRef.id,
+        is_anonymous: !!isAnonymous,
+        is_reply: !!parentId,
+        comment_length: content.trim().length,
+      });
 
       // 게시글의 댓글 수 증가
       const postRef = doc(db, 'boardPosts', postId);

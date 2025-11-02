@@ -6,7 +6,7 @@ export const useProfileCompletion = () => {
   
   const isProfileComplete = useMemo(() => {
     if (!user) return false;
-    return !!(user.studentId && user.displayName && user.displayName !== '스쿠리 유저');
+    return !!(user.studentId && user.displayName && user.department && user.displayName !== '스쿠리 유저');
   }, [user]);
   
   const needsProfile = !!user && !isProfileComplete;

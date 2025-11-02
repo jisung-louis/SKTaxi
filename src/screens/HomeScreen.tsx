@@ -24,10 +24,13 @@ import { useNotifications } from '../hooks/useNotifications';
 import { TabBadge } from '../components/common/TabBadge';
 import { usePendingJoinRequest } from '../hooks/usePendingJoinRequest';
 import { useMyParty } from '../hooks/useMyParty';
+import { useScreenView } from '../hooks/useScreenView';
+import { logEvent } from '../lib/analytics';
 
 type SimpleNotice = { id: string; title: string; content?: string; postedAt?: any; category?: string };
 
 export const HomeScreen = () => {
+  useScreenView();
   const { parties, loading } = useParties(); // SKTaxi: Firestore에서 실제 파티 목록 구독
   const { user } = useAuth(); // SKTaxi: 현재 사용자 정보
   const { markAsRead } = useNotices('전체'); // SKTaxi: 공지사항 읽음 처리 함수
@@ -157,6 +160,12 @@ export const HomeScreen = () => {
                 requesterId: user.uid,
                 status: 'pending',
                 createdAt: serverTimestamp(),
+              });
+              
+              // Analytics: 동승 요청 이벤트 로깅
+              await logEvent('party_join_requested', {
+                party_id: party.id,
+                request_id: ref.id,
               });
               
               Alert.alert('요청 전송', '방장에게 요청을 보냈어요.');

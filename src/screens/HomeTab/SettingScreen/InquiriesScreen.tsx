@@ -9,6 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../../hooks/useAuth';
 import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 const INQUIRY_TYPES = [
   { id: 'feature', label: '기능 제안', icon: 'bulb-outline' },
@@ -19,6 +20,7 @@ const INQUIRY_TYPES = [
 ];
 
 export const InquiriesScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const { user } = useAuth();

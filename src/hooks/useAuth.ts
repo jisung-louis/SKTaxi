@@ -6,6 +6,7 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
+import { setUserId } from '../lib/analytics';
 
 export const useAuth = () => {
   const [state, setState] = useState<AuthState>({
@@ -22,6 +23,13 @@ export const useAuth = () => {
         unsubscribeProfile = undefined;
       }
 
+      // Analytics: 사용자 ID 설정 (로그인/로그아웃 시 자동 처리)
+      if (firebaseUser) {
+        setUserId(firebaseUser.uid);
+      } else {
+        setUserId(null);
+      }
+
       if (firebaseUser) {
         // 사용자 문서 실시간 구독: 프로필 완료 저장 직후 반영
         const userDocRef = firestore().collection('users').doc(firebaseUser.uid);
@@ -36,6 +44,7 @@ export const useAuth = () => {
                 email: firebaseUser.email,
                 displayName: '스쿠리 유저',
                 studentId: null,
+                department: null,
                 photoURL: firebaseUser.photoURL,
                 linkedAccounts: [],
                 realname: null,
@@ -144,6 +153,7 @@ export const useAuth = () => {
           }],
           studentId: null,
           realname: null,
+          department: null,
         });
         firstLogin = true;
       }

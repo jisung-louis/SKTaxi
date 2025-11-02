@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { useAuth } from './useAuth';
 import { UserTimetable, Course, TimetableCourse } from '../types/timetable';
+import { logEvent } from '../lib/analytics';
 import { getTodayCourses, findOverlappingCourses } from '../utils/timetableUtils';
 import { TIMETABLE_COURSE_COLORS, assignColor } from '../constants/colorPalettes';
 
@@ -178,6 +179,15 @@ export const useTimetable = (semester: string) => {
         const filteredCourses = prev.filter(c => !overlappingCourseIds.includes(c.id));
         const courseWithColor = assignColorToCourse(course, filteredCourses.length);
         return [...filteredCourses, courseWithColor];
+      });
+      
+      // Analytics: 수업 추가 이벤트 로깅
+      await logEvent('timetable_course_added', {
+        course_id: course.id,
+        course_name: course.name,
+        semester: semester,
+        had_overlapping: overlappingCourses.length > 0,
+        overlapping_count: overlappingCourses.length,
       });
     } catch (err: any) {
       console.error('Failed to add course:', err);

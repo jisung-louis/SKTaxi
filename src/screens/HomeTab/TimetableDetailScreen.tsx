@@ -17,9 +17,10 @@ import { getCurrentSemester, generateSemesterOptions, generatePeriods } from '..
 import { Course } from '../../types/timetable';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { DAY_CELL_HEIGHT } from '../../constants/constants';
-
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const TimetableDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute();
   const [selectedSemester, setSelectedSemester] = useState(getCurrentSemester());

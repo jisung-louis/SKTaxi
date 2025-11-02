@@ -21,10 +21,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '../../components/common/Button';
 import Surface from '../../components/common/Surface';
 import { WINDOW_HEIGHT, WINDOW_WIDTH } from '@gorhom/bottom-sheet';
+import { useScreenView } from '../../hooks/useScreenView';
+import { logEvent } from '../../lib/analytics';
 
 type ChatScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>;
 
 export const ChatScreen = () => {
+  useScreenView();
   const navigation = useNavigation<ChatScreenNavigationProp>();
   const route = useRoute<RouteProp<TaxiStackParamList, 'Chat'>>();
   const [message, setMessage] = useState('');
@@ -494,6 +497,12 @@ export const ChatScreen = () => {
       await updateDoc(doc(collection(firestore(getApp()), 'parties'), partyId), {
         members: arrayUnion(requesterId),
         updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
+
+      // Analytics: 동승 요청 승인 이벤트 로깅
+      await logEvent('party_join_accepted', {
+        party_id: partyId,
+        request_id: requestId,
       });
 
       // 시스템 메시지 전송

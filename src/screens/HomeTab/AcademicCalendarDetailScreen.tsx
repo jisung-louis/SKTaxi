@@ -12,8 +12,10 @@ import { WeekCalendar } from '../../components/academic/WeekCalendar';
 import { MonthCalendar } from '../../components/academic/MonthCalendar';
 import PageHeader from '../../components/common/PageHeader';
 import { normalizeDate, isSameDate, isDateAfterOrEqual, isDateBeforeOrEqual } from '../../utils/dateUtils';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const AcademicCalendarDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute();
   const { schedules, loading, error, getTodayScheduleMessage, getSchedulesForMonth } = useAcademicSchedules();

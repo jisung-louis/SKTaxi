@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -8,16 +8,21 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { useScreenView } from '../../../hooks/useScreenView';
+import { setUserProperties } from '../../../lib/analytics';
+import { Dropdown } from '../../../components/common/Dropdown';
+import { DEPARTMENT_OPTIONS } from '../../../constants/constants';
 
 export const ProfileEditScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const user = auth().currentUser;
 
   const [displayName, setDisplayName] = useState('');
   const [studentId, setStudentId] = useState('');
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [department, setDepartment] = useState('');
   const [fetching, setFetching] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; studentId?: string } | null>(null);
 
   useEffect(() => {
@@ -31,6 +36,7 @@ export const ProfileEditScreen = () => {
         if (cancelled) return;
         setDisplayName(data?.displayName || user.displayName || '');
         setStudentId(data?.studentId || '');
+        setDepartment(data?.department || '');
       } catch {}
       finally {
         if (!cancelled) setFetching(false);
@@ -63,16 +69,27 @@ export const ProfileEditScreen = () => {
       return;
     }
     try {
+      setSaving(true);
       // Firestore 업데이트
       await firestore().collection('users').doc(user.uid).set({
         displayName: displayName.trim(),
         studentId: studentId.trim(),
+        department: department.trim(),
       }, { merge: true });
       // Auth 표시 이름도 업데이트(옵션)
       try { await user.updateProfile({ displayName: displayName.trim() }); } catch {}
+      
+      // Analytics: 사용자 속성 업데이트
+      await setUserProperties({
+        display_name: displayName.trim(),
+        department: department.trim() || '',
+      });
+      
       Alert.alert('완료', '프로필이 저장되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
     } catch (e) {
       Alert.alert('오류', '저장 중 오류가 발생했어요.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -106,16 +123,28 @@ export const ProfileEditScreen = () => {
                 setDisplayName(next);
                 if (errors?.name) setErrors({ ...errors, name: '' });
               }}
-              editable={!fetching}
+              editable={!fetching && !saving}
             />
             {errors?.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.label}>학과</Text>
+            <Dropdown
+              value={department}
+              options={DEPARTMENT_OPTIONS}
+              onSelect={setDepartment}
+              placeholder="학과를 선택해주세요"
+              modalTitle="학과 선택"
+              disabled={fetching || saving}
+            />
           </View>
 
           <View style={styles.section}>
             <Text style={styles.label}>학번</Text>
             <TextInput
               style={styles.input}
-              placeholder={fetching ? '불러오는 중...' : '예: 20251234'}
+              placeholder={fetching ? '불러오는 중...' : saving ? '저장 중...' : '예: 20251234'}
               placeholderTextColor={COLORS.text.disabled}
               value={studentId}
               onChangeText={(v) => {
@@ -123,20 +152,21 @@ export const ProfileEditScreen = () => {
                 setStudentId(only);
                 if (errors?.studentId) setErrors({ ...errors, studentId: '' });
               }}
-              editable={!fetching}
+              editable={!fetching && !saving}
               keyboardType="number-pad"
             />
             {errors?.studentId ? <Text style={styles.errorText}>{errors.studentId}</Text> : null}
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.label}>비밀번호 (준비중)</Text>
-            <TextInput style={[styles.input, { opacity: 0.6 }]} editable={false} secureTextEntry placeholder="비밀번호 변경 (준비중)" placeholderTextColor={COLORS.text.disabled} value={password} onChangeText={setPassword} />
-            <TextInput style={[styles.input, { opacity: 0.6, marginTop: 8 }]} editable={false} secureTextEntry placeholder="비밀번호 확인 (준비중)" placeholderTextColor={COLORS.text.disabled} value={passwordConfirm} onChangeText={setPasswordConfirm} />
-          </View>
-
-          <TouchableOpacity style={[styles.saveButton, fetching && { opacity: 0.6 }]} disabled={fetching} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>저장하기</Text>
+          <TouchableOpacity style={[styles.saveButton, (fetching || saving) && styles.saveButtonDisabled]} disabled={fetching || saving} onPress={handleSave}>
+            {saving ? (
+              <View style={styles.saveButtonContent}>
+                <ActivityIndicator size="small" color={COLORS.text.buttonText} style={{ marginRight: 8 }} />
+                <Text style={styles.saveButtonText}>저장 중...</Text>
+              </View>
+            ) : (
+              <Text style={styles.saveButtonText}>저장하기</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
@@ -211,6 +241,14 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginVertical: 24,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   saveButtonText: {
     color: COLORS.text.buttonText,

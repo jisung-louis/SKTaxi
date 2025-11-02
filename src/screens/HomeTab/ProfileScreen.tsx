@@ -9,8 +9,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const ProfileScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user, signOut, loading } = useAuthContext();
   const fadeOverlay = React.useRef(new Animated.Value(0)).current;
@@ -79,8 +81,12 @@ export const ProfileScreen = () => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{loading ? '불러오는 중...' : (user?.displayName || '이름 없음')}</Text>
-            <Text style={styles.email}>{user?.email}</Text>
-            <Text style={styles.studentNumber}>{user?.studentId}</Text>
+            <Text style={styles.email}>{user?.email || '이메일 정보 없음'}</Text>
+            <View style={styles.departmentAndStudentNumberContainer}>
+              <Text style={styles.departmentAndStudentNumber}>{user?.department || '학과 정보 없음'}</Text>
+              <Text style={styles.departmentAndStudentNumber}>•</Text>
+              <Text style={styles.departmentAndStudentNumber}>{user?.studentId || '학번 정보 없음'}</Text>
+            </View>
           </View>
           <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
             <Icon name="create-outline" size={18} color={COLORS.accent.green} />
@@ -163,7 +169,12 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body2,
     color: COLORS.text.secondary,
   },
-  studentNumber: {
+  departmentAndStudentNumberContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  departmentAndStudentNumber: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
   },

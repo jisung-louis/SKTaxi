@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { doc, updateDoc, increment } from '@react-native-firebase/firestore';
 import { db } from '../config/firebase';
 import { useUserBoardInteractions } from './useUserBoardInteractions';
+import { logEvent } from '../lib/analytics';
 
 export const usePostActions = (postId: string) => {
   const { isLiked, isBookmarked, toggleLike, toggleBookmark } = useUserBoardInteractions(postId);
@@ -19,6 +20,11 @@ export const usePostActions = (postId: string) => {
         const postRef = doc(db, 'boardPosts', postId);
         await updateDoc(postRef, {
           likeCount: increment(1),
+        });
+        
+        // Analytics: 게시글 좋아요 이벤트 로깅
+        await logEvent('board_post_liked', {
+          post_id: postId,
         });
       }
     } catch (err) {

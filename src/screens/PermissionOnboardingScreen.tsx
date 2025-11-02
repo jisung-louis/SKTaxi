@@ -10,6 +10,7 @@ import { ensureFcmTokenSaved } from '../lib/fcm';
 import { requestLocationPermission } from '../components/section/TaxiTab/hooks/useCurrentLocation';
 import { updateUserProfile, authInstance } from '../libs/firebase';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
+import { useScreenView } from '../hooks/useScreenView';
 
 interface PermissionOnboardingScreenProps {
   navigation: any;
@@ -18,6 +19,7 @@ interface PermissionOnboardingScreenProps {
 type OnboardingStep = 'intro' | 'notification' | 'location' | 'complete';
 
 export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProps> = ({ navigation }) => {
+  useScreenView();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('intro');
   const [isLoading, setIsLoading] = useState(false);
   const {

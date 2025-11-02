@@ -10,6 +10,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { useScreenView } from '../../../hooks/useScreenView';
 
 interface AppNotice {
   id: string;
@@ -43,6 +44,7 @@ const PRIORITY_COLORS = {
 };
 
 export const AppNoticeDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const noticeId = route?.params?.noticeId;

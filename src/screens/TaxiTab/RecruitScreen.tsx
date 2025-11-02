@@ -19,10 +19,13 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { sendSystemMessage } from '../../hooks/useMessages';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useScreenView } from '../../hooks/useScreenView';
+import { logEvent } from '../../lib/analytics';
 
 type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Recruit'>;
 
 export const RecruitScreen = () => {
+  useScreenView();
   const navigation = useNavigation<RecruitScreenNavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
   const keywordInputRef = useRef<TextInput>(null);
@@ -111,6 +114,17 @@ export const RecruitScreen = () => {
       };
 
       const ref = await firestore(getApp()).collection('parties').add(partyDoc);
+      
+      // Analytics: 파티 생성 이벤트 로깅
+      await logEvent('party_created', {
+        party_id: ref.id,
+        departure: departure,
+        destination: destination,
+        max_members: maxMembers,
+        has_keywords: keywords.length > 0,
+        keyword_count: keywords.length,
+        has_detail: !!detail.trim(),
+      });
       
       // SKTaxi: 채팅방 생성 시스템 메시지 전송
       try {

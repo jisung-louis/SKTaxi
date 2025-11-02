@@ -6,17 +6,23 @@ import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useAuth } from '../../hooks/useAuth';
 import { updateUserProfile } from '../../libs/firebase';
+import { useScreenView } from '../../hooks/useScreenView';
+import { Dropdown } from '../../components/common/Dropdown';
+import { DEPARTMENT_OPTIONS } from '../../constants/constants';
+import { setUserProperties } from '../../lib/analytics';
 
 export const CompleteProfileScreen = () => {
+  useScreenView();
   const { user } = useAuth();
   const [displayName, setDisplayName] = useState('');
+  const [department, setDepartment] = useState('');
   const [studentId, setStudentId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     if (!user) return;
-    if (!displayName.trim() || !studentId.trim()) {
-      Alert.alert('알림', '닉네임과 학번을 모두 입력해주세요.');
+    if (!displayName.trim() || !studentId.trim() || !department.trim()) {
+      Alert.alert('알림', '닉네임과 학번, 학과를 모두 입력해주세요.');
       return;
     }
     if (displayName.trim().length > 7) {
@@ -28,7 +34,16 @@ export const CompleteProfileScreen = () => {
       await updateUserProfile(user.uid, {
         displayName: displayName.trim(),
         studentId: studentId.trim(),
+        department: department.trim(),
       });
+      
+      // Analytics: 사용자 속성 설정
+      await setUserProperties({
+        display_name: displayName.trim(),
+        department: department.trim(),
+        // studentId는 개인 식별 정보이므로 Analytics에 저장하지 않음
+      });
+      
       // 프로필 완료 후 RootNavigator가 자동으로 Main으로 전환함
       // 별도 네비게이션 불필요
     } catch (e) {
@@ -44,7 +59,7 @@ export const CompleteProfileScreen = () => {
         <View style={{ flex: 1 }}>
           <View style={styles.header}>
             <Text style={styles.title}>프로필 설정</Text>
-            <Text style={styles.subtitle}>닉네임과 학번을 입력해주세요</Text>
+            <Text style={styles.subtitle}>닉네임, 학과, 학번을 입력해주세요</Text>
           </View>
 
           <View style={styles.form}>
@@ -58,7 +73,22 @@ export const CompleteProfileScreen = () => {
               maxLength={7}
             />
 
-            <Text style={styles.labelWithGap}>학번</Text>
+            <View style={styles.labelGroup}>
+              <Text style={styles.labelWithGap}>학과</Text>
+              <Text style={styles.labelDescription}>학과별 맞춤 공지사항 알림을 받을 수 있어요</Text>
+            </View>
+            <Dropdown
+              value={department}
+              options={DEPARTMENT_OPTIONS}
+              onSelect={setDepartment}
+              placeholder="학과를 선택해주세요"
+              modalTitle="학과 선택"
+            />
+
+            <View style={styles.labelGroup}>
+              <Text style={styles.labelWithGap}>학번</Text>
+              <Text style={styles.labelDescription}>학번은 공개되지 않아요</Text>
+            </View>
             <TextInput
               style={styles.input}
               value={studentId}
@@ -104,12 +134,25 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body1,
     color: COLORS.text.secondary, 
     marginBottom: 8,
+    fontWeight: '600',
   },
   labelWithGap: { 
     ...TYPOGRAPHY.body1,
     color: COLORS.text.secondary, 
     marginBottom: 8, 
     marginTop: 16,
+    fontWeight: '600',
+  },
+  labelDescription: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.disabled,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  labelGroup: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
   },
   input: {
     backgroundColor: COLORS.background.card,

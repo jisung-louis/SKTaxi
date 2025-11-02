@@ -27,6 +27,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { ImageSelector } from '../../components/board/ImageSelector';
+import { useScreenView } from '../../hooks/useScreenView';
 
 interface BoardEditScreenProps {
   route: {
@@ -37,6 +38,7 @@ interface BoardEditScreenProps {
 }
 
 export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const { user } = useAuth();

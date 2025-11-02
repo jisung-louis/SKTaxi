@@ -4,6 +4,7 @@ import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 import { Message } from '../types/firestore';
+import { logEvent } from '../lib/analytics';
 
 // SKTaxi: 특정 파티의 메시지를 실시간으로 구독하는 훅
 export function useMessages(partyId: string | undefined) {
@@ -73,6 +74,12 @@ export async function sendMessage(partyId: string, text: string): Promise<void> 
     };
 
     await addDoc(messagesRef, messageData);
+    
+    // Analytics: 채팅 메시지 전송 이벤트 로깅
+    await logEvent('chat_message_sent', {
+      party_id: partyId,
+      message_length: text.trim().length,
+    });
   } catch (error) {
     console.error('SKTaxi sendMessage: Error sending message:', error);
     throw error;

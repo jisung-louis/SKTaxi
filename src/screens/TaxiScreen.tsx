@@ -27,10 +27,12 @@ import { TYPOGRAPHY } from '../constants/typhograpy';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import auth from '@react-native-firebase/auth';
 import { getApp } from '@react-native-firebase/app';
+import { useScreenView } from '../hooks/useScreenView';
 
 type TaxiScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'TaxiMain'>;
 
 export const TaxiScreen = () => {
+  useScreenView();
   const navigation = useNavigation<TaxiScreenNavigationProp>();
   const mapRef = useRef<MapView | null>(null);
   const { location, loading, refresh } = useCurrentLocation();

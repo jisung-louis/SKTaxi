@@ -34,6 +34,7 @@ import CommentInput, { CommentInputRef } from '../../components/common/CommentIn
 import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { HashTagText } from '../../components/common/HashTagText';
 import { ImageViewer } from '../../components/board/ImageViewer';
+import { useScreenView } from '../../hooks/useScreenView';
 
 interface BoardDetailScreenProps {
   route: {
@@ -44,6 +45,7 @@ interface BoardDetailScreenProps {
 }
 
 export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const { user } = useAuth();

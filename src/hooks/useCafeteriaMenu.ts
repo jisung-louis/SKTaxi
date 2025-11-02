@@ -10,7 +10,6 @@ export const useCafeteriaMenu = () => {
   // ISO 주차 계산 (월요일부터 시작)
   const getCurrentWeek = () => {
     const now = new Date();
-    const year = now.getFullYear();
     
     // ISO 주차 계산: 월요일부터 시작하는 주차
     const getISOWeek = (date: Date) => {
@@ -25,18 +24,8 @@ export const useCafeteriaMenu = () => {
       return 1 + Math.ceil((firstThursday - target.valueOf()) / 604800000);
     };
     
-    const weekNumber = getISOWeek(now);
-    
-    // 2025년 10월 기준 주차 매핑
-    if (year === 2025 && now.getMonth() === 9) { // 10월 (0-based)
-      // 2025년 10월의 ISO 주차들
-      if (weekNumber >= 40 && weekNumber <= 44) {
-        return weekNumber;
-      }
-    }
-    
-    // 기본값 (현재 데이터가 있는 주차)
-    return 43;
+    // 항상 실제 현재 ISO 주차를 반환
+    return getISOWeek(now);
   };
 
   // 주차 ID 생성 (예: "2025-W43")

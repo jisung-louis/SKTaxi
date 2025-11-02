@@ -16,11 +16,13 @@ import { formatKoreanAmPmTime } from '../../utils/datetime'; // SKTaxi: 시간 �
 import Button from '../../components/common/Button';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../constants/constants';
 import { useUserDisplayNames } from '../../hooks/useUserDisplayNames';
+import { useScreenView } from '../../hooks/useScreenView';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;
 type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'AcceptancePending'>;
 
 export const AcceptancePendingScreen = () => {
+  useScreenView();
   const navigation = useNavigation<AcceptancePendingScreenNavigationProp>();
   const route = useRoute<AcceptancePendingScreenRouteProp>();
   const { party, requestId } = route.params as any;

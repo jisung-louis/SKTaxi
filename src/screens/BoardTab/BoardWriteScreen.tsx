@@ -25,8 +25,11 @@ import { useAuth } from '../../hooks/useAuth';
 import { db } from '../../config/firebase';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import { ImageSelector } from '../../components/board/ImageSelector';
+import { useScreenView } from '../../hooks/useScreenView';
+import { logEvent } from '../../lib/analytics';
 
 export const BoardWriteScreen: React.FC = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user } = useAuth();
   
@@ -107,6 +110,15 @@ export const BoardWriteScreen: React.FC = () => {
 
       const docRef = await addDoc(collection(db, 'boardPosts'), postData);
       const postId = docRef.id;
+
+      // Analytics: 게시글 작성 이벤트 로깅
+      await logEvent('board_post_created', {
+        post_id: postId,
+        category: formData.category,
+        is_anonymous: formData.isAnonymous,
+        has_images: selectedImages.length > 0,
+        image_count: selectedImages.length,
+      });
 
       // 익명 설정이면 anonId 업데이트
       if (formData.isAnonymous) {

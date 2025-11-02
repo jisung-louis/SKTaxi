@@ -10,8 +10,10 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import PageHeader from '../../components/common/PageHeader';
 import { useCafeteriaMenu } from '../../hooks/useCafeteriaMenu';
 import { CAFETERIA_CATEGORIES } from '../../types/cafeteria';
+import { useScreenView } from '../../hooks/useScreenView';
 
 export const CafeteriaDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const { menu, loading, error, weekDisplayName } = useCafeteriaMenu();
