@@ -16,8 +16,13 @@ import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
 import auth from '@react-native-firebase/auth';
 import { configureGoogleSignin } from './src/config/google';
+import { checkVersionUpdate } from './src/lib/versionCheck';
+import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
 
 const App = () => {
+  const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState<string | undefined>();
+
   useEffect(() => {
     configureGoogleSignin();
     // SKTaxi: 간소화 정책 - 앱 시작 즉시 저장 로직은 제거하고 로그인 성공 시점에서만 저장
@@ -25,6 +30,18 @@ const App = () => {
     // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제
     // const unsub = subscribeFcmTokenRefresh();
     const unsubAuth = auth().onAuthStateChanged(() => {});
+    
+    // SKTaxi: 버전 체크 및 강제 업데이트 확인
+    checkVersionUpdate().then((result) => {
+      if (result.forceUpdate) {
+        setForceUpdateRequired(true);
+        setUpdateMessage(result.message);
+        console.log('강제 업데이트 필요:', result);
+      }
+    }).catch((error) => {
+      console.error('버전 체크 실패:', error);
+    });
+    
     return () => { unsubAuth(); };
   }, []);
 
@@ -38,6 +55,11 @@ const App = () => {
             </NavigationContainer>
           </CourseSearchProvider>
         </AuthProvider>
+        {/* SKTaxi: 강제 업데이트 모달 */}
+        <ForceUpdateModal 
+          visible={forceUpdateRequired} 
+          message={updateMessage}
+        />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

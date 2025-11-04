@@ -414,8 +414,8 @@ export const HomeScreen = () => {
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
-          {/* 학식 섹션 */}
-          <CafeteriaSection />
+          {/* My Timetable */}
+          <TimetableSection />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
@@ -424,8 +424,9 @@ export const HomeScreen = () => {
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
-        {/* My Timetable */}
-        <TimetableSection />
+          {/* 학식 섹션 */}
+          <CafeteriaSection />
+
         </ScrollView>
       </Animated.View>
     </SafeAreaView>

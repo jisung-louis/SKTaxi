@@ -312,6 +312,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 1,
   },
+  courseXButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  courseXButtonIcon: {
+    color: COLORS.text.secondary,
+  },
   emptyCell: {
     flex: 1,
     minHeight: DAY_CELL_HEIGHT,

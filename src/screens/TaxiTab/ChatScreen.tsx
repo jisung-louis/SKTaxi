@@ -33,6 +33,7 @@ export const ChatScreen = () => {
   const [message, setMessage] = useState('');
   const partyId = route.params?.partyId;
   const flatListRef = useRef<FlatList>(null);
+  const contentHeightRef = useRef<number>(0); // SKTaxi: FlatList content 높이 추적
   const kickHandledRef = useRef<boolean>(false);
   const deleteHandledRef = useRef<boolean>(false);
   const seenPartyRef = useRef<boolean>(false); // SKTaxi: 해당 파티가 한번이라도 존재했는지
@@ -327,12 +328,26 @@ export const ChatScreen = () => {
     setIsPartyEnded(hasEndMessage);
   }, [messages]);
 
+  // SKTaxi: paddingBottom을 포함한 스크롤 함수
+  const scrollToEndWithPadding = (animated: boolean = true) => {
+    const paddingBottom = 16; // messageList의 paddingBottom 값
+    if (contentHeightRef.current > 0) {
+      flatListRef.current?.scrollToOffset({
+        offset: contentHeightRef.current + paddingBottom,
+        animated,
+      });
+    } else {
+      // contentHeight가 아직 측정되지 않았으면 fallback으로 scrollToEnd 사용
+      flatListRef.current?.scrollToEnd({ animated });
+    }
+  };
+
   // SKTaxi: 메시지가 추가될 때마다 스크롤을 맨 아래로
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+        scrollToEndWithPadding(true);
+      }, 1000);
     }
   }, [messages.length]);
 
@@ -533,7 +548,7 @@ export const ChatScreen = () => {
   // SKTaxi: 텍스트 입력 뷰 클릭 시 스크롤을 맨 아래로
   const handleInputFocus = () => {
     setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
+      scrollToEndWithPadding(true);
     }, 300);
   };
 
@@ -553,7 +568,7 @@ export const ChatScreen = () => {
     
     // SKTaxi: 메뉴가 열릴 때 스크롤을 맨 아래로
     setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
+      scrollToEndWithPadding(true);
     }, 100);
   };
 
@@ -1108,7 +1123,32 @@ export const ChatScreen = () => {
     );
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
+  // 같은 시간(분 단위)인지 확인하는 헬퍼 함수
+  const isSameMinute = (date1: any, date2: any): boolean => {
+    if (!date1 || !date2) return false;
+    
+    let d1: Date;
+    if (date1 instanceof Date) {
+      d1 = date1;
+    } else if (date1 && typeof date1.toDate === 'function') {
+      d1 = date1.toDate();
+    } else {
+      return false;
+    }
+    
+    let d2: Date;
+    if (date2 instanceof Date) {
+      d2 = date2;
+    } else if (date2 && typeof date2.toDate === 'function') {
+      d2 = date2.toDate();
+    } else {
+      return false;
+    }
+    
+    return d1.getHours() === d2.getHours() && d1.getMinutes() === d2.getMinutes();
+  };
+
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => {
     const isMyMessage = item.senderId === currentUser?.uid;
     const isSystemMessage = item.type === 'system';
     const isAccountMessage = item.type === 'account';
@@ -1140,21 +1180,159 @@ export const ChatScreen = () => {
     }
     
     // SKTaxi: 일반 메시지 렌더링
+    // 이전 일반 메시지 찾기
+    let prevNormalMessage: Message | null = null;
+    for (let i = index - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (msg && msg.type !== 'system' && msg.type !== 'account' && msg.type !== 'arrived' && msg.type !== 'end') {
+        prevNormalMessage = msg;
+        break;
+      }
+    }
+    
+    // 다음 일반 메시지 찾기
+    let nextNormalMessage: Message | null = null;
+    for (let i = index + 1; i < messages.length; i++) {
+      const msg = messages[i];
+      if (msg && msg.type !== 'system' && msg.type !== 'account' && msg.type !== 'arrived' && msg.type !== 'end') {
+        nextNormalMessage = msg;
+        break;
+      }
+    }
+    
+    // 이전 일반 메시지와 현재 메시지 사이에 특수 메시지가 있는지 확인
+    const hasSpecialMessageBetween = (() => {
+      if (!prevNormalMessage) return false;
+      
+      // 이전 일반 메시지의 인덱스 찾기
+      let prevNormalIndex = -1;
+      for (let i = index - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg && msg.id === prevNormalMessage.id) {
+          prevNormalIndex = i;
+          break;
+        }
+      }
+      
+      if (prevNormalIndex === -1) return false;
+      
+      // 이전 일반 메시지와 현재 메시지 사이에 특수 메시지가 있는지 확인
+      for (let i = prevNormalIndex + 1; i < index; i++) {
+        const msg = messages[i];
+        if (!msg) continue;
+        
+        // 같은 분이 아니면 더 이상 확인할 필요 없음
+        if (!isSameMinute(msg.createdAt, item.createdAt)) {
+          break;
+        }
+        
+        // 특수 메시지가 있으면 true
+        if (msg.type === 'system' || msg.type === 'account' || msg.type === 'arrived' || msg.type === 'end') {
+          return true;
+        }
+      }
+      return false;
+    })();
+    
+    // 그룹의 첫 번째 메시지인지 확인 (같은 사람, 같은 분, 중간에 특수 메시지 없음)
+    const isGroupStart = !prevNormalMessage || 
+      prevNormalMessage.senderId !== item.senderId || 
+      !isSameMinute(prevNormalMessage.createdAt, item.createdAt) ||
+      hasSpecialMessageBetween;
+    
+    // 다음 일반 메시지와 현재 메시지 사이에 특수 메시지가 있는지 확인
+    const hasSpecialMessageAfter = (() => {
+      if (!nextNormalMessage) return false;
+      
+      // 다음 일반 메시지의 인덱스 찾기
+      let nextNormalIndex = -1;
+      for (let i = index + 1; i < messages.length; i++) {
+        const msg = messages[i];
+        if (msg && msg.id === nextNormalMessage.id) {
+          nextNormalIndex = i;
+          break;
+        }
+      }
+      
+      if (nextNormalIndex === -1) return false;
+      
+      // 현재 메시지와 다음 일반 메시지 사이에 특수 메시지가 있는지 확인
+      for (let i = index + 1; i < nextNormalIndex; i++) {
+        const msg = messages[i];
+        if (!msg) continue;
+        
+        // 같은 분이 아니면 더 이상 확인할 필요 없음
+        if (!isSameMinute(msg.createdAt, item.createdAt)) {
+          break;
+        }
+        
+        // 특수 메시지가 있으면 true
+        if (msg.type === 'system' || msg.type === 'account' || msg.type === 'arrived' || msg.type === 'end') {
+          return true;
+        }
+      }
+      return false;
+    })();
+    
+    const isGroupEnd = !nextNormalMessage || 
+      nextNormalMessage.senderId !== item.senderId || 
+      !isSameMinute(nextNormalMessage.createdAt, item.createdAt) ||
+      hasSpecialMessageAfter;
+    
+    const timeString = item.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 
+                       new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    // 아바타 텍스트 생성 (이름 첫 글자)
+    const avatarText = item.senderName?.[0] || '?';
+    
     return (
-    <View style={[
-      styles.messageContainer,
-        isMyMessage ? styles.myMessage : styles.otherMessage
-    ]}>
-        {!isMyMessage && (
-          <Text style={styles.senderName}>{item.senderName}</Text>
-        )}
-      <Text style={styles.messageText}>{item.text}</Text>
-      <Text style={styles.timestamp}>
-          {item.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || 
-           new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-      </Text>
-    </View>
-  );
+      <View style={[
+        styles.messageWrapper,
+        isMyMessage ? styles.myMessageWrapper : styles.otherMessageWrapper,
+        !isGroupStart && styles.messageWrapperInGroup // 그룹 내 메시지는 위쪽 간격 축소
+      ]}>
+        <View style={[
+          styles.messageRowContainer,
+          isMyMessage ? styles.myMessageRowContainer : styles.otherMessageRowContainer
+        ]}>
+          {!isMyMessage && isGroupStart && (
+            <View style={styles.avatarContainer}>
+              <Text style={styles.avatarText}>{avatarText}</Text>
+            </View>
+          )}
+          {!isMyMessage && !isGroupStart && (
+            <View style={styles.avatarPlaceholder} />
+          )}
+          <View style={[
+            styles.messageContent,
+            isMyMessage && styles.myMessageContent
+          ]}>
+            {!isMyMessage && isGroupStart && (
+              <Text style={styles.senderName}>{item.senderName}</Text>
+            )}
+            <View style={[
+              styles.messageRow,
+              isMyMessage ? styles.myMessageRow : styles.otherMessageRow
+            ]}>
+              {isMyMessage && isGroupEnd && (
+                <Text style={styles.timestamp}>{timeString}</Text>
+              )}
+              <View style={[
+                styles.messageBubble,
+                isMyMessage ? styles.myMessage : styles.otherMessage
+              ]}>
+                <Text style={[styles.messageText, { color: isMyMessage ? COLORS.text.buttonText : COLORS.text.primary }]}>
+                  {item.text}
+                </Text>
+              </View>
+              {!isMyMessage && isGroupEnd && (
+                <Text style={styles.timestamp}>{timeString}</Text>
+              )}
+            </View>
+          </View>
+        </View>
+      </View>
+    );
   };
 
   const handleDotMenuPress = () => {
@@ -1600,7 +1778,10 @@ export const ChatScreen = () => {
               keyExtractor={item => item.id || ''}
               contentContainerStyle={styles.messageList}
               showsVerticalScrollIndicator={false}
-              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+              onContentSizeChange={(width, height) => {
+                contentHeightRef.current = height;
+                scrollToEndWithPadding(true);
+              }}
             />
           </>
         )}
@@ -1704,7 +1885,7 @@ export const ChatScreen = () => {
         >
           <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
+              <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
                 <View style={styles.accountModalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>계좌 정보</Text>
@@ -2244,31 +2425,97 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
   },
   messageList: {
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  messageWrapper: {
+    marginTop: 12,
+    width: '100%',
+  },
+  messageWrapperInGroup: {
+    marginTop: 4, // 그룹 내 메시지는 위쪽 간격 축소
+  },
+  myMessageWrapper: {
+    alignItems: 'flex-end',
+  },
+  otherMessageWrapper: {
+    alignItems: 'flex-start',
+  },
+  messageRowContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    maxWidth: '100%',
+  },
+  myMessageRowContainer: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageRowContainer: {
+    justifyContent: 'flex-start',
+  },
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.accent.green,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    marginTop: 2,
+  },
+  avatarPlaceholder: {
+    width: 36,
+    marginRight: 8,
+  },
+  messageContent: {
+    flex: 1,
+    flexDirection: 'column',
+  },
+  myMessageContent: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  messageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    maxWidth: '85%',
+    flex: 1,
+  },
+  myMessageRow: {
+    justifyContent: 'flex-end',
+  },
+  otherMessageRow: {
+    justifyContent: 'flex-start',
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 16,
   },
   messageContainer: {
     maxWidth: '80%',
     padding: 12,
     borderRadius: 16,
-    marginBottom: 8,
+    marginTop: 12,
   },
   myMessage: {
     alignSelf: 'flex-end',
     backgroundColor: COLORS.accent.green,
+    borderBottomRightRadius: 4,
   },
   otherMessage: {
     alignSelf: 'flex-start',
     backgroundColor: COLORS.background.card,
+    borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
   },
   timestamp: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption2,
     color: COLORS.text.secondary,
-    marginTop: 4,
-    alignSelf: 'flex-end',
+    marginHorizontal: 6,
+    marginBottom: 2,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -2293,10 +2540,15 @@ const styles = StyleSheet.create({
     maxHeight: 100,
   },
   senderName: {
-    fontSize: 12,
+    ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
-    marginBottom: 4,
+    marginBottom: 2,
     fontWeight: '500',
+  },
+  avatarText: {
+    fontSize: 16,
+    color: COLORS.text.buttonText,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
@@ -2506,7 +2758,7 @@ const styles = StyleSheet.create({
   },
   systemMessageContainer: {
     alignItems: 'center',
-    marginVertical: 8,
+    marginTop: 16,
     paddingHorizontal: 16,
   },
   systemMessageText: {

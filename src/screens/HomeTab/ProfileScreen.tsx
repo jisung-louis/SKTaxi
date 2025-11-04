@@ -28,7 +28,7 @@ export const ProfileScreen = () => {
   const handleWithdraw = () => {
     Alert.alert(
       '회원탈퇴',
-      '정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      '정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
       [
         { text: '취소', style: 'cancel' },
         { text: '탈퇴', style: 'destructive', onPress: () => Alert.alert('탈퇴 처리', '추후 구현 예정입니다.') },
@@ -81,11 +81,11 @@ export const ProfileScreen = () => {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.name}>{loading ? '불러오는 중...' : (user?.displayName || '이름 없음')}</Text>
-            <Text style={styles.email}>{user?.email || '이메일 정보 없음'}</Text>
-            <View style={styles.departmentAndStudentNumberContainer}>
-              <Text style={styles.departmentAndStudentNumber}>{user?.department || '학과 정보 없음'}</Text>
-              <Text style={styles.departmentAndStudentNumber}>•</Text>
-              <Text style={styles.departmentAndStudentNumber}>{user?.studentId || '학번 정보 없음'}</Text>
+            <Text style={styles.subText}>{user?.email || '이메일 정보 없음'}</Text>
+            <View style={styles.subTextContainer}>
+              <Text style={styles.subText}>{user?.department || '학과 정보 없음'}</Text>
+              <Text style={styles.subText}>•</Text>
+              <Text style={styles.subText}>{user?.studentId || '학번 정보 없음'}</Text>
             </View>
           </View>
           <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
@@ -165,16 +165,13 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: 2,
   },
-  email: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-  },
-  departmentAndStudentNumberContainer: {
+  subTextContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginTop: 2,
   },
-  departmentAndStudentNumber: {
+  subText: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
   },

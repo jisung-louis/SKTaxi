@@ -186,9 +186,12 @@ export const InquiriesScreen = () => {
         <View style={styles.infoContainer}>
           <Icon name="information-circle-outline" size={16} color={COLORS.text.secondary} />
           <Text style={styles.infoText}>
-            문의사항이 접수되면 최대한 빨리 답변드릴게요. 감사해요!!
+            문의사항이 접수되면 최대한 빨리 답변드릴게요.
           </Text>
         </View>
+        <Text style={[styles.infoText, { ...TYPOGRAPHY.caption2, marginTop: 18, textAlign: 'right' }]}>
+          이메일 문의 : <Text style={{ fontWeight: '600' }}>junjs3341@gmail.com</Text>
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );

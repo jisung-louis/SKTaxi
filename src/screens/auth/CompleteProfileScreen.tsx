@@ -5,22 +5,31 @@ import { Text } from '../../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useAuth } from '../../hooks/useAuth';
-import { updateUserProfile } from '../../libs/firebase';
+import { updateUserProfile, getUserProfile, createUserProfile } from '../../libs/firebase';
 import { useScreenView } from '../../hooks/useScreenView';
 import { Dropdown } from '../../components/common/Dropdown';
 import { DEPARTMENT_OPTIONS } from '../../constants/constants';
 import { setUserProperties } from '../../lib/analytics';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
 export const CompleteProfileScreen = () => {
   useScreenView();
+  const navigation = useNavigation<any>();
   const { user } = useAuth();
   const [displayName, setDisplayName] = useState('');
   const [department, setDepartment] = useState('');
   const [studentId, setStudentId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSave = async () => {
     if (!user) return;
+    if (!ageConfirmed || !termsAccepted) {
+      Alert.alert('동의 필요', '계정 사용 전에 18세 이상 확인과 이용약관(EULA 포함) 동의가 필요합니다.');
+      return;
+    }
     if (!displayName.trim() || !studentId.trim() || !department.trim()) {
       Alert.alert('알림', '닉네임과 학번, 학과를 모두 입력해주세요.');
       return;
@@ -31,11 +40,38 @@ export const CompleteProfileScreen = () => {
     }
     try {
       setLoading(true);
+      // 사용자 문서가 없으면 먼저 생성
+      const existing = await getUserProfile(user.uid);
+      if (!existing) {
+        await createUserProfile(user.uid, {
+          uid: user.uid,
+          email: user.email ?? null,
+          displayName: displayName.trim(),
+          studentId: studentId.trim(),
+          department: department.trim(),
+          photoURL: user.photoURL ?? null,
+          onboarding: { permissionsComplete: false },
+          agreements: {
+            termsAccepted: true,
+            ageConfirmed: true,
+            termsVersion: '2025-10-29',
+            acceptedAt: new Date().toISOString(),
+          },
+        } as any);
+      }
       await updateUserProfile(user.uid, {
         displayName: displayName.trim(),
         studentId: studentId.trim(),
         department: department.trim(),
-      });
+      } as any);
+      await updateUserProfile(user.uid, {
+        agreements: {
+          termsAccepted: true,
+          ageConfirmed: true,
+          termsVersion: '2025-10-29',
+          acceptedAt: new Date().toISOString(),
+        } as any,
+      } as any);
       
       // Analytics: 사용자 속성 설정
       await setUserProperties({
@@ -98,6 +134,44 @@ export const CompleteProfileScreen = () => {
               placeholderTextColor={COLORS.text.disabled}
             />
 
+            {/* 동의 체크박스 */}
+            <View style={[styles.checkRow, { marginTop: 24 }]}> 
+              <TouchableOpacity
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: ageConfirmed }}
+                style={[styles.checkBox, ageConfirmed && styles.checkBoxChecked]}
+                onPress={() => setAgeConfirmed((v) => !v)}
+              >
+                {ageConfirmed && <Icon name="checkmark" size={14} color={COLORS.background.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setAgeConfirmed((v) => !v)} accessibilityRole="button">
+                <Text style={styles.checkLabel}>성결대 학생이고 19세 이상이에요.</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.checkRow}> 
+              <TouchableOpacity
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: termsAccepted }}
+                style={[styles.checkBox, termsAccepted && styles.checkBoxChecked]}
+                onPress={() => setTermsAccepted((v) => !v)}
+              >
+                {termsAccepted && <Icon name="checkmark" size={14} color={COLORS.background.primary} />}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setTermsAccepted((v) => !v)} accessibilityRole="button">
+                <Text style={styles.checkLabel}>이용약관(EULA 포함)에 동의해요.</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  try { (navigation as any).navigate?.('TermsOfUseForAuth'); } catch {}
+                }}
+                accessibilityLabel="이용 약관 보기"
+              >
+                <Text style={styles.linkText}> 약관 보기</Text>
+              </TouchableOpacity>
+            </View>
+
+
             <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
               <Text style={styles.saveButtonText}>{loading ? '저장 중...' : '완료'}</Text>
             </TouchableOpacity>
@@ -112,6 +186,35 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: COLORS.background.primary,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  checkBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: COLORS.border.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.background.primary,
+    marginRight: 8,
+  },
+  checkBoxChecked: {
+    backgroundColor: COLORS.accent.green,
+    borderColor: COLORS.accent.green,
+  },
+  checkLabel: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+  },
+  linkText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.accent.green,
+    fontWeight: '700',
   },
   header: { 
     paddingHorizontal: 24, 

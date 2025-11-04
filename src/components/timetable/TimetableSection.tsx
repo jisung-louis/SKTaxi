@@ -7,7 +7,7 @@ import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useTimetable } from '../../hooks/useTimetable';
 import { TimableViewMode, TimetableCourse, CourseSchedule } from '../../types/timetable';
-import { getWeekdayName, generatePeriods, getCurrentSemester, getPeriodTimeInfo, getCurrentTimeInfo, coursesToTimetableBlocks, arrangeBlocksInRows } from '../../utils/timetableUtils';
+import { getWeekdayName, generatePeriods, getCurrentSemester, getCurrentAcademicWeek, getPeriodTimeInfo, getCurrentTimeInfo, coursesToTimetableBlocks, arrangeBlocksInRows } from '../../utils/timetableUtils';
 import { TimetableGrid } from './TimetableGrid';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { DAY_CELL_HEIGHT } from '../../constants/constants';
@@ -19,9 +19,10 @@ const TODAY_CELL_MARGIN_BOTTOM = 12;
 export const TimetableSection = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const currentSemester = getCurrentSemester();
+  const currentAcademicWeek = getCurrentAcademicWeek();
   const { courses, loading, getTodayCourses } = useTimetable(currentSemester);
   const [viewMode, setViewMode] = useState<TimableViewMode>('today');
-  
+      
   // 오늘 야간수업이 있는지 확인하여 기본값 설정
   const todayCourses = getTodayCourses() || [];
   const hasTodayNightClasses = todayCourses.some(course => 
@@ -77,9 +78,11 @@ export const TimetableSection = () => {
               <Text style={[styles.courseName, {flex: 2, marginRight: 2}]} numberOfLines={1}>
                 {block.course.name}
               </Text>
-              <Text style={[styles.courseBodyText, {flex: 1}]} numberOfLines={1}>
-                {block.course.location}
-              </Text>
+              {block.course.location && (
+                <Text style={[styles.courseBodyText, {flex: 1}]} numberOfLines={1}>
+                  {block.course.location}
+                </Text>
+              )}
             </View>
             <View style={styles.courseBadgeContainer}>
               {isInClass && (
@@ -177,9 +180,7 @@ export const TimetableSection = () => {
             </Text>
             <Text style={styles.todayDayText}>{getWeekdayName(todayDayOfWeek)}요일</Text>
           </View>
-          <TouchableOpacity style={styles.todayIconContainer} onPress={handleViewAll}>
-            <Icon name="calendar" size={24} color={COLORS.accent.blue} />
-          </TouchableOpacity>
+          <Text style={styles.todayWeekText}>{currentAcademicWeek}주차</Text>
         </View>
 
         {/* 시간표 그리드 */}
@@ -274,7 +275,7 @@ export const TimetableSection = () => {
             <Text style={styles.sectionTitle}>내 시간표</Text>
         </View>
         <TouchableOpacity style={styles.viewAllButton} onPress={handleViewAll}>
-            <Text style={styles.viewAllText}>자세히</Text>
+            <Text style={styles.viewAllText}>시간표 편집</Text>
             <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
         </TouchableOpacity>
       </View>
@@ -307,7 +308,6 @@ export const TimetableSection = () => {
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
-    marginBottom: 24,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -564,8 +564,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    padding: 16,
     backgroundColor: COLORS.background.secondary,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.dark,
@@ -586,10 +585,10 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     marginTop: 2,
   },
-  todayIconContainer: {
-    padding: 8,
-    backgroundColor: COLORS.accent.blue + '20',
-    borderRadius: 12,
+  todayWeekText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    fontWeight: '600',
   },
   todayGridBody: {
     paddingHorizontal: 8,

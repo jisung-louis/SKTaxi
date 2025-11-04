@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Alert } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Alert, Keyboard, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
@@ -8,6 +8,7 @@ import { CourseSearch } from './CourseSearch';
 import { TimetablePreview } from './TimetablePreview';
 import { Course } from '../../types/timetable';
 import { findOverlappingCourses } from '../../utils/timetableUtils';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 
 interface TimetableEditBottomSheetProps {
   visible: boolean;
@@ -27,6 +28,40 @@ export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> =
   semester,
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const translateY = useSharedValue(0);
+
+  // 키보드 이벤트 처리
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        const keyboardHeight = event.endCoordinates.height;
+        translateY.value = withTiming(-keyboardHeight, {
+          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+        });
+      }
+    );
+
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (event) => {
+        translateY.value = withTiming(0, {
+          duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
+        });
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, [translateY]);
+
+  const searchSectionAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateY: translateY.value }],
+    };
+  });
 
   const handleCourseSelect = (course: Course) => {
     // 이미 선택된 수업을 다시 누르면 선택 해제
@@ -104,7 +139,7 @@ export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> =
           </View>
 
           {/* 수업 검색 */}
-          <View style={styles.searchSection}>
+          <Animated.View style={[styles.searchSection, searchSectionAnimatedStyle]}>
             <CourseSearch
               onCourseSelect={handleCourseSelect}
               onCourseAdd={handleCourseAdd}
@@ -112,7 +147,7 @@ export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> =
               semester={semester}
               currentCourses={currentCourses}
             />
-          </View>
+          </Animated.View>
         </View>
       </SafeAreaView>
     </Modal>

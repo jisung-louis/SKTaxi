@@ -58,6 +58,7 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
     const keyboardWillShowListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (event) => {
+        console.log('keyboard Showed');
         const keyboardHeight = event.endCoordinates.height;
         setKeyboardHeight(keyboardHeight);
         onKeyboardHeightChange?.(keyboardHeight);
@@ -70,6 +71,7 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
     const keyboardWillHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       (event) => {
+        console.log('keyboard Hidden');
         setKeyboardHeight(0);
         onKeyboardHeightChange?.(0);
         translateY.value = withTiming(0, {

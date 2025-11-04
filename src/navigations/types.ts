@@ -6,6 +6,7 @@ export type RootStackParamList = {
   Auth: undefined;
   CompleteProfile: undefined;
   PermissionOnboarding: undefined;
+  TermsOfUseForAuth: undefined;
 };
 
 export type MainTabParamList = {

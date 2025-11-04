@@ -13,8 +13,8 @@
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		962C6A4A2DE30046001B7558 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 962C6A492DE30046001B7558 /* GoogleService-Info.plist */; };
 		96E9BA252EB521AA0081CB2E /* skuriicon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 96E9BA242EB521AA0081CB2E /* skuriicon.icon */; };
-		BB35ADDF91BA4D275FDFD4FD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		A1B2C3D4E5F6789012345678 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6789012345679 /* Settings.bundle */; };
+		BB35ADDF91BA4D275FDFD4FD /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,11 +23,11 @@
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = SKTaxi/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = SKTaxi/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SKTaxi/AppDelegate.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F6789012345679 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = wrapper.plug-in; name = Settings.bundle; path = SKTaxi/Settings.bundle; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SKTaxi/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		962C6A492DE30046001B7558 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SKTaxi/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		96BCF10B2E9D496A000A37CA /* SKTaxi.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = SKTaxi.entitlements; path = SKTaxi/SKTaxi.entitlements; sourceTree = "<group>"; };
 		96E9BA242EB521AA0081CB2E /* skuriicon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = skuriicon.icon; sourceTree = "<group>"; };
+		A1B2C3D4E5F6789012345679 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Settings.bundle; path = SKTaxi/Settings.bundle; sourceTree = "<group>"; };
 		CCE97E32734DFA319052DB3C /* Pods-SKTaxi.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SKTaxi.release.xcconfig"; path = "Target Support Files/Pods-SKTaxi/Pods-SKTaxi.release.xcconfig"; sourceTree = "<group>"; };
 		DB4B7C4CE4FE50B686F802AD /* Pods-SKTaxi.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SKTaxi.debug.xcconfig"; path = "Target Support Files/Pods-SKTaxi/Pods-SKTaxi.debug.xcconfig"; sourceTree = "<group>"; };
 		E76931627888995B5B71265E /* Pods_SKTaxi.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SKTaxi.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -308,7 +308,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SKTaxi/SKTaxi.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = SKTaxi/Info.plist;
@@ -319,7 +319,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -341,7 +341,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = SKTaxi/SKTaxi.entitlements;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				INFOPLIST_FILE = SKTaxi/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SKURI Taxi";
@@ -351,7 +351,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",

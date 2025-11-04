@@ -15,6 +15,7 @@ import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { BoardComment } from '../types/board';
 import { db } from '../config/firebase';
 import { useAuth } from './useAuth';
+import { logEvent } from '../lib/analytics';
 
 export const useBoardComments = (postId: string) => {
   const { user } = useAuth();
@@ -34,7 +35,6 @@ export const useBoardComments = (postId: string) => {
       const q = query(
         commentsRef,
         where('postId', '==', postId),
-        where('isDeleted', '==', false),
         orderBy('createdAt', 'asc')
       );
 
@@ -113,10 +113,13 @@ export const useBoardComments = (postId: string) => {
   }, [postId]);
 
   const addComment = useCallback(async (content: string, parentId?: string, isAnonymous?: boolean) => {
-    if (!postId || !user || !content.trim()) return;
+    if (!postId || !user || !content.trim()) {
+      throw new Error('댓글 내용을 입력해주세요.');
+    }
 
     try {
       setSubmitting(true);
+      setError(null);
 
       const commentData: any = {
         postId,
@@ -154,19 +157,24 @@ export const useBoardComments = (postId: string) => {
         lastCommentAt: serverTimestamp(),
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('댓글 작성 실패:', err);
-      setError('댓글 작성에 실패했습니다.');
+      const errorMessage = err?.message || '댓글 작성에 실패했습니다.';
+      setError(errorMessage);
+      throw err;
     } finally {
       setSubmitting(false);
     }
   }, [postId, user]);
 
   const updateComment = useCallback(async (commentId: string, content: string) => {
-    if (!content.trim()) return;
+    if (!user?.uid || !content.trim()) {
+      throw new Error('댓글 내용을 입력해주세요.');
+    }
 
     try {
       setSubmitting(true);
+      setError(null);
 
       const commentRef = doc(db, 'boardComments', commentId);
       await updateDoc(commentRef, {
@@ -174,17 +182,24 @@ export const useBoardComments = (postId: string) => {
         updatedAt: serverTimestamp(),
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('댓글 수정 실패:', err);
-      setError('댓글 수정에 실패했습니다.');
+      const errorMessage = err?.message || '댓글 수정에 실패했습니다.';
+      setError(errorMessage);
+      throw err;
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [user]);
 
   const deleteComment = useCallback(async (commentId: string) => {
+    if (!user?.uid) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
     try {
       setSubmitting(true);
+      setError(null);
 
       const commentRef = doc(db, 'boardComments', commentId);
       await updateDoc(commentRef, {
@@ -198,13 +213,15 @@ export const useBoardComments = (postId: string) => {
         commentCount: increment(-1),
       });
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('댓글 삭제 실패:', err);
-      setError('댓글 삭제에 실패했습니다.');
+      const errorMessage = err?.message || '댓글 삭제에 실패했습니다.';
+      setError(errorMessage);
+      throw err;
     } finally {
       setSubmitting(false);
     }
-  }, [postId]);
+  }, [postId, user]);
 
   useEffect(() => {
     const unsubscribe = loadComments();
@@ -213,12 +230,18 @@ export const useBoardComments = (postId: string) => {
     };
   }, [loadComments]);
 
+  // 대댓글 작성
+  const addReply = useCallback(async (parentId: string, content: string, isAnonymous?: boolean) => {
+    return addComment(content, parentId, isAnonymous);
+  }, [addComment]);
+
   return {
     comments,
     loading,
     submitting,
     error,
     addComment,
+    addReply,
     updateComment,
     deleteComment,
   };

@@ -115,7 +115,7 @@ export const BoardWriteScreen: React.FC = () => {
       await logEvent('board_post_created', {
         post_id: postId,
         category: formData.category,
-        is_anonymous: formData.isAnonymous,
+        is_anonymous: formData.isAnonymous ?? false,
         has_images: selectedImages.length > 0,
         image_count: selectedImages.length,
       });
@@ -307,6 +307,7 @@ export const BoardWriteScreen: React.FC = () => {
                 <Text style={styles.charCount}>{formData.content.length}/2000</Text>
               </View>
             </View>
+            <Text style={styles.contentInputHint}>부적절한 내용을 작성할 경우 통보 없이 게시글이 삭제될 수 있습니다.</Text>
           </View>
 
           {/* 이미지 선택 */}
@@ -528,6 +529,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  contentInputHint: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.secondary,
+    marginTop: 8,
+    marginLeft: 4,
   },
   anonymousToggleContainer: {
     flexDirection: 'row',

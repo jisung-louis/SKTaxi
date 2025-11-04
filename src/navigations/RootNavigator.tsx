@@ -7,6 +7,7 @@ import { useAuthContext } from '../contexts/AuthContext';
 import { AuthState } from '../types/auth';
 import { useProfileCompletion } from '../hooks/useProfileCompletion';
 import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
+import { TermsOfUseForAuthScreen } from '../screens/auth/TermsOfUseForAuthScreen';
 import { PermissionOnboardingScreen } from '../screens/PermissionOnboardingScreen';
 import { Alert } from 'react-native';
 import { initForegroundMessageHandler, initBackgroundMessageHandler, initNotificationOpenedAppHandler, checkInitialNotification } from '../lib/notifications';
@@ -367,7 +368,10 @@ export const RootNavigator = () => {
         {!user ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : needsProfile ? (
+          <>
           <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
+            <Stack.Screen name="TermsOfUseForAuth" component={TermsOfUseForAuthScreen} />
+          </>
         ) : !permissionsComplete ? (
           <Stack.Screen name="PermissionOnboarding" component={PermissionOnboardingScreen} />
         ) : (

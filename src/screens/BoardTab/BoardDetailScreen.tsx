@@ -17,14 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDate, formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { POST_CATEGORY_LABELS } from '../../constants/board';
 import { useBoardPost } from '../../hooks/useBoardPost';
-import { useBoardComments } from '../../hooks/useBoardComments';
+import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../hooks/useAuth';
 import { useUserBoardInteractions } from '../../hooks/useUserBoardInteractions';
 import { ToggleButton } from '../../components/common/ToggleButton';
@@ -35,6 +35,8 @@ import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { HashTagText } from '../../components/common/HashTagText';
 import { ImageViewer } from '../../components/board/ImageViewer';
 import { useScreenView } from '../../hooks/useScreenView';
+import { createReport, blockUser } from '../../lib/moderation';
+import { isPostEdited } from '../../utils/boardUtils';
 
 interface BoardDetailScreenProps {
   route: {
@@ -56,6 +58,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
   const commentInputRef = useRef<CommentInputRef>(null);
+  const [isEditingComment, setIsEditingComment] = useState(false);
 
   const {
     post,
@@ -73,35 +76,30 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     loading: commentsLoading,
     submitting: commentsSubmitting,
     addComment,
+    addReply,
     updateComment,
     deleteComment,
-  } = useBoardComments(postId);
+  } = useComments('board', postId);
 
-  // BoardComment 타입을 UniversalComment 타입으로 변환
-  const comments = rawComments.map(comment => ({
+  // Comment 타입을 UniversalComment 타입으로 변환 (재귀적으로 답글의 답글도 변환)
+  const convertComment = (comment: any): any => {
+    const boardComment = comment as any;
+    return {
     id: comment.id,
     content: comment.content,
     createdAt: comment.createdAt,
     updatedAt: comment.updatedAt,
     isDeleted: comment.isDeleted,
     parentId: comment.parentId,
-    authorId: comment.authorId,
+      authorId: boardComment.authorId || boardComment.userId,
     isAnonymous: comment.isAnonymous,
-    authorName: comment.authorName,
+      authorName: boardComment.authorName || boardComment.userDisplayName,
     anonymousOrder: comment.anonymousOrder,
-    replies: comment.replies?.map(reply => ({
-      id: reply.id,
-      content: reply.content,
-      createdAt: reply.createdAt,
-      updatedAt: reply.updatedAt,
-      isDeleted: reply.isDeleted,
-      parentId: reply.parentId,
-      authorId: reply.authorId,
-      isAnonymous: reply.isAnonymous,
-      authorName: reply.authorName,
-      anonymousOrder: reply.anonymousOrder,
-    })) || []
-  }));
+      replies: comment.replies?.map((reply: any) => convertComment(reply)) || []
+    };
+  };
+
+  const comments = rawComments.map(comment => convertComment(comment));
 
   // 조회수 증가 (한 번만)
   useEffect(() => {
@@ -160,6 +158,57 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
       console.error('북마크 처리 실패:', err);
     }
   }, [post, isBookmarked, toggleBookmark]);
+
+  const handleReport = useCallback(() => {
+    if (!post) return;
+    if (!user) {
+      Alert.alert('로그인 필요', '신고를 하려면 로그인해주세요.');
+      return;
+    }
+    const categories: Array<'스팸' | '욕설/혐오' | '불법/위험' | '음란물' | '기타'> = ['스팸', '욕설/혐오', '불법/위험', '음란물', '기타'];
+    Alert.alert(
+      '게시물 신고',
+      '신고 사유를 선택해주세요.',
+      [
+        ...categories.map((cat) => ({
+          text: cat,
+          onPress: async () => {
+            try {
+              await createReport({
+                targetType: 'post',
+                targetId: post.id,
+                targetAuthorId: post.authorId,
+                category: cat,
+              });
+              Alert.alert(
+                '신고 완료',
+                '운영자가 24시간 이내 검토합니다. 감사합니다.',
+                [
+                  {
+                    text: '작성자 차단',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await blockUser(post.authorId);
+                        Alert.alert('차단 완료', '해당 사용자의 콘텐츠가 더 이상 표시되지 않습니다.');
+                        navigation.goBack();
+                      } catch (e) {
+                        Alert.alert('오류', '차단에 실패했습니다. 잠시 후 다시 시도해주세요.');
+                      }
+                    },
+                  },
+                  { text: '확인' },
+                ]
+              );
+            } catch (e) {
+              Alert.alert('오류', '신고에 실패했습니다. 잠시 후 다시 시도해주세요.');
+            }
+          },
+        })),
+        { text: '취소', style: 'cancel' },
+      ]
+    );
+  }, [post, user]);
 
   const handleShare = useCallback(async () => {
     if (!post) return;
@@ -231,6 +280,8 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     );
   }, [post, user, deletePost, navigation]);
 
+  
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'general': return COLORS.accent.blue;
@@ -286,6 +337,11 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
           <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
             <Icon name="share-outline" size={28} color={COLORS.text.primary} />
           </TouchableOpacity>
+          {!isAuthor && (
+            <TouchableOpacity onPress={handleReport} style={styles.headerButton}>
+              <Icon name="alert-circle-outline" size={28} color={COLORS.text.primary} />
+            </TouchableOpacity>
+          )}
           {isAuthor && (
             <TouchableOpacity onPress={handleEdit} style={styles.headerButton}>
               <Icon name="create-outline" size={28} color={COLORS.text.primary} />
@@ -302,6 +358,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: isEditingComment ? 300 : 50 }}
         contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 + 20 }}
         contentInsetAdjustmentBehavior="never"
       >
@@ -341,9 +398,15 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
               </View>
               <View>
                 <Text style={styles.authorName}>{post.isAnonymous ? '익명' : post.authorName}</Text>
-                <Text style={styles.postDate}>
-                  {formatDistanceToNow(post.createdAt, { addSuffix: true, locale: ko })}
-                </Text>
+                <View style={styles.postDateRow}>
+                  <Text style={styles.postDate}>{format(post.createdAt, 'yyyy.MM.dd HH:mm', { locale: ko })}</Text>
+                  {isPostEdited(post.createdAt, post.updatedAt) && (
+                    <>
+                      <Text style={styles.postDate}>•</Text>
+                      <Text style={styles.postDate}>수정됨</Text>
+                    </>
+                  )}
+                </View>
               </View>
             </View>
 
@@ -361,7 +424,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
             {post.images && post.images.length > 0 && (
               <View style={{ gap: 10, marginTop: 12 }}>
                 {post.images.map((image, index) => (
-                  <TouchableOpacity key={index} onPress={() => handleImagePress(index)}>
+                  <TouchableOpacity key={index} activeOpacity={0.8} onPress={() => handleImagePress(index)}>
                     <Image
                       source={{ uri: image.url }}
                       style={[
@@ -413,7 +476,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
                 comments={comments}
                 loading={commentsLoading}
                 onAddComment={async (content: string, isAnonymous?: boolean) => addComment(content, undefined, isAnonymous)}
-                onAddReply={async (parentId: string, content: string, isAnonymous?: boolean) => addComment(content, parentId, isAnonymous)}
+                onAddReply={addReply}
                 onUpdateComment={updateComment}
                 onDeleteComment={deleteComment}
                 onReply={handleReply}
@@ -422,20 +485,31 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
                 postAuthorId={post?.authorId}
                 borderTop={!post.isPinned}
                 replyingToCommentId={replyingTo?.commentId}
+                onEditStateChange={setIsEditingComment}
             />
         </View>
       </ScrollView>
 
       {/* 댓글 입력 */}
+      {!replyingTo && !isEditingComment && (
       <CommentInput
         ref={commentInputRef}
         onSubmit={async (content: string, isAnonymous?: boolean) => {
-          if (replyingTo) {
-            await addComment(content, replyingTo.commentId, isAnonymous);
-            setReplyingTo(null);
-          } else {
             await addComment(content, undefined, isAnonymous);
-          }
+          }}
+          submitting={commentsSubmitting}
+          placeholder={"댓글을 입력하세요..."}
+          parentId={undefined}
+          onKeyboardHeightChange={setKeyboardHeight}
+          onCancelReply={handleCancelReply}
+        />
+      )}
+      {replyingTo && !isEditingComment && (
+        <CommentInput
+          ref={commentInputRef}
+          onSubmit={async (content: string, isAnonymous?: boolean) => {
+            await addReply(replyingTo.commentId, content, isAnonymous);
+            setReplyingTo(null);
         }}
         submitting={commentsSubmitting}
         placeholder={replyingTo ? `${replyingTo.isAnonymous ? '익명' : replyingTo.authorName}님에게 답글...` : "댓글을 입력하세요..."}
@@ -443,6 +517,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
         onKeyboardHeightChange={setKeyboardHeight}
         onCancelReply={handleCancelReply}
       />
+      )}
 
       {/* 이미지 뷰어 */}
       {post?.images && (
@@ -535,6 +610,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 28,
   },
+  postDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 4,
+  },
   // authorRow: {
   //   flexDirection: 'row',
   //   alignItems: 'center',
@@ -568,7 +649,6 @@ const styles = StyleSheet.create({
   postDate: {
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
-    marginTop: 2,
   },
   contentContainer: {
     // backgroundColor: COLORS.background.secondary,

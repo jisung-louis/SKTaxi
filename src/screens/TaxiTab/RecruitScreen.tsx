@@ -192,7 +192,10 @@ export const RecruitScreen = () => {
         style={{marginTop: 10, paddingHorizontal: 16}}
       >
         <View style={styles.card}>
-          <Text style={styles.label}>출발지</Text>
+          <View style={styles.labelRow}>
+            <Icon name="location-sharp" size={20} color={COLORS.accent.blue} />
+            <Text style={styles.label}>출발지</Text>
+          </View>
           {DEPARTURE_OPTIONS.map((row, rowIdx) => (
             <View key={rowIdx} style={styles.segmentContainer}>
               {row.map(station => (
@@ -203,7 +206,7 @@ export const RecruitScreen = () => {
                     departure === station && !isCustom && styles.segmentButtonSelected,
                   ]}
                   onPress={() => {
-                    setDeparture(station);
+                    setDeparture(prev => prev === station ? '' : station);
                     setIsCustom(false);
                     // 해당 station의 인덱스 찾기
                     const stationIndex = DEPARTURE_OPTIONS[rowIdx].indexOf(station);
@@ -260,7 +263,10 @@ export const RecruitScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>도착지</Text>
+          <View style={styles.labelRow}>
+            <Icon name="location-sharp" size={20} color={COLORS.accent.green} />
+            <Text style={styles.label}>도착지</Text>
+          </View>
           {DESTINATION_OPTIONS.map((row, rowIdx) => (
             <View key={rowIdx} style={styles.segmentContainer}>
               {row.map(station => (
@@ -271,7 +277,7 @@ export const RecruitScreen = () => {
                     destination === station && !isCustomDestination && styles.segmentButtonSelected,
                   ]}
                   onPress={() => {
-                    setDestination(station);
+                    setDestination(prev => prev === station ? '' : station);
                     setIsCustomDestination(false);
                     // 해당 station의 인덱스 찾기
                     const stationIndex = DESTINATION_OPTIONS[rowIdx].indexOf(station);
@@ -327,7 +333,10 @@ export const RecruitScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>출발시간</Text>
+          <View style={styles.labelRow}>
+            <Icon name="time" size={20} color={COLORS.accent.orange} />
+            <Text style={styles.label}>출발시간</Text>
+          </View>
           <TimePicker
             timeVal={time} // 이미 'HH:mm:ss' 형식
             onChange={(newTime) => {
@@ -347,7 +356,10 @@ export const RecruitScreen = () => {
         
         <View style={styles.card}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>최대 인원</Text>
+            <View style={styles.labelRow}>
+              <Icon name="people" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.label}>최대 인원</Text>
+            </View>
             <Text style={styles.infoText}>본인을 포함한 인원을 선택해주세요!</Text>
           </View>
           <View style={styles.memberContainer}>
@@ -373,7 +385,11 @@ export const RecruitScreen = () => {
 
         <View style={styles.card}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>키워드 선택</Text>
+            <View style={styles.labelRow}>
+              <Icon name="pricetag" size={20} color={COLORS.accent.orange} />
+              <Text style={styles.label}>키워드 선택</Text>
+            </View>
+
             <View style={{ position: 'relative' }}>
               <TouchableOpacity onPress={() => setShowKeywordInfo(v => !v)}>
                 <Text style={styles.infoButton}>ⓘ</Text>
@@ -419,7 +435,10 @@ export const RecruitScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.label}>상세 내용</Text>
+          <View style={styles.labelRow}>
+            <Icon name="document-text" size={20} color={COLORS.text.secondary} />
+            <Text style={styles.label}>상세 내용</Text>
+          </View>
           <TextInput
             style={[styles.input, { minHeight: 80 }]}
             value={detail}
@@ -501,6 +520,12 @@ const styles = StyleSheet.create({
     elevation: 2,
     transform: [{ scale: 1 }],
   },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background.primary,
@@ -511,7 +536,6 @@ const styles = StyleSheet.create({
   label: {
     ...TYPOGRAPHY.title3,
     color: COLORS.text.primary,
-    marginBottom: 12,
   },
   input: {
     borderWidth: 1,

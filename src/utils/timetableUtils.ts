@@ -199,6 +199,61 @@ export const getCurrentSemester = (): string => {
 };
 
 /**
+ * 학기 시작 월의 첫 번째 월요일 찾기
+ */
+const getFirstMondayOfSemester = (year: number, semester: number): Date => {
+  // 1학기: 3월, 2학기: 9월
+  const startMonth = semester === 1 ? 2 : 8; // 0-based (3월 = 2, 9월 = 8)
+  const firstDayOfMonth = new Date(year, startMonth, 1);
+  firstDayOfMonth.setHours(0, 0, 0, 0); // 시간 초기화
+  
+  // 첫 번째 월요일 찾기
+  const dayOfWeek = firstDayOfMonth.getDay(); // 0=일요일, 1=월요일, ..., 6=토요일
+  const daysToMonday = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+  
+  const firstMonday = new Date(firstDayOfMonth);
+  firstMonday.setDate(firstDayOfMonth.getDate() + daysToMonday);
+  firstMonday.setHours(0, 0, 0, 0); // 시간 초기화
+  
+  return firstMonday;
+};
+
+/**
+ * 현재 학사 주차 계산
+ * 1학기(1~6월): 3월의 첫 번째 주차를 1주차로 계산
+ * 2학기(7~12월): 9월의 첫 번째 주차를 1주차로 계산
+ * academicWeek이 1보다 작으면 0 반환
+ */
+export const getCurrentAcademicWeek = (): number => {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // 시간 초기화 (날짜만 비교)
+  
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 0-11을 1-12로 변환
+  
+  // 현재 학기 결정
+  const semester = month >= 1 && month <= 6 ? 1 : 2;
+  
+  // 학기 시작 월의 첫 번째 월요일 찾기
+  const firstMonday = getFirstMondayOfSemester(year, semester);
+  
+  // 현재 날짜가 첫 번째 월요일 이전이면 0 반환
+  if (now < firstMonday) {
+    return 0;
+  }
+  
+  // 현재 날짜와 첫 번째 월요일 사이의 차이 계산
+  const diffTime = now.getTime() - firstMonday.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // 주차 계산 (월요일 기준, 0부터 시작하므로 +1)
+  const weekNumber = Math.floor(diffDays / 7) + 1;
+  
+  // 1보다 작으면 0 반환
+  return weekNumber < 1 ? 0 : weekNumber;
+};
+
+/**
  * 학기 옵션 생성 (2025-1학기부터 현재 학기까지)
  */
 export const generateSemesterOptions = (): string[] => {

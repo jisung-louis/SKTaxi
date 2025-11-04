@@ -11,12 +11,14 @@ import { requestLocationPermission } from '../components/section/TaxiTab/hooks/u
 import { updateUserProfile, authInstance } from '../libs/firebase';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import { useScreenView } from '../hooks/useScreenView';
+import { requestATTPermission } from '../lib/att';
+import { Platform } from 'react-native';
 
 interface PermissionOnboardingScreenProps {
   navigation: any;
 }
 
-type OnboardingStep = 'intro' | 'notification' | 'location' | 'complete';
+type OnboardingStep = 'intro' | 'notification' | 'att' | 'location' | 'complete';
 
 export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProps> = ({ navigation }) => {
   useScreenView();
@@ -80,9 +82,31 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
     try {
       const granted = await requestNotificationPermission();
       // 권한 여부와 관계없이 다음 단계로 애니메이션 전환
+      if (Platform.OS === 'ios') {
+        goToStep('att');
+      } else {
       goToStep('location');
+      }
     } catch (error) {
       console.warn('알림 권한 요청 실패:', error);
+      if (Platform.OS === 'ios') {
+        setCurrentStep('att');
+      } else {
+        setCurrentStep('location');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleATTPermission = async () => {
+    setIsLoading(true);
+    try {
+      await requestATTPermission();
+      // 권한 여부와 관계없이 다음 단계로 애니메이션 전환
+      goToStep('location');
+    } catch (error) {
+      console.warn('ATT 권한 요청 실패:', error);
       setCurrentStep('location');
     } finally {
       setIsLoading(false);
@@ -192,6 +216,48 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
     </View>
   );
 
+  const renderATTStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.iconContainer}>
+        <Icon name="shield-checkmark" size={80} color={COLORS.accent.orange} />
+      </View>
+      
+      <Text style={styles.title}>개인정보 보호를 위해</Text>
+      <Text style={styles.subtitle}>광고 추적 권한 설정이 필요해요</Text>
+      
+      <View style={styles.featureList}>
+        <View style={styles.featureItem}>
+          <Icon name="checkmark-circle" size={20} color={COLORS.accent.orange} />
+          <Text style={styles.featureText}>맞춤형 콘텐츠 제공</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Icon name="checkmark-circle" size={20} color={COLORS.accent.orange} />
+          <Text style={styles.featureText}>서비스 개선을 위한 분석</Text>
+        </View>
+        <View style={styles.featureItem}>
+          <Icon name="checkmark-circle" size={20} color={COLORS.accent.orange} />
+          <Text style={styles.featureText}>사용자 경험 최적화</Text>
+        </View>
+      </View>
+
+      <Text style={styles.additionalInfo}>
+        거부하셔도 앱의 모든 기능을 사용할 수 있어요{"\n"}
+        설정에서 언제든지 변경할 수 있습니다.
+        </Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[styles.primaryButton, isLoading && styles.buttonDisabled]}
+          onPress={handleATTPermission}
+          disabled={isLoading}
+        >
+          <Text style={styles.primaryButtonText}>
+            {isLoading ? '요청 중...' : '계속하기'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderLocationStep = () => (
     <View style={styles.stepContainer}>
       <View style={styles.iconContainer}>
@@ -276,6 +342,17 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
         >
           {renderNotificationStep()}
         </View>
+        {Platform.OS === 'ios' && (
+          <View
+            style={[
+              styles.stepLayer,
+              currentStep === 'att' ? styles.stepVisible : styles.stepHidden,
+            ]}
+            pointerEvents={currentStep === 'att' ? 'auto' : 'none'}
+          >
+            {renderATTStep()}
+          </View>
+        )}
         <View
           style={[
             styles.stepLayer,
@@ -302,17 +379,19 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
             style={[
               styles.progressFill, 
               { 
-                width: currentStep === 'intro' ? '25%' :
-                      currentStep === 'notification' ? '50%' : 
-                      currentStep === 'location' ? '75%' : '100%' 
+                width: currentStep === 'intro' ? (Platform.OS === 'ios' ? '20%' : '25%') :
+                      currentStep === 'notification' ? (Platform.OS === 'ios' ? '40%' : '50%') :
+                      currentStep === 'att' ? '60%' :
+                      currentStep === 'location' ? (Platform.OS === 'ios' ? '80%' : '75%') : '100%' 
               }
             ]} 
           />
         </View>
         <Text style={styles.progressText}>
-          {currentStep === 'intro' ? '1/4' :
-           currentStep === 'notification' ? '2/4' : 
-           currentStep === 'location' ? '3/4' : '4/4'}
+          {currentStep === 'intro' ? (Platform.OS === 'ios' ? '1/5' : '1/4') :
+           currentStep === 'notification' ? (Platform.OS === 'ios' ? '2/5' : '2/4') :
+           currentStep === 'att' ? '3/5' :
+           currentStep === 'location' ? (Platform.OS === 'ios' ? '4/5' : '3/4') : (Platform.OS === 'ios' ? '5/5' : '4/4')}
         </Text>
       </View>
     </SafeAreaView>

@@ -19,6 +19,7 @@ import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useScreenView } from '../hooks/useScreenView';
+import { shouldHideContent } from '../lib/moderation';
 
 export const BoardScreen = () => {
   useScreenView();
@@ -42,6 +43,30 @@ export const BoardScreen = () => {
     loadMore,
     refresh,
   } = useBoardPosts(searchFilters);
+
+  const [visiblePosts, setVisiblePosts] = useState<any[]>([]);
+
+  // 차단 사용자 콘텐츠 숨김 필터
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!posts || posts.length === 0) {
+        if (!cancelled) setVisiblePosts([]);
+        return;
+      }
+      try {
+        const decisions = await Promise.all(
+          posts.map(async (p: any) => ({ p, hide: await shouldHideContent(p.authorId) }))
+        );
+        const filtered = decisions.filter(d => !d.hide).map(d => d.p);
+        if (!cancelled) setVisiblePosts(filtered);
+      } catch {
+        // 필터 실패 시 전체 표시 (UX 보존)
+        if (!cancelled) setVisiblePosts(posts);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [posts]);
 
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
@@ -166,7 +191,7 @@ export const BoardScreen = () => {
         )}
 
         <FlatList
-          data={posts}
+          data={visiblePosts}
           renderItem={renderPost}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}

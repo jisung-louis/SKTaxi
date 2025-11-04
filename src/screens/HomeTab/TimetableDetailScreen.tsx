@@ -136,8 +136,8 @@ export const TimetableDetailScreen = () => {
           
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-              <Icon name="create-outline" size={20} color={COLORS.accent.blue} />
-              <Text style={styles.actionButtonText}>편집</Text>
+              <Icon name="add-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.actionButtonText}>추가</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
@@ -146,6 +146,7 @@ export const TimetableDetailScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
+        <Text style={styles.infoText}>수업 블록을 터치하여 수업을 삭제할 수 있어요</Text>
 
         {/* 시간표 그리드 */}
         <View style={styles.timetableContainer}>
@@ -227,6 +228,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
+    paddingBottom: 8,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -247,6 +249,12 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body2,
     color: COLORS.text.primary,
     fontWeight: '600',
+  },
+  infoText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.tertiary,
+    paddingHorizontal: 10,
+    marginBottom: 8,
   },
   timetableContainer: {
     flex: 1,

@@ -279,7 +279,6 @@ export const AcademicCalendarSection = () => {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: 24,
     paddingHorizontal: 16,
   },
   sectionHeader: {

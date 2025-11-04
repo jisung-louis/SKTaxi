@@ -212,7 +212,16 @@ export const PrivacyPolicyScreen = () => {
 회사는 이용자의 개인정보를 보호하고 개인정보와 관련한 불만을 처리하기 위하여 아래와 같이 관련 부서 및 개인정보 보호 책임자를 지정하고 있습니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-개인정보 보호 책임자 1) 성명: Louis Chun 2) 직책: CTO 3) 전화번호: 4) 이메일: junjs3341@gmail.com
+개인정보 보호 책임자
+          </Text>
+          <Text style={styles.paragraph} selectable allowFontScaling>
+            1) 성명: Louis Chun
+          </Text>
+          <Text style={styles.paragraph} selectable allowFontScaling>
+            2) 직책: CTO
+          </Text>
+          <Text style={styles.paragraph} selectable allowFontScaling>
+            3) 이메일: junjs3341@gmail.com
           </Text>
 
           <Text style={styles.sectionTitle}>제22조(권익침해에 대한 구제방법)</Text>

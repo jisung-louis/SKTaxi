@@ -6,7 +6,7 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import PageHeader from '../../components/common/PageHeader';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
+import { getFirestore, doc, onSnapshot } from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Notice } from '../../hooks/useNotices';
 import { convertToSubviewURL } from '../../utils/linkConverter';
@@ -20,7 +20,7 @@ import { ToggleButton } from '../../components/common/ToggleButton';
 import { useNoticeLike } from '../../hooks/useNoticeLike';
 import CommentInput, { CommentInputRef } from '../../components/common/CommentInput';
 import UniversalCommentList from '../../components/common/UniversalCommentList';
-import { useNoticeComments } from '../../hooks/useNoticeComments';
+import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../hooks/useAuth';
 import { useScreenView } from '../../hooks/useScreenView';
 
@@ -38,6 +38,7 @@ export const NoticeDetailScreen = () => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
   const commentInputRef = useRef<CommentInputRef>(null);
+  const [isEditingComment, setIsEditingComment] = useState(false);
 
   // 좋아요 기능
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
@@ -51,7 +52,7 @@ export const NoticeDetailScreen = () => {
     addReply, 
     updateComment, 
     deleteComment 
-  } = useNoticeComments(noticeId || '');
+  } = useComments('notice', noticeId || '');
 
   const handleReply = useCallback((commentId: string, authorName: string, isAnonymous: boolean) => {
     setReplyingTo({ commentId, authorName, isAnonymous });
@@ -65,56 +66,58 @@ export const NoticeDetailScreen = () => {
     setReplyingTo(null);
   }, []);
 
-  // Comment 타입을 UniversalComment 타입으로 변환
-  const comments = rawComments.map(comment => ({
-    id: comment.id,
-    content: comment.content,
-    createdAt: comment.createdAt,
-    updatedAt: comment.updatedAt,
-    isDeleted: comment.isDeleted,
-    parentId: comment.parentId,
-    authorId: comment.userId,
-    authorName: comment.userDisplayName,
-    isAnonymous: comment.isAnonymous,
-    anonId: comment.anonId,
-    anonymousOrder: comment.anonymousOrder,
-    replies: comment.replies?.map(reply => ({
-      id: reply.id,
-      content: reply.content,
-      createdAt: reply.createdAt,
-      updatedAt: reply.updatedAt,
-      isDeleted: reply.isDeleted,
-      parentId: reply.parentId,
-      authorId: reply.userId,
-      authorName: reply.userDisplayName,
-      isAnonymous: reply.isAnonymous,
-      anonId: reply.anonId,
-      anonymousOrder: reply.anonymousOrder,
-    })) || []
-  }));
+  // Comment 타입을 UniversalComment 타입으로 변환 (재귀적으로 답글의 답글도 변환)
+  const convertComment = (comment: any): any => {
+    const noticeComment = comment as any; // useComments에서 notice 타입일 때는 userId/userDisplayName 사용
+    return {
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      isDeleted: comment.isDeleted,
+      parentId: comment.parentId,
+      authorId: noticeComment.userId || noticeComment.authorId,
+      isAnonymous: comment.isAnonymous,
+      authorName: noticeComment.userDisplayName || noticeComment.authorName,
+      anonymousOrder: comment.anonymousOrder,
+      replies: comment.replies?.map((reply: any) => convertComment(reply)) || []
+    };
+  };
+
+  const comments = rawComments.map(comment => convertComment(comment));
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        if (!noticeId) {
-          setError('잘못된 접근입니다.');
-          setLoading(false);
-          return;
-        }
-        const db = getFirestore();
-        const snap = await getDoc(doc(db, 'notices', noticeId));
+    if (!noticeId) {
+      setError('잘못된 접근입니다.');
+      setLoading(false);
+      return;
+    }
+
+    const db = getFirestore();
+    const noticeRef = doc(db, 'notices', noticeId);
+
+    setLoading(true);
+    setError(null);
+
+    const unsubscribe = onSnapshot(
+      noticeRef,
+      (snap) => {
         if (!snap.exists()) {
           setError('공지사항을 찾을 수 없습니다.');
+          setLoading(false);
         } else {
           setNotice({ id: snap.id, ...(snap.data() as any) });
+          setLoading(false);
         }
-      } catch (e: any) {
-        setError(e?.message || '로딩 중 오류가 발생했습니다.');
-      } finally {
+      },
+      (err) => {
+        console.error('공지사항 구독 실패:', err);
+        setError(err?.message || '로딩 중 오류가 발생했습니다.');
         setLoading(false);
       }
-    };
-    load();
+    );
+
+    return () => unsubscribe();
   }, [noticeId]);
 
   const formattedDate = useMemo(() => {
@@ -231,7 +234,7 @@ const TableToWebView = (props: any) => {
           </View>
         ) : (
           <ScrollView 
-            contentContainerStyle={styles.contentWrap} 
+            contentContainerStyle={[styles.contentWrap, { paddingBottom: isEditingComment ? 300 : 50 }]} 
             showsVerticalScrollIndicator={false}
             contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 - 20 }}
             contentInsetAdjustmentBehavior="never"
@@ -347,7 +350,7 @@ const TableToWebView = (props: any) => {
                 />
                 <ToggleButton
                   type="comment"
-                  count={comments.length + comments.reduce((sum, comment) => sum + (comment.replies?.length || 0), 0)}
+                  count={notice?.commentCount || 0}
                   onPress={() => {}}
                   size="medium"
                   disabled={true}
@@ -359,7 +362,7 @@ const TableToWebView = (props: any) => {
               <UniversalCommentList
                 comments={comments}
                 loading={commentsLoading}
-                onAddComment={(content) => addComment({ content })}
+                onAddComment={async (content: string, isAnonymous?: boolean) => addComment(content, undefined, isAnonymous)}
                 onAddReply={addReply}
                 onUpdateComment={updateComment}
                 onDeleteComment={deleteComment}
@@ -367,29 +370,41 @@ const TableToWebView = (props: any) => {
                 currentUserId={user?.uid}
                 onReply={handleReply}
                 replyingToCommentId={replyingTo?.commentId}
+                onEditStateChange={setIsEditingComment}
               />
             
           </ScrollView>
         )}
         
         
-        {/* 댓글 섹션 */}
-        <CommentInput
-          ref={commentInputRef}
-          onSubmit={async (content: string, isAnonymous?: boolean) => {
-            if (replyingTo) {
+        {/* 댓글 입력: 편집 중에는 숨김 */}
+        {!replyingTo && !isEditingComment && (
+          <CommentInput
+            ref={commentInputRef}
+            onSubmit={async (content: string, isAnonymous?: boolean) => {
+              await addComment(content, undefined, isAnonymous);
+            }}
+            submitting={commentsSubmitting}
+            placeholder={"댓글을 입력하세요..."}
+            parentId={undefined}
+            onKeyboardHeightChange={setKeyboardHeight}
+            onCancelReply={handleCancelReply}
+          />
+        )}
+        {replyingTo && !isEditingComment && (
+          <CommentInput
+            ref={commentInputRef}
+            onSubmit={async (content: string, isAnonymous?: boolean) => {
               await addReply(replyingTo.commentId, content, isAnonymous);
               setReplyingTo(null);
-            } else {
-              await addComment({ content, isAnonymous });
-            }
-          }}
-          submitting={commentsSubmitting}
-          placeholder={replyingTo ? `${replyingTo.isAnonymous ? '익명' : replyingTo.authorName}님에게 답글...` : "댓글을 입력하세요..."}
-          parentId={replyingTo?.commentId}
-          onKeyboardHeightChange={setKeyboardHeight}
-          onCancelReply={handleCancelReply}
-        />
+            }}
+            submitting={commentsSubmitting}
+            placeholder={replyingTo ? `${replyingTo.isAnonymous ? '익명' : replyingTo.authorName}님에게 답글...` : "댓글을 입력하세요..."}
+            parentId={replyingTo?.commentId}
+            onKeyboardHeightChange={setKeyboardHeight}
+            onCancelReply={handleCancelReply}
+          />
+        )}
     </SafeAreaView>
   );
 };

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ActivityIndicator, FlatList } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, FlatList, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useCourseSearch } from '../../hooks/useCourseSearch';
 import { CourseCard } from './CourseCard';
 import { Course } from '../../types/timetable';
+import { useAuth } from '../../hooks/useAuth';
 
 interface CourseSearchProps {
   onCourseSelect?: (course: Course) => void;
@@ -24,6 +25,25 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
 }) => {
   const { courses, loading, error, searchQuery, setSearchQuery, executeSearch, isInitialized, initializeCourses } = useCourseSearch();
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+  const [filterByMyDepartment, setFilterByMyDepartment] = useState(false);
+  const { user } = useAuth();
+
+  // 내 학과 필터링된 수업 목록
+  const filteredCourses = useMemo(() => {
+    if (!filterByMyDepartment || !user?.department) {
+      return courses;
+    }
+
+    const userDepartment = user.department.toLowerCase().trim();
+    
+    return courses.filter(course => {
+      // course.department와 user.department를 비교
+      // 부분 일치도 허용 (예: "컴퓨터공학과"와 "컴퓨터공학" 모두 매칭)
+      const courseDept = course.department?.toLowerCase().trim() || '';
+      
+      return courseDept.includes(userDepartment) || userDepartment.includes(courseDept);
+    });
+  }, [courses, filterByMyDepartment, user?.department]);
 
   // 학기 변경 시 초기화
   useEffect(() => {
@@ -42,6 +62,10 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, semester, isInitialized, executeSearch]);
+
+  const handleToggleDepartmentFilter = () => {
+    setFilterByMyDepartment(prev => !prev);
+  };
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -114,6 +138,26 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
     <View style={styles.container}>
       {/* 검색 입력 */}
       <View style={styles.searchContainer}>
+        <TouchableOpacity
+          style={styles.searchMyDepartmentCheckboxContainer}
+          onPress={handleToggleDepartmentFilter}
+          disabled={!user?.department}
+        >
+          <Icon
+            name={filterByMyDepartment ? "checkbox" : "square-outline"}
+            size={20}
+            color={filterByMyDepartment ? COLORS.accent.blue : COLORS.text.secondary}
+          />
+          <Text
+            style={[
+              styles.searchMyDepartmentCheckboxText,
+              filterByMyDepartment && styles.searchMyDepartmentCheckboxTextActive,
+              !user?.department && styles.searchMyDepartmentCheckboxTextDisabled,
+            ]}
+          >
+            내 학과
+          </Text>
+        </TouchableOpacity>
         <View style={styles.searchInputContainer}>
           <Icon name="search" size={18} color={COLORS.text.secondary} />
           <TextInput
@@ -138,9 +182,9 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
 
       {/* 검색 결과 */}
       <View style={styles.resultsContainer}>
-        {courses.length > 0 ? (
+        {filteredCourses.length > 0 ? (
           <FlatList
-            data={courses}
+            data={filteredCourses}
             renderItem={renderCourse}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
@@ -166,14 +210,36 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background.primary,
   },
   searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border.default,
   },
+  searchMyDepartmentCheckboxContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 4,
+    padding: 4,
+  },
+  searchMyDepartmentCheckboxText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.secondary,
+  },
+  searchMyDepartmentCheckboxTextActive: {
+    color: COLORS.accent.blue,
+    fontWeight: '600',
+  },
+  searchMyDepartmentCheckboxTextDisabled: {
+    opacity: 0.5,
+  },
   searchInputContainer: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.background.secondary,

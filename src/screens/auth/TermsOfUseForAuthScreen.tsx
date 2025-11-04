@@ -1,20 +1,21 @@
 import React from 'react';
 import { Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typhograpy';
-import PageHeader from '../../../components/common/PageHeader';
+import { COLORS } from '../../constants/colors';
+import { TYPOGRAPHY } from '../../constants/typhograpy';
+import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useScreenView } from '../../../hooks/useScreenView';
+import { useScreenView } from '../../hooks/useScreenView';
 
-export const TermsOfUseScreen = () => {
+export const TermsOfUseForAuthScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   return (
     <SafeAreaView style={styles.container}>
         <PageHeader onBack={() => navigation.goBack()} title="이용 약관" borderBottom />
         <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.contentContainer}>
+          {/* 원본 TermsOfUseScreen의 본문을 그대로 복사 */}
           <Text style={[styles.sectionTitle, {marginTop: 0}]}>제1조(목적)</Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
 이 약관은 스쿠리 (이하 '회사' 라고 합니다)가 제공하는 제반 서비스의 이용과 관련하여 회사와 회원과의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
@@ -73,7 +74,7 @@ export const TermsOfUseScreen = () => {
 회사는 이 약관에 별도 규정이 없는 한 이용자에게 전자우편, 문자메시지(SMS), 전자쪽지, 푸쉬(Push)알림 등의 전자적 수단을 이용하여 통지할 수 있습니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-회사는 이용자 전체에 대한 통지의 경우 7일 이상 회사가 운영하는 웹사이트 내의 게시판에 게시함으로써 제1항의 통지에 갈음할 수 있습니다. 다만, 이용자 본인의 거래와 관련하여 중대한 영향을 미치는 사항에 대하여는 제1항의 개별 통지를 합니다.
+회사는 이용자 전체에 대한 통지의 경우 7일 이상 회사가 운영하는 웹사이트 내의 게시판에 게시함으로써 제1항의 통지에 갈음할 수 있습니다. 다만, 이용자 본인의 거래와 관련하여 중대한 영향을 미치는 사항에 대하여서는 제1항의 개별 통지를 합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
 회사는 이용자의 연락처 미기재, 변경 후 미수정, 오기재 등으로 인하여 개별 통지가 어려운 경우에 한하여 전항의 공지를 함으로써 개별 통지를 한 것으로 간주합니다.
@@ -155,7 +156,7 @@ export const TermsOfUseScreen = () => {
 회사는 대표자의 성명, 상호, 주소, 전화번호, 모사전송번호(FAX), 통신판매업 신고번호, 이용약관, 개인정보취급방침 등을 이용자가 쉽게 알 수 있도록 온라인 서비스 초기화면에 게시합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-회사는 이용자의 신고나 문의에 대해 신속히 대응하며, 이용자는 앱 내 ‘설정 {'>'} 문의하기’ 메뉴를 통해 부적절한 게시물 또는 이용자를 신고할 수 있습니다. 문의 및 신고는 이메일 support.skuri@gmail.com 으로도 접수할 수 있습니다.
+회사는 이용자의 신고나 문의에 대해 신속히 대응하며, 이용자는 앱 내 ‘설정 > 문의하기’ 메뉴를 통해 부적절한 게시물 또는 이용자를 신고할 수 있습니다. 문의 및 신고는 이메일 support.skuri@gmail.com 으로도 접수할 수 있습니다.
           </Text>
 
           <Text style={styles.sectionTitle}>제11조(개인정보보호)</Text>
@@ -343,3 +344,5 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 });
+
+
