@@ -1466,23 +1466,23 @@ export const onBoardCommentCreated = onDocumentCreated('boardComments/{commentId
     
     if (!postData) return;
     
-    // 2. 본인 댓글에는 알림 전송하지 않음
-    if (authorId === postData.authorId) return;
-    
-    // 3. targetUserId 결정 (답글인 경우 부모 댓글 작성자, 댓글인 경우 게시글 작성자)
-    let targetUserId = postData.authorId;
-    
+    // 2. targetUserId 결정 및 자기 자신 제외 규칙 분기
+    // - 최상위 댓글: 게시글 작성자에게 알림, 단 본인이 자기 글에 단 댓글이면 제외
+    // - 답글: 부모 댓글 작성자에게 알림, 단 본인이 자기 댓글에 단 답글이면 제외
+    let targetUserId: string;
     if (parentId) {
       // 답글인 경우: 부모 댓글 작성자 조회
       const parentDoc = await db.doc(`boardComments/${parentId}`).get();
       const parentData = parentDoc.data();
-      
-      if (parentData) {
-        targetUserId = parentData.authorId;
-        
-        // 부모 댓글 작성자가 본인인 경우 알림 전송하지 않음
-        if (authorId === targetUserId) return;
-      }
+      if (!parentData) return;
+      targetUserId = parentData.authorId;
+      // 본인이 자신의 댓글에 단 답글이면 제외
+      if (authorId === targetUserId) return;
+    } else {
+      // 최상위 댓글: 게시글 작성자에게 알림
+      targetUserId = postData.authorId;
+      // 본인이 자신의 글에 단 댓글이면 제외
+      if (authorId === targetUserId) return;
     }
     
     // 4. 알림 타입 결정

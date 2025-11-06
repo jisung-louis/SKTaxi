@@ -86,12 +86,8 @@ export const useComments = (type: CommentType, targetId: string) => {
             updatedAt: data.updatedAt?.toDate(),
           } as Comment;
           
-          // 삭제된 대댓글은 필터링 (상위 댓글은 답글이 있으면 표시해야 하므로 필터링하지 않음)
+          // 대댓글도 삭제 여부와 관계없이 repliesMap에 포함시켜 트리 구조를 유지한다
           if (comment.parentId) {
-            // 대댓글인 경우 - 삭제된 대댓글은 제외
-            if (comment.isDeleted) {
-              return;
-            }
             if (!repliesMap[comment.parentId]) {
               repliesMap[comment.parentId] = [];
             }

@@ -203,7 +203,13 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
         [
           {
             text: '확인',
-            onPress: () => navigation.navigate('BoardDetail', { postId })
+            onPress: () => navigation.reset({
+              index: 1,
+              routes: [
+                { name: 'BoardMain' },
+                { name: 'BoardDetail', params: { postId } },
+              ],
+            })
           }
         ]
       );

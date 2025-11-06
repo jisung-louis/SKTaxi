@@ -156,7 +156,7 @@ export const TermsOfUseForAuthScreen = () => {
 회사는 대표자의 성명, 상호, 주소, 전화번호, 모사전송번호(FAX), 통신판매업 신고번호, 이용약관, 개인정보취급방침 등을 이용자가 쉽게 알 수 있도록 온라인 서비스 초기화면에 게시합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-회사는 이용자의 신고나 문의에 대해 신속히 대응하며, 이용자는 앱 내 ‘설정 > 문의하기’ 메뉴를 통해 부적절한 게시물 또는 이용자를 신고할 수 있습니다. 문의 및 신고는 이메일 support.skuri@gmail.com 으로도 접수할 수 있습니다.
+회사는 이용자의 신고나 문의에 대해 신속히 대응하며, 이용자는 앱 내 ‘설정 {'>'} 문의하기’ 메뉴를 통해 부적절한 게시물 또는 이용자를 신고할 수 있습니다. 문의 및 신고는 이메일 support.skuri@gmail.com 으로도 접수할 수 있습니다.
           </Text>
 
           <Text style={styles.sectionTitle}>제11조(개인정보보호)</Text>

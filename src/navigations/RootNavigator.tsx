@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { MainNavigator } from './MainNavigator';
@@ -17,6 +18,7 @@ import { ForegroundNotification } from '../components/common/ForegroundNotificat
 import { acceptJoin, declineJoin, deleteJoinRequestNotifications } from '../lib/notifications';
 import firestore, { doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
+import { requestATTPermission } from '../lib/att';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -291,6 +293,11 @@ export const RootNavigator = () => {
   useEffect(() => {
     let unsubscribeTokenRefresh: (() => void) | undefined;
     if (user && !needsProfile && permissionsComplete) {
+      // // iOS: Main 스택 진입 시 ATT 권한 상태가 not-determined이면 요청 
+      // 일단 주석 후 나중에 CTA (온보딩) 페이지 만들어보기
+      // if (Platform.OS === 'ios') {
+      //   requestATTPermission().catch(() => {});
+      // }
       // 포그라운드 알림 처리
       initForegroundMessageHandler(
         setJoinData, 

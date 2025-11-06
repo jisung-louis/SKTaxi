@@ -163,7 +163,13 @@ export const BoardWriteScreen: React.FC = () => {
         [
           {
             text: '확인',
-            onPress: () => navigation.navigate('BoardDetail', { postId: docRef.id })
+            onPress: () => navigation.reset({
+              index: 1,
+              routes: [
+                { name: 'BoardMain' },
+                { name: 'BoardDetail', params: { postId: docRef.id } },
+              ],
+            })
           }
         ]
       );

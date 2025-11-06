@@ -33,7 +33,7 @@ export const PostCard: React.FC<PostCardProps> = ({
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress}>
+    <TouchableOpacity style={[styles.container, post.isPinned && styles.pinnedContainer]} onPress={handlePress}>
       {/* <View style={styles.header}>
         <View style={styles.categoryContainer}>
           <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(post.category) }]}>
@@ -55,13 +55,13 @@ export const PostCard: React.FC<PostCardProps> = ({
       <View style={styles.body}>
         <View style={styles.bodyLeft}>
           <View style={styles.titleContainer}>
-            {post.isPinned && (
+            {/* {post.isPinned && (
               <View style={styles.pinnedBadge}>
                 <Text style={styles.pinnedText}>📌</Text>
               </View>
-            )}
+            )} */}
             <Text style={styles.title} numberOfLines={1}>
-              {post.title}
+              {post.isPinned ? '📌  ' : ''}{post.title}
             </Text>
           </View>
 
@@ -142,6 +142,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+  },
+  pinnedContainer: {
+    borderWidth: 2,
+    borderColor: COLORS.accent.orange + '50',
+    padding: 14,
   },
   header: {
     flexDirection: 'row',
