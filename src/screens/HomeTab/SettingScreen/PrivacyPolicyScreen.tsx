@@ -49,10 +49,10 @@ export const PrivacyPolicyScreen = () => {
 회사는 이용자의 회사 서비스에 대한 회원가입을 위하여 다음과 같은 정보를 수집합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-필수 수집 정보: 이메일 주소, 이름 및 닉네임
+필수 수집 정보: 이메일 주소, 닉네임, 학번 
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-선택 수집 정보: 학번, 이름
+선택 수집 정보: 이름
           </Text>
 
           <Text style={styles.sectionTitle}>제6조(본인 인증을 위한 정보)</Text>
@@ -60,10 +60,7 @@ export const PrivacyPolicyScreen = () => {
 회사는 이용자의 본인인증을 위하여 다음과 같은 정보를 수집합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-필수 수집 정보: 이메일 주소, 이름 및 본인확인값(CI,DI)
-          </Text>
-          <Text style={styles.paragraph} selectable allowFontScaling>
-선택 수집 정보: 학번
+필수 수집 정보: 이메일 주소, 이름 및 본인확인값(CI,DI), 학번
           </Text>
 
           <Text style={styles.sectionTitle}>제7조(회사 서비스 제공을 위한 정보)</Text>
@@ -71,10 +68,13 @@ export const PrivacyPolicyScreen = () => {
 회사는 이용자에게 회사의 서비스를 제공하기 위하여 다음과 같은 정보를 수집합니다.
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-필수 수집 정보: 이메일 주소
+필수 수집 정보: 이메일 주소, 학번, 닉네임
           </Text>
           <Text style={styles.paragraph} selectable allowFontScaling>
-선택 수집 정보: 위치 정보, 학번, 계좌번호, 계좌 예금주명
+선택 수집 정보: 위치 정보, 계좌번호, 계좌 예금주명, 계좌 은행명
+          </Text>
+          <Text style={styles.paragraph} selectable allowFontScaling>
+다만, 위치 정보는 단말기 내에서 주변 파티 추천 및 지도 편의 기능을 위해 일시적으로만 활용되며, 회사 서버에 저장되지 않습니다. 회사는 개인위치정보를 제3자(다른 이용자 포함)에게 제공하지 않습니다.
           </Text>
 
           <Text style={styles.sectionTitle}>제8조(서비스 이용 및 부정 이용 확인을 위한 정보)</Text>
@@ -130,8 +130,6 @@ export const PrivacyPolicyScreen = () => {
           <Text style={styles.paragraph} selectable allowFontScaling>가. 웹사이트 로그 기록 자료 : 3개월</Text>
           <Text style={styles.paragraph} selectable allowFontScaling>전자금융거래법에 따른 보유정보 및 보유기간</Text>
           <Text style={styles.paragraph} selectable allowFontScaling>가. 전자금융거래에 관한 기록 : 5년</Text>
-          <Text style={styles.paragraph} selectable allowFontScaling>위치정보의 보호 및 이용 등에 관한 법률</Text>
-          <Text style={styles.paragraph} selectable allowFontScaling>가. 개인위치정보에 관한 기록 : 6개월</Text>
 
           <Text style={styles.sectionTitle}>제13조(개인정보의 파기원칙)</Text>
           <Text style={styles.paragraph} selectable allowFontScaling>

@@ -184,7 +184,7 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
       <View style={styles.featureList}>
         <View style={styles.featureItem}>
           <Icon name="car" size={20} color={COLORS.accent.green} />
-          <Text style={styles.featureText}>택시 동승 매칭으로 택시비 절약</Text>
+          <Text style={styles.featureText}>택시 동승 파티로 택시비 절약</Text>
         </View>
         <View style={styles.featureItem}>
           <Icon name="notifications" size={20} color={COLORS.accent.green} />
@@ -270,25 +270,25 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
       <View style={styles.featureList}>
         <View style={styles.featureItem}>
           <Icon name="checkmark-circle" size={20} color={COLORS.accent.blue} />
-          <Text style={styles.featureText}>현재 위치 기반 파티 매칭</Text>
+          <Text style={styles.featureText}>현재 위치 기반 가까운 파티 찾기</Text>
         </View>
         <View style={styles.featureItem}>
           <Icon name="checkmark-circle" size={20} color={COLORS.accent.blue} />
-          <Text style={styles.featureText}>파티원 위치 실시간 확인</Text>
+          <Text style={styles.featureText}>파티 모임장소까지의 거리 계산</Text>
         </View>
         <View style={styles.featureItem}>
           <Icon name="checkmark-circle" size={20} color={COLORS.accent.blue} />
-          <Text style={styles.featureText}>정확한 출발지/도착지 설정</Text>
+          <Text style={styles.featureText}>택시 동승 요청 시 출발지/도착지 설정</Text>
         </View>
         <View style={styles.featureItem}>
           <Icon name="checkmark-circle" size={20} color={COLORS.accent.blue} />
-          <Text style={styles.featureText}>안전한 동승 매칭</Text>
+          <Text style={styles.featureText}>안전한 동승 파티</Text>
         </View>
       </View>
 
       <Text style={styles.additionalInfo}>
-        내 위치 정보는 사용자가 공개했을 때만 공개돼요{"\n"}
-        위치정보 권한 거절 시 택시 동승 매칭이 불가능해요
+        내 위치 정보는 단말기 내에서만 활용되며 서버에 저장되지 않아요{"\n"}
+        위치정보 권한 거절 시 택시 동승 파티 찾기 기능이 불가능해요
         </Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
@@ -311,7 +311,7 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
       </View>
       
       <Text style={styles.title}>설정이 완료되었어요!</Text>
-      <Text style={styles.subtitle}>이제 SKURI Taxi의 모든 기능을 사용할 수 있습니다</Text>
+      <Text style={styles.subtitle}>이제 SKURI의 모든 기능을 사용할 수 있습니다</Text>
       
       <View style={styles.completeMessage}>
         <Text style={styles.completeText}>

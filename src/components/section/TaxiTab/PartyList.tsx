@@ -384,7 +384,7 @@ export const PartyList: React.FC<PartyListProps> = ({
                             
                             // Analytics: 동승 요청 이벤트 로깅
                             await logEvent('party_join_requested', {
-                              party_id: party.id,
+                              party_id: party.id ?? '',
                               request_id: ref.id,
                             });
                             

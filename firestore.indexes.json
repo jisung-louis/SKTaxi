@@ -34,23 +34,6 @@
       ]
     },
     {
-      "collectionGroup": "userLocations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "partyId", "order": "ASCENDING" },
-        { "fieldPath": "lastUpdated", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "userLocations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "partyId", "order": "ASCENDING" },
-        { "fieldPath": "share", "order": "ASCENDING" },
-        { "fieldPath": "lastUpdated", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "boardPosts",
       "queryScope": "COLLECTION",
       "fields": [

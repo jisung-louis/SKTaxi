@@ -1,7 +1,7 @@
 # SKTaxi 백엔드 명세서 (for Server Team / AI)
 
 ## 1. 프로젝트 개요
-- 목적: 대학생 대상 택시 동승(카풀) 매칭/모집 앱
+- 목적: 대학생 대상 택시 동승자 모집 앱
 - 클라이언트: React Native 0.79, React 19
 - 인증: Firebase Auth(이메일/비밀번호, 학교 도메인 제한 `sungkyul.ac.kr`)
 - 지도/위치: react-native-maps(기본 MapKit), react-native-geolocation-service
@@ -164,7 +164,6 @@ APP_BASE_URL=
 
 ## 12. 추후 확장
 - 결제(선결제/정산) 연동
-- 실시간 위치 공유(드라이버/동승자)
 - 신고/차단, 평점, 운영자 공지 관리 백오피스
 
 ---

@@ -157,11 +157,11 @@ export function openAppStore(): void {
   if (Platform.OS === 'ios') {
     // iOS App Store URL (실제 앱 ID로 변경 필요)
     // App Store Connect에서 앱 ID 확인: https://appstoreconnect.apple.com
-    const appStoreUrl = 'https://apps.apple.com/app/id1234567890'; // TODO: 실제 앱 ID로 변경
+    const appStoreUrl = 'https://apps.apple.com/app/id6754636203';
     Linking.openURL(appStoreUrl).catch(err => {
       console.error('앱스토어 열기 실패:', err);
       // Fallback: 일반 앱스토어 검색 페이지
-      Linking.openURL('https://apps.apple.com/kr/app/skuri-taxi/id1234567890').catch(() => {});
+      Linking.openURL('https://apps.apple.com/kr/app/skuri/id6754636203').catch(() => {});
     });
   } else {
     // Android Play Store URL (실제 패키지명으로 변경 필요)

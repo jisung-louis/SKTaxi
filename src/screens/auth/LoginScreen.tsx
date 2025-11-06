@@ -68,7 +68,7 @@ export const LoginScreen = ({ navigation }: any) => {
           </View>
           <Text style={styles.title}>SKURI Taxi</Text>
           <Text style={styles.subtitle}>성결대 학생들을 위한 스마트한 캠퍼스 라이프</Text>
-          <Text style={styles.subtitleSecondary}>택시 동승 매칭 • 실시간 공지 • 시간표 • 학사일정</Text>
+          <Text style={styles.subtitleSecondary}>택시 동승자 찾기 • 실시간 공지 • 시간표 • 학사일정</Text>
         </View>
 
         <View style={styles.body}>

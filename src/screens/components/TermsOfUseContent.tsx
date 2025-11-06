@@ -1,0 +1,150 @@
+import React from 'react';
+import { Text, StyleSheet } from 'react-native';
+import { COLORS } from '../../constants/colors';
+import { TYPOGRAPHY } from '../../constants/typhograpy';
+
+export const TermsOfUseContent: React.FC = () => {
+  return (
+    <>
+      <Text style={[styles.sectionTitle, {marginTop: 0}]}>제1조(목적)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이 약관은 스쿠리 (이하 '회사' 라고 합니다)가 제공하는 제반 서비스의 이용과 관련하여 회사와 회원과의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+      </Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이 서비스는 만 14세 이상 이용자만을 대상으로 하며, 만 18세 미만의 이용자는 보호자의 동의 하에만 회원가입이 가능합니다. 회사는 청소년 보호를 위해 유해 정보 차단 등 필요한 조치를 취합니다.
+      </Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+본 서비스는 개인 개발자가 비영리 목적으로 운영하는 모바일 커뮤니티 앱이며, ‘회사’라는 용어는 편의상 사용된 것으로, 사업자등록이 없는 개인 운영자를 의미합니다. 회사는 택시 운송의 주선, 알선, 배차 또는 결제 기능을 제공하지 않습니다.
+      </Text>
+
+      <Text style={styles.sectionTitle}>제2조(정의)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이 약관에서 사용하는 주요 용어의 정의는 다음과 같습니다.
+      </Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'서비스'라 함은 구현되는 단말기(PC, TV, 휴대형단말기 등의 각종 유무선 장치를 포함)와 상관없이 '이용자'가 이용할 수 있는 회사가 제공하는 제반 서비스를 의미합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'이용자'란 이 약관에 따라 회사가 제공하는 서비스를 받는 '개인회원', '기업회원' 및 '비회원'을 말합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'개인회원'은 회사에 개인정보를 제공하여 회원등록을 한 사람으로, 회사로부터 지속적으로 정보를 제공받고 '회사'가 제공하는 서비스를 계속적으로 이용할 수 있는 자를 말합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'기업회원'은 회사에 기업정보 및 개인정보를 제공하여 회원등록을 한 사람으로, 회사로부터 지속적으로 정보를 제공받고 회사가 제공하는 서비스를 계속적으로 이용할 수 있는 자를 말합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'비회원'은 회원가입 없이 회사가 제공하는 서비스를 이용하는 자를 말합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'아이디(ID)'라 함은 회원의 식별과 서비스이용을 위하여 회원이 정하고 회사가 승인하는 문자 또는 문자와 숫자의 조합을 의미합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>'비밀번호'라 함은 회원이 부여받은 아이디와 일치되는 회원임을 확인하고 비밀의 보호를 위해 회원 자신이 정한 문자(특수문자 포함)와 숫자의 조합을 의미합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제3조(약관 외 준칙)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이 약관에서 정하지 아니한 사항에 대해서는 법령 또는 회사가 정한 서비스의 개별약관, 운영정책 및 칙 등(이하 세부지침)의 규정에 따릅니다. 또한 본 약관과 세부지침이 충돌할 경우에는 세부지침에 따릅니다.
+      </Text>
+
+      <Text style={styles.sectionTitle}>제4조(약관의 효력과 변경)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이 약관은 스쿠리(이)가 제공하는 모든 인터넷서비스에 게시하여 공시합니다. '회사'는 관계법령에 위배되지 않는 범위 내에서 이 약관을 변경할 수 있습니다. 회사는 약관이 변경되는 경우 변경된 약관의 내용과 시행일을 정하여, 그 시행일로부터 최소 7일(이용자에게 불리하거나 중대한 변경은 30일) 이전부터 공지합니다. 기존 이용자에게는 별도의 전자적 수단으로 통지할 수 있습니다. 변경된 약관은 공지 또는 통지한 시행일로부터 효력이 발생합니다.
+      </Text>
+
+      <Text style={styles.sectionTitle}>제5조(이용자에 대한 통지)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 이 약관에 별도 규정이 없는 한 전자적 수단을 이용하여 통지할 수 있습니다. 전체 통지는 게시판 공지로 갈음할 수 있습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제6조(이용계약의 체결)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>이용계약은 회원가입 동의 및 승낙 시 체결됩니다. 일부 무료 서비스는 동의 절차 진행 시 체결될 수 있습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제7조(회원가입에 대한 승낙)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 원칙적으로 이용계약 요청을 승낙합니다. 다만 법령·운영상 제한 사유가 있는 경우 보류 또는 거절할 수 있습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제8조(회원정보의 변경)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회원은 개인정보관리 화면에서 정보를 열람·수정할 수 있습니다. 변경사항 미통지로 인한 불이익은 회원 책임입니다.</Text>
+
+      <Text style={styles.sectionTitle}>제9조(회원정보의 관리 및 보호)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>아이디/비밀번호 관리책임은 회원에게 있으며, 도용 또는 제3자 사용 인지 시 즉시 통지해야 합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제10조(회사의 의무)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 안정적 서비스 제공을 위해 노력하며, 불가피한 중지 시 사후 공지합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제11조(개인정보보호)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 관련 법규 및 개인정보처리방침을 적용합니다. 외부 링크 페이지에는 회사의 방침이 적용되지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+회사는 서비스 제공을 위하여 이메일, 이름, 학교명, 기기식별정보(ADID/IDFA) 등을 수집할 수 있습니다. 위치정보는 이용자의 단말기 내에서 가까운 파티 정렬 등 기능에만 일시적으로 활용되며, 서버에 저장되거나 제3자에게 제공되지 않습니다. 또한, 광고 게재를 위해 Google AdMob 등 제3자의 광고 네트워크 SDK가 동작할 수 있으며, 이 과정에서 광고 식별자(ADID/IDFA) 및 일부 단말 정보가 자동으로 처리될 수 있습니다. 회사는 광고 목적의 위치정보를 직접 수집·저장하지 않습니다.
+      </Text>
+
+      <Text style={styles.sectionTitle}>제12조(이용자의 의무)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>이용자는 사실에 근거하여 가입하고, 회사의 규정과 공지사항을 준수해야 합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이용자는 회사의 명시적 동의 없이 서비스 이용 권한 등을 처분할 수 없습니다.
+      </Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>
+이용자는 택시 동승 파티 이용 시 다음 사항을 준수해야 합니다.  가. 다른 이용자에 대한 존중과 배려를 바탕으로 한 원만한 소통  나. 동승 약속의 성실한 이행 및 사전 통지 없는 불참 방지  다. 요금 분담에 대한 명확한 합의 및 성실한 정산  라. 안전한 동승을 위한 기본적인 주의 의무 준수
+      </Text>
+
+      <Text style={styles.sectionTitle}>제13조(서비스의 제공)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사의 서비스는 원칙적으로 24시간 제공됩니다. 개별 서비스 안내는 화면에서 확인합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>서비스 내용: 가. 택시 동승자 찾기 서비스  나. 학교 공지 알림  다. 시간표/학사일정 관리  라. 커뮤니티</Text>
+
+      <Text style={styles.sectionTitle}>제13조의2(택시 동승 서비스의 성격 및 책임의 한계)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>본 앱이 제공하는 택시 동승자 찾기 서비스는 택시 운송의 주선, 알선, 중개 또는 배차 서비스가 아닙니다. 본 서비스는 이용자들이 자율적으로 동행자를 찾을 수 있도록 정보를 제공하는 커뮤니티 서비스입니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>이용자는 본 서비스를 이용함에 있어 다음 사항을 이해하고 동의합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>가. 본 서비스는 택시 운송 주선·알선 서비스가 아니며, 회사는 택시 기사와 이용자를 연결하거나 배차하는 기능을 제공하지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>나. 택시 호출, 차량 배차, 요금 결제 및 정산은 이용자가 직접 외부 앱(카카오T, 티머니GO, 토스 등)을 통해 진행하며, 회사는 이에 대한 책임을 부담하지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>다. 택시 동승 파티 내에서 발생하는 모든 법적 문제(사고, 분쟁, 계약 불이행, 손해배상 등)에 대하여 회사는 어떠한 책임도 부담하지 않으며, 이는 이용자 간 또는 이용자와 제3자(택시 기사, 택시 회사 등) 간의 문제입니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>라. 이용자는 본 서비스가 운송 주선·알선 서비스가 아님을 이해하고, 동승에 따른 모든 위험과 책임을 본인이 부담함에 동의합니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>마. 회사는 이용자 간의 동승 계약, 요금 분담, 안전, 사고 등에 대한 중재, 보증 또는 책임을 지지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>바. 이용자는 동승 파티 참여 시 본인의 안전에 대한 책임을 지며, 다른 이용자와의 동승 계약은 이용자 간 자율적으로 체결됩니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>사. 회사는 동승 파티의 성사 여부, 동승의 안전성, 요금 분담의 공정성 등에 대하여 보증하거나 책임지지 않습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제14조(서비스의 제한 등)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>부득이한 사유로 서비스 제한 또는 중지될 수 있으며, 사전 또는 사후 공지합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제15조(서비스의 해제·해지 및 탈퇴 절차)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>언제든지 탈퇴 신청이 가능하며, 일부 제한이 있을 수 있습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>이용자가 택시 동승 파티에 참여 중인 경우, 파티 종료 후 탈퇴를 권장합니다. 파티 진행 중 탈퇴로 인해 발생하는 문제에 대하여 회사는 책임을 지지 않습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제16조(손해배상)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>상대방의 귀책으로 손해 발생 시 손해배상 청구가 가능합니다. 다만 공 중단 등 일정 사유는 면책됩니다.</Text>
+
+      <Text style={styles.sectionTitle}>제17조(면책사항)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>불가항력, 이용자 귀책, 기대이익 미실현 등에 대하여 회사는 책임지지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>이용자 게시물 내용의 신뢰도·정확성 등에 대한 책임은 게시자에게 있으며, 회사는 분쟁에 개입하지 않습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 택시 동승 파티 내에서 발생하는 모든 사고, 분쟁, 계약 불이행, 요금 분담 문제, 안전 사고 등에 대하여 어떠한 책임도 부담하지 않습니다. 택시 호출, 차량 배차, 요금 결제 및 정산은 이용자가 직접 외부 앱을 통해 진행하며, 이 과정에서 발생하는 모든 문제에 대한 책임은 이용자 본인에게 있습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 외부 앱(카카오T, 티머니GO, 토스 등)의 서비스 품질, 안전성, 정확성 등에 대하여 책임을 지지 않으며, 외부 앱 이용으로 인한 손해에 대하여도 책임을 지지 않습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제18조(정보의 제공 및 광고의 게재)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 필요 정보 및 광고를 제공할 수 있으며, 이용자는 수신을 거부할 수 있습니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>회사는 Google AdMob 등 제3자의 광고 네트워크를 통해 광고를 게재할 수 있으며, 이 과정에서 광고 식별자(ADID/IDFA) 및 일부 단말 정보가 자동으로 처리될 수 있습니다. 단, 회사는 광고 목적의 위치정보를 직접 수집하거나 저장하지 않습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제19조(권리의 귀속)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>서비스 관련 지식재산권은 회사에 귀속됩니다. 이용자에게는 사용 권한만 부여됩니다.</Text>
+
+      <Text style={styles.sectionTitle}>제20조(콘텐츠의 관리)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>불법·유해 콘텐츠는 관련 법에 따라 게시중단·삭제될 수 있습니다. 신고 시 24시간 내 조치합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제21조(콘텐츠의 저작권)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>게시물의 저작권은 저작자에게 귀속되며, 회사는 서비스 운영 범위 내 사용이 가능합니다.</Text>
+
+      <Text style={styles.sectionTitle}>제22조(관할법원 및 준거법)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>분쟁의 관할법원은 회사 소재지 관할법원이며, 준거법은 대한민국 법령입니다.</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>택시 동승 파티 관련 분쟁은 이용자 간 자율적으로 해결하여야 하며, 회사는 분쟁 조정에 개입하지 않습니다.</Text>
+
+      <Text style={styles.sectionTitle}>제23조(최종 사용자 라이선스 동의)</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>본 약관은 각 앱마켓의 표준 EULA를 포함하며, 명시되지 않은 사항은 해당 플랫폼 EULA를 따릅니다.</Text>
+
+      <Text style={styles.sectionTitle}>부칙</Text>
+      <Text style={styles.paragraph} selectable allowFontScaling>제1조(시행일) 본 약관은 2025.10.29.부터 시행됩니다.</Text>
+    </>
+  );
+};
+
+const styles = StyleSheet.create({
+  sectionTitle: {
+    ...TYPOGRAPHY.title3,
+    color: COLORS.text.primary,
+    fontWeight: '700',
+    marginTop: 32,
+    marginBottom: 12,
+  },
+  paragraph: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    lineHeight: 22,
+    marginBottom: 6,
+  },
+});
+
+export default TermsOfUseContent;
+
+
