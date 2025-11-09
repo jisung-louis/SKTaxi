@@ -205,7 +205,8 @@ export const NoticeScreen = () => {
               </Animated.View>
             )}
             <TouchableOpacity style={styles.menuButtonContainer} onPress={openPanel}>
-              <Icon name="notifications-circle-outline" size={32} color={COLORS.text.primary} />
+              <Icon name="notifications-circle-outline" size={28} color={COLORS.text.primary} />
+              <Text style={styles.menuButtonText}>세부 알림 설정</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -517,6 +518,13 @@ const styles = StyleSheet.create({
   },
   menuButtonContainer: {
     paddingVertical: 8,
+    alignItems: 'center',
+    gap: 2,
+  },
+  menuButtonText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.primary,
+    fontWeight: '600',
   },
   unreadHeader: {
     flexDirection: 'row',

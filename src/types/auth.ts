@@ -12,6 +12,9 @@ export interface User {
     permissionsComplete: boolean;
   };
   joinedAt?: any;
+  currentVersion?: string;
+  lastLogin?: any;
+  isAdmin?: boolean;
 }
 
 export interface LinkedAccount {

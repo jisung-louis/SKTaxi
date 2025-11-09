@@ -1,4 +1,4 @@
-package com.sktaxi
+package com.jisung.sktaxi
 
 import android.app.Application
 import com.facebook.react.PackageList

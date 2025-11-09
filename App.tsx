@@ -16,12 +16,12 @@ import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
 import auth from '@react-native-firebase/auth';
 import { configureGoogleSignin } from './src/config/google';
-import { checkVersionUpdate } from './src/lib/versionCheck';
+import { checkVersionUpdate, VersionModalConfig } from './src/lib/versionCheck';
 import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
 
 const App = () => {
   const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
-  const [updateMessage, setUpdateMessage] = useState<string | undefined>();
+  const [modalConfig, setModalConfig] = useState<VersionModalConfig | undefined>();
 
   useEffect(() => {
     configureGoogleSignin();
@@ -35,7 +35,7 @@ const App = () => {
     checkVersionUpdate().then((result) => {
       if (result.forceUpdate) {
         setForceUpdateRequired(true);
-        setUpdateMessage(result.message);
+        setModalConfig(result.modalConfig);
         console.log('강제 업데이트 필요:', result);
       }
     }).catch((error) => {
@@ -58,7 +58,7 @@ const App = () => {
         {/* SKTaxi: 강제 업데이트 모달 */}
         <ForceUpdateModal 
           visible={forceUpdateRequired} 
-          message={updateMessage}
+          config={modalConfig}
         />
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -18,7 +18,8 @@ export function initForegroundMessageHandler(
   onMemberKicked?: () => void,
   onPartyCreated?: (data: { partyId: string; title: string; body: string }) => void,
   onBoardNotificationReceived?: (data: { postId: string; type: string; title: string; body: string }) => void,
-  onNoticeNotificationReceived?: (data: { noticeId: string; type: string; title: string; body: string }) => void
+  onNoticeNotificationReceived?: (data: { noticeId: string; type: string; title: string; body: string }) => void,
+  onChatRoomMessageReceived?: (data: { chatRoomId: string; senderName: string; messageText: string }) => void
 ) {
   console.log('🔔 포그라운드 메시지 핸들러 등록됨');
   
@@ -84,6 +85,29 @@ export function initForegroundMessageHandler(
           senderName,
           messageText,
           partyId: data.partyId,
+        });
+      }
+    } else if (data.type === 'chat_room_message') {
+      console.log('🔔 채팅방 메시지 처리:', data.chatRoomId);
+      // SKTaxi: 현재 화면이 ChatDetail이면 알림 숨김
+      const currentScreen = getCurrentScreen?.();
+      if (currentScreen === 'ChatDetail') {
+        console.log('🔔 현재 ChatDetail 화면이므로 알림 숨김');
+        return;
+      }
+      
+      if (onChatRoomMessageReceived && data.chatRoomId && typeof data.chatRoomId === 'string') {
+        const title = typeof remoteMessage.notification?.title === 'string' ? remoteMessage.notification.title : '';
+        const body = typeof remoteMessage.notification?.body === 'string' ? remoteMessage.notification.body : '';
+        // body 형식: "송신자명: 메시지 내용"
+        const parts = body.split(': ');
+        const senderName = parts.length > 1 ? parts[0] : '익명';
+        const messageText = parts.length > 1 ? parts.slice(1).join(': ') : body;
+        
+        onChatRoomMessageReceived({
+          chatRoomId: data.chatRoomId,
+          senderName,
+          messageText,
         });
       }
     } else if (data.type === 'settlement_completed') {
@@ -272,36 +296,60 @@ export function initNotificationOpenedAppHandler(
       navigation.navigate('택시');
     } else if (data.type === 'chat_message' && data.partyId) {
       // 채팅 메시지 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
+      });
+    } else if (data.type === 'chat_room_message' && data.chatRoomId) {
+      // 채팅방 메시지 - 채팅방 상세 화면으로 이동
+      navigation.navigate('Main', {
+        screen: '채팅',
+        params: {
+          screen: 'ChatDetail',
+          params: { chatRoomId: data.chatRoomId }
+        }
       });
     } else if (data.type === 'party_closed' && data.partyId) {
       // 파티 모집 마감 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
       });
     } else if (data.type === 'party_arrived' && data.partyId) {
       // 파티 도착 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
       });
     } else if (data.type === 'board_post_comment' || data.type === 'board_comment_reply' || data.type === 'board_post_like') {
       // 게시판 알림 - 게시판 상세 화면으로 이동
       if (data.postId) {
-        navigation.navigate('게시판', {
-          screen: 'BoardDetail',
-          params: { postId: data.postId }
+        navigation.navigate('Main', {
+          screen: '게시판',
+          params: {
+            screen: 'BoardDetail',
+            params: { postId: data.postId }
+          }
         });
       }
     } else if (data.type === 'notice_post_comment' || data.type === 'notice_comment_reply') {
       // 공지사항 알림 - 공지사항 상세 화면으로 이동
       if (data.noticeId) {
-        navigation.navigate('공지', {
-          screen: 'NoticeDetail',
-          params: { noticeId: data.noticeId }
+        navigation.navigate('Main', {
+          screen: '공지',
+          params: {
+            screen: 'NoticeDetail',
+            params: { noticeId: data.noticeId }
+          }
         });
       }
     }
@@ -348,36 +396,60 @@ export async function checkInitialNotification(
       navigation.navigate('택시');
     } else if (data.type === 'chat_message' && data.partyId) {
       // 채팅 메시지 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
+      });
+    } else if (data.type === 'chat_room_message' && data.chatRoomId) {
+      // 채팅방 메시지 - 채팅방 상세 화면으로 이동
+      navigation.navigate('Main', {
+        screen: '채팅',
+        params: {
+          screen: 'ChatDetail',
+          params: { chatRoomId: data.chatRoomId }
+        }
       });
     } else if (data.type === 'party_closed' && data.partyId) {
       // 파티 모집 마감 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
       });
     } else if (data.type === 'party_arrived' && data.partyId) {
       // 파티 도착 - 채팅 화면으로 이동
-      navigation.navigate('택시', { 
-        screen: 'Chat', 
-        params: { partyId: data.partyId } 
+      navigation.navigate('Main', {
+        screen: '택시',
+        params: { 
+          screen: 'Chat', 
+          params: { partyId: data.partyId } 
+        }
       });
     } else if (data.type === 'board_post_comment' || data.type === 'board_comment_reply' || data.type === 'board_post_like') {
       // 게시판 알림 - 게시판 상세 화면으로 이동
       if (data.postId) {
-        navigation.navigate('게시판', {
-          screen: 'BoardDetail',
-          params: { postId: data.postId }
+        navigation.navigate('Main', {
+          screen: '게시판',
+          params: {
+            screen: 'BoardDetail',
+            params: { postId: data.postId }
+          }
         });
       }
     } else if (data.type === 'notice_post_comment' || data.type === 'notice_comment_reply') {
       // 공지사항 알림 - 공지사항 상세 화면으로 이동
       if (data.noticeId) {
-        navigation.navigate('공지', {
-          screen: 'NoticeDetail',
-          params: { noticeId: data.noticeId }
+        navigation.navigate('Main', {
+          screen: '공지',
+          params: {
+            screen: 'NoticeDetail',
+            params: { noticeId: data.noticeId }
+          }
         });
       }
     }

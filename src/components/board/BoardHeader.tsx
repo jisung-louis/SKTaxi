@@ -183,13 +183,13 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
         </TouchableOpacity>
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton} onPress={() => setShowSortModal(true)}>
-            <Icon name="swap-vertical-outline" size={30} color={COLORS.text.primary} />
+            <Icon name="swap-vertical-outline" size={28} color={COLORS.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onSearchPress}>
-            <Icon name="search-outline" size={30} color={COLORS.text.primary} />
+            <Icon name="search-outline" size={28} color={COLORS.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={onWritePress}>
-            <Icon name="create-outline" size={30} color={COLORS.accent.blue} />
+            <Icon name="create-outline" size={28} color={COLORS.accent.blue} />
           </TouchableOpacity>
         </View>
       </View>

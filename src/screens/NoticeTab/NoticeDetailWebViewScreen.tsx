@@ -58,9 +58,11 @@ const NoticeDetailWebViewScreen = () => {
         subTitleNumberOfLines={2}
         borderBottom 
         rightButton={true}
-        rightButtonIcon="open-outline"
+        rightButtonIcon="globe-outline"
         onRightButtonPress={() => {
-          Linking.openURL(notice?.link || '');
+          if (notice?.link) {
+            Linking.openURL(notice.link);
+          }
         }}
       />{/* TODO: 페이지헤더 아래쪽 투명화 그라데이션 넣어보기 */}
         <WebView

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking } from 'react-native';
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking, Image, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -11,6 +11,9 @@ import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useScreenView } from '../../../hooks/useScreenView';
+
+const WINDOW_WIDTH = Dimensions.get('window').width;
+const WINDOW_HEIGHT = Dimensions.get('window').height;
 
 interface AppNotice {
   id: string;
@@ -153,6 +156,19 @@ export const AppNoticeDetailScreen = () => {
           <Text style={styles.title}>{notice.title}</Text>
         </View>
 
+        {/* 이미지 (있는 경우) */}
+        {notice.imageUrl && (
+          <View style={styles.imageSection}>
+            <Image
+              source={
+                { uri: notice.imageUrl }
+              }
+              style={styles.noticeImage}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
         {/* 본문 내용 */}
         <View style={styles.contentSection}>
           <Text style={styles.content}>{notice.content}</Text>
@@ -256,6 +272,19 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontWeight: '700',
     lineHeight: 32,
+  },
+  imageSection: {
+    marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: COLORS.background.secondary,
+    width: '100%',
+    height: WINDOW_WIDTH,
+  },
+  noticeImage: {
+    width: '100%',
+    height: WINDOW_WIDTH,
+    backgroundColor: COLORS.background.secondary,
   },
   contentSection: {
     backgroundColor: COLORS.background.card,

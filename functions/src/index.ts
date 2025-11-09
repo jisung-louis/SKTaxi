@@ -386,7 +386,206 @@ export const onJoinRequestUpdate = onDocumentUpdated('joinRequests/{requestId}',
   }
 });
 
-// SKTaxi: 채팅 메시지 생성 시 알림
+// SKTaxi: 채팅방 메시지 생성 시 알림 (chatRooms)
+export const onChatRoomMessageCreated = onDocumentCreated('chatRooms/{chatRoomId}/messages/{messageId}', async (event) => {
+  console.log('🔔 onChatRoomMessageCreated 트리거됨');
+  
+  if (!event.data) {
+    console.log('⚠️ event.data가 없음');
+    return;
+  }
+  
+  const messageData = event.data.data();
+  const chatRoomId = event.params.chatRoomId;
+  const senderId = messageData?.senderId;
+  
+  console.log(`📝 메시지 정보: chatRoomId=${chatRoomId}, senderId=${senderId}, type=${messageData?.type}`);
+  
+  if (!senderId || !chatRoomId) {
+    console.log('⚠️ senderId 또는 chatRoomId가 없음');
+    return;
+  }
+  
+  try {
+    // 채팅방 정보 조회 (문서 ID는 이제 base64 인코딩된 영문/숫자만 사용)
+    const chatRoomDoc = await db.doc(`chatRooms/${chatRoomId}`).get();
+    const chatRoomData = chatRoomDoc.data();
+    
+    if (!chatRoomData) {
+      console.log(`⚠️ 채팅방 정보 없음: chatRoomId=${chatRoomId}`);
+      return;
+    }
+    
+    const members = Array.isArray(chatRoomData.members) ? chatRoomData.members : [];
+    console.log(`👥 채팅방 멤버 수: ${members.length}명`);
+    
+    // 본인을 제외한 멤버들에게 알림
+    const targetMembers = members.filter((memberId: string) => memberId !== senderId);
+    console.log(`🎯 알림 대상 멤버 수: ${targetMembers.length}명`);
+    
+    // unreadCount 업데이트: 전송자를 제외한 모든 멤버의 unreadCount 증가
+    const currentUnreadCount = chatRoomData.unreadCount || {};
+    const updatedUnreadCount: { [key: string]: number } = { ...currentUnreadCount };
+    
+    for (const memberId of members) {
+      if (memberId !== senderId) {
+        // 전송자가 아닌 멤버의 unreadCount 증가
+        updatedUnreadCount[memberId] = (updatedUnreadCount[memberId] || 0) + 1;
+      } else {
+        // 전송자는 unreadCount를 0으로 설정 (자신이 보낸 메시지는 읽음 처리)
+        updatedUnreadCount[memberId] = 0;
+      }
+    }
+    
+    // 채팅방의 unreadCount 업데이트
+    await db.doc(`chatRooms/${chatRoomId}`).update({
+      unreadCount: updatedUnreadCount,
+    });
+    console.log(`📊 unreadCount 업데이트 완료`);
+    
+    if (targetMembers.length === 0) {
+      console.log('⚠️ 알림 대상 멤버가 없음');
+      return;
+    }
+    
+    // 시스템 메시지는 Push 전송하지 않음
+    if (messageData.type === 'system') {
+      console.log('⚠️ 시스템 메시지이므로 알림 전송 스킵');
+      return;
+    }
+    
+    // FCM 토큰 수집 및 알림 설정 체크
+    const tokens: string[] = [];
+    const senderName = messageData.senderName || '익명';
+    const messageText = messageData.text || '';
+    
+    console.log(`📨 메시지 내용: ${senderName}: ${messageText.substring(0, 30)}...`);
+    
+    for (const memberId of targetMembers) {
+      try {
+        // 채팅방별 알림 설정 체크
+        const notificationSettingDoc = await db.doc(`users/${memberId}/chatRoomNotifications/${chatRoomId}`).get();
+        const notificationData = notificationSettingDoc.data();
+        // 문서가 없거나 enabled가 false가 아니면 기본값 true
+        const isNotificationEnabled = notificationData?.enabled !== false;
+        
+        if (!isNotificationEnabled) {
+          console.log(`⏭️ ${memberId}: 채팅방 알림이 꺼져있음`);
+          continue;
+        }
+        
+        // 사용자 알림 설정 체크 (전체 알림 설정)
+        const userDoc = await db.doc(`users/${memberId}`).get();
+        if (!userDoc.exists) {
+          console.log(`⚠️ ${memberId}: 사용자 문서가 없음`);
+          continue;
+        }
+        
+        const userData = userDoc.data();
+        const notificationSettings = (userData?.notificationSettings || {}) as any;
+        const allNotificationsEnabled = notificationSettings.allNotifications !== false;
+        
+        if (!allNotificationsEnabled) {
+          console.log(`⏭️ ${memberId}: 전체 알림이 꺼져있음`);
+          continue;
+        }
+        
+        const userTokens = (userData?.fcmTokens || []) as string[];
+        const validTokens = userTokens.filter((t: string) => t && typeof t === 'string' && t.length > 10);
+        
+        if (validTokens.length === 0) {
+          console.log(`⚠️ ${memberId}: 유효한 FCM 토큰이 없음 (총 ${userTokens.length}개 토큰 중)`);
+        } else {
+          console.log(`✅ ${memberId}: ${validTokens.length}개 토큰 추가`);
+        }
+        
+        tokens.push(...validTokens);
+      } catch (error) {
+        console.error(`❌ ${memberId} 처리 중 오류:`, error);
+      }
+    }
+    
+    console.log(`📱 총 수집된 FCM 토큰: ${tokens.length}개`);
+    
+    if (tokens.length === 0) {
+      console.log('⚠️ 전송할 FCM 토큰이 없음');
+      return;
+    }
+    
+    // Push 알림 메시지 구성
+    const chatRoomTitle = chatRoomData.type === 'university' ? '성결대 전체 채팅방' : 
+                         chatRoomData.type === 'department' ? `${chatRoomData.department} 채팅방` :
+                         chatRoomData.name || '채팅방';
+    
+    const message = {
+      tokens,
+      notification: {
+        title: chatRoomTitle,
+        body: `${senderName}: ${messageText.length > 50 ? messageText.substring(0, 50) + '...' : messageText}`,
+      },
+      data: {
+        type: 'chat_room_message',
+        chatRoomId,
+        messageId: event.params.messageId,
+        senderId,
+      },
+      apns: { payload: { aps: { sound: 'default' } } },
+      android: { priority: 'high' as const },
+    };
+    
+    console.log(`📤 FCM 메시지 전송 시작: ${tokens.length}개 토큰`);
+    
+    const BATCH = 500;
+    const failed: string[] = [];
+    let successCount = 0;
+    
+    for (let i = 0; i < tokens.length; i += BATCH) {
+      const chunk = tokens.slice(i, i + BATCH);
+      try {
+        const resp = await fcm.sendEachForMulticast({ ...message, tokens: chunk });
+        resp.responses.forEach((r, idx) => { 
+          if (!r.success) {
+            failed.push(chunk[idx]);
+            console.error(`❌ FCM 전송 실패 (${chunk[idx].substring(0, 20)}...):`, r.error?.code || 'Unknown error');
+          } else {
+            successCount++;
+          }
+        });
+        console.log(`✅ 배치 ${Math.floor(i / BATCH) + 1}: 성공 ${resp.successCount}개, 실패 ${resp.failureCount}개`);
+      } catch (error) {
+        console.error(`❌ 배치 ${Math.floor(i / BATCH) + 1} 전송 실패:`, error);
+        failed.push(...chunk);
+      }
+    }
+    
+    if (failed.length > 0) {
+      console.log(`🧹 실패한 토큰 ${failed.length}개 정리 중...`);
+      await Promise.all(targetMembers.map(async (uid) => {
+        try {
+          const userRef = db.doc(`users/${uid}`);
+          const userSnap = await userRef.get();
+          const cur: string[] = (userSnap.get('fcmTokens') || []);
+          const next = cur.filter((t) => !failed.includes(t));
+          if (next.length !== cur.length) {
+            await userRef.update({ fcmTokens: next });
+            console.log(`🧹 ${uid}: ${cur.length - next.length}개 토큰 제거`);
+          }
+        } catch (error) {
+          console.error(`❌ ${uid} 토큰 정리 실패:`, error);
+        }
+      }));
+    }
+    
+    console.log(`📢 채팅방 알림 전송 완료: ${chatRoomId}`);
+    console.log(`  - 성공: ${successCount}개`);
+    console.log(`  - 실패: ${failed.length}개`);
+  } catch (error) {
+    console.error('❌ 채팅방 알림 전송 실패:', error);
+    console.error('스택 트레이스:', error instanceof Error ? error.stack : 'N/A');
+  }
+});
+
+// SKTaxi: 채팅 메시지 생성 시 알림 (택시 파티용)
 export const onChatMessageCreated = onDocumentCreated('chats/{partyId}/messages/{messageId}', async (event) => {
   if (!event.data) return;
   
@@ -1356,13 +1555,22 @@ export const onAppNoticeCreated = onDocumentCreated(
     if (!appNotice) return;
 
     try {
-      // 1) 알림 설정 필터: allNotifications !== false && systemNotifications !== false
+      const isUrgent = appNotice.priority === 'urgent';
+      
+      // 1) 알림 설정 필터: urgent가 아닌 경우에만 필터링
+      // urgent인 경우 알림 설정과 상관없이 모든 유저에게 전송
       const usersSnapshot = await db.collection('users').get();
       const targetUserIds: string[] = [];
       for (const userDoc of usersSnapshot.docs) {
+        if (isUrgent) {
+          // urgent인 경우 모든 유저 포함
+          targetUserIds.push(userDoc.id);
+        } else {
+          // 일반 공지는 알림 설정 확인
         const settings = (userDoc.data().notificationSettings || {}) as any;
         const allow = settings.allNotifications !== false && settings.systemNotifications !== false;
         if (allow) targetUserIds.push(userDoc.id);
+        }
       }
       if (!targetUserIds.length) return;
 
@@ -1379,14 +1587,14 @@ export const onAppNoticeCreated = onDocumentCreated(
       if (!tokens.length) return;
 
       // 3) 메시지 구성 및 전송
-      const title = String(appNotice.title || '새 앱 공지');
-      const body = String(appNotice.content || title);
+      const title = '새로운 스쿠리 공지사항!';
+      const body = String(appNotice.title || '새 앱 공지');
       const messageBase: any = {
         notification: { title, body },
         data: {
           type: 'app_notice',
           appNoticeId: String(appNoticeId || ''),
-          title,
+          title: String(appNotice.title || ''),
         },
         apns: { payload: { aps: { sound: 'default' } } },
         android: { priority: 'high' as const },
@@ -1405,8 +1613,8 @@ export const onAppNoticeCreated = onDocumentCreated(
       // 4) 내부 userNotification 생성
       await Promise.all(targetUserIds.map((uid) => createUserNotification(uid, {
         type: 'app_notice',
-        title,
-        message: body,
+        title: String(appNotice.title || ''),
+        message: String(appNotice.content || ''),
         data: { appNoticeId: String(appNoticeId || '') },
       })));
     } catch (e) {
@@ -1482,7 +1690,7 @@ export const onBoardCommentCreated = onDocumentCreated('boardComments/{commentId
       // 최상위 댓글: 게시글 작성자에게 알림
       targetUserId = postData.authorId;
       // 본인이 자신의 글에 단 댓글이면 제외
-      if (authorId === targetUserId) return;
+        if (authorId === targetUserId) return;
     }
     
     // 4. 알림 타입 결정

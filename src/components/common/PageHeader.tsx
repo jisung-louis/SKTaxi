@@ -10,6 +10,13 @@ interface PageHeaderProps {
   padding?: number;
   style?: StyleProp<ViewStyle>;
   titleStyle?: StyleProp<TextStyle>;
+  backIconSize?: number;
+  secondIcon?: string;
+  secondIconSize?: number;
+  secondIconPress?: () => void;
+  thirdIcon?: string;
+  thirdIconSize?: number;
+  thirdIconPress?: () => void;
   subTitle?: string;
   subTitleStyle?: StyleProp<TextStyle>;
   subTitleNumberOfLines?: number;
@@ -21,10 +28,12 @@ interface PageHeaderProps {
   borderBottom?: boolean;
 }
 
-const PageHeader = ({ onBack, title, padding = 10, style, titleStyle, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', rightButtons, onRightButtonPress, onRightButtonsPress, borderBottom=false }: PageHeaderProps) => {
+const PageHeader = ({ onBack, title, padding = 10, style, secondIcon, secondIconSize=28, secondIconPress, thirdIcon, thirdIconSize=28, thirdIconPress, titleStyle, backIconSize=36, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', rightButtons, onRightButtonPress, onRightButtonsPress, borderBottom=false }: PageHeaderProps) => {
   return (
     <View style={[styles.container, {paddingHorizontal: padding}, style, borderBottom && styles.borderBottom]}>
-      <Icon name="chevron-back" size={36} color={COLORS.text.primary} onPress={onBack} />
+      <Icon name="chevron-back" size={backIconSize} color={COLORS.text.primary} onPress={onBack} />
+      {secondIcon && <Icon name={secondIcon} size={secondIconSize} color={COLORS.text.primary} onPress={secondIconPress} style={{ marginLeft: 8 }} />}
+      {thirdIcon && <Icon name={thirdIcon} size={thirdIconSize} color={COLORS.text.primary} onPress={thirdIconPress} style={{ marginLeft: 8 }} />}
       <View style={styles.titleContainer}>
         {title && <Text style={[styles.title, titleStyle]} numberOfLines={1}>{title}</Text>}
         {subTitle && <Text style={[styles.subTitle, subTitleStyle]} numberOfLines={subTitleNumberOfLines}>{subTitle}</Text>}

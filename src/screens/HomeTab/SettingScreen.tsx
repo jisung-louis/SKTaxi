@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
@@ -8,10 +8,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useScreenView } from '../../hooks/useScreenView';
+import { getCurrentAppVersion } from '../../lib/versionCheck';
 
 export const SettingScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const [appVersion, setAppVersion] = useState<string>('0.1.0');
+
+  useEffect(() => {
+    const version = getCurrentAppVersion();
+    setAppVersion(version);
+  }, []);
 
   const handleNotice = () => {
     navigation.navigate('AppNotice');
@@ -34,11 +41,14 @@ export const SettingScreen = () => {
   };
 
   const handleAppVersion = () => {
-    Alert.alert('앱 버전', 'SKTaxi v0.1.0');
+    Alert.alert('앱 버전', `SKURI Taxi v${appVersion}`);
   };
 
   const handleAbout = () => {
-    Alert.alert('앱 정보', 'SKURI Taxi\n성결대 학생들을 위한 스마트한 캠퍼스 라이프');
+    Linking.openURL('https://jisung-louis.github.io/SKURI-homepage/').catch((err) => {
+      console.error('웹사이트 열기 실패:', err);
+      Alert.alert('오류', '웹사이트를 열 수 없습니다.');
+    });
   };
 
   return (
@@ -174,7 +184,7 @@ export const SettingScreen = () => {
                 </View>
                 <View style={styles.menuTextContainer}>
                   <Text style={styles.menuText}>앱 버전</Text>
-                  <Text style={styles.menuSubtext}>현재 버전: v0.1.0</Text>
+                  <Text style={styles.menuSubtext}>현재 버전: v{appVersion}</Text>
                 </View>
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />

@@ -177,11 +177,40 @@ export const TaxiScreen = () => {
 
   // SKTaxi: 위치 권한 재요청 및 설정 안내
   const handleLocationPermissionRequest = async () => {
-    // 먼저 권한 재요청 시도
-    const hasPermission = await requestLocationPermission();
-    
-    if (!hasPermission) {
-      // 권한이 거절되면 설정으로 이동 안내
+    console.log('handleLocationPermissionRequest 호출됨');
+    try {
+      // 먼저 권한 재요청 시도
+      const hasPermission = await requestLocationPermission();
+      console.log('권한 요청 결과:', hasPermission);
+      
+      if (!hasPermission) {
+        // 권한이 거절되면 설정으로 이동 안내
+        console.log('권한이 거절됨, Alert 표시');
+        if(Platform.OS === 'android') {
+          Alert.alert(
+            '위치 권한이 필요해요',
+            '위치 권한을 허용해주세요.',
+            [
+              { text: '취소', style: 'cancel' },
+              { text: '설정으로 이동', onPress: openAppSettings }
+            ]
+          );
+        } else if(Platform.OS === 'ios') {
+          Alert.alert(
+            '위치 권한이 필요해요',
+            '위치 → \'앱을 사용하는 동안\'으로 설정해주세요.',
+            [
+              { text: '취소', style: 'cancel' },
+              { text: '설정으로 이동', onPress: openAppSettings }
+            ]
+          );
+        }
+      } else {
+        console.log('권한이 허용됨, Alert 표시 안함');
+      }
+    } catch (error) {
+      console.error('위치 권한 요청 중 에러:', error);
+      // 에러 발생 시에도 Alert 표시
       if(Platform.OS === 'android') {
         Alert.alert(
           '위치 권한이 필요해요',

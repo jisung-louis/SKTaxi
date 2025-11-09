@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authInstance, createUserProfile, getUserProfile } from '../libs/firebase';
 import { ensureFcmTokenSaved } from '../lib/fcm'; // SKTaxi: FCM 토큰 관리
+import { getCurrentAppVersion } from '../lib/versionCheck'; // SKTaxi: 앱 버전 가져오기
 import { User, AuthState } from '../types/auth';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import auth from '@react-native-firebase/auth';
@@ -31,6 +32,19 @@ export const useAuth = () => {
       }
 
       if (firebaseUser) {
+        // SKTaxi: 자동 로그인 시에도 lastLogin과 currentVersion 업데이트
+        try {
+          const currentVersion = getCurrentAppVersion();
+          firestore().collection('users').doc(firebaseUser.uid).update({
+            lastLogin: firestore.FieldValue.serverTimestamp(),
+            currentVersion: currentVersion,
+          }).catch((e) => {
+            console.warn('자동 로그인 정보 업데이트 실패:', e);
+          });
+        } catch (e) {
+          console.warn('자동 로그인 정보 업데이트 실패:', e);
+        }
+        
         // 사용자 문서 실시간 구독: 프로필 완료 저장 직후 반영
         const userDocRef = firestore().collection('users').doc(firebaseUser.uid);
         unsubscribeProfile = userDocRef.onSnapshot((snap) => {
@@ -157,6 +171,20 @@ export const useAuth = () => {
         });
         firstLogin = true;
       }
+      
+      // SKTaxi: 로그인 성공 시 lastLogin과 currentVersion 업데이트
+      try {
+        const currentVersion = getCurrentAppVersion();
+        await firestore().collection('users').doc(fbUser.uid).update({
+          lastLogin: firestore.FieldValue.serverTimestamp(),
+          currentVersion: currentVersion,
+        });
+        console.log('✅ 로그인 정보 업데이트 완료:', { lastLogin: 'now', currentVersion });
+      } catch (e) {
+        console.warn('로그인 정보 업데이트 실패:', e);
+        // 로그인 정보 업데이트 실패해도 로그인은 계속 진행
+      }
+      
       setState((prev: AuthState) => ({ ...prev, loading: false }));
       return { firstLogin };
     } catch (error: any) {

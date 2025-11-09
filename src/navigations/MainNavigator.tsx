@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList } from './types';
+import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
@@ -27,10 +27,10 @@ import { ChatScreen } from '../screens/TaxiTab/ChatScreen';
 import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { Animated, View, Linking, AppState, Text } from 'react-native';
+import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import PermissionBubble from '../components/common/PermissionBubble';
+import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
 import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
@@ -39,14 +39,19 @@ import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewS
 import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
 import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
 import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
+import { ChatListScreen } from '../screens/ChatListScreen';
+import { ChatDetailScreen } from '../screens/ChatTab/ChatDetailScreen';
 import { useMyParty } from '../hooks/useMyParty';
 import { TYPOGRAPHY } from '../constants/typhograpy';
+import { useChatRooms } from '../hooks/useChatRooms';
+import { useAuth } from '../hooks/useAuth';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
 const BoardStack = createNativeStackNavigator<BoardStackParamList>();
+const ChatStack = createNativeStackNavigator<ChatStackParamList>();
 
 const TaxiStackNavigator = () => {
   return (
@@ -82,6 +87,16 @@ const HomeStackNavigator = () => {
   );
 };
 
+const NoticeStackNavigator = () => {
+  return (
+    <NoticeStack.Navigator screenOptions={{ headerShown: false }}>
+      <NoticeStack.Screen name="NoticeMain" component={NoticeScreen} />
+      <NoticeStack.Screen name="NoticeDetail" component={NoticeDetailScreen} />
+      <NoticeStack.Screen name="NoticeDetailWebView" component={NoticeDetailWebViewScreen} />
+    </NoticeStack.Navigator>
+  );
+};
+
 const BoardStackNavigator = () => {
   return (
     <BoardStack.Navigator screenOptions={{ headerShown: false }}>
@@ -93,13 +108,12 @@ const BoardStackNavigator = () => {
   );
 };
 
-const NoticeStackNavigator = () => {
+const ChatStackNavigator = () => {
   return (
-    <NoticeStack.Navigator screenOptions={{ headerShown: false }}>
-      <NoticeStack.Screen name="NoticeMain" component={NoticeScreen} />
-      <NoticeStack.Screen name="NoticeDetail" component={NoticeDetailScreen} />
-      <NoticeStack.Screen name="NoticeDetailWebView" component={NoticeDetailWebViewScreen} />
-    </NoticeStack.Navigator>
+    <ChatStack.Navigator screenOptions={{ headerShown: false }}>
+      <ChatStack.Screen name="ChatList" component={ChatListScreen} />
+      <ChatStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </ChatStack.Navigator>
   );
 };
 
@@ -108,15 +122,56 @@ const MainNavigatorContent = () => {
   const [bubbleVisible, setBubbleVisible] = React.useState(false);
   const [checking, setChecking] = React.useState(true);
   const { hasParty } = useMyParty();
+  const { user } = useAuth();
+  
+  // 모든 채팅방 조회 (안읽은 메시지 수 계산용)
+  const { chatRooms: allChatRooms } = useChatRooms('all');
+  const { chatRooms: customChatRooms } = useChatRooms('custom');
+  
+  // 전체 안읽은 메시지 수 계산
+  const totalUnreadCount = React.useMemo(() => {
+    if (!user?.uid) return 0;
+    
+    // 모든 채팅방에서 내가 참가중인 채팅방만 필터링 (중복 제거)
+    const roomMap = new Map<string, any>();
+    [...allChatRooms, ...customChatRooms].forEach(room => {
+      if (room.id && room.members?.includes(user.uid)) {
+        roomMap.set(room.id, room);
+      }
+    });
+    const myRooms = Array.from(roomMap.values());
+    
+    // 각 채팅방의 unreadCount 합산
+    return myRooms.reduce((total, room) => {
+      const unread = room.unreadCount?.[user.uid] || 0;
+      return total + unread;
+    }, 0);
+  }, [allChatRooms, customChatRooms, user?.uid]);
   React.useEffect(() => {
     let mounted = true;
 
     const checkPermission = async () => {
       try {
-        const status = await messaging().hasPermission();
-        const granted = status === messaging.AuthorizationStatus.AUTHORIZED;
-        if (mounted) setBubbleVisible(!granted);
-      } catch {
+        if (Platform.OS === 'ios') {
+          const status = await messaging().hasPermission();
+          const granted = status === messaging.AuthorizationStatus.AUTHORIZED;
+          if (mounted) setBubbleVisible(!granted);
+        } else {
+          // Android: POST_NOTIFICATIONS 권한 확인 (API 33+)
+          const androidVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+          if (androidVersion >= 33) {
+            const { PermissionsAndroid } = require('react-native');
+            const granted = await PermissionsAndroid.check(
+              PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+            );
+            if (mounted) setBubbleVisible(!granted);
+          } else {
+            // Android 12 이하는 자동 허용
+            if (mounted) setBubbleVisible(false);
+          }
+        }
+      } catch (error) {
+        console.warn('알림 권한 확인 실패:', error);
         if (mounted) setBubbleVisible(true);
       } finally {
         if (mounted) setChecking(false);
@@ -141,15 +196,35 @@ const MainNavigatorContent = () => {
 
   const handleAllowNotification = React.useCallback(async () => {
     try {
-      const req = await messaging().requestPermission();
-      const ok = req === messaging.AuthorizationStatus.AUTHORIZED;
-      if (ok) {
-        setBubbleVisible(false);
-        return;
+      if (Platform.OS === 'ios') {
+        const req = await messaging().requestPermission();
+        const ok = req === messaging.AuthorizationStatus.AUTHORIZED;
+        if (ok) {
+          setBubbleVisible(false);
+          return;
+        }
+      } else {
+        // Android: POST_NOTIFICATIONS 권한 요청 (API 33+)
+        const androidVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
+        if (androidVersion >= 33) {
+          const { PermissionsAndroid } = require('react-native');
+          const result = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+          );
+          if (result === PermissionsAndroid.RESULTS.GRANTED) {
+            setBubbleVisible(false);
+            return;
+          }
+        } else {
+          // Android 12 이하는 자동 허용
+          setBubbleVisible(false);
+          return;
+        }
       }
       // 권한이 여전히 허용되지 않은 경우(이전에 거절로 더 이상 팝업이 안 뜨는 케이스 포함): 설정으로 이동
       try { await Linking.openSettings(); } catch {}
-    } catch {
+    } catch (error) {
+      console.warn('알림 권한 요청 실패:', error);
       // 요청 자체가 실패한 경우에도 설정으로 이동 시도
       try { await Linking.openSettings(); } catch {}
     }
@@ -209,21 +284,35 @@ const MainNavigatorContent = () => {
         }}
       />
       <Tab.Screen 
-        name="게시판" 
-        component={BoardStackNavigator}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
-          ),
-          lazy: false,
-        }}
-      />
-      <Tab.Screen 
         name="공지" 
         component={NoticeStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="notifications-outline" size={size} color={color} style={{ marginBottom: 4 }} />
+          ),
+          lazy: false,
+        }}
+      />
+      <Tab.Screen 
+        name="게시판" 
+        component={BoardStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            // <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
+            <IconMaterial name="note-text" size={size} color={color} style={{ marginBottom: 4 }} />
+          ),
+          lazy: false,
+        }}
+      />
+      <Tab.Screen 
+        name="채팅" 
+        component={ChatStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <View style={{ position: 'relative' }}>
+              <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
+              <TabBadge count={totalUnreadCount} location="bottom" size="small" />
+            </View>
           ),
           lazy: false,
         }}
@@ -253,6 +342,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
       'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail'],
     '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
     '공지': ['NoticeDetail', 'NoticeDetailWebView'],
+    '채팅': ['ChatDetail'],
   };
 
   const shouldHide = React.useMemo(() => {

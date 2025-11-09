@@ -218,6 +218,7 @@ const ScrollPicker = ({
           onChange(data[idx]);
         }}
         style={{ flex: 1 }}
+        nestedScrollEnabled={true}
       >
         {data.map((item, idx) => (
           <View

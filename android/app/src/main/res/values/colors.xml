@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 스플래시 스크린 배경색 (iOS와 동일한 연한 초록색) -->
+    <color name="splash_background">#94E78B</color>
+</resources>
+

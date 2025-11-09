@@ -12,8 +12,9 @@ export type RootStackParamList = {
 export type MainTabParamList = {
   홈: NavigatorScreenParams<HomeStackParamList>;
   택시: NavigatorScreenParams<TaxiStackParamList>;
-  게시판: NavigatorScreenParams<BoardStackParamList>;
   공지: NavigatorScreenParams<NoticeStackParamList>;
+  게시판: NavigatorScreenParams<BoardStackParamList>;
+  채팅: NavigatorScreenParams<ChatStackParamList>;
 };
 
 export type TaxiStackParamList = {
@@ -47,6 +48,13 @@ export type HomeStackParamList = {
 
 export type AuthStackParamList = {
   Login: undefined;
+  AccountGuide: undefined;
+}; 
+
+export type NoticeStackParamList = {
+  NoticeMain: undefined;
+  NoticeDetail: { noticeId: string };
+  NoticeDetailWebView: { noticeId: string };
 }; 
 
 export type BoardStackParamList = {
@@ -56,8 +64,7 @@ export type BoardStackParamList = {
   BoardEdit: { postId: string };
 };
 
-export type NoticeStackParamList = {
-  NoticeMain: undefined;
-  NoticeDetail: { noticeId: string };
-  NoticeDetailWebView: { noticeId: string };
+export type ChatStackParamList = {
+  ChatList: undefined;
+  ChatDetail: { chatRoomId: string };
 };

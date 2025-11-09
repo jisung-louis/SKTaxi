@@ -2,14 +2,44 @@
   "ios": {
     "minimumVersion": "1.0.0",
     "forceUpdate": true,
-    "message": "새로운 기능과 버그 수정이 포함된 업데이트가 있습니다.\n앱을 최신 버전으로 업데이트해주세요."
+    "icon": "cloud-download-outline",
+    "title": "업데이트가 필요해요!",
+    "message": "새로운 기능과 버그 수정이 포함된 업데이트가 있습니다.\n앱을 최신 버전으로 업데이트해주세요.",
+    "showButton": true,
+    "buttonText": "App Store에서 업데이트",
+    "buttonUrl": "https://apps.apple.com/app/id6754636203"
   },
   "android": {
     "minimumVersion": "1.0.0",
     "forceUpdate": true,
-    "message": "새로운 기능과 버그 수정이 포함된 업데이트가 있습니다.\n앱을 최신 버전으로 업데이트해주세요."
+    "icon": "cloud-download-outline",
+    "title": "업데이트가 필요해요!",
+    "message": "새로운 기능과 버그 수정이 포함된 업데이트가 있습니다.\n앱을 최신 버전으로 업데이트해주세요.",
+    "showButton": true,
+    "buttonText": "Play Store에서 업데이트",
+    "buttonUrl": "https://play.google.com/store/apps/details?id=com.sktaxi"
   }
 }
+
+// 서비스 점검 예시:
+// {
+//   "ios": {
+//     "minimumVersion": "999.0.0",
+//     "forceUpdate": true,
+//     "icon": "construct-outline",
+//     "title": "서비스 점검 중",
+//     "message": "더 나은 서비스를 위해 점검 중입니다.\n잠시 후 다시 시도해주세요.",
+//     "showButton": false
+//   },
+//   "android": {
+//     "minimumVersion": "999.0.0",
+//     "forceUpdate": true,
+//     "icon": "construct-outline",
+//     "title": "서비스 점검 중",
+//     "message": "더 나은 서비스를 위해 점검 중입니다.\n잠시 후 다시 시도해주세요.",
+//     "showButton": false
+//   }
+// }
 
 
 

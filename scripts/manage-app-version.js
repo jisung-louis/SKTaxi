@@ -76,12 +76,22 @@ async function createVersion(args) {
       minimumVersion: args['ios-version'] || '0.0.1',
       forceUpdate: parseBoolean(args['force-update'] !== undefined ? args['force-update'] : args['ios-force-update']),
       message: args['ios-message'] || args.message || undefined,
+      icon: args['ios-icon'] || args.icon || undefined,
+      title: args['ios-title'] || args.title || undefined,
+      showButton: args['ios-show-button'] !== undefined ? parseBoolean(args['ios-show-button']) : (args['show-button'] !== undefined ? parseBoolean(args['show-button']) : undefined),
+      buttonText: args['ios-button-text'] || args['button-text'] || undefined,
+      buttonUrl: args['ios-button-url'] || args['button-url'] || undefined,
     };
     
     androidData = {
       minimumVersion: args['android-version'] || args['ios-version'] || '0.0.1',
       forceUpdate: parseBoolean(args['force-update'] !== undefined ? args['force-update'] : args['android-force-update']),
       message: args['android-message'] || args.message || undefined,
+      icon: args['android-icon'] || args.icon || undefined,
+      title: args['android-title'] || args.title || undefined,
+      showButton: args['android-show-button'] !== undefined ? parseBoolean(args['android-show-button']) : (args['show-button'] !== undefined ? parseBoolean(args['show-button']) : undefined),
+      buttonText: args['android-button-text'] || args['button-text'] || undefined,
+      buttonUrl: args['android-button-url'] || args['button-url'] || undefined,
     };
   }
 
@@ -93,33 +103,53 @@ async function createVersion(args) {
 
   // iOS 문서 생성/업데이트
   const iosRef = db.collection('appVersion').doc('ios');
-  await iosRef.set({
+  const iosUpdateData = {
     minimumVersion: iosData.minimumVersion,
     forceUpdate: iosData.forceUpdate !== undefined ? iosData.forceUpdate : false,
-    message: iosData.message || null,
     updatedAt: admin.firestore.Timestamp.fromDate(new Date()),
-  }, { merge: true });
+  };
+  if (iosData.message !== undefined) iosUpdateData.message = iosData.message || null;
+  if (iosData.icon !== undefined) iosUpdateData.icon = iosData.icon || null;
+  if (iosData.title !== undefined) iosUpdateData.title = iosData.title || null;
+  if (iosData.showButton !== undefined) iosUpdateData.showButton = iosData.showButton;
+  if (iosData.buttonText !== undefined) iosUpdateData.buttonText = iosData.buttonText || null;
+  if (iosData.buttonUrl !== undefined) iosUpdateData.buttonUrl = iosData.buttonUrl || null;
+  
+  await iosRef.set(iosUpdateData, { merge: true });
   console.log(`✅ iOS 버전 설정 완료:`);
   console.log(`   - 최소 버전: ${iosData.minimumVersion}`);
   console.log(`   - 강제 업데이트: ${iosData.forceUpdate !== undefined ? iosData.forceUpdate : false}`);
-  if (iosData.message) {
-    console.log(`   - 메시지: ${iosData.message}`);
-  }
+  if (iosData.message !== undefined) console.log(`   - 메시지: ${iosData.message || '(없음)'}`);
+  if (iosData.icon !== undefined) console.log(`   - 아이콘: ${iosData.icon || '(없음)'}`);
+  if (iosData.title !== undefined) console.log(`   - 제목: ${iosData.title || '(없음)'}`);
+  if (iosData.showButton !== undefined) console.log(`   - 버튼 표시: ${iosData.showButton}`);
+  if (iosData.buttonText !== undefined) console.log(`   - 버튼 텍스트: ${iosData.buttonText || '(없음)'}`);
+  if (iosData.buttonUrl !== undefined) console.log(`   - 버튼 URL: ${iosData.buttonUrl || '(없음)'}`);
 
   // Android 문서 생성/업데이트
   const androidRef = db.collection('appVersion').doc('android');
-  await androidRef.set({
+  const androidUpdateData = {
     minimumVersion: androidData.minimumVersion,
     forceUpdate: androidData.forceUpdate !== undefined ? androidData.forceUpdate : false,
-    message: androidData.message || null,
     updatedAt: admin.firestore.Timestamp.fromDate(new Date()),
-  }, { merge: true });
+  };
+  if (androidData.message !== undefined) androidUpdateData.message = androidData.message || null;
+  if (androidData.icon !== undefined) androidUpdateData.icon = androidData.icon || null;
+  if (androidData.title !== undefined) androidUpdateData.title = androidData.title || null;
+  if (androidData.showButton !== undefined) androidUpdateData.showButton = androidData.showButton;
+  if (androidData.buttonText !== undefined) androidUpdateData.buttonText = androidData.buttonText || null;
+  if (androidData.buttonUrl !== undefined) androidUpdateData.buttonUrl = androidData.buttonUrl || null;
+  
+  await androidRef.set(androidUpdateData, { merge: true });
   console.log(`✅ Android 버전 설정 완료:`);
   console.log(`   - 최소 버전: ${androidData.minimumVersion}`);
   console.log(`   - 강제 업데이트: ${androidData.forceUpdate !== undefined ? androidData.forceUpdate : false}`);
-  if (androidData.message) {
-    console.log(`   - 메시지: ${androidData.message}`);
-  }
+  if (androidData.message !== undefined) console.log(`   - 메시지: ${androidData.message || '(없음)'}`);
+  if (androidData.icon !== undefined) console.log(`   - 아이콘: ${androidData.icon || '(없음)'}`);
+  if (androidData.title !== undefined) console.log(`   - 제목: ${androidData.title || '(없음)'}`);
+  if (androidData.showButton !== undefined) console.log(`   - 버튼 표시: ${androidData.showButton}`);
+  if (androidData.buttonText !== undefined) console.log(`   - 버튼 텍스트: ${androidData.buttonText || '(없음)'}`);
+  if (androidData.buttonUrl !== undefined) console.log(`   - 버튼 URL: ${androidData.buttonUrl || '(없음)'}`);
 }
 
 async function updateVersion(args) {
@@ -140,6 +170,21 @@ async function updateVersion(args) {
     }
     if (args.message !== undefined) {
       data.message = args.message || null;
+    }
+    if (args.icon !== undefined) {
+      data.icon = args.icon || null;
+    }
+    if (args.title !== undefined) {
+      data.title = args.title || null;
+    }
+    if (args['show-button'] !== undefined) {
+      data.showButton = parseBoolean(args['show-button']);
+    }
+    if (args['button-text'] !== undefined) {
+      data.buttonText = args['button-text'] || null;
+    }
+    if (args['button-url'] !== undefined) {
+      data.buttonUrl = args['button-url'] || null;
     }
   }
 
@@ -164,6 +209,21 @@ async function updateVersion(args) {
   if (data.message !== undefined) {
     console.log(`   - 메시지: ${data.message || '(없음)'}`);
   }
+  if (data.icon !== undefined) {
+    console.log(`   - 아이콘: ${data.icon || '(없음)'}`);
+  }
+  if (data.title !== undefined) {
+    console.log(`   - 제목: ${data.title || '(없음)'}`);
+  }
+  if (data.showButton !== undefined) {
+    console.log(`   - 버튼 표시: ${data.showButton}`);
+  }
+  if (data.buttonText !== undefined) {
+    console.log(`   - 버튼 텍스트: ${data.buttonText || '(없음)'}`);
+  }
+  if (data.buttonUrl !== undefined) {
+    console.log(`   - 버튼 URL: ${data.buttonUrl || '(없음)'}`);
+  }
 }
 
 async function getVersion(args) {
@@ -187,6 +247,11 @@ async function getVersion(args) {
     console.log(`   - 최소 버전: ${data.minimumVersion || 'N/A'}`);
     console.log(`   - 강제 업데이트: ${data.forceUpdate ? '✅' : '❌'}`);
     console.log(`   - 메시지: ${data.message || '(없음)'}`);
+    console.log(`   - 아이콘: ${data.icon || '(없음)'}`);
+    console.log(`   - 제목: ${data.title || '(없음)'}`);
+    console.log(`   - 버튼 표시: ${data.showButton !== undefined ? (data.showButton ? '✅' : '❌') : '(기본값: 표시)'}`);
+    console.log(`   - 버튼 텍스트: ${data.buttonText || '(없음)'}`);
+    console.log(`   - 버튼 URL: ${data.buttonUrl || '(없음)'}`);
     if (data.updatedAt) {
       console.log(`   - 업데이트 시간: ${data.updatedAt.toDate().toLocaleString('ko-KR')}`);
     }
@@ -203,6 +268,11 @@ async function getVersion(args) {
       console.log(`   - 최소 버전: ${iosData.minimumVersion || 'N/A'}`);
       console.log(`   - 강제 업데이트: ${iosData.forceUpdate ? '✅' : '❌'}`);
       console.log(`   - 메시지: ${iosData.message || '(없음)'}`);
+      console.log(`   - 아이콘: ${iosData.icon || '(없음)'}`);
+      console.log(`   - 제목: ${iosData.title || '(없음)'}`);
+      console.log(`   - 버튼 표시: ${iosData.showButton !== undefined ? (iosData.showButton ? '✅' : '❌') : '(기본값: 표시)'}`);
+      console.log(`   - 버튼 텍스트: ${iosData.buttonText || '(없음)'}`);
+      console.log(`   - 버튼 URL: ${iosData.buttonUrl || '(없음)'}`);
       if (iosData.updatedAt) {
         console.log(`   - 업데이트 시간: ${iosData.updatedAt.toDate().toLocaleString('ko-KR')}`);
       }
@@ -216,6 +286,11 @@ async function getVersion(args) {
       console.log(`   - 최소 버전: ${androidData.minimumVersion || 'N/A'}`);
       console.log(`   - 강제 업데이트: ${androidData.forceUpdate ? '✅' : '❌'}`);
       console.log(`   - 메시지: ${androidData.message || '(없음)'}`);
+      console.log(`   - 아이콘: ${androidData.icon || '(없음)'}`);
+      console.log(`   - 제목: ${androidData.title || '(없음)'}`);
+      console.log(`   - 버튼 표시: ${androidData.showButton !== undefined ? (androidData.showButton ? '✅' : '❌') : '(기본값: 표시)'}`);
+      console.log(`   - 버튼 텍스트: ${androidData.buttonText || '(없음)'}`);
+      console.log(`   - 버튼 URL: ${androidData.buttonUrl || '(없음)'}`);
       if (androidData.updatedAt) {
         console.log(`   - 업데이트 시간: ${androidData.updatedAt.toDate().toLocaleString('ko-KR')}`);
       }

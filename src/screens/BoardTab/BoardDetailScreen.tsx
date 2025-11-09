@@ -358,9 +358,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: isEditingComment ? 300 : 50 }}
-        contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 + 20 }}
-        contentInsetAdjustmentBehavior="never"
+        contentContainerStyle={{ paddingBottom: isEditingComment ? (keyboardHeight > 0 ? keyboardHeight + 91 + 300 : 91 + 20 + 300) : (keyboardHeight > 0 ? keyboardHeight + 91 + 50 : 91 + 20 + 50) }}
       >
         <View style={[styles.postContainer, 
           { margin: post.isPinned ? 5 : 0, 

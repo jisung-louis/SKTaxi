@@ -72,4 +72,35 @@ export type Message = {
   updatedAt?: any;
 };
 
+export type ChatRoom = {
+  id?: string;
+  name: string;
+  type: 'university' | 'department' | 'custom';
+  department?: string; // type이 'department'일 때만
+  description?: string;
+  createdBy: string; // userId
+  members: string[]; // userId 배열
+  maxMembers?: number;
+  isPublic: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+  lastMessage?: {
+    text: string;
+    senderId: string;
+    senderName: string;
+    timestamp: any;
+  };
+  unreadCount?: { [userId: string]: number }; // 사용자별 읽지 않은 메시지 수
+};
+
+export type ChatMessage = {
+  id?: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  type?: 'text' | 'image' | 'system';
+  createdAt?: any;
+  readBy?: string[]; // userId 배열
+};
+
 

@@ -111,6 +111,12 @@ export const LoginScreen = ({ navigation }: any) => {
             <Text style={styles.googleButtonText}>{loading ? '로그인 중...' : '성결대 이메일로 로그인하기'}</Text>
           </TouchableOpacity>
           <Text style={styles.helperText}>성결대학교 이메일(@sungkyul.ac.kr)만 사용할 수 있어요</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('AccountGuide')}
+            style={styles.guideLink}
+          >
+            <Text style={styles.guideLinkText}>성결대 이메일이 없나요?</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Admin floating button */}
@@ -306,6 +312,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
+  },
+  guideLink: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  guideLinkText: {
+    color: COLORS.accent.green,
+    ...TYPOGRAPHY.body2,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   adminFab: {
     position: 'absolute',

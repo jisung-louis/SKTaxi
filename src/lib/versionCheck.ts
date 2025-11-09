@@ -78,10 +78,19 @@ function isVersionLessThan(v1: string, v2: string): boolean {
 /**
  * Firestore에서 최소 필수 버전 정보 가져오기
  */
+export interface VersionModalConfig {
+  icon?: string;
+  title?: string;
+  message?: string;
+  showButton?: boolean;
+  buttonText?: string;
+  buttonUrl?: string;
+}
+
 export async function getMinimumRequiredVersion(): Promise<{
   version: string;
   forceUpdate: boolean;
-  message?: string;
+  modalConfig?: VersionModalConfig;
 } | null> {
   try {
     const app = getApp();
@@ -95,10 +104,19 @@ export async function getMinimumRequiredVersion(): Promise<{
     }
     
     const data = versionDoc.data();
+    const modalConfig: VersionModalConfig = {};
+    
+    if (data?.icon !== undefined) modalConfig.icon = data.icon;
+    if (data?.title !== undefined) modalConfig.title = data.title;
+    if (data?.message !== undefined) modalConfig.message = data.message;
+    if (data?.showButton !== undefined) modalConfig.showButton = data.showButton;
+    if (data?.buttonText !== undefined) modalConfig.buttonText = data.buttonText;
+    if (data?.buttonUrl !== undefined) modalConfig.buttonUrl = data.buttonUrl;
+    
     return {
       version: data?.minimumVersion || '0.0.1',
       forceUpdate: data?.forceUpdate || false,
-      message: data?.message || undefined,
+      modalConfig: Object.keys(modalConfig).length > 0 ? modalConfig : undefined,
     };
   } catch (error) {
     console.error('최소 필수 버전 정보를 가져오는 중 오류:', error);
@@ -114,7 +132,7 @@ export async function checkVersionUpdate(): Promise<{
   needsUpdate: boolean;
   forceUpdate: boolean;
   minimumVersion: string;
-  message?: string;
+  modalConfig?: VersionModalConfig;
 }> {
   try {
     const currentVersion = getCurrentAppVersion();
@@ -134,7 +152,7 @@ export async function checkVersionUpdate(): Promise<{
       needsUpdate,
       forceUpdate: versionInfo.forceUpdate && needsUpdate,
       minimumVersion: versionInfo.version,
-      message: versionInfo.message,
+      modalConfig: versionInfo.modalConfig,
     };
   } catch (error) {
     console.error('버전 체크 중 오류:', error);
@@ -153,7 +171,14 @@ export async function checkVersionUpdate(): Promise<{
  * iOS: App Store Connect에서 앱 ID 확인 후 변경
  * Android: Play Store에서 패키지명 확인 후 변경
  */
-export function openAppStore(): void {
+export function openAppStore(customUrl?: string): void {
+  if (customUrl) {
+    Linking.openURL(customUrl).catch(err => {
+      console.error('URL 열기 실패:', err);
+    });
+    return;
+  }
+  
   if (Platform.OS === 'ios') {
     // iOS App Store URL (실제 앱 ID로 변경 필요)
     // App Store Connect에서 앱 ID 확인: https://appstoreconnect.apple.com
@@ -165,8 +190,8 @@ export function openAppStore(): void {
     });
   } else {
     // Android Play Store URL (실제 패키지명으로 변경 필요)
-    // build.gradle의 applicationId 확인: com.sktaxi
-    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.sktaxi';
+    // build.gradle의 applicationId 확인: com.jisung.sktaxi
+    const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.jisung.sktaxi';
     Linking.openURL(playStoreUrl).catch(err => {
       console.error('플레이스토어 열기 실패:', err);
       // Fallback: 일반 플레이스토어 검색 페이지

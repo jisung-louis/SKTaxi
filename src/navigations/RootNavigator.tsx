@@ -17,13 +17,16 @@ import { JoinRequestModal } from '../components/common/JoinRequestModal';
 import { ForegroundNotification } from '../components/common/ForegroundNotification';
 import { acceptJoin, declineJoin, deleteJoinRequestNotifications } from '../lib/notifications';
 import firestore, { doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
 import { useNavigation } from '@react-navigation/native';
 import { requestATTPermission } from '../lib/att';
+import { useAuth } from '../hooks/useAuth';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
   const { user, loading }: AuthState = useAuthContext();
+  const { user: authUser } = useAuth();
   const { needsProfile } = useProfileCompletion();
   const permissionsComplete = !!(user as any)?.onboarding?.permissionsComplete;
   const [joinData, setJoinData] = useState<any | null>(null);
@@ -35,7 +38,8 @@ export const RootNavigator = () => {
     noticeId?: string;
     partyId?: string;
     postId?: string;
-    type?: 'notice' | 'chat' | 'settlement' | 'kicked' | 'party_created' | 'board_notification' | 'notice_notification' | 'app_notice';
+    chatRoomId?: string;
+    type?: 'notice' | 'chat' | 'settlement' | 'kicked' | 'party_created' | 'board_notification' | 'notice_notification' | 'app_notice' | 'chat_room_message';
   }>({
     visible: false,
     title: '',
@@ -177,6 +181,15 @@ export const RootNavigator = () => {
           params: { noticeId: foregroundNotification.noticeId }
         }
       });
+    } else if (foregroundNotification.type === 'chat_room_message' && foregroundNotification.chatRoomId) {
+      // 채팅방 메시지 알림 클릭 시 채팅방 상세 화면으로 이동
+      (navigation as any).navigate('Main', {
+        screen: '채팅',
+        params: {
+          screen: 'ChatDetail',
+          params: { chatRoomId: foregroundNotification.chatRoomId }
+        }
+      });
     }
     setForegroundNotification(prev => ({ ...prev, visible: false }));
   };
@@ -278,6 +291,48 @@ export const RootNavigator = () => {
       type: 'notice_notification',
     });
   };
+
+  // SKTaxi: 채팅방 메시지 알림 핸들러
+  const handleChatRoomMessageReceived = async (data: { chatRoomId: string; senderName: string; messageText: string }) => {
+    try {
+      // 채팅방 정보 조회
+      const chatRoomDoc = await getDoc(doc(firestore(getApp()), 'chatRooms', data.chatRoomId));
+      const chatRoomData = chatRoomDoc.data();
+      
+      // 채팅방 이름 결정
+      let chatRoomName = '채팅방';
+      if (chatRoomData) {
+        if (chatRoomData.type === 'university') {
+          chatRoomName = '성결대 전체 채팅방';
+        } else if (chatRoomData.type === 'department' && authUser?.department) {
+          chatRoomName = `${authUser.department} 채팅방`;
+        } else {
+          chatRoomName = chatRoomData.name || '채팅방';
+        }
+      }
+      
+      // body 형식: "송신자명 : 메시지 내용"
+      const body = `${data.senderName || '익명'} : ${data.messageText}`;
+      
+      setForegroundNotification({
+        visible: true,
+        title: chatRoomName,
+        body: body,
+        chatRoomId: data.chatRoomId,
+        type: 'chat_room_message',
+      });
+    } catch (error) {
+      console.error('채팅방 정보 조회 실패:', error);
+      // 실패 시 기본값 사용
+      setForegroundNotification({
+        visible: true,
+        title: '채팅방',
+        body: `${data.senderName || '익명'} : ${data.messageText}`,
+        chatRoomId: data.chatRoomId,
+        type: 'chat_room_message',
+      });
+    }
+  };
   // SKTaxi: 앱 공지 알림 핸들러
   const handleAppNoticeNotificationReceived = (data: { appNoticeId: string; title: string }) => {
     setForegroundNotification({
@@ -312,7 +367,8 @@ export const RootNavigator = () => {
         handleMemberKicked,
         handlePartyCreated,
         handleBoardNotificationReceived,
-        handleNoticeNotificationReceived
+        handleNoticeNotificationReceived,
+        handleChatRoomMessageReceived
       );
       
       // 백그라운드 알림 처리

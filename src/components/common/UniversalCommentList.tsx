@@ -347,6 +347,23 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
     );
   };
 
+  // 재귀적으로 모든 자식 댓글이 삭제되었는지 확인하는 함수
+  const areAllChildrenDeleted = (comment: UniversalComment & { replies?: UniversalComment[] }): boolean => {
+    if (!comment.replies || comment.replies.length === 0) {
+      return true; // 자식이 없으면 true (숨김 가능)
+    }
+    // 모든 자식이 삭제되었고, 각 자식의 모든 자식도 삭제되었는지 재귀적으로 확인
+    return comment.replies.every(reply => {
+      const replyWithReplies = reply as any;
+      return !!reply.isDeleted && areAllChildrenDeleted(replyWithReplies);
+    });
+  };
+
+  // 댓글이 숨겨져야 하는지 확인하는 함수
+  const shouldHideComment = (comment: UniversalComment & { replies?: UniversalComment[] }): boolean => {
+    return !!comment.isDeleted && areAllChildrenDeleted(comment);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -366,8 +383,8 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
       ) : (
         <View style={styles.commentsList}>
           {comments.map((comment) => {
-            // 삭제된 상위 댓글이며, 자식 답글이 하나도 없으면 완전히 숨김
-            if (comment.isDeleted && (!comment.replies || comment.replies.length === 0)) {
+            // 삭제된 댓글이며, 모든 자식(재귀적으로)이 삭제되었으면 완전히 숨김
+            if (shouldHideComment(comment)) {
               return null;
             }
             return (
@@ -380,6 +397,10 @@ const UniversalCommentList: React.FC<UniversalCommentListProps> = ({
                     // 재귀적으로 답글 렌더링하는 함수
                     const renderReply = (replyComment: UniversalComment) => {
                       const replyWithReplies = replyComment as any;
+                      // 삭제된 답글이며, 모든 자식(재귀적으로)이 삭제되었으면 완전히 숨김
+                      if (shouldHideComment(replyWithReplies)) {
+                        return null;
+                      }
                       return (
                         <React.Fragment key={replyComment.id}>
                           <CommentItem 

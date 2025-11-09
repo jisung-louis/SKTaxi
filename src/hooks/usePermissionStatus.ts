@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Platform, PermissionsAndroid } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import Geolocation from 'react-native-geolocation-service';
+import Geolocation from '@react-native-community/geolocation';
 
 export interface PermissionStatus {
   notification: boolean | null;
@@ -50,16 +50,45 @@ export const usePermissionStatus = () => {
 
   const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
     try {
-      const authStatus = await messaging().requestPermission();
-      const granted = authStatus === messaging.AuthorizationStatus.AUTHORIZED;
-      
-      setPermissionStatus(prev => ({
-        ...prev,
-        notification: granted,
-        needsOnboarding: !(granted && prev.location),
-      }));
-      
-      return granted;
+      if (Platform.OS === 'ios') {
+        const authStatus = await messaging().requestPermission();
+        const granted = authStatus === messaging.AuthorizationStatus.AUTHORIZED;
+        
+        setPermissionStatus(prev => ({
+          ...prev,
+          notification: granted,
+          needsOnboarding: !(granted && prev.location),
+        }));
+        
+        return granted;
+      } else if (Platform.OS === 'android') {
+        // Android 13 (API 33) 이상에서만 POST_NOTIFICATIONS 권한이 필요
+        const androidVersion = Platform.Version;
+        if (androidVersion >= 33) {
+          const result = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
+          );
+          const granted = result === PermissionsAndroid.RESULTS.GRANTED;
+          
+          setPermissionStatus(prev => ({
+            ...prev,
+            notification: granted,
+            needsOnboarding: !(granted && prev.location),
+          }));
+          
+          return granted;
+        } else {
+          // Android 12 이하는 알림 권한이 자동으로 허용됨
+          setPermissionStatus(prev => ({
+            ...prev,
+            notification: true,
+            needsOnboarding: !(true && prev.location),
+          }));
+          
+          return true;
+        }
+      }
+      return false;
     } catch (error) {
       console.warn('알림 권한 요청 실패:', error);
       return false;
@@ -71,8 +100,22 @@ export const usePermissionStatus = () => {
       let granted = false;
       
       if (Platform.OS === 'ios') {
-        const authStatus = await Geolocation.requestAuthorization('whenInUse');
-        granted = authStatus === 'granted';
+        // @react-native-community/geolocation의 requestAuthorization 사용
+        await new Promise<void>((resolve) => {
+          Geolocation.requestAuthorization(
+            () => {
+              // 권한 요청 성공
+              granted = true;
+              resolve();
+            },
+            (error) => {
+              // 권한 요청 실패
+              console.warn('iOS 위치 권한 요청 실패:', error);
+              granted = false;
+              resolve(); // 에러가 발생해도 Promise는 resolve하여 다음 단계로 진행
+            }
+          );
+        });
       } else if (Platform.OS === 'android') {
         const result = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
@@ -89,6 +132,11 @@ export const usePermissionStatus = () => {
       return granted;
     } catch (error) {
       console.warn('위치 권한 요청 실패:', error);
+      setPermissionStatus(prev => ({
+        ...prev,
+        location: false,
+        needsOnboarding: !(prev.notification && false),
+      }));
       return false;
     }
   }, []);

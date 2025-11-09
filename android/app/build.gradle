@@ -78,13 +78,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.sktaxi"
+    namespace "com.jisung.sktaxi"
     defaultConfig {
-        applicationId "com.sktaxi"
+        applicationId "com.jisung.sktaxi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.1.0"
     }
     signingConfigs {
         debug {
@@ -117,5 +117,8 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+    
+    // @react-native-community/geolocation은 Google Play Services를 사용하지 않으므로 제거 가능
+    // 하지만 다른 라이브러리에서 사용할 수 있으므로 유지
 }
 apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"

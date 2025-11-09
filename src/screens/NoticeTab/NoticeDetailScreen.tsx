@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Linking, Image, useWindowDimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -234,10 +234,8 @@ const TableToWebView = (props: any) => {
           </View>
         ) : (
           <ScrollView 
-            contentContainerStyle={[styles.contentWrap, { paddingBottom: isEditingComment ? 300 : 50 }]} 
+            contentContainerStyle={[styles.contentWrap, { paddingBottom: isEditingComment ? (keyboardHeight > 0 ? keyboardHeight + 91 + 300 : 91 - 20 + 300) : (keyboardHeight > 0 ? keyboardHeight + 91 + 50 : 91 - 20 + 50) }]} 
             showsVerticalScrollIndicator={false}
-            contentInset={{ bottom: keyboardHeight > 0 ? keyboardHeight + 91 : 91 - 20 }}
-            contentInsetAdjustmentBehavior="never"
           >
             <View style={styles.noticeContainer}>
               <View style={styles.headerBlock}>
