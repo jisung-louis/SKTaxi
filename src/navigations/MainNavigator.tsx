@@ -45,6 +45,7 @@ import { useMyParty } from '../hooks/useMyParty';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { useAuth } from '../hooks/useAuth';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -123,7 +124,11 @@ const MainNavigatorContent = () => {
   const [checking, setChecking] = React.useState(true);
   const { hasParty } = useMyParty();
   const { user } = useAuth();
-  
+  const insets = useSafeAreaInsets();
+  const bottomInset = React.useMemo(
+    () => (Platform.OS === 'android' && insets.bottom === 0 ? 16 : insets.bottom),
+    [insets.bottom],
+  );
   // 모든 채팅방 조회 (안읽은 메시지 수 계산용)
   const { chatRooms: allChatRooms } = useChatRooms('all');
   const { chatRooms: customChatRooms } = useChatRooms('custom');
@@ -237,7 +242,7 @@ const MainNavigatorContent = () => {
       screenOptions={{
         tabBarStyle: {
           backgroundColor: COLORS.background.primary,
-          borderTopColor: COLORS.border.default,
+          borderTopColor: COLORS.border.dark,
           backfaceVisibility: 'hidden',
           borderCurve: 'circular',
           height: BOTTOM_TAB_BAR_HEIGHT,

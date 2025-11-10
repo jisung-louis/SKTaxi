@@ -589,7 +589,7 @@ export const ChatDetailScreen = () => {
 
         {/* Input Area */}
         <Animated.View style={inputAnimatedStyle}>
-          <View style={[styles.inputContainer, { paddingBottom: insets.bottom }]}>
+          <View style={[styles.inputContainer, { paddingBottom: Platform.OS === 'ios' ? insets.bottom : 16 }]}>
             <TextInput
               style={styles.input}
               value={message}
@@ -793,10 +793,9 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 12,
     borderTopWidth: 1,
     borderTopColor: COLORS.border.default,
     backgroundColor: COLORS.background.primary,

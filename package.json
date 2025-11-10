@@ -1,6 +1,6 @@
 {
-  "name": "SKTaxi",
-  "version": "0.0.1",
+  "name": "SKURI Taxi",
+  "version": "1.1.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
@@ -40,6 +40,7 @@
     "react-native-draggable-flatlist": "^4.0.3",
     "react-native-gesture-handler": "^2.25.0",
     "react-native-image-picker": "^8.2.1",
+    "react-native-immersive-mode": "^2.0.2",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-maps": "^1.26.18",
     "react-native-modal": "^14.0.0-rc.1",

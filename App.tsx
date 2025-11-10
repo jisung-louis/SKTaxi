@@ -18,6 +18,8 @@ import auth from '@react-native-firebase/auth';
 import { configureGoogleSignin } from './src/config/google';
 import { checkVersionUpdate, VersionModalConfig } from './src/lib/versionCheck';
 import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
+import ImmersiveMode from 'react-native-immersive-mode';
+import { Platform } from 'react-native';
 
 const App = () => {
   const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
@@ -30,6 +32,9 @@ const App = () => {
     // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제
     // const unsub = subscribeFcmTokenRefresh();
     const unsubAuth = auth().onAuthStateChanged(() => {});
+    if (Platform.OS === 'android') {
+      ImmersiveMode.setBarMode('BottomSticky');
+    }
     
     // SKTaxi: 버전 체크 및 강제 업데이트 확인
     checkVersionUpdate().then((result) => {
