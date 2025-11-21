@@ -27,7 +27,7 @@ const removeDuplicates = (arr) => {
   return [...new Set(arr)];
 };
 
-// 2025.11.03 ~ 2025.11.09 주차 학식 메뉴 데이터 (45주차)
+// 2025.11.10 ~ 2025.11.14 주차 학식 메뉴 데이터 (46주차)
 const menuData = {
   // Roll & Noodles (10개, 모든 요일 동일)
   rollNoodles: removeDuplicates([
@@ -38,12 +38,12 @@ const menuData = {
     '꼬치어묵우동',
     '왕새우튀김우동',
     '우동돈까스세트',
-    '로제카레우동',
-    '왕새우튀김로제카레우동',
-    '돈육순두부찌개'
+    '들기름메밀국수',
+    '들기름메밀국수돈까스세트',
+    '돈까스김치나베'
   ]),
 
-  // The bab (8개, 모든 요일 동일)
+  // The bab (7개, 모든 요일 동일)
   theBab: removeDuplicates([
     '참치마요비빔밥ⓣ',
     '마그마참치마요비빔밥ⓣ',
@@ -51,17 +51,16 @@ const menuData = {
     '마그마치킨마요비빔밥ⓣ',
     '제육덮밥ⓣ',
     '목살고추장비빔밥ⓣ',
-    '중식볶음밥ⓣ',
-    '탕수육볶음밥'
+    '소불고기잡채밥ⓣ'
   ]),
 
-  // Fry & Rice (16개, 모든 요일 동일)
+  // Fry & Rice (15개, 모든 요일 동일)
   fryRice: removeDuplicates([
-    '로제크림카레ⓣ',
-    '케네디소시지로제크림카레ⓣ',
-    '왕새우튀김로제크림카레ⓣ',
-    '돈까스로제크림카레ⓣ',
-    '고추가라아게로제크림카레ⓣ',
+    '카레덮밥ⓣ',
+    '돈까스카레동ⓣ',
+    '고추가라아게카레동ⓣ',
+    '왕새우튀김카레동ⓣ',
+    '케네디소시지카레동ⓣ',
     '치즈고구마돈까스',
     '왕돈까스',
     '케네디소시지ⓣ',
@@ -71,8 +70,7 @@ const menuData = {
     '돈까스오므라이스ⓣ',
     '닭강정오므라이스ⓣ',
     '케네디소시지오므라이스ⓣ',
-    '김치가츠동ⓣ',
-    '김치치즈가츠동ⓣ'
+    '목살김치볶음밥ⓣ'
   ])
 };
 
@@ -80,15 +78,15 @@ const addCafeteriaMenu = async () => {
   console.log('학식 메뉴 추가 시작...');
 
   try {
-    // 2025년 11월 3일(월) 기준으로 ISO 주차 계산
-    const weekStartDate = new Date('2025-11-03');
+    // 2025년 11월 10일(월) 기준으로 ISO 주차 계산
+    const weekStartDate = new Date('2025-11-10');
     const weekNumber = getISOWeek(weekStartDate);
     const year = weekStartDate.getFullYear();
     const weekId = `${year}-W${weekNumber}`;
     
     // 학식은 월~금에만 제공되므로 weekEnd는 금요일로 설정
-    const weekStart = '2025-11-03'; // 월요일
-    const weekEnd = '2025-11-07';   // 금요일
+    const weekStart = '2025-11-10'; // 월요일
+    const weekEnd = '2025-11-14';   // 금요일
 
     const cafeteriaMenu = {
       id: weekId,

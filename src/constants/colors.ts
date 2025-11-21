@@ -31,6 +31,7 @@ export const COLORS = {
     primary: '#27272A',   // 주요 경계선
     light: '#9999A2',     // 연한 경계선
     dark: '#48484A',     // 어두운 경계선
+    moreDark: '#303033', // 더 어두운 경계선
   },
   gray: {
     100: '#F7FAFC',

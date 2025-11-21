@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { useAuth } from './useAuth';
 import { UserTimetable, Course, TimetableCourse } from '../types/timetable';
@@ -12,6 +12,8 @@ export const useTimetable = (semester: string) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isFirstLoadRef = useRef(true); // 첫 로드인지 추적
+  const lastCourseIdsRef = useRef<string>(''); // 마지막 courses ID 저장
 
   // 수업에 컬러 할당하는 함수
   const assignColorToCourse = useCallback((course: Course, index: number): TimetableCourse => {
@@ -40,18 +42,63 @@ export const useTimetable = (semester: string) => {
     const unsubscribe = onSnapshot(q, 
       async (querySnapshot) => {
         try {
+          // 메타데이터 변경만 있고 실제 데이터 변경이 없으면 무시
+          if (querySnapshot.metadata.hasPendingWrites && !isFirstLoadRef.current) {
+            return; // 로컬 쓰기만 있고 실제 변경이 없으면 무시
+          }
+
           if (!querySnapshot.empty) {
             const timetableData = querySnapshot.docs[0].data() as UserTimetable;
-            setTimetable({
+            const newTimetable = {
               ...timetableData,
               createdAt: (timetableData.createdAt as any)?.toDate?.() || new Date(),
               updatedAt: (timetableData.updatedAt as any)?.toDate?.() || new Date(),
-            });
+            };
             
-            // 시간표의 수업들 로드
-            await loadCourses(timetableData.courses);
+            // courses ID 문자열 생성
+            const newCourseIds = [...newTimetable.courses].sort().join(',');
+            
+            // courses가 실제로 변경되지 않았으면 무시
+            if (!isFirstLoadRef.current && lastCourseIdsRef.current === newCourseIds) {
+              return; // courses가 변경되지 않았으면 아무것도 하지 않음
+            }
+            
+            // courses ID 업데이트
+            lastCourseIdsRef.current = newCourseIds;
+            
+            // 이전 timetable과 비교하여 실제로 변경되었을 때만 업데이트
+            setTimetable(prev => {
+              if (!prev) {
+                // 첫 로드 시 courses 로드
+                isFirstLoadRef.current = false;
+                loadCourses(newTimetable.courses);
+                return newTimetable;
+              }
+              
+              // courses 배열 비교 (참조 비교가 아닌 내용 비교)
+              const prevCourseIds = [...prev.courses].sort().join(',');
+              
+              // courses가 변경되었으면 로드
+              if (prevCourseIds !== newCourseIds) {
+                loadCourses(newTimetable.courses);
+              }
+              
+              // id와 courses가 같으면 이전 객체 반환 (참조 유지)
+              if (prev.id === newTimetable.id && prevCourseIds === newCourseIds) {
+                return prev;
+              }
+              
+              isFirstLoadRef.current = false;
+              return newTimetable;
+            });
           } else {
             // 새 시간표 생성
+            const emptyCourseIds = '';
+            if (!isFirstLoadRef.current && lastCourseIdsRef.current === emptyCourseIds) {
+              return; // 이미 빈 시간표면 무시
+            }
+            
+            lastCourseIdsRef.current = emptyCourseIds;
             const newTimetable: UserTimetable = {
               id: '',
               userId: user.uid,
@@ -60,8 +107,18 @@ export const useTimetable = (semester: string) => {
               createdAt: new Date(),
               updatedAt: new Date(),
             };
-            setTimetable(newTimetable);
-            setCourses([]);
+            setTimetable(prev => {
+              // 이미 빈 시간표면 업데이트하지 않음
+              if (prev && prev.id === '' && prev.courses.length === 0) {
+                return prev;
+              }
+              isFirstLoadRef.current = false;
+              return newTimetable;
+            });
+            setCourses(prev => {
+              if (prev.length === 0) return prev;
+              return [];
+            });
           }
         } catch (err) {
           console.error('Failed to process timetable data:', err);
@@ -80,10 +137,14 @@ export const useTimetable = (semester: string) => {
     return unsubscribe; // 구독 해제 함수 반환
   }, [user, semester]);
 
-  // 수업 데이터 로드
+  // 수업 데이터 로드 (이전 데이터와 비교하여 불필요한 업데이트 방지)
   const loadCourses = useCallback(async (courseIds: string[]) => {
     if (courseIds.length === 0) {
-      setCourses([]);
+      setCourses(prev => {
+        // 이전 배열이 비어있으면 업데이트하지 않음
+        if (prev.length === 0) return prev;
+        return [];
+      });
       return;
     }
 
@@ -123,12 +184,29 @@ export const useTimetable = (semester: string) => {
         assignColorToCourse(course, index)
       );
       
-      setCourses(coursesWithColor);
+      // 이전 courses와 비교하여 실제로 변경되었을 때만 업데이트
+      setCourses(prev => {
+        // 길이가 다르면 변경된 것
+        if (prev.length !== coursesWithColor.length) {
+          return coursesWithColor;
+        }
+        
+        // 각 course의 id를 비교
+        const prevIds = prev.map(c => c.id).sort().join(',');
+        const newIds = coursesWithColor.map(c => c.id).sort().join(',');
+        
+        // id가 같으면 이전 배열 반환 (참조 유지)
+        if (prevIds === newIds) {
+          return prev;
+        }
+        
+        return coursesWithColor;
+      });
     } catch (err: any) {
       console.error('Failed to load courses:', err);
       setError('수업 정보를 불러오는데 실패했습니다.');
     }
-  }, []);
+  }, [assignColorToCourse]);
 
   // 수업 추가 (겹치는 수업 자동 삭제)
   const addCourse = useCallback(async (course: Course) => {
@@ -253,6 +331,10 @@ export const useTimetable = (semester: string) => {
   }, [user, timetable]);
 
   useEffect(() => {
+    // 학기 변경 시 첫 로드 플래그 리셋
+    isFirstLoadRef.current = true;
+    lastCourseIdsRef.current = '';
+    
     const unsubscribe = loadUserTimetable();
     
     // 컴포넌트 언마운트 시 구독 해제

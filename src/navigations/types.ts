@@ -44,6 +44,7 @@ export type HomeStackParamList = {
   CafeteriaDetail: { scrollToCategory?: string };
   AcademicCalendarDetail: undefined;
   TimetableDetail: { mode?: 'edit' };
+  MinecraftDetail: undefined;
 };
 
 export type AuthStackParamList = {

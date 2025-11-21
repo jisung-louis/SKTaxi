@@ -5,7 +5,7 @@ import { getApp } from '@react-native-firebase/app';
 import { ChatRoom } from '../types/firestore';
 import { useAuth } from './useAuth';
 
-export type ChatRoomCategory = 'all' | 'university' | 'department' | 'custom';
+export type ChatRoomCategory = 'all' | 'university' | 'department' | 'game' | 'custom';
 
 // SKTaxi: 채팅방 목록을 실시간으로 구독하는 훅
 export function useChatRooms(category: ChatRoomCategory) {
@@ -43,6 +43,16 @@ export function useChatRooms(category: ChatRoomCategory) {
           collection(db, 'chatRooms'),
           where('type', '==', 'department'),
           where('department', '==', user.department),
+          where('isPublic', '==', true),
+          orderBy('updatedAt', 'desc')
+        );
+        break;
+
+      case 'game':
+        // 게임 채팅방: type이 'game'이고 공개인 것
+        q = query(
+          collection(db, 'chatRooms'),
+          where('type', '==', 'game'),
           where('isPublic', '==', true),
           orderBy('updatedAt', 'desc')
         );

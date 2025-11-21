@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onValueCreated } from 'firebase-functions/v2/database';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
 import https from 'https';
@@ -21,8 +22,11 @@ const fcm = admin.messaging();
 // SKTaxi: FCM 서비스 확인
 console.log('🔍 FCM 서비스 초기화 확인:', !!fcm);
 
+const MINECRAFT_CHAT_ROOM_ID = 'game-minecraft';
+
 // SKTaxi: RSS 파서 설정
 const parser = new Parser({
+
   customFields: {
     item: ['description', 'content:encoded']
   },
@@ -448,9 +452,9 @@ export const onChatRoomMessageCreated = onDocumentCreated('chatRooms/{chatRoomId
       return;
     }
     
-    // 시스템 메시지는 Push 전송하지 않음
-    if (messageData.type === 'system') {
-      console.log('⚠️ 시스템 메시지이므로 알림 전송 스킵');
+    // 시스템 메시지는 기본적으로 Push 전송하지 않지만, 게임 채팅방은 예외
+    if (messageData.type === 'system' && chatRoomData.type !== 'game') {
+      console.log('⚠️ 시스템 메시지이므로 알림 전송 스킵 (game 제외)');
       return;
     }
     
@@ -584,6 +588,85 @@ export const onChatRoomMessageCreated = onDocumentCreated('chatRooms/{chatRoomId
     console.error('스택 트레이스:', error instanceof Error ? error.stack : 'N/A');
   }
 });
+
+// SKTaxi: Minecraft RTDB 메시지를 Firestore로 동기화
+export const syncMinecraftChatMessage = onValueCreated(
+  {
+    ref: 'mc_chat/messages/{messageId}',
+    region: 'asia-southeast1',
+  },
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) {
+      console.log('⚠️ Minecraft 메시지 스냅샷이 없습니다.');
+      return;
+    }
+
+    const payload = snapshot.val() as Record<string, any> | null;
+    if (!payload) {
+      console.log('⚠️ Minecraft 메시지 데이터가 비어 있습니다.');
+      return;
+    }
+
+    const messageId = event.params?.messageId;
+    const chatRoomId = payload.chatRoomId || MINECRAFT_CHAT_ROOM_ID;
+    const text = typeof payload.message === 'string' ? payload.message : '';
+    const senderName = payload.username || '플레이어';
+    const timestampMs = typeof payload.timestamp === 'number' ? payload.timestamp : Date.now();
+    const createdAt = admin.firestore.Timestamp.fromMillis(timestampMs);
+    const direction =
+      payload.direction === 'app_to_mc'
+        ? 'app_to_mc'
+        : payload.direction === 'system'
+          ? 'system'
+          : 'mc_to_app';
+    const appUserId = typeof payload.appUserId === 'string' ? payload.appUserId : null;
+    const senderId = appUserId || `minecraft:${senderName}`;
+    const readBy = appUserId ? [appUserId] : [];
+    const messageType = direction === 'system' ? 'system' : 'text';
+
+    if (!messageId || !chatRoomId) {
+      console.log('⚠️ messageId 또는 chatRoomId가 없어 동기화를 중단합니다.');
+      return;
+    }
+
+    try {
+      const messageRef = db.doc(`chatRooms/${chatRoomId}/messages/${messageId}`);
+      await messageRef.set(
+        {
+          text,
+          senderId,
+          senderName,
+          type: messageType,
+          createdAt,
+          readBy,
+          direction,
+          source: 'minecraft',
+          minecraftUuid: payload.uuid || null,
+          appUserDisplayName: payload.appUserDisplayName || null,
+        },
+        { merge: false }
+      );
+
+      await db.doc(`chatRooms/${chatRoomId}`).set(
+        {
+          lastMessage: {
+            text,
+            senderId,
+            senderName,
+            timestamp: createdAt,
+          },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      console.log(`✅ Minecraft 메시지 동기화 완료: chatRoomId=${chatRoomId}, messageId=${messageId}`);
+    } catch (error) {
+      console.error('❌ Minecraft 메시지 동기화 실패:', error);
+    }
+  }
+);
 
 // SKTaxi: 채팅 메시지 생성 시 알림 (택시 파티용)
 export const onChatMessageCreated = onDocumentCreated('chats/{partyId}/messages/{messageId}', async (event) => {

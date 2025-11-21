@@ -62,6 +62,14 @@ const DEPARTMENT_OPTIONS = [
   '파이데이아학부',
 ];
 
+const GAME_CHAT_ROOMS = [
+  {
+    id: 'game-minecraft',
+    name: '마인크래프트 채팅방',
+    description: '마인크래프트 유저들을 위한 채팅방입니다.',
+  },
+];
+
 // 성결대 전체 채팅방 생성
 async function createUniversityChatRoom() {
   try {
@@ -169,6 +177,53 @@ async function createDepartmentChatRooms() {
   }
 }
 
+// 게임 채팅방 생성
+async function createGameChatRooms() {
+  try {
+    console.log('🎮 게임 채팅방 생성 시작...');
+
+    const now = admin.firestore.Timestamp.now();
+    let createdCount = 0;
+    let existingCount = 0;
+
+    for (const room of GAME_CHAT_ROOMS) {
+      const docRef = db.collection('chatRooms').doc(room.id);
+      const docSnap = await docRef.get();
+
+      if (docSnap.exists) {
+        console.log(`⚠️  ${room.name}이 이미 존재합니다.`);
+        existingCount++;
+        continue;
+      }
+
+      await docRef.set({
+        name: room.name,
+        type: 'game',
+        description: room.description,
+        createdBy: 'system',
+        members: [],
+        isPublic: true,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      console.log(`   ✅ ${room.name} 생성 완료`);
+      createdCount++;
+    }
+
+    if (createdCount === 0) {
+      console.log(`\n⚠️  생성할 게임 채팅방이 없습니다. (이미 존재: ${existingCount}개)`);
+    } else {
+      console.log(`\n✅ 게임 채팅방 생성 완료!`);
+      console.log(`   - 새로 생성: ${createdCount}개`);
+      console.log(`   - 이미 존재: ${existingCount}개`);
+    }
+  } catch (error) {
+    console.error('❌ 게임 채팅방 생성 실패:', error);
+    throw error;
+  }
+}
+
 // 모든 채팅방 생성 (전체 + 학과)
 async function createAllChatRooms() {
   try {
@@ -177,6 +232,8 @@ async function createAllChatRooms() {
     await createUniversityChatRoom();
     console.log('');
     await createDepartmentChatRooms();
+    console.log('');
+    await createGameChatRooms();
     
     console.log('\n🎉 모든 채팅방 생성 완료!');
     
@@ -235,6 +292,7 @@ async function listChatRooms() {
     const rooms = {
       university: [],
       department: [],
+      game: [],
       custom: [],
     };
     
@@ -254,6 +312,8 @@ async function listChatRooms() {
         rooms.university.push(room);
       } else if (data.type === 'department') {
         rooms.department.push(room);
+      } else if (data.type === 'game') {
+        rooms.game.push(room);
       } else {
         rooms.custom.push(room);
       }
@@ -274,6 +334,15 @@ async function listChatRooms() {
       console.log(`🎓 학과 채팅방 (${rooms.department.length}개):`);
       rooms.department.forEach((room, index) => {
         console.log(`   ${index + 1}. ${room.name} (${room.department})`);
+        console.log(`      멤버: ${room.members}명, 공개: ${room.isPublic ? '예' : '아니오'}`);
+      });
+      console.log('');
+    }
+
+    if (rooms.game.length > 0) {
+      console.log(`🎮 게임 채팅방 (${rooms.game.length}개):`);
+      rooms.game.forEach((room, index) => {
+        console.log(`   ${index + 1}. ${room.name} (${room.id})`);
         console.log(`      멤버: ${room.members}명, 공개: ${room.isPublic ? '예' : '아니오'}`);
       });
       console.log('');
@@ -318,6 +387,8 @@ if (command === 'create-all') {
   createUniversityChatRoom().then(() => process.exit(0));
 } else if (command === 'create-departments') {
   createDepartmentChatRooms().then(() => process.exit(0));
+} else if (command === 'create-games') {
+  createGameChatRooms().then(() => process.exit(0));
 } else if (command === 'list') {
   listChatRooms().then(() => process.exit(0));
 } else if (command === 'migrate') {
@@ -329,6 +400,7 @@ if (command === 'create-all') {
   console.log('  node scripts/manage-chat-rooms.js create-all          # 모든 채팅방 생성');
   console.log('  node scripts/manage-chat-rooms.js create-university     # 전체 채팅방만 생성');
   console.log('  node scripts/manage-chat-rooms.js create-departments    # 학과 채팅방만 생성');
+  console.log('  node scripts/manage-chat-rooms.js create-games          # 게임 채팅방만 생성');
   console.log('  node scripts/manage-chat-rooms.js list                 # 채팅방 목록 조회');
   console.log('  node scripts/manage-chat-rooms.js migrate               # 기존 한글 문서 ID 삭제 후 새로 생성');
   console.log('  node scripts/manage-chat-rooms.js delete-old            # 기존 한글 문서 ID 채팅방만 삭제');

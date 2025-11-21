@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Keyboard, Clipboard, ActionSheetIOS } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Alert, Keyboard, Clipboard, ActionSheetIOS, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIsFocused, useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,6 +15,7 @@ import { useScreenView } from '../../hooks/useScreenView';
 import firestore, { doc, onSnapshot, arrayUnion, writeBatch } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import { createReport } from '../../lib/moderation';
+import { sendMinecraftMessage } from '../../lib/minecraftChat';
 
 type ChatDetailScreenNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'ChatDetail'>;
 type ChatDetailScreenRouteProp = RouteProp<ChatStackParamList, 'ChatDetail'>;
@@ -52,6 +53,16 @@ const formatMessageTime = (timestamp: any) => {
   }
 };
 
+const getMessageMinuteKey = (timestamp: any): number | null => {
+  if (!timestamp) return null;
+  try {
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return Math.floor(date.getTime() / (60 * 1000));
+  } catch {
+    return null;
+  }
+};
+
 export const ChatDetailScreen = () => {
   useScreenView();
   const { user } = useAuth();
@@ -75,6 +86,7 @@ export const ChatDetailScreen = () => {
   const translateY = useSharedValue(0);
   const inputTranslateY = useSharedValue(0);
   
+  const isGameRoom = chatRoom?.type === 'game';
   const { messages, loading: messagesLoading } = useChatMessages(chatRoomId);
 
   useEffect(() => {
@@ -129,8 +141,6 @@ export const ChatDetailScreen = () => {
       }
 
       const readBy = msg.readBy || [];
-      // 보낸 사람은 항상 읽은 것으로 간주하므로, 안읽은 사람 수 계산에서 제외
-      // members에서 보낸 사람과 이미 읽은 사람을 제외한 나머지가 안읽은 사람 수
       const unreadCount = members.filter(memberId => 
         memberId !== msg.senderId && !readBy.includes(memberId)
       ).length;
@@ -322,7 +332,11 @@ export const ChatDetailScreen = () => {
     if (!message.trim() || !chatRoomId) return;
 
     try {
-      await sendChatMessage(chatRoomId, message);
+      if (isGameRoom) {
+        await sendMinecraftMessage(chatRoomId, message);
+      } else {
+        await sendChatMessage(chatRoomId, message);
+      }
       setMessage('');
     } catch (error: any) {
       console.error('메시지 전송 실패:', error);
@@ -438,15 +452,27 @@ export const ChatDetailScreen = () => {
     const prevMessage = index > 0 ? messages[index - 1] : null;
     const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
     
-    // 그룹 시작/끝 판단 (같은 사람, 같은 시간대)
-    const isGroupStart = !prevMessage || 
-      prevMessage.senderId !== item.senderId || 
-      prevMessage.type === 'system';
-    const isGroupEnd = !nextMessage || 
-      nextMessage.senderId !== item.senderId || 
-      nextMessage.type === 'system';
+    const currentMinuteKey = getMessageMinuteKey(item.createdAt);
+    const prevMinuteKey = prevMessage ? getMessageMinuteKey(prevMessage.createdAt) : null;
+    const nextMinuteKey = nextMessage ? getMessageMinuteKey(nextMessage.createdAt) : null;
+
+    // 그룹 시작/끝 판단 (같은 사람, 같은 분 단위 시간)
+    const isGroupStart = !prevMessage ||
+      prevMessage.senderId !== item.senderId ||
+      prevMessage.type === 'system' ||
+      currentMinuteKey === null ||
+      prevMinuteKey === null ||
+      currentMinuteKey !== prevMinuteKey;
+
+    const isGroupEnd = !nextMessage ||
+      nextMessage.senderId !== item.senderId ||
+      nextMessage.type === 'system' ||
+      currentMinuteKey === null ||
+      nextMinuteKey === null ||
+      currentMinuteKey !== nextMinuteKey;
     
     const avatarText = item.senderName?.[0] || '?';
+    const minecraftAvatarUrl = item.minecraftUuid ? `https://minotar.net/avatar/${item.minecraftUuid}/48` : undefined;
 
     return (
       <View style={[
@@ -459,8 +485,18 @@ export const ChatDetailScreen = () => {
           isMyMessage ? styles.myMessageRowContainer : styles.otherMessageRowContainer
         ]}>
           {!isMyMessage && isGroupStart && (
-            <View style={styles.avatarContainer}>
-              <Text style={styles.avatarText}>{avatarText}</Text>
+            <View style={[
+              styles.avatarContainer,
+              {
+                backgroundColor: minecraftAvatarUrl ? 'transparent' : COLORS.accent.green,
+                borderRadius: minecraftAvatarUrl ? 8 : 18,
+              },
+            ]}>
+              {minecraftAvatarUrl ? (
+                <Image source={{ uri: minecraftAvatarUrl }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.avatarText}>{avatarText}</Text>
+              )}
             </View>
           )}
           {!isMyMessage && !isGroupStart && (
@@ -657,10 +693,10 @@ const styles = StyleSheet.create({
   },
   messageList: {
     padding: 16,
-    paddingTop: 12,
+    paddingTop: 0,
   },
   messageWrapper: {
-    marginTop: 12,
+    marginTop: 16,
     width: '100%',
   },
   messageWrapperInGroup: {
@@ -687,11 +723,11 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: COLORS.accent.green,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
     marginTop: 2,
+    overflow: 'hidden',
   },
   avatarPlaceholder: {
     width: 36,
@@ -765,7 +801,7 @@ const styles = StyleSheet.create({
   },
   systemMessageContainer: {
     alignItems: 'center',
-    marginVertical: 8,
+    marginTop: 16,
   },
   systemMessageText: {
     ...TYPOGRAPHY.caption1,
@@ -828,6 +864,10 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: COLORS.background.card,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
   },
 });
 

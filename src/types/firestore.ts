@@ -75,7 +75,7 @@ export type Message = {
 export type ChatRoom = {
   id?: string;
   name: string;
-  type: 'university' | 'department' | 'custom';
+  type: 'university' | 'department' | 'game' | 'custom';
   department?: string; // type이 'department'일 때만
   description?: string;
   createdBy: string; // userId
@@ -101,6 +101,10 @@ export type ChatMessage = {
   type?: 'text' | 'image' | 'system';
   createdAt?: any;
   readBy?: string[]; // userId 배열
+  direction?: 'mc_to_app' | 'app_to_mc' | 'system';
+  source?: 'minecraft' | 'app';
+  minecraftUuid?: string | null;
+  appUserDisplayName?: string | null;
 };
 
 

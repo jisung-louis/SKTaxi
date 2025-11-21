@@ -1,0 +1,62 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    /* -------------------------
+       Minecraft 채팅 메시지
+    -------------------------- */
+    "mc_chat": {
+      "messages": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "$msgId": {
+          ".validate": "newData.hasChildren(['username','message','timestamp','direction'])"
+        }
+      }
+    },
+    /* -------------------------
+       화이트리스트 (JE + BE)
+    -------------------------- */
+    "whitelist": {
+      ".read": "auth != null",
+      /* 화이트리스트 활성화 여부 */
+      "enabled": {
+        ".read": "auth != null",
+        ".write": false
+      },
+      /* JE 플레이어 (uuid 기반) */
+      "players": {
+        ".read": "auth != null",
+        "$uuid": {
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['nickname','addedBy','addedAt','edition'])"
+        }
+      },
+      /* BE 플레이어 (닉네임 기반) */
+      "BEPlayers": {
+        ".read": "auth != null",
+        "$name": {
+          /* [BE] 제거한 닉네임을 key로 사용하므로 '.', '#', '$', '[', ']' 없음 */
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['nickname','storedName','addedBy','addedAt','edition'])"
+        }
+      }
+    },
+    /* -------------------------
+       서버 상태 (플러그인만 write 가능)
+    -------------------------- */
+    "serverStatus": {
+      ".read": "auth != null",
+      ".write": false,
+      "serverUrl": {
+        ".read": "auth != null"
+      },
+      "$key": {
+        // Admin SDK (auth == null)만 write 가능
+        ".write": "auth == null",
+        ".validate": "newData.hasChildren(['online','playerCount','updatedAt'])"
+      }
+    }
+  }
+}
+

@@ -45,10 +45,26 @@ const getChatRoomIcon = (type: ChatRoom['type']) => {
       return 'school-outline';
     case 'department':
       return 'people-outline';
+    case 'game':
+      return 'game-controller-outline';
     case 'custom':
       return 'chatbubbles-outline';
     default:
       return 'chatbubble-outline';
+  }
+};
+
+const getChatRoomColor = (type: ChatRoom['type']) => {
+  switch (type) {
+    case 'university':
+      return COLORS.accent.blue;
+    case 'department':
+      return COLORS.accent.green;
+    case 'game':
+      return COLORS.accent.orange;
+    case 'custom':
+    default:
+      return COLORS.accent.red;
   }
 };
 
@@ -99,20 +115,21 @@ export const ChatListScreen = () => {
   // 일반 사용자인 경우: 각 카테고리별 채팅방 조회
   const { chatRooms: universityRooms, loading: loadingUniversity } = useChatRooms('university');
   const { chatRooms: departmentRooms, loading: loadingDepartment } = useChatRooms('department');
+  const { chatRooms: gameRooms, loading: loadingGame } = useChatRooms('game');
   const { chatRooms: customRooms, loading: loadingCustom } = useChatRooms('custom');
 
   // 관리자일 때는 allRooms 사용, 아닐 때는 기존 로직
   const loading = isAdmin 
     ? loadingAll 
-    : (loadingUniversity || loadingDepartment || loadingCustom);
+    : (loadingUniversity || loadingDepartment || loadingGame || loadingCustom);
 
   // 관리자 모드: 채팅방을 타입별로 정렬 (university > department > custom)
   const allRooms = useMemo(() => {
     if (!isAdmin) return [];
     
     const sorted = [...allRoomsRaw].sort((a, b) => {
-      // 타입 우선순위: university > department > custom
-      const typeOrder = { university: 0, department: 1, custom: 2 };
+      // 타입 우선순위: university > department > game > custom
+      const typeOrder = { university: 0, department: 1, game: 2, custom: 3 };
       const aOrder = typeOrder[a.type] ?? 3;
       const bOrder = typeOrder[b.type] ?? 3;
       
@@ -151,6 +168,17 @@ export const ChatListScreen = () => {
     return rooms;
   }, [isAdmin, universityRooms, departmentRooms]);
 
+  // 게임 채팅방: updatedAt 기준 정렬
+  const sortedGameRooms = useMemo(() => {
+    if (isAdmin) return [];
+
+    return [...gameRooms].sort((a, b) => {
+      const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
+      const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
+      return bTime - aTime;
+    });
+  }, [isAdmin, gameRooms]);
+  
   // 일반 사용자 모드: 커스텀 채팅방을 updatedAt 기준으로 정렬
   const sortedCustomRooms = useMemo(() => {
     if (isAdmin) return [];
@@ -162,6 +190,33 @@ export const ChatListScreen = () => {
     });
   }, [isAdmin, customRooms]);
 
+  const adminRoomsWithSettings = useMemo(() => {
+    if (!isAdmin) return [];
+
+    return allRooms.map(room => ({
+      ...room,
+      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
+    }));
+  }, [isAdmin, allRooms, notificationSettings]);
+
+  const gameRoomsWithSettings = useMemo(() => {
+    if (isAdmin) return [];
+
+    return sortedGameRooms.map(room => ({
+      ...room,
+      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
+    }));
+  }, [isAdmin, sortedGameRooms, notificationSettings]);
+
+  const customRoomsWithSettings = useMemo(() => {
+    if (isAdmin) return [];
+
+    return sortedCustomRooms.map(room => ({
+      ...room,
+      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
+    }));
+  }, [isAdmin, sortedCustomRooms, notificationSettings]);
+
   // 각 채팅방의 알림 설정 구독
   useEffect(() => {
     if (!user?.uid) {
@@ -169,7 +224,7 @@ export const ChatListScreen = () => {
       return;
     }
 
-    const allRoomsToCheck = isAdmin ? allRooms : [...fixedRooms, ...sortedCustomRooms];
+    const allRoomsToCheck = isAdmin ? allRooms : [...fixedRooms, ...sortedGameRooms, ...sortedCustomRooms];
     const unsubscribes: (() => void)[] = [];
 
     allRoomsToCheck.forEach((room) => {
@@ -208,7 +263,7 @@ export const ChatListScreen = () => {
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
-  }, [user?.uid, isAdmin, allRooms, fixedRooms, sortedCustomRooms]);
+  }, [user?.uid, isAdmin, allRooms, fixedRooms, sortedGameRooms, sortedCustomRooms]);
 
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
@@ -243,17 +298,19 @@ export const ChatListScreen = () => {
     
     const displayName = useDisplayName && item.displayName ? item.displayName : item.name;
 
+    const iconColor = getChatRoomColor(item.type);
+
     return (
       <TouchableOpacity
         style={styles.chatRoomCard}
         onPress={() => handleChatRoomPress(item)}
         activeOpacity={0.7}
       >
-        <View style={styles.chatRoomIconContainer}>
+        <View style={[styles.chatRoomIconContainer, { backgroundColor: `${iconColor}20` }]}>
           <Icon 
             name={getChatRoomIcon(item.type)} 
             size={24} 
-            color={COLORS.accent.blue} 
+            color={iconColor} 
           />
         </View>
         
@@ -333,9 +390,25 @@ export const ChatListScreen = () => {
             {renderChatRoomCard({ item: room, useDisplayName: true })}
           </View>
         ))}
-        
+
+        {/* 게임 채팅방 */}
+        {gameRoomsWithSettings.length > 0 && (
+          <View>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>게임 채팅방</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            {gameRoomsWithSettings.map((room) => (
+              <View key={room.id}>
+                {renderChatRoomCard({ item: room })}
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* 구분선 */}
-        {fixedRooms.length > 0 && sortedCustomRooms.length > 0 && (
+        {sortedCustomRooms.length > 0 && (
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
             <Text style={styles.dividerText}>내 채팅방</Text>
@@ -347,8 +420,8 @@ export const ChatListScreen = () => {
   };
 
   const renderEmpty = () => {
-    // 고정 채팅방이 있고 커스텀 채팅방만 없을 때
-    if (fixedRooms.length > 0 && sortedCustomRooms.length === 0) {
+    // 고정 채팅방만 있고 나머지 채팅방이 없을 때
+    if (fixedRooms.length > 0 && sortedGameRooms.length === 0 && sortedCustomRooms.length === 0) {
       return (
         <View style={styles.emptyContainer}>
           <Icon name="chatbubbles-outline" size={64} color={COLORS.text.disabled} />
@@ -372,6 +445,12 @@ export const ChatListScreen = () => {
     );
   };
 
+  const isAdminListEmpty = adminRoomsWithSettings.length === 0;
+  const isNonAdminListEmpty = customRoomsWithSettings.length === 0;
+  const shouldShowEmpty = isAdmin
+    ? isAdminListEmpty
+    : (fixedRooms.length === 0 && sortedGameRooms.length === 0 && isNonAdminListEmpty);
+
   return (
     <SafeAreaView style={styles.container}>
       <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
@@ -381,31 +460,22 @@ export const ChatListScreen = () => {
         </View>
 
         {/* Chat List */}
-        {loading && (isAdmin ? allRooms.length === 0 : (fixedRooms.length === 0 && sortedCustomRooms.length === 0)) ? (
+        {loading && (isAdmin ? allRooms.length === 0 : (fixedRooms.length === 0 && sortedGameRooms.length === 0 && sortedCustomRooms.length === 0)) ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>채팅방을 불러오는 중...</Text>
           </View>
         ) : (
           <FlatList
-            data={isAdmin 
-              ? allRooms.map(room => ({
-                  ...room,
-                  notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-                }))
-              : sortedCustomRooms.map(room => ({
-                  ...room,
-                  notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-                }))
-            }
+            data={isAdmin ? adminRoomsWithSettings : customRoomsWithSettings}
             keyExtractor={(item) => item.id || ''}
             renderItem={renderChatRoomCard}
             ListHeaderComponent={renderListHeader}
             contentContainerStyle={[
               styles.listContent,
-              (isAdmin ? allRooms.length === 0 : (fixedRooms.length === 0 && sortedCustomRooms.length === 0)) && styles.listContentEmpty,
+              shouldShowEmpty && styles.listContentEmpty,
               { paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20 }
             ]}
-            ListEmptyComponent={(isAdmin ? allRooms.length === 0 : fixedRooms.length === 0) ? renderEmpty : null}
+            ListEmptyComponent={shouldShowEmpty ? renderEmpty : null}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
