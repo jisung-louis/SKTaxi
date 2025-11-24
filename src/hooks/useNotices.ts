@@ -19,6 +19,7 @@ export interface Notice {
   contentAttachments: { name: string; downloadUrl: string; previewUrl: string }[];
   likeCount?: number;
   commentCount?: number;
+  viewCount?: number;
 }
 
 export const useNotices = (selectedCategory: string = '전체') => {
@@ -71,6 +72,7 @@ export const useNotices = (selectedCategory: string = '전체') => {
           ...doc.data(),
           likeCount: doc.data().likeCount || 0,
           commentCount: doc.data().commentCount || 0,
+          viewCount: doc.data().viewCount || 0,
         })) as Notice[];
 
         setCategoryCache(prev => ({

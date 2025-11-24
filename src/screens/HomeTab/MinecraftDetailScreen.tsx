@@ -8,12 +8,14 @@ import firestore from '@react-native-firebase/firestore';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { MinecraftServerStatus, MinecraftWhitelistPlayer } from '../../types/minecraft';
+import { useScreenView } from '../../hooks/useScreenView';
 
 type PlayerWithMeta = MinecraftWhitelistPlayer & {
   addedByDisplayName?: string;
 };
 
 export const MinecraftDetailScreen = () => {
+  useScreenView();
   const navigation = useNavigation();
   const [whitelistEnabled, setWhitelistEnabled] = useState<boolean | null>(null);
   const [players, setPlayers] = useState<PlayerWithMeta[]>([]);

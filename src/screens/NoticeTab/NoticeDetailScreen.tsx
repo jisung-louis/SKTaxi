@@ -23,6 +23,7 @@ import UniversalCommentList from '../../components/common/UniversalCommentList';
 import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../hooks/useAuth';
 import { useScreenView } from '../../hooks/useScreenView';
+import { incrementNoticeViewCount } from '../../lib/noticeViews';
 
 export const NoticeDetailScreen = () => {
   useScreenView();
@@ -39,6 +40,7 @@ export const NoticeDetailScreen = () => {
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
   const commentInputRef = useRef<CommentInputRef>(null);
   const [isEditingComment, setIsEditingComment] = useState(false);
+  const hasTrackedViewRef = useRef(false);
 
   // 좋아요 기능
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
@@ -118,6 +120,14 @@ export const NoticeDetailScreen = () => {
     );
 
     return () => unsubscribe();
+  }, [noticeId]);
+
+  useEffect(() => {
+    if (!noticeId || hasTrackedViewRef.current) return;
+    hasTrackedViewRef.current = true;
+    incrementNoticeViewCount(noticeId).catch(() => {
+      hasTrackedViewRef.current = false;
+    });
   }, [noticeId]);
 
   const formattedDate = useMemo(() => {
@@ -260,6 +270,13 @@ const TableToWebView = (props: any) => {
                       <Text style={styles.metaText}>{formattedDate}</Text>
                     </View>
                   )}
+                  <View style={styles.metaDotRow}>
+                    <View style={styles.dot} />
+                    <View style={styles.viewCountRow}>
+                      <Icon name="eye-outline" size={14} color={COLORS.text.secondary} />
+                      <Text style={styles.metaText}>{(notice as any)?.viewCount || 0}회 조회</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
               {!!htmlSource ? (
@@ -481,6 +498,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  viewCountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   dot: {
     width: 4,

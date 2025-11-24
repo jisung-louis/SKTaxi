@@ -92,3 +92,6 @@ Gemfile.lock
 google-services.json
 GoogleService-Info.plist
 serviceAccountKey.json
+
+# Cursor
+.cursor/

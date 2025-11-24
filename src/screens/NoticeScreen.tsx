@@ -185,6 +185,10 @@ export const NoticeScreen = () => {
               <Icon name="chatbubble-outline" size={14} color={COLORS.text.secondary} />
               <Text style={styles.statText}>{notice.commentCount || 0}</Text>
             </View>
+            <View style={styles.statItem}>
+              <Icon name="eye-outline" size={14} color={COLORS.text.secondary} />
+              <Text style={styles.statText}>{notice.viewCount || 0}</Text>
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -671,7 +675,7 @@ const styles = StyleSheet.create({
   noticeStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   statItem: {
     flexDirection: 'row',
