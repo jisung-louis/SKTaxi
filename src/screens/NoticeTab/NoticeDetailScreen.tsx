@@ -24,6 +24,7 @@ import { useComments } from '../../hooks/useComments';
 import { useAuth } from '../../hooks/useAuth';
 import { useScreenView } from '../../hooks/useScreenView';
 import { incrementNoticeViewCount } from '../../lib/noticeViews';
+import { ImageViewer } from '../../components/board/ImageViewer';
 
 export const NoticeDetailScreen = () => {
   useScreenView();
@@ -41,6 +42,11 @@ export const NoticeDetailScreen = () => {
   const commentInputRef = useRef<CommentInputRef>(null);
   const [isEditingComment, setIsEditingComment] = useState(false);
   const hasTrackedViewRef = useRef(false);
+  const inlineImagesRef = useRef<string[]>([]);
+  const [inlineImageUrls, setInlineImageUrls] = useState<string[]>([]);
+  const [inlineImageMeta, setInlineImageMeta] = useState<Record<string, { width: number; height: number }>>({});
+  const [inlineImageViewerVisible, setInlineImageViewerVisible] = useState(false);
+  const [inlineImageSelectedIndex, setInlineImageSelectedIndex] = useState(0);
 
   // 좋아요 기능
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
@@ -87,6 +93,27 @@ export const NoticeDetailScreen = () => {
   };
 
   const comments = rawComments.map(comment => convertComment(comment));
+
+  const handleInlineImageLoaded = useCallback(({ url, width, height }: { url: string; width: number; height: number }) => {
+    if (!url) return;
+    setInlineImageMeta((prev) => (prev[url] ? prev : { ...prev, [url]: { width, height } }));
+    if (!inlineImagesRef.current.includes(url)) {
+      inlineImagesRef.current = [...inlineImagesRef.current, url];
+      setInlineImageUrls(inlineImagesRef.current);
+    }
+  }, []);
+
+  const handleInlineImagePress = useCallback((url: string) => {
+    if (!url) return;
+    let index = inlineImagesRef.current.indexOf(url);
+    if (index === -1) {
+      inlineImagesRef.current = [...inlineImagesRef.current, url];
+      setInlineImageUrls(inlineImagesRef.current);
+      index = inlineImagesRef.current.length - 1;
+    }
+    setInlineImageSelectedIndex(index);
+    setInlineImageViewerVisible(true);
+  }, []);
 
   useEffect(() => {
     if (!noticeId) {
@@ -144,6 +171,16 @@ export const NoticeDetailScreen = () => {
       return '';
     }
   }, [notice]);
+
+  const inlineViewerImages = useMemo(
+    () =>
+      inlineImageUrls.map((url) => ({
+        url,
+        width: inlineImageMeta[url]?.width || width,
+        height: inlineImageMeta[url]?.height || width,
+      })),
+    [inlineImageUrls, inlineImageMeta, width]
+  );
 
   const htmlSource = useMemo(() => {
     let html = (notice as any)?.contentDetail as string | undefined;
@@ -300,7 +337,11 @@ const TableToWebView = (props: any) => {
                         if (href) Linking.openURL(href);
                         return Promise.resolve();
                       }
-                    }
+                    },
+                    img: {
+                      onImagePress: handleInlineImagePress,
+                      onImageLoaded: handleInlineImageLoaded,
+                    } as any,
                   }}
                 />
               ) : !!notice?.content && (
@@ -418,6 +459,14 @@ const TableToWebView = (props: any) => {
             parentId={replyingTo?.commentId}
             onKeyboardHeightChange={setKeyboardHeight}
             onCancelReply={handleCancelReply}
+          />
+        )}
+        {inlineViewerImages.length > 0 && (
+          <ImageViewer
+            visible={inlineImageViewerVisible}
+            images={inlineViewerImages}
+            initialIndex={inlineImageSelectedIndex}
+            onClose={() => setInlineImageViewerVisible(false)}
           />
         )}
     </SafeAreaView>

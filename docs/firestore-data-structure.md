@@ -8,7 +8,7 @@
 
 | 경로 | 설명 | 주요 필드/하위 구조 |
 | --- | --- | --- |
-| `users/{uid}` | 사용자 기본 프로필, 온보딩 상태, 디바이스 토큰, 버전 정보, 계좌/마인크래프트 정보 등 모든 계정 메타데이터를 저장 | `email`, `displayName`, `studentId`, `department`, `photoURL`, `linkedAccounts[]`, `account.{bankName,accountNumber,accountHolder,hideName}`, `onboarding.permissionsComplete`, `fcmTokens[]`, `joinedAt`, `updatedAt`, `currentVersion`, `lastLogin`, `minecraftAccount.accounts[]`(닉네임·UUID·edition·whoseFriend·linkedAt) |
+| `users/{uid}` | 사용자 기본 프로필, 온보딩 상태, 디바이스 토큰, 버전 정보, 계좌/마인크래프트 정보 등 모든 계정 메타데이터를 저장 | `email`, `displayName`, `studentId`, `department`, `photoURL`, `linkedAccounts[]`, `account.{bankName,accountNumber,accountHolder,hideName}`, `onboarding.permissionsComplete`, `fcmTokens[]`, `joinedAt`, `updatedAt`, `currentVersion`, `lastLogin`, `lastLoginOS`, `minecraftAccount.accounts[]`(닉네임·UUID·edition·whoseFriend·linkedAt) |
 | `users/{uid}.notificationSettings` | 알림 토글 묶음 | `allNotifications`, `partyNotifications`, `noticeNotifications`, `boardLikeNotifications`, `boardCommentNotifications`, `systemNotifications`, `marketingNotifications`, (선택) `noticeNotificationsDetail.{카테고리}` |
 | `users/{uid}/chatRoomNotifications/{chatRoomId}` | 공개 채팅방별 mute 상태 | `enabled` (기본 true) |
 | `userNotifications/{uid}/notifications/{notificationId}` | 클라우드 함수/앱에서 발송하는 사용자별 알림 인박스 | `type`, `title`, `message`, `data`, `isRead`, `readAt`, `createdAt` |

@@ -1,5 +1,26 @@
-import React, { useState, useEffect, useMemo } from 'react';
+const NoticeImage = ({
+  uri,
+  ratio,
+  onPress,
+}: {
+  uri: string;
+  ratio?: number;
+  onPress?: () => void;
+}) => (
+  <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+    <Image
+      source={{ uri }}
+      style={[
+        styles.noticeImage,
+        ratio ? { aspectRatio: ratio } : { height: WINDOW_WIDTH - 40 },
+      ]}
+      resizeMode="cover"
+    />
+  </TouchableOpacity>
+);
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking, Image, Dimensions } from 'react-native';
+import { ImageViewer } from '../../../components/board/ImageViewer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -13,7 +34,6 @@ import { ko } from 'date-fns/locale';
 import { useScreenView } from '../../../hooks/useScreenView';
 
 const WINDOW_WIDTH = Dimensions.get('window').width;
-const WINDOW_HEIGHT = Dimensions.get('window').height;
 
 interface AppNotice {
   id: string;
@@ -23,7 +43,7 @@ interface AppNotice {
   priority: 'urgent' | 'normal' | 'info';
   publishedAt: Date;
   updatedAt?: Date;
-  imageUrl?: string;
+  imageUrls?: string[];
   actionUrl?: string;
 }
 
@@ -55,6 +75,11 @@ export const AppNoticeDetailScreen = () => {
   const [notice, setNotice] = useState<AppNotice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageRatios, setImageRatios] = useState<Record<string, number>>({});
+  const [imageMetadata, setImageMetadata] = useState<Record<string, { width: number; height: number }>>({});
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
 
   const isEdited = useMemo(() => {
     return notice?.updatedAt && notice?.updatedAt > notice?.publishedAt;
@@ -76,12 +101,30 @@ export const AppNoticeDetailScreen = () => {
           setError('공지사항을 찾을 수 없습니다.');
         } else {
           const data = noticeDoc.data();
+          const parsedImageUrls = Array.isArray(data?.imageUrls) ? data.imageUrls.filter(Boolean) : [];
+
           setNotice({
             id: noticeDoc.id,
             ...data,
+            imageUrls: parsedImageUrls,
             publishedAt: data?.publishedAt?.toDate() || new Date(),
             updatedAt: data?.updatedAt ? data?.updatedAt.toDate?.() || new Date(data?.updatedAt) : undefined,
           } as AppNotice);
+
+          if (parsedImageUrls.length) {
+            parsedImageUrls.forEach((url: string) => {
+              Image.getSize(
+                url,
+                (width, height) => {
+                  if (width > 0 && height > 0) {
+                    setImageRatios((prev) => ({ ...prev, [url]: width / height }));
+                    setImageMetadata((prev) => ({ ...prev, [url]: { width, height } }));
+                  }
+                },
+                () => {}
+              );
+            });
+          }
         }
       } catch (err) {
         console.error('공지사항 로드 실패:', err);
@@ -157,17 +200,58 @@ export const AppNoticeDetailScreen = () => {
         </View>
 
         {/* 이미지 (있는 경우) */}
-        {notice.imageUrl && (
-          <View style={styles.imageSection}>
-            <Image
-              source={
-                { uri: notice.imageUrl }
-              }
-              style={styles.noticeImage}
-              resizeMode="cover"
-            />
+        {notice.imageUrls?.length ? (
+          <View style={styles.carouselContainer}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onScroll={(event) => {
+                const index = Math.round(event.nativeEvent.contentOffset.x / WINDOW_WIDTH);
+                setCurrentImageIndex(index);
+              }}
+              scrollEventThrottle={16}
+            >
+              {notice.imageUrls.map((url, idx) => (
+                <View key={url} style={{ width: WINDOW_WIDTH - 40 }}>
+                  <NoticeImage
+                    uri={url}
+                    ratio={imageRatios[url]}
+                    onPress={() => {
+                      setSelectedImageIndex(idx);
+                      setImageViewerVisible(true);
+                    }}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+            {notice.imageUrls.length > 1 && (
+              <View style={styles.pagination}>
+                {notice.imageUrls.map((_, idx) => (
+                  <View
+                    key={`${idx}`}
+                    style={[
+                      styles.dot,
+                      idx === currentImageIndex && styles.dotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+            {notice.imageUrls && (
+              <ImageViewer
+                visible={imageViewerVisible}
+                images={notice.imageUrls.map((url) => ({
+                  url,
+                  width: imageMetadata[url]?.width || WINDOW_WIDTH,
+                  height: imageMetadata[url]?.height || WINDOW_WIDTH,
+                }))}
+                initialIndex={selectedImageIndex}
+                onClose={() => setImageViewerVisible(false)}
+              />
+            )}
           </View>
-        )}
+        ) : null}
 
         {/* 본문 내용 */}
         <View style={styles.contentSection}>
@@ -273,18 +357,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 32,
   },
-  imageSection: {
+  carouselContainer: {
     marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: COLORS.background.secondary,
-    width: '100%',
-    height: WINDOW_WIDTH,
   },
   noticeImage: {
     width: '100%',
-    height: WINDOW_WIDTH,
+    borderRadius: 12,
     backgroundColor: COLORS.background.secondary,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.border.default,
+  },
+  dotActive: {
+    backgroundColor: COLORS.accent.blue,
   },
   contentSection: {
     backgroundColor: COLORS.background.card,

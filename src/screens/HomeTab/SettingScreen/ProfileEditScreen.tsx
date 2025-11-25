@@ -12,6 +12,7 @@ import { useScreenView } from '../../../hooks/useScreenView';
 import { setUserProperties } from '../../../lib/analytics';
 import { Dropdown } from '../../../components/common/Dropdown';
 import { DEPARTMENT_OPTIONS } from '../../../constants/constants';
+import { leaveDepartmentRoom } from '../../../utils/chatRoomUtils';
 
 export const ProfileEditScreen = () => {
   useScreenView();
@@ -21,6 +22,7 @@ export const ProfileEditScreen = () => {
   const [displayName, setDisplayName] = useState('');
   const [studentId, setStudentId] = useState('');
   const [department, setDepartment] = useState('');
+  const [previousDepartment, setPreviousDepartment] = useState(''); // SKTaxi: 학과 변경 전 값 저장
   const [fetching, setFetching] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; studentId?: string } | null>(null);
@@ -36,7 +38,9 @@ export const ProfileEditScreen = () => {
         if (cancelled) return;
         setDisplayName(data?.displayName || user.displayName || '');
         setStudentId(data?.studentId || '');
-        setDepartment(data?.department || '');
+        const initialDepartment = data?.department || '';
+        setDepartment(initialDepartment);
+        setPreviousDepartment(initialDepartment); // SKTaxi: 초기 학과 값 저장
       } catch {}
       finally {
         if (!cancelled) setFetching(false);
@@ -70,20 +74,33 @@ export const ProfileEditScreen = () => {
     }
     try {
       setSaving(true);
+      
+      const newDepartment = department.trim();
+      const oldDepartment = previousDepartment.trim();
+      
+      // SKTaxi: 학과가 변경된 경우 기존 학과 채팅방에서 탈퇴
+      if (oldDepartment && oldDepartment !== newDepartment) {
+        await leaveDepartmentRoom(oldDepartment, user.uid);
+      }
+      
       // Firestore 업데이트
       await firestore().collection('users').doc(user.uid).set({
         displayName: displayName.trim(),
         studentId: studentId.trim(),
-        department: department.trim(),
+        department: newDepartment,
       }, { merge: true });
+      
       // Auth 표시 이름도 업데이트(옵션)
       try { await user.updateProfile({ displayName: displayName.trim() }); } catch {}
       
       // Analytics: 사용자 속성 업데이트
       await setUserProperties({
         display_name: displayName.trim(),
-        department: department.trim() || '',
+        department: newDepartment || '',
       });
+      
+      // SKTaxi: 저장 성공 시 previousDepartment 업데이트
+      setPreviousDepartment(newDepartment);
       
       Alert.alert('완료', '프로필이 저장되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
     } catch (e) {

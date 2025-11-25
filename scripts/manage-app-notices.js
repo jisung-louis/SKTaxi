@@ -51,8 +51,22 @@ function loadJson(filePath) {
   return JSON.parse(raw);
 }
 
+function normalizeImageUrls(input) {
+  if (!input) return [];
+  if (Array.isArray(input)) return input.filter(Boolean);
+  // 쉼표로 구분된 문자열 허용
+  if (typeof input === 'string') {
+    return input
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 function buildNoticeFromArgs(args) {
   const now = admin.firestore.Timestamp.fromDate(new Date());
+  const imageUrls = normalizeImageUrls(args.imageUrls || args.imageUrl);
   return {
     title: args.title || '제목 없음',
     content: args.content || '',
@@ -60,13 +74,32 @@ function buildNoticeFromArgs(args) {
     priority: args.priority || 'normal',
     publishedAt: args.publishedAt ? admin.firestore.Timestamp.fromDate(new Date(args.publishedAt)) : now,
     updatedAt: now,
-    imageUrl: args.imageUrl || null,
+    imageUrls,
     actionUrl: args.actionUrl || null,
   };
 }
 
 async function createNotice(args) {
-  const data = args.file ? loadJson(args.file) : buildNoticeFromArgs(args);
+  const data = args.file
+    ? (() => {
+        const raw = loadJson(args.file);
+        const normalized = {
+          ...raw,
+          imageUrls: normalizeImageUrls(raw.imageUrls || raw.imageUrl),
+          actionUrl: raw.actionUrl || null,
+        };
+        if (normalized.publishedAt) {
+          normalized.publishedAt = normalized.publishedAt.toDate
+            ? normalized.publishedAt
+            : admin.firestore.Timestamp.fromDate(new Date(normalized.publishedAt));
+        } else {
+          normalized.publishedAt = admin.firestore.Timestamp.fromDate(new Date());
+        }
+        normalized.updatedAt = admin.firestore.Timestamp.fromDate(new Date());
+        delete normalized.imageUrl;
+        return normalized;
+      })()
+    : buildNoticeFromArgs(args);
   // 필수 필드 보정
   if (!data.title) data.title = '제목 없음';
   if (!data.publishedAt) data.publishedAt = admin.firestore.Timestamp.fromDate(new Date());
@@ -85,19 +118,26 @@ async function updateNotice(args) {
   if (args.file) {
     data = loadJson(args.file);
   } else {
-    const keys = ['title', 'content', 'category', 'priority', 'imageUrl', 'actionUrl', 'publishedAt'];
+    const keys = ['title', 'content', 'category', 'priority', 'imageUrls', 'imageUrl', 'actionUrl', 'publishedAt'];
     for (const k of keys) {
       if (args[k] !== undefined) data[k] = args[k];
     }
     if (data.publishedAt) {
       data.publishedAt = admin.firestore.Timestamp.fromDate(new Date(data.publishedAt));
     }
+    if (data.imageUrl && !data.imageUrls) {
+      data.imageUrls = normalizeImageUrls(data.imageUrl);
+      delete data.imageUrl;
+    }
+    if (data.imageUrls) {
+      data.imageUrls = normalizeImageUrls(data.imageUrls);
+    }
   }
 
   // 항상 updatedAt 갱신
   data.updatedAt = admin.firestore.Timestamp.fromDate(new Date());
 
-  if (Object.keys(data).length === 0) {
+  if (Object.keys(data).length === 1 && data.updatedAt) {
     console.error('❌ 업데이트할 필드가 없습니다');
     process.exit(1);
   }

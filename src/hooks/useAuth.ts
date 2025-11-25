@@ -7,6 +7,7 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
+import { Platform } from 'react-native';
 import { setUserId } from '../lib/analytics';
 
 export const useAuth = () => {
@@ -38,6 +39,7 @@ export const useAuth = () => {
           firestore().collection('users').doc(firebaseUser.uid).update({
             lastLogin: firestore.FieldValue.serverTimestamp(),
             currentVersion: currentVersion,
+            lastLoginOS: Platform.OS,
           }).catch((e) => {
             console.warn('자동 로그인 정보 업데이트 실패:', e);
           });
@@ -178,8 +180,9 @@ export const useAuth = () => {
         await firestore().collection('users').doc(fbUser.uid).update({
           lastLogin: firestore.FieldValue.serverTimestamp(),
           currentVersion: currentVersion,
+          lastLoginOS: Platform.OS,
         });
-        console.log('✅ 로그인 정보 업데이트 완료:', { lastLogin: 'now', currentVersion });
+        console.log('✅ 로그인 정보 업데이트 완료:', { lastLogin: 'now', currentVersion, lastLoginOS: Platform.OS });
       } catch (e) {
         console.warn('로그인 정보 업데이트 실패:', e);
         // 로그인 정보 업데이트 실패해도 로그인은 계속 진행
