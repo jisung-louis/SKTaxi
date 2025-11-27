@@ -27,7 +27,7 @@ const removeDuplicates = (arr) => {
   return [...new Set(arr)];
 };
 
-// 2025.11.10 ~ 2025.11.14 주차 학식 메뉴 데이터 (46주차)
+// 2025.11.24 ~ 2025.11.28 주차 학식 메뉴 데이터 (48주차)
 const menuData = {
   // Roll & Noodles (10개, 모든 요일 동일)
   rollNoodles: removeDuplicates([
@@ -40,7 +40,7 @@ const menuData = {
     '우동돈까스세트',
     '들기름메밀국수',
     '들기름메밀국수돈까스세트',
-    '돈까스김치나베'
+    '스팸치즈순두부찌개'
   ]),
 
   // The bab (7개, 모든 요일 동일)
@@ -51,7 +51,7 @@ const menuData = {
     '마그마치킨마요비빔밥ⓣ',
     '제육덮밥ⓣ',
     '목살고추장비빔밥ⓣ',
-    '소불고기잡채밥ⓣ'
+    '찜닭덮밥ⓣ'
   ]),
 
   // Fry & Rice (15개, 모든 요일 동일)
@@ -70,7 +70,7 @@ const menuData = {
     '돈까스오므라이스ⓣ',
     '닭강정오므라이스ⓣ',
     '케네디소시지오므라이스ⓣ',
-    '목살김치볶음밥ⓣ'
+    '봉골레파스타'
   ])
 };
 
@@ -78,15 +78,15 @@ const addCafeteriaMenu = async () => {
   console.log('학식 메뉴 추가 시작...');
 
   try {
-    // 2025년 11월 10일(월) 기준으로 ISO 주차 계산
-    const weekStartDate = new Date('2025-11-10');
+    // 2025년 11월 24일(월) 기준으로 ISO 주차 계산
+    const weekStartDate = new Date('2025-11-24');
     const weekNumber = getISOWeek(weekStartDate);
     const year = weekStartDate.getFullYear();
     const weekId = `${year}-W${weekNumber}`;
     
     // 학식은 월~금에만 제공되므로 weekEnd는 금요일로 설정
-    const weekStart = '2025-11-10'; // 월요일
-    const weekEnd = '2025-11-14';   // 금요일
+    const weekStart = '2025-11-24'; // 월요일
+    const weekEnd = '2025-11-28';   // 금요일
 
     const cafeteriaMenu = {
       id: weekId,

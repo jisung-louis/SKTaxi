@@ -2,13 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 앱 버전체크용 공개 읽기 허용 (앱 첫 실행 전에 로그인 전 단계에서 필요)
+
+    // qr_logs: 익명 쓰기만 허용
+    match /qr_logs/{docId} {
+      allow create: if true;
+      allow read: if false;
+      allow update, delete: if false;
+    }
+
+    // 앱 버전체크
     match /appVersion/{platform} {
-      allow read: if true; // 누구나 읽기 허용
-      // 쓰기는 Admin SDK(서버/스크립트) 사용을 권장하며, 클라이언트에서의 쓰기는 금지
+      allow read: if true;
       allow write: if false;
     }
 
+    // 기본 규칙
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
