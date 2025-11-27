@@ -1,3 +1,83 @@
+diff --git a/node_modules/react-native-maps/android/.project b/node_modules/react-native-maps/android/.project
+new file mode 100644
+index 0000000..580124c
+--- /dev/null
++++ b/node_modules/react-native-maps/android/.project
+@@ -0,0 +1,34 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<projectDescription>
++	<name>react-native-maps</name>
++	<comment>Project react-native-maps created by Buildship.</comment>
++	<projects>
++	</projects>
++	<buildSpec>
++		<buildCommand>
++			<name>org.eclipse.jdt.core.javabuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.eclipse.buildship.core.gradleprojectbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++	</buildSpec>
++	<natures>
++		<nature>org.eclipse.jdt.core.javanature</nature>
++		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
++	</natures>
++	<filteredResources>
++		<filter>
++			<id>1760877223778</id>
++			<name></name>
++			<type>30</type>
++			<matcher>
++				<id>org.eclipse.core.resources.regexFilterMatcher</id>
++				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
++			</matcher>
++		</filter>
++	</filteredResources>
++</projectDescription>
+diff --git a/node_modules/react-native-maps/android/bin/.project b/node_modules/react-native-maps/android/bin/.project
+new file mode 100644
+index 0000000..580124c
+--- /dev/null
++++ b/node_modules/react-native-maps/android/bin/.project
+@@ -0,0 +1,34 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<projectDescription>
++	<name>react-native-maps</name>
++	<comment>Project react-native-maps created by Buildship.</comment>
++	<projects>
++	</projects>
++	<buildSpec>
++		<buildCommand>
++			<name>org.eclipse.jdt.core.javabuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++		<buildCommand>
++			<name>org.eclipse.buildship.core.gradleprojectbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++	</buildSpec>
++	<natures>
++		<nature>org.eclipse.jdt.core.javanature</nature>
++		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
++	</natures>
++	<filteredResources>
++		<filter>
++			<id>1760877223778</id>
++			<name></name>
++			<type>30</type>
++			<matcher>
++				<id>org.eclipse.core.resources.regexFilterMatcher</id>
++				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
++			</matcher>
++		</filter>
++	</filteredResources>
++</projectDescription>
 diff --git a/node_modules/react-native-maps/android/bin/build.gradle b/node_modules/react-native-maps/android/bin/build.gradle
 new file mode 100644
 index 0000000..0070417
@@ -6844,7 +6924,7 @@ index 0000000..d2c0329
 +} // namespace facebook::react
 \ No newline at end of file
 diff --git a/node_modules/react-native-maps/android/src/main/jni/CMakeLists.txt b/node_modules/react-native-maps/android/src/main/jni/CMakeLists.txt
-index ddb85f5..1895da4 100644
+index ddb85f5..020e2f2 100644
 --- a/node_modules/react-native-maps/android/src/main/jni/CMakeLists.txt
 +++ b/node_modules/react-native-maps/android/src/main/jni/CMakeLists.txt
 @@ -25,4 +25,15 @@ target_link_libraries(
@@ -6852,8 +6932,8 @@ index ddb85f5..1895da4 100644
  )
  
 -target_compile_reactnative_options(react_codegen_RNMapsSpecs PRIVATE)
-+# Apply React Native compile options manually
-+target_compile_options(react_codegen_RNMapsSpecs
++target_compile_options(
++  react_codegen_RNMapsSpecs
 +  PRIVATE
 +    -Wall
 +    -Werror
@@ -6861,6 +6941,6 @@ index ddb85f5..1895da4 100644
 +    -fexceptions
 +    -frtti
 +    -std=c++20
-+    -DLOG_TAG=\"ReactNative\"
++    -DLOG_TAG="ReactNative"
 +    -DFOLLY_NO_CONFIG=1
 +)
