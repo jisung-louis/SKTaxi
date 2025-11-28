@@ -9,6 +9,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useScreenView } from '../../hooks/useScreenView';
 import { getCurrentAppVersion } from '../../lib/versionCheck';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 export const SettingScreen = () => {
   useScreenView();
@@ -45,10 +46,28 @@ export const SettingScreen = () => {
   };
 
   const handleAbout = () => {
-    Linking.openURL('https://jisung-louis.github.io/SKURI-homepage/').catch((err) => {
+    Linking.openURL('https://www.skuri.kr').catch((err) => {
       console.error('웹사이트 열기 실패:', err);
       Alert.alert('오류', '웹사이트를 열 수 없습니다.');
     });
+  };
+
+  const handleCrashTest = () => {
+    Alert.alert(
+      'Crashlytics 테스트',
+      '강제 크래시를 발생시켜 Crashlytics 업로드를 확인할까요?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '강제 크래시',
+          style: 'destructive',
+          onPress: async () => {
+            await crashlytics().log('Manual crash test triggered on SettingScreen');
+            crashlytics().crash();
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -192,7 +211,12 @@ export const SettingScreen = () => {
             
             <View style={styles.divider} />
             
-            <TouchableOpacity style={styles.menuItem} onPress={handleAbout}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={handleAbout}
+              onLongPress={handleCrashTest}
+              delayLongPress={600}
+            >
               <View style={styles.menuLeft}>
                 <View style={styles.iconContainer}>
                   <Icon name="apps" size={20} color={COLORS.text.secondary} />

@@ -1,4 +1,5 @@
 import database from '@react-native-firebase/database';
+import firestore from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
 
@@ -16,15 +17,23 @@ export async function sendMinecraftMessage(chatRoomId: string, text: string): Pr
   }
 
   try {
+    const fallbackDisplayName = '스쿠리 유저';
+    const profileSnap = await firestore(getApp()).collection('users').doc(user.uid).get();
+    const profileData = profileSnap.data();
+    const resolvedDisplayName =
+      typeof profileData?.displayName === 'string' && profileData.displayName.trim().length > 0
+        ? profileData.displayName.trim()
+        : fallbackDisplayName;
+
     const userDoc = await database(getApp())
       .ref(MC_MESSAGES_PATH)
       .push({
-        username: user.displayName || '익명',
+        username: resolvedDisplayName,
         message: trimmed,
         timestamp: Date.now(),
         direction: 'app_to_mc',
         appUserId: user.uid,
-        appUserDisplayName: user.displayName || user.email || '익명',
+        appUserDisplayName: resolvedDisplayName,
         chatRoomId,
       });
 

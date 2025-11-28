@@ -163,6 +163,7 @@ yarn start   # 또는 npm start
 - **Android**
   - Debug/Release 빌드 플로우 및 키스토어 절차는 `docs/android-build-guide.md` 참고
   - `./gradlew assembleRelease` 실행 전 `gradle.properties`에 서명 정보를 설정
+  - **Crashlytics 심볼 업로드**: Play 스토어 제출용으로 릴리즈 번들을 만들 때마다 `./gradlew assembleRelease crashlyticsUploadSymbolFileRelease`를 함께 실행해 ProGuard 맵/심볼을 Crashlytics로 업로드합니다. CI 사용 시에도 동일 명령을 파이프라인에 포함시키세요.
 - **iOS**
   - `ios/` 디렉터리에서 `bundle exec fastlane beta`와 같은 워크플로를 구성할 예정이며, 현재는 Xcode Organizer를 통해 TestFlight 업로드
 - **Cloud Functions**

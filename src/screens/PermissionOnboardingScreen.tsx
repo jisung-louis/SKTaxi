@@ -116,7 +116,7 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
   const handleLocationPermission = async () => {
     setIsLoading(true);
     try {
-      const granted = await requestLocation();
+      await requestLocation();
       // 권한 여부와 관계없이 완료로 애니메이션 전환
       goToStep('complete');
     } catch (error) {

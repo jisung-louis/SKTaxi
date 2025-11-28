@@ -15,6 +15,7 @@ import { CourseSearchProvider } from './src/contexts/CourseSearchContext';
 import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
 import auth from '@react-native-firebase/auth';
+import crashlytics from '@react-native-firebase/crashlytics';
 import { configureGoogleSignin } from './src/config/google';
 import { checkVersionUpdate, VersionModalConfig } from './src/lib/versionCheck';
 import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
@@ -27,6 +28,7 @@ const App = () => {
 
   useEffect(() => {
     configureGoogleSignin();
+    crashlytics().log('App mounted');
     // SKTaxi: 간소화 정책 - 앱 시작 즉시 저장 로직은 제거하고 로그인 성공 시점에서만 저장
     // SKTaxi: 포그라운드 메시지 처리 핸들러는 RootNavigator에서 등록
     // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제

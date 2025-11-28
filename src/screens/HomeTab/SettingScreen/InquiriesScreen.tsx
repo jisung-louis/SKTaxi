@@ -190,7 +190,7 @@ export const InquiriesScreen = () => {
           </Text>
         </View>
         <Text style={[styles.infoText, { ...TYPOGRAPHY.caption2, marginTop: 18, textAlign: 'right' }]}>
-          이메일 문의 : <Text style={{ fontWeight: '600' }}>junjs3341@gmail.com</Text>
+          이메일 문의 : <Text style={{ fontWeight: '600' }}>skuri2025@gmail.com</Text>
         </Text>
       </ScrollView>
     </SafeAreaView>
