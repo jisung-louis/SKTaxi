@@ -68,6 +68,30 @@ export const RootNavigator = () => {
     return stackRoute?.name;
   };
 
+  // SKTaxi: 현재 ChatDetail 화면의 chatRoomId 가져오기
+  const getCurrentChatRoomId = () => {
+    const state = (navigation as any).getState?.();
+    if (!state) return undefined;
+    
+    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
+    if (!mainTabRoute) return undefined;
+    
+    const mainTabState = mainTabRoute.state;
+    if (!mainTabState) return undefined;
+    
+    const tabRoute = mainTabState.routes?.[mainTabState.index];
+    if (!tabRoute || tabRoute.name !== '채팅') return undefined;
+    
+    const stackState = tabRoute.state;
+    if (!stackState) return undefined;
+    
+    const stackRoute = stackState.routes?.[stackState.index];
+    if (stackRoute?.name === 'ChatDetail') {
+      return stackRoute.params?.chatRoomId;
+    }
+    return undefined;
+  };
+
   // SKTaxi: 파티 삭제 알림 핸들러
   const handlePartyDeleted = () => {
     Alert.alert(
@@ -368,7 +392,8 @@ export const RootNavigator = () => {
         handlePartyCreated,
         handleBoardNotificationReceived,
         handleNoticeNotificationReceived,
-        handleChatRoomMessageReceived
+        handleChatRoomMessageReceived,
+        getCurrentChatRoomId
       );
       
       // 백그라운드 알림 처리

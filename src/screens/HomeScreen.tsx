@@ -451,6 +451,9 @@ export const HomeScreen = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+              snapToInterval={232}
+              decelerationRate="fast"
+              snapToAlignment="start"
               ListEmptyComponent={() => 
               <View style={styles.emptyContainer}>
                 <View style={styles.emptyTextContainer}>

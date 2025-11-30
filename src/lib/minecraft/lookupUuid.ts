@@ -24,7 +24,9 @@ export async function lookupMinecraftUuid(nickname: string, edition: MinecraftEd
     }
 
     // 공백을 _로 치환
-    const storedName = trimmed.replace(/\s+/g, '_');
+    const replacedName = trimmed.replace(/\s+/g, '_');
+    // 12글자 이상이면 앞 12글자만 사용
+    const storedName = replacedName.length > 12 ? replacedName.slice(0, 12) : replacedName;
 
     return {
       uuid: `be:${storedName}`, // BE는 UUID 대신 be: 접두사 사용

@@ -252,7 +252,7 @@ export const TaxiScreen = () => {
               longitudeDelta: 0.01,
             }}
             showsUserLocation={isLocationValid}
-            tintColor={COLORS.accent.green}
+            //tintColor={COLORS.accent.green}
             onMapReady={() => { mapOpacity.value = withTiming(1, { duration: 200 }); }}
           />
         </Animated.View>

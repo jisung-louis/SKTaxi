@@ -19,7 +19,8 @@ export function initForegroundMessageHandler(
   onPartyCreated?: (data: { partyId: string; title: string; body: string }) => void,
   onBoardNotificationReceived?: (data: { postId: string; type: string; title: string; body: string }) => void,
   onNoticeNotificationReceived?: (data: { noticeId: string; type: string; title: string; body: string }) => void,
-  onChatRoomMessageReceived?: (data: { chatRoomId: string; senderName: string; messageText: string }) => void
+  onChatRoomMessageReceived?: (data: { chatRoomId: string; senderName: string; messageText: string }) => void,
+  getCurrentChatRoomId?: () => string | undefined
 ) {
   console.log('🔔 포그라운드 메시지 핸들러 등록됨');
   
@@ -89,11 +90,14 @@ export function initForegroundMessageHandler(
       }
     } else if (data.type === 'chat_room_message') {
       console.log('🔔 채팅방 메시지 처리:', data.chatRoomId);
-      // SKTaxi: 현재 화면이 ChatDetail이면 알림 숨김
+      // SKTaxi: 현재 화면이 ChatDetail이고 같은 채팅방이면 알림 숨김
       const currentScreen = getCurrentScreen?.();
       if (currentScreen === 'ChatDetail') {
-        console.log('🔔 현재 ChatDetail 화면이므로 알림 숨김');
-        return;
+        const currentChatRoomId = getCurrentChatRoomId?.();
+        if (currentChatRoomId === data.chatRoomId) {
+          console.log('🔔 현재 ChatDetail 화면이고 같은 채팅방이므로 알림 숨김');
+          return;
+        }
       }
       
       if (onChatRoomMessageReceived && data.chatRoomId && typeof data.chatRoomId === 'string') {

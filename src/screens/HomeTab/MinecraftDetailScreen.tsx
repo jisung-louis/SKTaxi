@@ -158,6 +158,17 @@ export const MinecraftDetailScreen = () => {
       .finally(() => setFetchingUsers(false));
   }, [players, userCache]);
 
+  // 온라인 플레이어 Set 생성 (UUID와 username으로 빠른 조회)
+  const onlinePlayerSet = useMemo(() => {
+    if (!serverStatus?.players) return new Set<string>();
+    const onlineSet = new Set<string>();
+    serverStatus.players.forEach((p) => {
+      if (p.uuid) onlineSet.add(p.uuid);
+      if (p.username) onlineSet.add(p.username);
+    });
+    return onlineSet;
+  }, [serverStatus?.players]);
+
   const sortedPlayers = useMemo(() => {
     // whoseFriend가 없는 플레이어(부모 계정)를 먼저 abc순으로 정렬
     const parentPlayers = players
@@ -351,6 +362,11 @@ export const MinecraftDetailScreen = () => {
                       <View style={styles.playerInfo}>
                         <Text style={styles.playerName}>{p.username}</Text>
                       </View>
+
+                      <View style={styles.onlineBadge}>
+                        <View style={styles.onlineIndicator} />
+                        <Text style={styles.onlineText}>온라인</Text>
+                      </View>
                       {/* <View style={styles.playerMeta}>
                         TODO: 레벨, 현재 체력, 위치(오버월드,네더 등) 표시 예정
                       </View> */}
@@ -400,6 +416,8 @@ export const MinecraftDetailScreen = () => {
           ) : (
             sortedPlayers.map((player) => {
               const avatarUrl = player.uuid && !player.uuid.startsWith('be:') ? player.uuid : '8667ba71b85a4004af54457a9734eed7';
+              // 온라인 여부 확인 (UUID 또는 username으로 매칭)
+              const isOnline = onlinePlayerSet.has(player.uuid) || onlinePlayerSet.has(player.username);
               return (
               <View key={player.uuid} style={styles.playerRow}>
                 <Image 
@@ -416,6 +434,14 @@ export const MinecraftDetailScreen = () => {
                         </Text>
                       </View>
                     )}
+
+                  {isOnline && (
+                    <View style={styles.onlineBadgeSmall}>
+                      <View style={styles.onlineIndicatorSmall} />
+                      <Text style={styles.onlineTextSmall}>온라인</Text>
+                    </View>
+                  )}
+                  {!isOnline && <View style={styles.offlinePlaceholder} />}
                   </View>
                   <Text style={styles.playerMeta}>
                     {player.edition || 'JE'} · {formatDateTime(player.addedAt)}
@@ -633,6 +659,53 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 8,
   },
+  onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: COLORS.accent.green + '20',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.accent.green + '40',
+  },
+  onlineIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: COLORS.accent.green,
+  },
+  onlineText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  onlineBadgeSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: COLORS.accent.green + '20',
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: COLORS.accent.green + '40',
+  },
+  onlineIndicatorSmall: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.accent.green,
+  },
+  onlineTextSmall: {
+    ...TYPOGRAPHY.caption3,
+    color: COLORS.accent.green,
+    fontWeight: '600',
+  },
+  offlinePlaceholder: {
+    width: 0,
+  },
   playerInfo: {
     flex: 1,
   },
@@ -649,18 +722,17 @@ const styles = StyleSheet.create({
   },
   playerTypeBadge: {
     backgroundColor: COLORS.accent.green + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   playerTypeBadgeFriend: {
     backgroundColor: COLORS.accent.blue + '20',
   },
   playerTypeText: {
-    ...TYPOGRAPHY.caption1,
+    ...TYPOGRAPHY.caption3,
     color: COLORS.accent.green,
     fontWeight: '600',
-    fontSize: 10,
   },
   playerTypeTextFriend: {
     color: COLORS.accent.blue,
