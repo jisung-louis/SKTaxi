@@ -24,6 +24,8 @@ class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     // 스플래시 스크린 테마를 AppTheme으로 변경
     setTheme(R.style.AppTheme)
-    super.onCreate(savedInstanceState)
+    // react-native-screens: 프래그먼트 상태 복원 비활성화 (크래시 방지)
+    // https://github.com/software-mansion/react-native-screens/issues/17#issuecomment-424704067
+    super.onCreate(null)
   }
 }

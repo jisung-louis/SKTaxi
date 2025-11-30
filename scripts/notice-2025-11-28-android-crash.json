@@ -1,0 +1,10 @@
+{
+  "title": "안드로이드 튕김 문제에 관한 공지",
+  "content": "안드로이드에서 앱을 실행하면 몇 초만에 튕기는 이슈를 발견했고 패치를 진행했어요.\n\n플레이스토어에서 1.2.2 최신 버전으로 업데이트해주세요.\n\n(현재 앱 버전이 1.2.2라도 플레이스토어에서 업데이트가 가능한지 확인하고 가장 최신 버전을 받아주세요.)\n\n그래도 튕기시는 분이 있다면 skuri2025@gmail.com으로 관련 증상, 기기명, OS 버전 등을 보내주시면 금방 해결하도록 하겠습니다!\n\n제보해주신분께는 커피쿠폰, 문화상품권 등으로 사례해드릴게요.",
+  "category": "service",
+  "priority": "urgent",
+  "imageUrl": null,
+  "actionUrl": "https://play.google.com/store/apps/details?id=com.jisung.sktaxi"
+}
+
+
