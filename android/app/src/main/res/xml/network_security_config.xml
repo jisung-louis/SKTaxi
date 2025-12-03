@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- 기본값: cleartext(HTTP) 금지 -->
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- mc.skuri.kr 에 대해서만 HTTP 허용 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">mc.skuri.kr</domain>
+    </domain-config>
+</network-security-config>
+
+

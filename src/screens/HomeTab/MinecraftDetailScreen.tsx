@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Clipboard, Alert } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -22,6 +23,7 @@ export const MinecraftDetailScreen = () => {
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [serverStatus, setServerStatus] = useState<MinecraftServerStatus | null>(null);
   const [serverUrl, setServerUrl] = useState<string | null>(null);
+  const [mapUri, setMapUri] = useState<string | null>(null);
   const [serverVersion, setServerVersion] = useState<string | null>(null);
   const [fetchingUsers, setFetchingUsers] = useState(false);
   const [userCache, setUserCache] = useState<Record<string, string>>({});
@@ -32,6 +34,7 @@ export const MinecraftDetailScreen = () => {
     const bePlayersRef = database().ref('whitelist/BEPlayers');
     const statusRef = database().ref('serverStatus');
     const serverUrlRef = database().ref('serverStatus/serverUrl');
+    const mapUriRef = database().ref('serverStatus/mapUri');
 
     const handleEnabled = enabledRef.on('value', (snap) => {
       if (snap.exists()) {
@@ -65,6 +68,7 @@ export const MinecraftDetailScreen = () => {
             whoseFriend: record?.whoseFriend,
             addedBy: record?.addedBy || 'unknown',
             addedAt: typeof record?.addedAt === 'number' ? record.addedAt : Date.now(),
+            lastSeenAt: typeof record?.lastSeenAt === 'number' ? record.lastSeenAt : undefined,
             addedByDisplayName: userCache[record?.addedBy || ''],
           };
         });
@@ -86,6 +90,7 @@ export const MinecraftDetailScreen = () => {
             whoseFriend: record?.whoseFriend,
             addedBy: record?.addedBy || 'unknown',
             addedAt: typeof record?.addedAt === 'number' ? record.addedAt : Date.now(),
+            lastSeenAt: typeof record?.lastSeenAt === 'number' ? record.lastSeenAt : undefined,
             addedByDisplayName: userCache[record?.addedBy || ''],
           };
         });
@@ -119,12 +124,21 @@ export const MinecraftDetailScreen = () => {
       }
     });
 
+    const handleMapUri = mapUriRef.on('value', (snap) => {
+      if (snap.exists()) {
+        setMapUri(snap.val() as string);
+      } else {
+        setMapUri(null);
+      }
+    });
+
     return () => {
       enabledRef.off('value', handleEnabled);
       playersRef.off('value', handleJePlayers);
       bePlayersRef.off('value', handleBePlayers);
       statusRef.off('value', handleStatus);
       serverUrlRef.off('value', handleServerUrl);
+      mapUriRef.off('value', handleMapUri);
     };
   }, [userCache]);
 
@@ -397,6 +411,44 @@ export const MinecraftDetailScreen = () => {
         </View>
 
         <View style={styles.card}>
+          <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+            <View style={styles.cardHeaderLeftContainer}>
+              <Icon name="map-outline" size={20} color={COLORS.accent.blue} />
+              <Text style={styles.cardTitle}>서버 지도</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.mapExpandButton}
+              onPress={() => {
+                // 전체 화면 서버 지도 화면으로 이동
+                // HomeStack 안에서 사용되므로 단순 name 네비게이션 사용
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (navigation as any).navigate('MinecraftMapDetail');
+              }}
+            >
+              <Icon name="expand-outline" size={16} color={COLORS.text.secondary} />
+              <Text style={styles.mapExpandButtonText}>크게 보기</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.mapWebViewContainer}>
+            {mapUri && mapUri !== 'null' ? (
+              <WebView
+                source={{ uri: mapUri }}
+                style={styles.mapWebView}
+                // 성능/UX를 위한 기본 설정
+                startInLoadingState
+                javaScriptEnabled
+                domStorageEnabled
+              />
+            ) : (
+              <View style={styles.mapLoadingContainer}>
+                <Icon name="map-outline" size={48} color={COLORS.text.disabled} />
+                <Text style={styles.mapLoadingText}>지도가 준비중이에요{'\n'}조금만 기다려주세요!</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <Icon name="list-circle" size={20} color={COLORS.accent.blue} />
             <Text style={styles.cardTitle}>서버 멤버 목록</Text>
@@ -443,9 +495,19 @@ export const MinecraftDetailScreen = () => {
                   )}
                   {!isOnline && <View style={styles.offlinePlaceholder} />}
                   </View>
-                  <Text style={styles.playerMeta}>
-                    {player.edition || 'JE'} · {formatDateTime(player.addedAt)}
-                  </Text>
+                  <View style={styles.playerMetaRow}>
+                    <Text style={[styles.playerMetaEdition, player.edition === 'BE' ? styles.playerMetaEditionBedrock : styles.playerMetaEditionJava]}>
+                      {player.edition}
+                    </Text>
+                    <View style={styles.playerMetaLastSeenRow}>
+                      <Icon name="time-outline" size={10} color={COLORS.text.secondary} />
+                      <Text style={styles.playerMetaLastSeenText}>
+                        {player.lastSeenAt
+                          ? `최근 접속 : ${formatDateTime(player.lastSeenAt)}`
+                          : '최근 접속 정보 없음'}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
                 <TouchableOpacity
                   style={styles.playerActionButton}
@@ -742,6 +804,31 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     marginTop: 2,
   },
+  playerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  playerMetaEdition: {
+    ...TYPOGRAPHY.caption2,
+    fontWeight: '600',
+  },
+  playerMetaEditionJava: {
+    color: COLORS.accent.orange,
+  },
+  playerMetaEditionBedrock: {
+    color: COLORS.accent.green,
+  },
+  playerMetaLastSeenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  playerMetaLastSeenText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.secondary,
+  },
   playerActionButton: {
     padding: 4,
     marginLeft: 'auto',
@@ -863,6 +950,46 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontWeight: '600',
     flex: 1,
+  },
+  mapExpandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: COLORS.background.tertiary,
+    gap: 4,
+  },
+  mapExpandButtonText: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.text.secondary,
+    fontWeight: '600',
+  },
+  mapWebViewContainer: {
+    marginTop: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    height: 260,
+  },
+  mapWebView: {
+    flex: 1,
+    backgroundColor: COLORS.background.primary,
+  },
+  mapLoadingContainer: {
+    flex: 1,
+    height: 260,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background.card,
+    gap: 12,
+  },
+  mapLoadingText: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    textAlign: 'center',
+    lineHeight: 22,
   },
   playersList: {
     marginTop: 12,

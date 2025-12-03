@@ -38,6 +38,7 @@ import database from '@react-native-firebase/database';
 import { createReport } from '../../lib/moderation';
 import { sendMinecraftMessage } from '../../lib/minecraftChat';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
+import { loadChatSound, playChatSound } from '../../lib/sound/chatSound';
 
 type ChatDetailScreenNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'ChatDetail'>;
 type ChatDetailScreenRouteProp = RouteProp<ChatStackParamList, 'ChatDetail'>;
@@ -93,7 +94,14 @@ export const ChatDetailScreen = () => {
 
   // 메시지 훅 (inverted를 위해 내림차순으로 반환)
   const isGameRoom = chatRoom?.type === 'game';
-  const { messages, loading: messagesLoading, loadingMore, hasMore, loadMore, updateMessageReadBy } = useChatMessages(chatRoomId);
+  // 화면이 포커스될 때만 구독을 활성화하여, 다시 포커스될 때 최신 30개를 다시 불러오도록 함
+  const { messages, loading: messagesLoading, loadingMore, hasMore, loadMore, updateMessageReadBy } =
+    useChatMessages(chatRoomId, isFocused);
+
+  // 채팅 사운드 사전 로드
+  useEffect(() => {
+    loadChatSound();
+  }, []);
 
   // 채팅방 정보 구독
   useEffect(() => {
@@ -352,6 +360,24 @@ export const ChatDetailScreen = () => {
     return () => clearTimeout(timer);
   }, [messages, chatRoomId, user?.uid, hasJoined, isFocused]);
 
+  // 새 메시지 수신 시 인앱 사운드 재생 (상대 메시지에만)
+  useEffect(() => {
+    if (!user?.uid) return;
+    if (!messages.length) return;
+    // 초기 로딩 단계에서는 사운드 재생하지 않음
+    if (!isInitialLoadCompleteRef.current) return;
+
+    const latest = messages[0]; // inverted: 0번이 최신 메시지
+    if (!latest || !latest.senderId) return;
+
+    // 내 메시지는 제외 (전송 시 별도 재생)
+    if (latest.senderId === user.uid) return;
+    // 시스템 메시지는 제외
+    if (latest.type === 'system') return;
+
+    playChatSound();
+  }, [messages.length, user?.uid]);
+
   // 메시지 전송
   const handleSendMessage = async () => {
     if (!message.trim() || !chatRoomId) return;
@@ -363,6 +389,9 @@ export const ChatDetailScreen = () => {
         await sendChatMessage(chatRoomId, message);
       }
       setMessage('');
+
+      // 내 메시지 전송 성공 시 인앱 사운드 재생
+      playChatSound();
     } catch (error: any) {
       console.error('메시지 전송 실패:', error);
       Alert.alert('오류', error.message || '메시지 전송에 실패했습니다.');

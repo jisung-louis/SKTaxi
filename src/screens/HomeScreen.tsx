@@ -531,6 +531,20 @@ export const HomeScreen = () => {
                           Alert.alert('로그인 필요', '계정을 삭제하려면 로그인이 필요해요.');
                           return;
                         }
+
+                        // 내 계정(부모 계정)에 친구 계정이 연결되어 있으면 삭제를 막음
+                        const isParentAccount = !account.whoseFriend;
+                        const hasFriendAccounts = minecraftAccounts.some(
+                          (acc) => !!acc.whoseFriend
+                        );
+                        if (isParentAccount && hasFriendAccounts) {
+                          Alert.alert(
+                            '삭제할 수 없어요',
+                            '이 계정에는 친구 계정이 연결되어 있어요.\n내 마인크래프트 계정을 삭제하려면 먼저 친구 계정들을 삭제해주세요.'
+                          );
+                          return;
+                        }
+
                         Alert.alert(
                           '계정 삭제',
                           `${account.nickname} 계정을 화이트리스트에서 삭제하시겠어요?`,

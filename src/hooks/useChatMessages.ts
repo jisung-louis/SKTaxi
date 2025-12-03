@@ -8,7 +8,8 @@ import { ChatMessage, ChatRoom } from '../types/firestore';
 const MESSAGES_PER_PAGE = 30;
 
 // 채팅방 메시지를 실시간으로 구독하는 훅 (페이징 지원)
-export function useChatMessages(chatRoomId: string | undefined) {
+// enabled가 true일 때만 구독을 활성화하고, false일 때는 구독과 상태를 정리합니다.
+export function useChatMessages(chatRoomId: string | undefined, enabled: boolean = true) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
@@ -192,7 +193,8 @@ export function useChatMessages(chatRoomId: string | undefined) {
   }, [chatRoomId, loadingMore, hasMore]);
 
   useEffect(() => {
-    if (!chatRoomId) {
+    if (!chatRoomId || !enabled) {
+      // 구독 비활성화 또는 채팅방 ID 없음: 상태 초기화 및 구독 해제
       setMessages([]);
       setLoading(false);
       setHasMore(true);
@@ -213,7 +215,7 @@ export function useChatMessages(chatRoomId: string | undefined) {
         realtimeUnsubscribeRef.current = null;
       }
     };
-  }, [chatRoomId, loadInitialMessages]);
+  }, [chatRoomId, enabled, loadInitialMessages]);
 
   // 메시지의 readBy 업데이트 (읽음 처리 후 로컬 상태 업데이트용)
   const updateMessageReadBy = useCallback((messageId: string, userId: string) => {

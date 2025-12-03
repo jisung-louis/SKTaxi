@@ -138,6 +138,17 @@ export async function deleteMinecraftAccount({ uid, uuid }: { uid: string; uuid:
     throw new Error('등록된 계정을 찾을 수 없습니다.');
   }
 
+  // 부모 계정(whoseFriend가 없는 계정)에 친구 계정들이 연결되어 있다면 삭제를 막음
+  const isParentAccount = !accountToDelete.whoseFriend;
+  if (isParentAccount) {
+    const hasFriendAccounts = existingAccounts.some(
+      (acc: MinecraftAccountEntry) => !!acc.whoseFriend
+    );
+    if (hasFriendAccounts) {
+      throw new Error('친구 계정이 등록되어 있어요. 내 계정을 삭제하려면 먼저 친구 계정들을 삭제해주세요.');
+    }
+  }
+
   // RTDB 경로 결정
   let playerRef;
   if (accountToDelete.edition === 'BE') {

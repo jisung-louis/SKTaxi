@@ -11,7 +11,7 @@ import { CAFETERIA_CATEGORIES } from '../../types/cafeteria';
 
 export const CafeteriaSection = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { menu, loading, error, weekDisplayName } = useCafeteriaMenu();
+  const { menu, menuToday, loading, error, weekDisplayName } = useCafeteriaMenu();
 
   const handleViewAll = () => {
     navigation.navigate('CafeteriaDetail');
@@ -38,7 +38,7 @@ export const CafeteriaSection = () => {
     );
   }
 
-  if (error || !menu) {
+  if (error || !menu || !menuToday) {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -74,7 +74,7 @@ export const CafeteriaSection = () => {
 
       <View style={styles.menuPreview}>
         {CAFETERIA_CATEGORIES.map((category) => {
-          const items = menu[category.id as keyof typeof menu] as string[];
+          const items = menuToday[category.id as keyof typeof menuToday] as string[];
           return (
             <TouchableOpacity key={category.id} style={styles.categoryItem} activeOpacity={0.7} onPress={() => handleCategoryPress(category.id)}>
               <View style={styles.categoryHeader}>

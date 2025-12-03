@@ -20,6 +20,7 @@ export type MinecraftWhitelistPlayer = {
   whoseFriend?: string; // 친구 계정인 경우, 부모 계정(첫 번째 계정)의 닉네임
   addedBy: string;
   addedAt: number;
+  lastSeenAt?: number; // 최근 접속 시각 (ms)
 };
 
 export type MinecraftServerPlayer = {

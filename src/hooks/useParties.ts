@@ -12,14 +12,21 @@ export function useParties() {
 
   useEffect(() => {
     // SKTaxi: createdAt 기준 내림차순 정렬로 구독
-    const q = query(collection(firestore(getApp()), 'parties'), orderBy('createdAt', 'desc'));
+    // status가 'ended'인 파티는 목록에서 제외 (소프트 삭제된 파티)
+    const q = query(
+      collection(firestore(getApp()), 'parties'),
+      orderBy('createdAt', 'desc'),
+    );
     const unsubscribe = onSnapshot(
       q,
       (snap: FirebaseFirestoreTypes.QuerySnapshot) => {
-          const next: Party[] = snap.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
-            id: docSnap.id,
-            ...(docSnap.data() as Omit<Party, 'id'>),
-          }));
+          const next: Party[] = snap.docs
+            .map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
+              id: docSnap.id,
+              ...(docSnap.data() as Omit<Party, 'id'>),
+            }))
+            // ended 상태(소프트 삭제된 파티)는 클라이언트 목록에서 제외
+            .filter((party) => party.status !== 'ended');
           setParties(next);
           setLoading(false);
       },

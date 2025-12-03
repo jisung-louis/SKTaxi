@@ -9,7 +9,14 @@ export type Party = {
   members: string[]; // uid list (leader 포함)
   tags?: string[];
   detail?: string;
-  status: 'open' | 'closed' | 'arrived';
+  // SKTaxi: 파티 상태
+  // open: 모집 중, closed: 모집 마감, arrived: 도착 후 정산 진행 중, ended: 종료(소프트 삭제)
+  status: 'open' | 'closed' | 'arrived' | 'ended';
+  // SKTaxi: 종료 사유 (status === 'ended' 일 때 설정)
+  // arrived: 도착 후 리더가 동승 종료, cancelled: 리더가 파티를 수동 삭제, timeout: 오래된 파티 자동 정리,
+  // withdrawed: 리더 회원 탈퇴로 인한 종료
+  endReason?: 'arrived' | 'cancelled' | 'timeout' | 'withdrawed';
+  endedAt?: any;
   settlement?: { // SKTaxi: 정산 현황 필드 추가
     status: 'pending' | 'completed';
     perPersonAmount: number;

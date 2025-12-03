@@ -59,6 +59,16 @@
 		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>mc.skuri.kr</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>카메라로 촬영한 사진을 커뮤니티 글/채팅 또는 프로필 사진으로 업로드하는 데 사용합니다. 예: 차량 번호판 인증 사진 첨부</string>

@@ -107,7 +107,7 @@ export const PartyList: React.FC<PartyListProps> = ({
     return R * c;
   };
 
-  // SKTaxi: 정렬된 파티 목록
+  // SKTaxi: 정렬된 파티 목록 (status === 'ended' 인 파티는 상위 훅에서 이미 제외됨)
   const sortedParties = useMemo(() => {
     if (!Array.isArray(parties)) return [] as Party[];
     if (selectedSort === '최신순') {

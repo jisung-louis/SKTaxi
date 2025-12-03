@@ -885,7 +885,16 @@ export const ChatScreen = () => {
                   updatedAt: firestore.FieldValue.serverTimestamp(),
                 });
                 
-                handleLeaderDeleteParty(true);
+                // SKTaxi: 정산 완료 후 파티를 종료 상태로 전환 (하드 삭제 대신 소프트 삭제)
+                await updateDoc(partyRef, {
+                  status: 'ended',
+                  endReason: 'arrived',
+                  endedAt: firestore.FieldValue.serverTimestamp(),
+                  updatedAt: firestore.FieldValue.serverTimestamp(),
+                });
+                setIsPartyEnded(true);
+                setShowMenu(false);
+                await sendEndMessage(partyId, true);
               } catch (error) {
                 console.error('SKTaxi: 정산 상태 업데이트 중 오류:', error);
                 Alert.alert('오류', '정산 상태 업데이트 중 오류가 발생했습니다.');
@@ -912,7 +921,16 @@ export const ChatScreen = () => {
                   updatedAt: firestore.FieldValue.serverTimestamp(),
                 });
                 
-                handleLeaderDeleteParty(true);
+                // SKTaxi: 일부 미정산 인원이 있어도 파티를 종료 상태로 전환
+                await updateDoc(partyRef, {
+                  status: 'ended',
+                  endReason: 'arrived',
+                  endedAt: firestore.FieldValue.serverTimestamp(),
+                  updatedAt: firestore.FieldValue.serverTimestamp(),
+                });
+                setIsPartyEnded(true);
+                setShowMenu(false);
+                await sendEndMessage(partyId, true);
               } catch (error) {
                 console.error('SKTaxi: 정산 상태 업데이트 중 오류:', error);
                 Alert.alert('오류', '정산 상태 업데이트 중 오류가 발생했습니다.');
@@ -1443,7 +1461,7 @@ export const ChatScreen = () => {
     );
   };
 
-  // SKTaxi: 리더 파티 삭제 함수
+  // SKTaxi: 리더 파티 삭제 함수 (소프트 삭제로 변경)
   const handleLeaderDeleteParty = async (isPartyArrived = false) => {
     if (!partyId || !isLeader) return;
 
@@ -1459,11 +1477,18 @@ export const ChatScreen = () => {
       const deletePromises = joinRequestsSnapshot.docs.map((docSnap: any) => deleteDoc(docSnap.ref));
       await Promise.all(deletePromises);
 
-      // SKTaxi: 동승 종료 메시지 전송
+      // SKTaxi: 파티를 하드 삭제 대신 소프트 삭제로 전환
+      const partyRef = doc(collection(firestore(getApp()), 'parties'), partyId);
+      await updateDoc(partyRef, {
+        status: 'ended',
+        endReason: isPartyArrived ? 'arrived' : 'cancelled',
+        endedAt: firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
+      });
 
+      // SKTaxi: 동승 종료 메시지 전송
       setIsPartyEnded(true);
       setShowMenu(false);
-      await deleteDoc(doc(collection(firestore(getApp()), 'parties'), partyId));
       await sendEndMessage(partyId, isPartyArrived);
       if (!isPartyArrived) {
         // SKTaxi: 파티 삭제

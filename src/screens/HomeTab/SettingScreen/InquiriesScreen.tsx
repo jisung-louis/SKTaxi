@@ -67,7 +67,7 @@ export const InquiriesScreen = () => {
         userId: user?.uid || null,
         userEmail: user?.email || null,
         userName: user?.displayName || null,
-        userRealname: user?.realname || null,
+        userRealname: user?.linkedAccounts?.[0]?.displayName || null,
         userStudentId: user?.studentId || null,
         status: 'pending', // pending, in_progress, resolved
         createdAt: new Date(),

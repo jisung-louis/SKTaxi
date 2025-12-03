@@ -70,13 +70,18 @@ async function handlePartyMembership(uid: string): Promise<void> {
     const leaderPartiesSnap = await leaderPartiesRef.get();
     
     if (!leaderPartiesSnap.empty) {
-      // 리더인 파티는 삭제 (또는 다른 멤버에게 리더 위임 가능하지만, 탈퇴 시에는 삭제가 더 안전)
+      // 리더인 파티는 하드 삭제 대신 종료 상태로 전환 (소프트 삭제)
       const batch = firestore().batch();
       leaderPartiesSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
+        batch.update(doc.ref, {
+          status: 'ended',
+          endReason: 'withdrawed',
+          endedAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
       });
       await batch.commit();
-      console.log(`✅ 리더인 파티 ${leaderPartiesSnap.size}개 삭제 완료`);
+      console.log(`✅ 리더인 파티 ${leaderPartiesSnap.size}개 종료(ended) 처리 완료`);
     }
     
     // 2. 멤버인 파티에서 제거

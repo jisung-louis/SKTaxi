@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
-import { WeeklyMenu } from '../types/cafeteria';
+import { WeeklyMenu, getMenuForDate, getAllMenuItems } from '../types/cafeteria';
 
 export const useCafeteriaMenu = () => {
   const [menu, setMenu] = useState<WeeklyMenu | null>(null);
@@ -74,6 +74,49 @@ export const useCafeteriaMenu = () => {
     fetchMenu();
   }, []);
 
+  // 현재 날짜를 YYYY-MM-DD 형식으로 반환
+  const getCurrentDateString = (): string => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // 현재 날짜에 맞는 메뉴를 반환하는 함수
+  const getMenuForToday = () => {
+    if (!menu) return null;
+    
+    const today = getCurrentDateString();
+    
+    return {
+      id: menu.id,
+      weekStart: menu.weekStart,
+      weekEnd: menu.weekEnd,
+      rollNoodles: getMenuForDate(menu.rollNoodles, today),
+      theBab: getMenuForDate(menu.theBab, today),
+      fryRice: getMenuForDate(menu.fryRice, today),
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+    };
+  };
+
+  // 모든 날짜의 메뉴를 합쳐서 반환 (미리보기용)
+  const getAllMenu = () => {
+    if (!menu) return null;
+    
+    return {
+      id: menu.id,
+      weekStart: menu.weekStart,
+      weekEnd: menu.weekEnd,
+      rollNoodles: getAllMenuItems(menu.rollNoodles),
+      theBab: getAllMenuItems(menu.theBab),
+      fryRice: getAllMenuItems(menu.fryRice),
+      createdAt: menu.createdAt,
+      updatedAt: menu.updatedAt,
+    };
+  };
+
   // 주차 정보를 파싱해서 "10월 넷째 주" 형태로 변환 (ISO 주차 기준)
   const getWeekDisplayName = () => {
     if (!menu) return '';
@@ -107,10 +150,13 @@ export const useCafeteriaMenu = () => {
   };
 
   return {
-    menu,
+    menu, // 원본 메뉴 데이터 (날짜별 구조 포함)
+    menuToday: getMenuForToday(), // 오늘 날짜의 메뉴만
+    allMenu: getAllMenu(), // 모든 날짜의 메뉴 합친 것 (미리보기용)
     loading,
     error,
     weekDisplayName: getWeekDisplayName(),
+    currentDate: getCurrentDateString(),
     refetch: () => {
       setLoading(true);
       setError(null);

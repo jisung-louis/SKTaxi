@@ -21,6 +21,7 @@ import { CafeteriaDetailScreen } from '../screens/HomeTab/CafeteriaDetailScreen'
 import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalendarDetailScreen';
 import { TimetableDetailScreen } from '../screens/HomeTab/TimetableDetailScreen';
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
+import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
 import { NoticeScreen } from '../screens/NoticeScreen';
 import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
 import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
@@ -86,6 +87,7 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="AcademicCalendarDetail" component={AcademicCalendarDetailScreen} />
       <HomeStack.Screen name="TimetableDetail" component={TimetableDetailScreen} />
       <HomeStack.Screen name="MinecraftDetail" component={MinecraftDetailScreen} />
+      <HomeStack.Screen name="MinecraftMapDetail" component={MinecraftMapDetailScreen} />
     </HomeStack.Navigator>
   );
 };
@@ -346,7 +348,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
     '택시': ['Recruit', 'MapSearch', 'Chat'],
     '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 
       'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy', 
-      'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail', 'MinecraftDetail'],
+      'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail', 'MinecraftDetail', 'MinecraftMapDetail'],
     '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
     '공지': ['NoticeDetail', 'NoticeDetailWebView'],
     '채팅': ['ChatDetail'],

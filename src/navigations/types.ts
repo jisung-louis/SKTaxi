@@ -45,6 +45,7 @@ export type HomeStackParamList = {
   AcademicCalendarDetail: undefined;
   TimetableDetail: { mode?: 'edit' };
   MinecraftDetail: undefined;
+  MinecraftMapDetail: undefined;
 };
 
 export type AuthStackParamList = {

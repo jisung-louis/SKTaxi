@@ -50,6 +50,7 @@
     "react-native-render-html": "^6.3.4",
     "react-native-safe-area-context": "^5.4.1",
     "react-native-screens": "^4.10.0",
+    "react-native-sound": "^0.13.0",
     "react-native-svg": "^15.14.0",
     "react-native-tracking-transparency": "^0.1.2",
     "react-native-vector-icons": "^10.2.0",

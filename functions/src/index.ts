@@ -1,5 +1,5 @@
 import * as admin from 'firebase-admin';
-import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { onValueCreated } from 'firebase-functions/v2/database';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { setGlobalOptions } from 'firebase-functions/v2/options';
@@ -39,7 +39,7 @@ const parser = new Parser({
   },
 });
 
-// SKTaxi: 4시간마다 12시간 초과 파티 자동 삭제
+// SKTaxi: 4시간마다 12시간 초과 파티 자동 종료(소프트 삭제)
 export const cleanupOldParties = onSchedule({ schedule: 'every 4 hours', timeZone: 'Asia/Seoul' }, async () => {
   try {
     const twelveHoursMs = 12 * 60 * 60 * 1000;
@@ -48,7 +48,7 @@ export const cleanupOldParties = onSchedule({ schedule: 'every 4 hours', timeZon
 
     console.log(`🧹 CleanupOldParties 시작 - 기준시각: ${cutoffDate.toISOString()}`);
 
-    // 페이지네이션으로 반복 삭제 (배치 400개 단위)
+    // 페이지네이션으로 반복 처리 (배치 400개 단위)
     const pageSize = 400;
     let totalDeleted = 0;
 
@@ -63,13 +63,25 @@ export const cleanupOldParties = onSchedule({ schedule: 'every 4 hours', timeZon
       if (snap.empty) break;
 
       const batch = db.batch();
-      snap.docs.forEach((doc) => batch.delete(doc.ref));
+      snap.docs.forEach((docSnap) => {
+        const data = docSnap.data() as any;
+        // 이미 ended 상태인 파티는 건너뜀
+        if (data?.status === 'ended') {
+          return;
+        }
+        batch.update(docSnap.ref, {
+          status: 'ended',
+          endReason: 'timeout',
+          endedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      });
       await batch.commit();
 
       totalDeleted += snap.size;
-      console.log(`🗑️ 삭제 진행: ${snap.size}건 (누적 ${totalDeleted})`);
+      console.log(`🗑️ 파티 종료 진행: ${snap.size}건 처리 (누적 ${totalDeleted})`);
 
-      // 다음 루프에서 추가 삭제 계속
+      // 다음 루프에서 추가 처리 계속
       if (snap.size < pageSize) break;
     }
 
@@ -201,8 +213,13 @@ export const onPartyCreate = onDocumentCreated('parties/{partyId}', async (event
         type: 'party_created',
         partyId,
       },
-      apns: { payload: { aps: { sound: 'default' } } },
-      android: { priority: 'high' as const },
+      apns: { payload: { aps: { sound: 'new_taxi_party.wav' } } },
+      android: {
+        priority: 'high' as const,
+        notification: {
+          sound: 'new_taxi_party',
+        },
+      },
     };
     
     const resp = await fcm.sendEachForMulticast(message as any);
@@ -533,8 +550,13 @@ export const onChatRoomMessageCreated = onDocumentCreated('chatRooms/{chatRoomId
         messageId: event.params.messageId,
         senderId,
       },
-      apns: { payload: { aps: { sound: 'default' } } },
-      android: { priority: 'high' as const },
+      apns: { payload: { aps: { sound: 'new_chat_notification.wav' } } },
+      android: {
+        priority: 'high' as const,
+        notification: {
+          sound: 'new_chat_notification',
+        },
+      },
     };
     
     console.log(`📤 FCM 메시지 전송 시작: ${tokens.length}개 토큰`);
@@ -739,8 +761,13 @@ export const onChatMessageCreated = onDocumentCreated('chats/{partyId}/messages/
         messageId: event.params.messageId,
         senderId,
       },
-      apns: { payload: { aps: { sound: 'default' } } },
-      android: { priority: 'high' as const },
+      apns: { payload: { aps: { sound: 'new_chat_notification.wav' } } },
+      android: {
+        priority: 'high' as const,
+        notification: {
+          sound: 'new_chat_notification',
+        },
+      },
     };
     
     const resp = await fcm.sendEachForMulticast(message as any);
@@ -839,8 +866,13 @@ export const onPartyStatusUpdate = onDocumentUpdated('parties/{partyId}', async 
           type: 'party_closed',
           partyId: String(event.params.partyId || ''),
         },
-        apns: { payload: { aps: { sound: 'default' } } },
-        android: { priority: 'high' as const },
+        apns: { payload: { aps: { sound: 'new_taxi_party.wav' } } },
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'new_taxi_party',
+          },
+        },
       };
     } else if (status === 'arrived') {
       message = {
@@ -853,8 +885,13 @@ export const onPartyStatusUpdate = onDocumentUpdated('parties/{partyId}', async 
           type: 'party_arrived',
           partyId: String(event.params.partyId || ''),
         },
-        apns: { payload: { aps: { sound: 'default' } } },
-        android: { priority: 'high' as const },
+        apns: { payload: { aps: { sound: 'new_taxi_party.wav' } } },
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'new_taxi_party',
+          },
+        },
       };
     } else {
       return;
@@ -1087,13 +1124,25 @@ export const onPartyMemberKicked = onDocumentUpdated('parties/{partyId}', async 
   }
 });
 
-// SKTaxi: 파티 삭제 시 멤버들에게 알림 전송
-export const onPartyDelete = onDocumentDeleted('parties/{partyId}', async (event) => {
-  const snap = event.data;
-  if (!snap) return;
-  const partyData = snap.data() as any;
-  const members = partyData?.members as string[] | undefined;
-  const leaderId = partyData?.leaderId as string | undefined;
+// SKTaxi: 파티가 종료(ended) 상태로 전환될 때 멤버들에게 알림 전송
+export const onPartyEnded = onDocumentUpdated('parties/{partyId}', async (event) => {
+  const change = event.data;
+  if (!change) return;
+
+  const beforeSnap = change.before;
+  const afterSnap = change.after;
+  if (!beforeSnap || !afterSnap) return;
+
+  const beforeData = beforeSnap.data() as any;
+  const afterData = afterSnap.data() as any;
+
+  // status가 ended로 변경된 경우에만 처리
+  if (beforeData?.status === afterData?.status || afterData?.status !== 'ended') {
+    return;
+  }
+
+  const members = afterData?.members as string[] | undefined;
+  const leaderId = afterData?.leaderId as string | undefined;
   const partyId = String(event.params.partyId || '');
   
   if (!members || !Array.isArray(members) || members.length <= 1) return; // 리더만 있으면 알림 불필요
@@ -1141,7 +1190,7 @@ export const onPartyDelete = onDocumentDeleted('parties/{partyId}', async (event
         title: '파티가 해체되었어요',
         message: '리더가 파티를 해체했습니다.',
         data: {
-          partyId: String(event.params.partyId || ''),
+          partyId,
         },
       });
     } catch (error) {
@@ -1550,14 +1599,14 @@ export const onNoticeCreated = onDocumentCreated(
           notification: {
             icon: 'ic_notification',
             color: '#4CAF50',
-            sound: 'default',
+            sound: 'new_notice',
             channelId: 'notice_channel',
           },
         },
         apns: {
           payload: {
             aps: {
-              sound: 'default',
+              sound: 'new_notice.wav',
             },
           },
         },
@@ -1679,8 +1728,13 @@ export const onAppNoticeCreated = onDocumentCreated(
           appNoticeId: String(appNoticeId || ''),
           title: String(appNotice.title || ''),
         },
-        apns: { payload: { aps: { sound: 'default' } } },
-        android: { priority: 'high' as const },
+        apns: { payload: { aps: { sound: 'new_notice.wav' } } },
+        android: {
+          priority: 'high' as const,
+          notification: {
+            sound: 'new_notice',
+          },
+        },
       };
 
       const BATCH = 500;

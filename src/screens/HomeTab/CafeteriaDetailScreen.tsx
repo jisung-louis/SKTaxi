@@ -16,7 +16,7 @@ export const CafeteriaDetailScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
-  const { menu, loading, error, weekDisplayName } = useCafeteriaMenu();
+  const { menu, menuToday, loading, error, weekDisplayName, currentDate } = useCafeteriaMenu();
   
   const scrollViewRef = useRef<ScrollView>(null);
   const [categoryPositions, setCategoryPositions] = useState<{ [key: string]: number }>({});
@@ -74,7 +74,7 @@ export const CafeteriaDetailScreen = () => {
     );
   }
 
-  if (error || !menu) {
+  if (error || !menu || !menuToday) {
     return (
       <SafeAreaView style={styles.container}>
         <PageHeader onBack={() => navigation.goBack()} title="이번 주 학식" />
@@ -86,6 +86,12 @@ export const CafeteriaDetailScreen = () => {
       </SafeAreaView>
     );
   }
+
+  // 날짜 포맷팅 (YYYY-MM-DD -> YYYY년 MM월 DD일)
+  const formatDate = (dateString: string) => {
+    const [year, month, day] = dateString.split('-');
+    return `${year}년 ${parseInt(month)}월 ${parseInt(day)}일`;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -109,11 +115,12 @@ export const CafeteriaDetailScreen = () => {
         <View style={styles.weekInfo}>
           <Text style={styles.weekTitle}>{weekDisplayName} 학식</Text>
           <Text style={styles.weekDate}>{menu.weekStart} ~ {menu.weekEnd}</Text>
+          <Text style={styles.todayDate}>오늘 ({formatDate(currentDate)})</Text>
         </View>
 
         {/* 메뉴 카테고리별 표시 */}
         {CAFETERIA_CATEGORIES.map((category) => {
-          const items = menu[category.id as keyof typeof menu] as string[];
+          const items = menuToday[category.id as keyof typeof menuToday] as string[];
           return (
             <View 
               key={category.id} 
@@ -218,6 +225,12 @@ const styles = StyleSheet.create({
   weekDate: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.secondary,
+    marginBottom: 4,
+  },
+  todayDate: {
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.accent.green,
+    fontWeight: '600',
   },
   categorySection: {
     marginBottom: 24,
