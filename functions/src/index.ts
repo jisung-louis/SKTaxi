@@ -218,6 +218,7 @@ export const onPartyCreate = onDocumentCreated('parties/{partyId}', async (event
         priority: 'high' as const,
         notification: {
           sound: 'new_taxi_party',
+          channelId: 'party_channel',
         },
       },
     };
@@ -555,6 +556,7 @@ export const onChatRoomMessageCreated = onDocumentCreated('chatRooms/{chatRoomId
         priority: 'high' as const,
         notification: {
           sound: 'new_chat_notification',
+          channelId: 'chat_channel',
         },
       },
     };
@@ -766,6 +768,7 @@ export const onChatMessageCreated = onDocumentCreated('chats/{partyId}/messages/
         priority: 'high' as const,
         notification: {
           sound: 'new_chat_notification',
+          channelId: 'chat_channel',
         },
       },
     };
@@ -871,6 +874,7 @@ export const onPartyStatusUpdate = onDocumentUpdated('parties/{partyId}', async 
           priority: 'high' as const,
           notification: {
             sound: 'new_taxi_party',
+            channelId: 'party_channel',
           },
         },
       };
@@ -890,6 +894,7 @@ export const onPartyStatusUpdate = onDocumentUpdated('parties/{partyId}', async 
           priority: 'high' as const,
           notification: {
             sound: 'new_taxi_party',
+            channelId: 'party_channel',
           },
         },
       };
@@ -1733,6 +1738,7 @@ export const onAppNoticeCreated = onDocumentCreated(
           priority: 'high' as const,
           notification: {
             sound: 'new_notice',
+            channelId: 'notice_channel',
           },
         },
       };

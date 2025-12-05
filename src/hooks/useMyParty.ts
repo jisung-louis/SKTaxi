@@ -17,9 +17,11 @@ export function useMyParty() {
     const subscribeForUser = (uid: string) => {
       try {
         // SKTaxi: 안전한 대안 - parties 컬렉션에서 members array-contains 쿼리로 소속 파티 조회
+        // ended(소프트 삭제) 상태 파티는 제외
         const q = query(
           collection(firestore(getApp()), 'parties'),
           where('members', 'array-contains', uid),
+          where('status', 'in', ['open', 'closed', 'arrived']),
           limit(1)
         );
         unsubscribeFirestore = onSnapshot(

@@ -50,6 +50,14 @@
       ]
     },
     {
+      "collectionGroup": "parties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "members", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "joinRequests",
       "queryScope": "COLLECTION",
       "fields": [
