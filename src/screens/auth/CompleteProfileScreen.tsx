@@ -5,7 +5,7 @@ import { Text } from '../../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useAuth } from '../../hooks/useAuth';
-import { updateUserProfile, getUserProfile, createUserProfile } from '../../libs/firebase';
+import { updateUserProfile, getUserProfile, createUserProfile, assertDisplayNameAvailable } from '../../libs/firebase';
 import { useScreenView } from '../../hooks/useScreenView';
 import { Dropdown } from '../../components/common/Dropdown';
 import { DEPARTMENT_OPTIONS } from '../../constants/constants';
@@ -25,7 +25,10 @@ export const CompleteProfileScreen = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user) {
+      Alert.alert('오류', '로그인이 필요합니다. 다시 로그인해 주세요.');
+      return;
+    }
     if (!ageConfirmed || !termsAccepted) {
       Alert.alert('동의 필요', '계정 사용 전에 18세 이상 확인과 이용약관(EULA 포함) 동의가 필요합니다.');
       return;
@@ -40,11 +43,21 @@ export const CompleteProfileScreen = () => {
     }
     try {
       setLoading(true);
+
+      // 닉네임 중복 검사
+      await assertDisplayNameAvailable(displayName);
+
+      // uid 안전 확보 (useAuth와 Firebase Auth가 잠시 엇갈리는 상황 대비)
+      const authUid = user.uid || (user as any)?.uid;
+      if (!authUid) {
+        throw new Error('사용자 정보를 불러오지 못했습니다. 다시 로그인해 주세요.');
+      }
+
       // 사용자 문서가 없으면 먼저 생성
-      const existing = await getUserProfile(user.uid);
+      const existing = await getUserProfile(authUid);
       if (!existing) {
-        await createUserProfile(user.uid, {
-          uid: user.uid,
+        await createUserProfile(authUid, {
+          uid: authUid,
           email: user.email ?? null,
           displayName: displayName.trim(),
           studentId: studentId.trim(),
@@ -59,12 +72,12 @@ export const CompleteProfileScreen = () => {
           },
         } as any);
       }
-      await updateUserProfile(user.uid, {
+      await updateUserProfile(authUid, {
         displayName: displayName.trim(),
         studentId: studentId.trim(),
         department: department.trim(),
       } as any);
-      await updateUserProfile(user.uid, {
+      await updateUserProfile(authUid, {
         agreements: {
           termsAccepted: true,
           ageConfirmed: true,
@@ -82,8 +95,12 @@ export const CompleteProfileScreen = () => {
       
       // 프로필 완료 후 RootNavigator가 자동으로 Main으로 전환함
       // 별도 네비게이션 불필요
-    } catch (e) {
-      Alert.alert('오류', '프로필 저장에 실패했습니다. 다시 시도해주세요.');
+    } catch (e: any) {
+      const message =
+        e?.message && typeof e.message === 'string'
+          ? e.message
+          : '프로필 저장에 실패했습니다. 다시 시도해주세요.';
+      Alert.alert('오류', message);
     } finally {
       setLoading(false);
     }

@@ -53,9 +53,9 @@ export const useCafeteriaMenu = () => {
               id: menuSnap.id,
               weekStart: data.weekStart,
               weekEnd: data.weekEnd,
-              rollNoodles: data.rollNoodles || [],
-              theBab: data.theBab || [],
-              fryRice: data.fryRice || [],
+              rollNoodles: data.rollNoodles || {},
+              theBab: data.theBab || {},
+              fryRice: data.fryRice || {},
               createdAt: data.createdAt?.toDate() || new Date(),
               updatedAt: data.updatedAt?.toDate() || new Date(),
             });

@@ -35,6 +35,7 @@ import PermissionBubble from '../components/common/PermissionBubble';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
+import { Dot } from '../components/common/Dot';
 import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
 import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
 import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
@@ -48,6 +49,9 @@ import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { useAuth } from '../hooks/useAuth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import firestore, { collection, onSnapshot } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { getApp } from '@react-native-firebase/app';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -128,6 +132,7 @@ const MainNavigatorContent = () => {
   const [checking, setChecking] = React.useState(true);
   const { hasParty } = useMyParty();
   const { user } = useAuth();
+  const [chatRoomStates, setChatRoomStates] = React.useState<{ [chatRoomId: string]: { lastReadAt?: any } }>({});
   const insets = useSafeAreaInsets();
   const bottomInset = React.useMemo(
     () => (Platform.OS === 'android' && insets.bottom === 0 ? 16 : insets.bottom),
@@ -136,11 +141,47 @@ const MainNavigatorContent = () => {
   // 모든 채팅방 조회 (안읽은 메시지 수 계산용)
   const { chatRooms: allChatRooms } = useChatRooms('all');
   const { chatRooms: customChatRooms } = useChatRooms('custom');
+
+  // 내 방 읽음 상태(lastReadAt) 구독
+  React.useEffect(() => {
+    if (!user?.uid) {
+      setChatRoomStates({});
+      return;
+    }
+
+    const statesRef = collection(firestore(getApp()), 'users', user.uid, 'chatRoomStates');
+    const unsubscribe = onSnapshot(
+      statesRef,
+      (snap) => {
+        const next: { [chatRoomId: string]: { lastReadAt?: any } } = {};
+        snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          next[docSnap.id] = docSnap.data() as any;
+        });
+        setChatRoomStates(next);
+      },
+      (error) => {
+        console.error('채팅방 읽음 상태 구독 실패 (tab badge):', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
   
-  // 전체 안읽은 메시지 수 계산
+  // 전체 안읽은 메시지 존재 여부 (있으면 1, 없으면 0)
   const totalUnreadCount = React.useMemo(() => {
     if (!user?.uid) return 0;
-    
+
+    const toMillis = (ts: any) => {
+      try {
+        if (!ts) return null;
+        if ((ts as any).toMillis) return (ts as any).toMillis();
+        if ((ts as any).toDate) return (ts as any).toDate().getTime();
+        return new Date(ts as any).getTime();
+      } catch {
+        return null;
+      }
+    };
+
     // 모든 채팅방에서 내가 참가중인 채팅방만 필터링 (중복 제거)
     const roomMap = new Map<string, any>();
     [...allChatRooms, ...customChatRooms].forEach(room => {
@@ -149,13 +190,19 @@ const MainNavigatorContent = () => {
       }
     });
     const myRooms = Array.from(roomMap.values());
-    
-    // 각 채팅방의 unreadCount 합산
-    return myRooms.reduce((total, room) => {
-      const unread = room.unreadCount?.[user.uid] || 0;
-      return total + unread;
-    }, 0);
-  }, [allChatRooms, customChatRooms, user?.uid]);
+
+    const hasUnread = myRooms.some((room) => {
+      const lastMessageAt = room.lastMessage?.timestamp;
+      const lastMessageMillis = toMillis(lastMessageAt);
+      if (!lastMessageMillis) return false; // 메시지가 없으면 unread 아님
+
+      const state = room.id ? chatRoomStates[room.id] : undefined;
+      const lastReadMillis = toMillis(state?.lastReadAt);
+      return lastReadMillis ? lastMessageMillis > lastReadMillis : true;
+    });
+
+    return hasUnread ? 1 : 0;
+  }, [allChatRooms, customChatRooms, user?.uid, chatRoomStates]);
   React.useEffect(() => {
     let mounted = true;
 
@@ -320,7 +367,11 @@ const MainNavigatorContent = () => {
           tabBarIcon: ({ color, size }) => (
             <View style={{ position: 'relative' }}>
               <Icon name="chatbubbles-outline" size={size} color={color} style={{ marginBottom: 4 }} />
-              <TabBadge count={totalUnreadCount} location="bottom" size="small" />
+              <Dot
+                visible={totalUnreadCount > 0}
+                size="small"
+                style={{ position: 'absolute', right: -6, bottom: -2 }}
+              />
             </View>
           ),
           lazy: false,

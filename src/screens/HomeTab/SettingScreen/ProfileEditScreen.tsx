@@ -13,6 +13,7 @@ import { setUserProperties } from '../../../lib/analytics';
 import { Dropdown } from '../../../components/common/Dropdown';
 import { DEPARTMENT_OPTIONS } from '../../../constants/constants';
 import { leaveDepartmentRoom } from '../../../utils/chatRoomUtils';
+import { assertDisplayNameAvailable } from '../../../libs/firebase';
 
 export const ProfileEditScreen = () => {
   useScreenView();
@@ -74,6 +75,9 @@ export const ProfileEditScreen = () => {
     }
     try {
       setSaving(true);
+
+      // 닉네임 중복 검사
+      await assertDisplayNameAvailable(displayName);
       
       const newDepartment = department.trim();
       const oldDepartment = previousDepartment.trim();
@@ -84,14 +88,17 @@ export const ProfileEditScreen = () => {
       }
       
       // Firestore 업데이트
-      await firestore().collection('users').doc(user.uid).set({
-        displayName: displayName.trim(),
-        studentId: studentId.trim(),
-        department: newDepartment,
-      }, { merge: true });
-      
-      // Auth 표시 이름도 업데이트(옵션)
-      try { await user.updateProfile({ displayName: displayName.trim() }); } catch {}
+      await firestore()
+        .collection('users')
+        .doc(user.uid)
+        .set(
+          {
+            displayName: displayName.trim(),
+            studentId: studentId.trim(),
+            department: newDepartment,
+          },
+          { merge: true }
+        );
       
       // Analytics: 사용자 속성 업데이트
       await setUserProperties({
@@ -103,8 +110,12 @@ export const ProfileEditScreen = () => {
       setPreviousDepartment(newDepartment);
       
       Alert.alert('완료', '프로필이 저장되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
-    } catch (e) {
-      Alert.alert('오류', '저장 중 오류가 발생했어요.');
+    } catch (e: any) {
+      const message =
+        e?.message && typeof e.message === 'string'
+          ? e.message
+          : '저장 중 오류가 발생했어요.';
+      Alert.alert('오류', message);
     } finally {
       setSaving(false);
     }

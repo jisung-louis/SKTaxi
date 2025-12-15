@@ -18,17 +18,18 @@
 
 | 경로 | 설명 | 주요 필드/하위 구조 |
 | --- | --- | --- |
-| `parties/{partyId}` | 택시 모집 카드 | `leaderId`, `departure{name,lat,lng}`, `destination{name,lat,lng}`, `departureTime`(ISO), `maxMembers`, `members[]`, `tags[]`, `detail`, `status ('open'|'closed'|'arrived'|'ended')`, `endReason ('arrived'|'cancelled'|'timeout'|'withdrawed')`, `endedAt`, `createdAt`, `updatedAt`, `settlement.{status,perPersonAmount,members.{uid}.{settled,settledAt}}` |
+| `parties/{partyId}` | 택시 모집 카드 | `leaderId`, `departure{name,lat,lng}`, `destination{name,lat,lng}`, `departureTime`(ISO), `maxMembers`, `members[]`, `tags[]`, `detail`, `status ('open','closed','arrived','ended')`, `endReason ('arrived','cancelled','timeout','withdrawed')`, `endedAt`, `createdAt`, `updatedAt`, `settlement.{status,perPersonAmount,members.{uid}.{settled,settledAt}}` |
 | `joinRequests/{requestId}` | 동승 요청 | `partyId`, `leaderId`, `requesterId`, `status ('pending'|'accepted'|'declined')`, `createdAt` |
-| `chats/{partyId}/messages/{messageId}` | 파티 전용 채팅 메시지 | `partyId`, `senderId`, `senderName`, `type ('user'|'system'|'account'|'arrived'|'end')`, `text`, `accountData{bankName,accountNumber,accountHolder,hideName}`, `arrivalData{taxiFare,perPerson,memberCount,bankName,accountNumber,accountHolder,hideName}`, `createdAt`, `updatedAt` |
+| `chats/{partyId}/messages/{messageId}` | 파티 전용 채팅 메시지 | `partyId`, `senderId`, `senderName`, `type ('user','system','account','arrived','end')`, `text`, `accountData{bankName,accountNumber,accountHolder,hideName}`, `arrivalData{taxiFare,perPerson,memberCount,bankName,accountNumber,accountHolder,hideName}`, `createdAt`, `updatedAt` |
 | `chats/{partyId}/notificationSettings/{uid}` | 파티 채팅 음소거 여부 | `muted`, `createdAt`, `updatedAt` |
 
 ## 3. 공개 채팅(커뮤니티)
 
 | 경로 | 설명 | 주요 필드/하위 구조 |
 | --- | --- | --- |
-| `chatRooms/{chatRoomId}` | 공개/학과/게임/커스텀 채팅방 메타데이터 | `name`, `type ('university'|'department'|'game'|'custom')`, `department`, `description`, `createdBy`, `members[]`, `isPublic`, `maxMembers`, `lastMessage{text,senderId,senderName,timestamp}`, `unreadCount.{uid}`, `createdAt`, `updatedAt` |
-| `chatRooms/{chatRoomId}/messages/{messageId}` | 공개방 메시지 | `text`, `senderId`, `senderName`, `type ('text'|'image'|'system')`, `readBy[]`, `createdAt`, (다음은 Minecraft 채팅방에만 추가로 존재하는 필드) `direction`, `source`, `minecraftUuid`, `appUserDisplayName` |
+| `chatRooms/{chatRoomId}` | 공개/학과/게임/커스텀 채팅방 메타데이터 | `name`, `type ('university','department','game','custom')`, `department`, `description`, `createdBy`, `members[]`, `isPublic`, `maxMembers`, `lastMessage{text,senderId,senderName,timestamp}`, `unreadCount.{uid}` *(기존 필드, 현재 클라이언트에서 더 이상 사용/업데이트하지 않음)*, `createdAt`, `updatedAt` |
+| `chatRooms/{chatRoomId}/messages/{messageId}` | 공개방 메시지 | `text`, `senderId`, `senderName`, `type ('text','image','system')`, `readBy[]` *(기존 필드, 현재 클라이언트에서 더 이상 사용/업데이트하지 않음)*, `createdAt`(서버 기준), `clientCreatedAt`(클라이언트 기준 임시 시간, UI용), (다음은 Minecraft 채팅방에만 추가로 존재하는 필드) `direction`, `source`, `minecraftUuid`, `appUserDisplayName` |
+| `users/{uid}/chatRoomStates/{chatRoomId}` | 사용자별 방 읽음 상태(저비용) | `lastReadAt` (Timestamp, 방을 마지막으로 읽은 시각), `lastOpenedAt` (선택) |
 
 ## 4. 게시판 & 공지
 
@@ -40,7 +41,7 @@
 | `notices/{noticeId}` | 학교 공지(크롤링) | `title`, `content`, `link`, `postedAt`, `category`, `department`, `author`, `source`, `contentDetail`, `contentAttachments[]`, `likeCount`, `commentCount`, `viewCount`, `createdAt` |
 | `notices/{noticeId}/readBy/{uid}` | 공지 읽음 상태 | `userId`, `noticeId`, `isRead`, `readAt` |
 | `noticeComments/{commentId}` | 공지 댓글 | `noticeId`, `userId`, `userDisplayName`, `content`, `isAnonymous`, `anonId`, `replyCount`, `parentId`, `isDeleted`, `createdAt`, `updatedAt` |
-| `appNotices/{noticeId}` | 운영 공지(앱 내 카드) | `title`, `content`, `category ('update'|'service'|'event'|'policy')`, `priority ('urgent'|'normal'|'info')`, `imageUrls` (string[] · optional), `actionUrl`, `publishedAt`, `updatedAt` (optional) |
+| `appNotices/{noticeId}` | 운영 공지(앱 내 카드) | `title`, `content`, `category ('update','service','event','policy')`, `priority ('urgent','normal','info')`, `imageUrls` (string[] · optional), `actionUrl`, `publishedAt`, `updatedAt` (optional) |
 
 ## 5. 학사·생활 정보
 
@@ -48,15 +49,15 @@
 | --- | --- | --- |
 | `courses/{courseId}` | 강의 마스터 | `grade`, `category`, `code`, `division`, `name`, `credits`, `professor`, `schedule[]`, `location`, `note`, `semester`, `department`, `createdAt`, `updatedAt` |
 | `userTimetables/{docId}` | 사용자별 학기 시간표 | `userId`, `semester`, `courses[]`, `createdAt`, `updatedAt` |
-| `academicSchedules/{scheduleId}` | 학사 일정 | `title`, `startDate`, `endDate`, `type ('single'|'multi')`, `isPrimary`, `description`, `createdAt`, `updatedAt` |
-| `cafeteriaMenus/{weekId}` | 주차별 학식 | `weekStart`, `weekEnd`, `rollNoodles` (string[] 또는 { [date: string]: string[] }), `theBab` (string[] 또는 { [date: string]: string[] }), `fryRice` (string[] 또는 { [date: string]: string[] }), `createdAt`, `updatedAt` |
+| `academicSchedules/{scheduleId}` | 학사 일정 | `title`, `startDate`, `endDate`, `type ('single','multi')`, `isPrimary`, `description`, `createdAt`, `updatedAt` |
+| `cafeteriaMenus/{weekId}` | 주차별 학식 | `weekStart`, `weekEnd`, `rollNoodles` ({ [date: string]: string[] }), `theBab` ({ [date: string]: string[] }), `fryRice` ({ [date: string]: string[] }), `createdAt`, `updatedAt` |
 
 ## 6. 문의/운영/관리
 
 | 경로 | 설명 | 주요 필드 |
 | --- | --- | --- |
-| `inquiries/{docId}` | 앱 내 문의 접수 | `type ('feature'|'bug'|...)`, `subject`, `content`, `userId`, `userEmail`, `userName`, `userRealname`, `userStudentId`, `status ('pending'|'in_progress'|'resolved')`, `createdAt`, `updatedAt` |
-| `reports/{reportId}` | 신고 접수 | `targetType ('post'|'comment'|'chat_message'|'profile')`, `targetId`, `targetAuthorId`, `category`, `reporterId`, `status`, `createdAt`, `updatedAt` |
+| `inquiries/{docId}` | 앱 내 문의 접수 | `type ('feature','bug','account','service','other')`, `subject`, `content`, `userId`, `userEmail`, `userName`, `userRealname`, `userStudentId`, `status ('pending','in_progress','resolved')`, `createdAt`, `updatedAt` |
+| `reports/{reportId}` | 신고 접수 | `targetType ('post','comment','chat_message','profile')`, `targetId`, `targetAuthorId`, `category`, `reporterId`, `status`, `createdAt`, `updatedAt` |
 | `blocks/{uid}/blockedUsers/{blockedUid}` | 차단 목록 | `blockedUserId`, `blockedBy`, `createdAt` |
 | `appVersion/{platform}` (`ios`, `android`) | 필수 업데이트 정보 | `minimumVersion`, `forceUpdate`, `message`, `icon`, `title`, `showButton`, `buttonText`, `buttonUrl`, `updatedAt` |
 

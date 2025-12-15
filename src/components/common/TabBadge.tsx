@@ -9,25 +9,47 @@ interface TabBadgeProps {
   style?: StyleProp<ViewStyle>;
   location?: 'top' | 'bottom';
   size?: 'small' | 'medium' | 'large';
+  showNumber?: boolean; // 숫자 대신 점만 표시할 때 false
 }
 
-export const TabBadge: React.FC<TabBadgeProps> = ({ count, visible = true, style, location = 'top', size = 'medium' }) => {
+export const TabBadge: React.FC<TabBadgeProps> = ({
+  count,
+  visible = true,
+  style,
+  location = 'top',
+  size = 'medium',
+  showNumber = true,
+}) => {
   if (!visible || count <= 0) {
     return null;
   }
 
+  const isDot = !showNumber;
+
   return (
-    <View style={[
-      styles.badge, 
-      location === 'top' ? { top: -2 } : { bottom: -2 }, 
-      size === 'small' ? styles.small : size === 'medium' ? styles.medium : styles.large,
-      style,
-      ]}>
-      <Text style={[
-        styles.badgeText, 
-        size === 'small' ? { ...TYPOGRAPHY.caption3 } : size === 'medium' ? { ...TYPOGRAPHY.caption2 } : { ...TYPOGRAPHY.caption1 }]}>
-        {count > 99 ? '99+' : count.toString()}
-      </Text>
+    <View
+      style={[
+        styles.badge,
+        location === 'top' ? { top: -2 } : { bottom: -2 },
+        size === 'small' ? styles.small : size === 'medium' ? styles.medium : styles.large,
+        isDot && styles.dot,
+        style,
+      ]}
+    >
+      {isDot ? null : (
+        <Text
+          style={[
+            styles.badgeText,
+            size === 'small'
+              ? { ...TYPOGRAPHY.caption3 }
+              : size === 'medium'
+              ? { ...TYPOGRAPHY.caption2 }
+              : { ...TYPOGRAPHY.caption1 },
+          ]}
+        >
+          {count > 99 ? '99+' : count.toString()}
+        </Text>
+      )}
     </View>
   );
 };
@@ -67,5 +89,12 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     minWidth: 20,
     borderRadius: 16,
+  },
+  dot: {
+    minWidth: 10,
+    height: 10,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 8,
   },
 });

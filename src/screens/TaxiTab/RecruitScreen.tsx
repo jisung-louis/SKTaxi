@@ -44,6 +44,7 @@ export const RecruitScreen = () => {
   const [customKeyword, setCustomKeyword] = useState('');
   const [showKeywordInput, setShowKeywordInput] = useState(false);
   const [maxMembers, setMaxMembers] = useState(4);
+  const [isCreating, setIsCreating] = useState(false);
 
   const now = new Date();
   const currentHour = now.getHours().toString().padStart(2, '0');
@@ -96,7 +97,12 @@ export const RecruitScreen = () => {
       return;
     }
 
+    if (isCreating) {
+      return;
+    }
+
     try {
+      setIsCreating(true);
       const departureTimeISO = new Date(new Date().toDateString() + ' ' + time).toISOString();
       const partyDoc = {
         // SKTaxi: 실제 Firestore 저장 필드 구성
@@ -140,6 +146,8 @@ export const RecruitScreen = () => {
     } catch (e) {
       Alert.alert('오류', '파티 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
       console.warn('create party failed', e); // SKTaxi: 디버깅 로그
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -455,7 +463,12 @@ export const RecruitScreen = () => {
         </View>
       </ScrollView>
       <View style={styles.floatingSubmitButton}>
-        <Button title="택시 모집 시작" onPress={handleRecruit} style={{width: '100%'}}/>
+        <Button
+          title={isCreating ? '생성 중...' : '택시 모집 시작'}
+          onPress={handleRecruit}
+          disabled={isCreating}
+          style={{ width: '100%', opacity: isCreating ? 0.7 : 1 }}
+        />
       </View>
       <Modal
         visible={showKeywordInput}

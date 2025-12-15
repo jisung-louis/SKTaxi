@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
   ActionSheetIOS,
   Image,
   ActivityIndicator,
+  AppState,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused, useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { useIsFocused, useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -27,12 +28,11 @@ import {
   sendChatMessage,
   getChatRoomNotificationSetting,
   updateChatRoomNotificationSetting,
-  markChatRoomAsRead,
 } from '../../hooks/useChatMessages';
 import { ChatMessage, ChatRoom } from '../../types/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { useScreenView } from '../../hooks/useScreenView';
-import firestore, { doc, onSnapshot, arrayUnion, writeBatch } from '@react-native-firebase/firestore';
+import firestore, { doc, onSnapshot, setDoc, serverTimestamp } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import database from '@react-native-firebase/database';
 import { createReport } from '../../lib/moderation';
@@ -75,10 +75,10 @@ export const ChatDetailScreen = () => {
 
   // 상태
   const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [hasJoined, setHasJoined] = useState(false);
-  const [unreadCounts, setUnreadCounts] = useState<{ [messageId: string]: number }>({});
   const [serverCurrentPlayers, setServerCurrentPlayers] = useState<number | null>(null);
   const [serverMaxPlayers, setServerMaxPlayers] = useState<number | null>(null);
   const [serverStatus, setServerStatus] = useState<{ online: boolean } | null>(null);
@@ -89,13 +89,11 @@ export const ChatDetailScreen = () => {
   // Ref
   const flatListRef = useRef<FlatList>(null);
   const isInitialLoadCompleteRef = useRef(false);
-  const previousMessagesLengthRef = useRef<number>(0);
-  const processedMessageIdsRef = useRef<Set<string>>(new Set());
 
   // 메시지 훅 (inverted를 위해 내림차순으로 반환)
   const isGameRoom = chatRoom?.type === 'game';
   // 화면이 포커스될 때만 구독을 활성화하여, 다시 포커스될 때 최신 30개를 다시 불러오도록 함
-  const { messages, loading: messagesLoading, loadingMore, hasMore, loadMore, updateMessageReadBy } =
+  const { messages, loading: messagesLoading, loadingMore, hasMore, loadMore } =
     useChatMessages(chatRoomId, isFocused);
 
   // 채팅 사운드 사전 로드
@@ -124,29 +122,6 @@ export const ChatDetailScreen = () => {
     return () => unsubscribe();
   }, [chatRoomId, user?.uid]);
 
-  // 각 메시지의 안읽은 사람 수 계산
-  useEffect(() => {
-    if (!chatRoom || !messages.length) {
-      setUnreadCounts({});
-      return;
-    }
-
-    const members = chatRoom.members || [];
-    const counts: { [messageId: string]: number } = {};
-
-    messages.forEach((msg) => {
-      if (!msg.id || msg.type === 'system') return;
-
-      const readBy = msg.readBy || [];
-      const unreadCount = members.filter(
-        (memberId) => memberId !== msg.senderId && !readBy.includes(memberId)
-      ).length;
-      counts[msg.id] = unreadCount;
-    });
-
-    setUnreadCounts(counts);
-  }, [messages, chatRoom]);
-
   // 최초 접속 시 members에 추가 및 읽음 처리
   useEffect(() => {
     if (!chatRoomId || !user?.uid || hasJoined) return;
@@ -155,10 +130,6 @@ export const ChatDetailScreen = () => {
       try {
         await joinChatRoom(chatRoomId);
         setHasJoined(true);
-        await markChatRoomAsRead(chatRoomId);
-        // 처리한 메시지 ID 초기화
-        processedMessageIdsRef.current.clear();
-        // 메시지 배열은 나중에 로드되므로, 메시지가 로드된 후 업데이트됨
       } catch (error) {
         console.error('채팅방 참여 실패:', error);
         Alert.alert('오류', '채팅방에 참여할 수 없습니다.');
@@ -168,31 +139,57 @@ export const ChatDetailScreen = () => {
     joinRoom();
   }, [chatRoomId, user?.uid, hasJoined]);
 
-  // 화면이 포커스될 때마다 읽음 처리
-  useEffect(() => {
-    if (!chatRoomId || !user?.uid || !hasJoined || !isFocused) return;
+  // 포커스 수명주기(입장/퇴장) + 앱 백그라운드 전환 시 lastReadAt/lastOpenedAt 업데이트
+  useFocusEffect(
+    useCallback(() => {
+      if (!chatRoomId || !user?.uid) return;
 
-    const markAsRead = async () => {
-      try {
-        await markChatRoomAsRead(chatRoomId);
-        // 모든 메시지의 readBy를 로컬에서 업데이트 (UI 즉시 반영)
-        if (user?.uid) {
-          messages.forEach((msg) => {
-            if (msg.id) {
-              const readBy = msg.readBy || [];
-              if (!readBy.includes(user.uid)) {
-                updateMessageReadBy(msg.id, user.uid);
-              }
-            }
+      const stateRef = doc(firestore(getApp()), 'users', user.uid, 'chatRoomStates', chatRoomId);
+
+      // 포커스 획득 시점
+      setDoc(
+        stateRef,
+        {
+          lastReadAt: serverTimestamp(),
+          lastOpenedAt: serverTimestamp(),
+        },
+        { merge: true }
+      ).catch((error) => {
+        console.error('채팅방 lastReadAt 업데이트 실패(focus):', error);
+      });
+
+      // 앱 상태 변경 시(백그라운드/비활성 전환)
+      const subscription = AppState.addEventListener('change', (state) => {
+        if (state === 'background' || state === 'inactive') {
+          setDoc(
+            stateRef,
+            {
+              lastReadAt: serverTimestamp(),
+              lastOpenedAt: serverTimestamp(),
+            },
+            { merge: true }
+          ).catch((error) => {
+            console.error('채팅방 lastReadAt 업데이트 실패(appstate):', error);
           });
         }
-      } catch (error) {
-        console.error('채팅방 읽음 처리 실패:', error);
-      }
-    };
+      });
 
-    markAsRead();
-  }, [chatRoomId, user?.uid, hasJoined, isFocused, messages, updateMessageReadBy]);
+      // 포커스 해제 또는 화면 언마운트 시
+      return () => {
+        subscription.remove();
+        setDoc(
+          stateRef,
+          {
+            lastReadAt: serverTimestamp(),
+            lastOpenedAt: serverTimestamp(),
+          },
+          { merge: true }
+        ).catch((error) => {
+          console.error('채팅방 lastReadAt 업데이트 실패(blur/unmount):', error);
+        });
+      };
+    }, [chatRoomId, user?.uid])
+  );
 
   // 알림 설정 로드
   useEffect(() => {
@@ -279,87 +276,6 @@ export const ChatDetailScreen = () => {
     }
   }, [messagesLoading, messages.length]);
 
-  // 새 메시지가 추가될 때 읽음 처리
-  useEffect(() => {
-    if (!chatRoomId || !user?.uid || !hasJoined || !isFocused || messages.length === 0) {
-      previousMessagesLengthRef.current = messages.length;
-      return;
-    }
-
-    // 초기 로드 시에는 전체 읽음 처리를 하지 않음 (최초 접속 시 markChatRoomAsRead에서 처리)
-    if (!isInitialLoadCompleteRef.current) {
-      previousMessagesLengthRef.current = messages.length;
-      return;
-    }
-
-    // 새로 추가된 메시지만 체크 (이전 길이보다 증가한 경우)
-    const currentLength = messages.length;
-    const previousLength = previousMessagesLengthRef.current;
-
-    if (currentLength <= previousLength) {
-      previousMessagesLengthRef.current = currentLength;
-      return;
-    }
-
-    // 새로 추가된 메시지만 추출 (inverted이므로 배열 앞부분이 최신 메시지)
-    const newMessages = messages.slice(0, currentLength - previousLength);
-
-    const markNewMessagesAsRead = async () => {
-      try {
-        const unreadMessages = newMessages.filter((msg) => {
-          if (!msg.id || msg.type === 'system' || msg.senderId === user.uid) {
-            return false;
-          }
-          // 이미 처리한 메시지는 스킵
-          if (processedMessageIdsRef.current.has(msg.id)) {
-            return false;
-          }
-          const readBy = msg.readBy || [];
-          return !readBy.includes(user.uid);
-        });
-
-        if (unreadMessages.length === 0) {
-          previousMessagesLengthRef.current = currentLength;
-          return;
-        }
-
-        const batch = writeBatch(firestore(getApp()));
-        unreadMessages.forEach((msg) => {
-          if (msg.id) {
-            const messageRef = doc(firestore(getApp()), 'chatRooms', chatRoomId, 'messages', msg.id);
-            batch.update(messageRef, {
-              readBy: arrayUnion(user.uid),
-            });
-            // 처리한 메시지 ID 기록
-            processedMessageIdsRef.current.add(msg.id);
-          }
-        });
-
-        await batch.commit();
-        console.log(`✅ ${unreadMessages.length}개 새 메시지 읽음 처리 완료`);
-        
-        // 로컬 메시지 배열의 readBy 업데이트 (UI 즉시 반영)
-        unreadMessages.forEach((msg) => {
-          if (msg.id && user?.uid) {
-            updateMessageReadBy(msg.id, user.uid);
-          }
-        });
-        
-        previousMessagesLengthRef.current = currentLength;
-      } catch (error) {
-        console.error('새 메시지 읽음 처리 실패:', error);
-        previousMessagesLengthRef.current = currentLength;
-      }
-    };
-
-    // 약간의 지연을 두어 메시지가 완전히 로드된 후 처리
-    const timer = setTimeout(() => {
-      markNewMessagesAsRead();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [messages, chatRoomId, user?.uid, hasJoined, isFocused]);
-
   // 새 메시지 수신 시 인앱 사운드 재생 (상대 메시지에만)
   useEffect(() => {
     if (!user?.uid) return;
@@ -381,7 +297,9 @@ export const ChatDetailScreen = () => {
   // 메시지 전송
   const handleSendMessage = async () => {
     if (!message.trim() || !chatRoomId) return;
+    if (isSending) return;
 
+    setIsSending(true);
     try {
       if (isGameRoom) {
         await sendMinecraftMessage(chatRoomId, message);
@@ -395,6 +313,8 @@ export const ChatDetailScreen = () => {
     } catch (error: any) {
       console.error('메시지 전송 실패:', error);
       Alert.alert('오류', error.message || '메시지 전송에 실패했습니다.');
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -514,7 +434,7 @@ export const ChatDetailScreen = () => {
       );
     }
 
-    const timeString = formatMessageTime(item.createdAt);
+    const timeString = formatMessageTime((item as any).createdAt || (item as any).clientCreatedAt);
     
     // inverted FlatList에서 메시지 배열 구조:
     // - messages 배열: 내림차순 (index 0 = 최신 메시지, 마지막 = 오래된 메시지)
@@ -601,13 +521,10 @@ export const ChatDetailScreen = () => {
               delayLongPress={300}
             >
               <View style={[styles.messageRow, isMyMessage ? styles.myMessageRow : styles.otherMessageRow]}>
-                {/* 내 메시지: unreadCount는 항상 표시, 타임스탬프는 그룹의 첫 메시지에만 */}
-                {isMyMessage && (
+                {/* 내 메시지: 타임스탬프는 그룹의 첫 메시지에만 */}
+                {isMyMessage && isGroupStart && (
                   <View style={styles.myMessageMetaContainer}>
-                    {unreadCounts[item.id || ''] > 0 && (
-                      <Text style={styles.unreadCountText}>{unreadCounts[item.id || '']}</Text>
-                    )}
-                    {isGroupStart && <Text style={styles.timestamp}>{timeString}</Text>}
+                    <Text style={styles.timestamp}>{timeString}</Text>
                   </View>
                 )}
                 <View style={[styles.messageBubble, isMyMessage ? styles.myMessage : styles.otherMessage]}>
@@ -620,13 +537,10 @@ export const ChatDetailScreen = () => {
                     {item.text}
                   </Text>
                 </View>
-                {/* 다른 사람 메시지: unreadCount는 항상 표시, 타임스탬프는 그룹의 첫 메시지에만 */}
-                {!isMyMessage && (
+                {/* 다른 사람 메시지: 타임스탬프는 그룹의 첫 메시지에만 */}
+                {!isMyMessage && isGroupStart && (
                   <View style={styles.otherMessageMetaContainer}>
-                    {unreadCounts[item.id || ''] > 0 && (
-                      <Text style={styles.unreadCountText}>{unreadCounts[item.id || '']}</Text>
-                    )}
-                    {isGroupStart && <Text style={styles.timestamp}>{timeString}</Text>}
+                    <Text style={styles.timestamp}>{timeString}</Text>
                   </View>
                 )}
               </View>
@@ -643,9 +557,7 @@ export const ChatDetailScreen = () => {
 
     if (chatRoom.type === 'university') {
       return '성결대 전체 채팅방';
-    } else if (chatRoom.type === 'department' && user?.department) {
-      return `${user.department} 채팅방`;
-    }
+    } 
 
     return chatRoom.name;
   };
@@ -834,18 +746,30 @@ export const ChatDetailScreen = () => {
             multiline
             maxLength={500}
             onSubmitEditing={handleSendMessage}
+            editable={!isSending}
           />
           <TouchableOpacity
-            style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
+            style={[
+              styles.sendButton,
+              (!message.trim() || isSending) && styles.sendButtonDisabled,
+            ]}
             onPress={handleSendMessage}
-            disabled={!message.trim()}
+            disabled={!message.trim() || isSending}
             activeOpacity={0.7}
           >
-            <Icon
-              name="send"
-              size={20}
-              color={message.trim() ? COLORS.text.buttonText : COLORS.text.disabled}
-            />
+            {isSending ? (
+              <ActivityIndicator size="small" color={COLORS.text.buttonText} />
+            ) : (
+              <Icon
+                name="send"
+                size={20}
+                color={
+                  message.trim()
+                    ? COLORS.text.buttonText
+                    : COLORS.text.disabled
+                }
+              />
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, ActivityIndicator } from 'react-native';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
@@ -52,7 +52,7 @@ const getNotificationIcon = (type: string) => {
 export const NotificationScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { notifications, loading, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, unreadCount } = useNotifications();
+  const { notifications, loading, initialized, markAsRead, markAllAsRead, deleteNotification, deleteAllNotifications, unreadCount } = useNotifications();
   const [refreshing, setRefreshing] = useState(false);
 
   const handleRefresh = () => {
@@ -239,9 +239,10 @@ export const NotificationScreen = () => {
           />
         }
       >
-        {loading ? (
+        {!initialized || loading ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyMessage}>알림을 불러오는 중...</Text>
+            <ActivityIndicator size="large" color={COLORS.accent.green} />
+            <Text style={styles.loadingMessage}>알림을 불러오는 중...</Text>
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -285,6 +286,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
     paddingVertical: 80,
+  },
+  loadingMessage: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    marginTop: 12,
   },
   emptyTitle: {
     ...TYPOGRAPHY.title2,

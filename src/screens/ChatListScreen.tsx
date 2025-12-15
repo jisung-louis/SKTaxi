@@ -14,10 +14,11 @@ import { useScreenView } from '../hooks/useScreenView';
 import { useChatRooms } from '../hooks/useChatRooms';
 import { ChatRoom } from '../types/firestore';
 import { useAuth } from '../hooks/useAuth';
-import firestore, { doc, onSnapshot } from '@react-native-firebase/firestore';
+import firestore, { collection, doc, onSnapshot } from '@react-native-firebase/firestore';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
-import { TabBadge } from '../components/common/TabBadge';
 import { getChatRoomNotificationSetting } from '../hooks/useChatMessages';
+import { Dot } from '../components/common/Dot';
 
 const formatTimeAgo = (timestamp: any) => {
   if (!timestamp) return '';
@@ -82,6 +83,7 @@ export const ChatListScreen = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAllRooms, setShowAllRooms] = useState(false); // 관리자 모드 토글
   const [notificationSettings, setNotificationSettings] = useState<{ [chatRoomId: string]: boolean }>({});
+  const [chatRoomStates, setChatRoomStates] = useState<{ [chatRoomId: string]: { lastReadAt?: any } }>({});
 
   // 관리자 여부 확인
   useEffect(() => {
@@ -118,6 +120,31 @@ export const ChatListScreen = () => {
   const { chatRooms: departmentRooms, loading: loadingDepartment } = useChatRooms('department');
   const { chatRooms: gameRooms, loading: loadingGame } = useChatRooms('game');
   const { chatRooms: customRooms, loading: loadingCustom } = useChatRooms('custom');
+
+  // 내 방 읽음 상태(lastReadAt) 구독
+  useEffect(() => {
+    if (!user?.uid) {
+      setChatRoomStates({});
+      return;
+    }
+
+    const statesRef = collection(firestore(getApp()), 'users', user.uid, 'chatRoomStates');
+    const unsubscribe = onSnapshot(
+      statesRef,
+      (snap) => {
+        const next: { [chatRoomId: string]: { lastReadAt?: any } } = {};
+        snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+          next[docSnap.id] = docSnap.data() as any;
+        });
+        setChatRoomStates(next);
+      },
+      (error) => {
+        console.error('채팅방 읽음 상태 구독 실패:', error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   // 관리자 모드가 켜져있을 때는 allRooms 사용, 아닐 때는 기존 로직
   const loading = (isAdmin && showAllRooms)
@@ -288,19 +315,28 @@ export const ChatListScreen = () => {
     navigation.navigate('ChatDetail', { chatRoomId: chatRoom.id });
   };
 
-  const getUnreadCount = (chatRoom: ChatRoom): number => {
-    if (!user?.uid || !chatRoom.unreadCount) return 0;
-    return chatRoom.unreadCount[user.uid] || 0;
-  };
-
   const renderChatRoomCard = ({ item, useDisplayName }: { item: ChatRoom & { displayName?: string; notificationEnabled?: boolean }; useDisplayName?: boolean }) => {
-    const unreadCount = getUnreadCount(item);
-    const lastMessageTime = item.lastMessage?.timestamp 
-      ? formatTimeAgo(item.lastMessage.timestamp)
-      : '';
-    
-    const displayName = useDisplayName && item.displayName ? item.displayName : item.name;
+    const roomState = item.id ? chatRoomStates[item.id] : undefined;
+    const lastReadAt = roomState?.lastReadAt;
+    const lastMessageAt = item.lastMessage?.timestamp;
 
+    const toMillis = (ts: any) => {
+      try {
+        if (!ts) return null;
+        if (ts.toMillis) return ts.toMillis();
+        if (ts.toDate) return ts.toDate().getTime();
+        return new Date(ts).getTime();
+      } catch {
+        return null;
+      }
+    };
+
+    const lastReadMillis = toMillis(lastReadAt);
+    const lastMessageMillis = toMillis(lastMessageAt);
+    const hasUnread = lastMessageMillis ? (lastReadMillis ? lastMessageMillis > lastReadMillis : true) : false;
+
+    const lastMessageTime = lastMessageAt ? formatTimeAgo(lastMessageAt) : '';
+    const displayName = useDisplayName && item.displayName ? item.displayName : item.name;
     const iconColor = getChatRoomColor(item.type);
 
     return (
@@ -356,10 +392,10 @@ export const ChatListScreen = () => {
             </View>
           </View>
         </View>
-        
-        {/* 읽지 않은 메시지 수 배지 (우측 아래) */}
+
+        {/* 새 메시지 여부 도트 (우측 아래) */}
         <View style={styles.badgeContainer}>
-          <TabBadge count={unreadCount} location="bottom" size="large" />
+          <Dot visible={hasUnread} size="large" />
         </View>
       </TouchableOpacity>
     );
@@ -591,8 +627,8 @@ const styles = StyleSheet.create({
   },
   badgeContainer: {
     position: 'absolute',
-    left: 24,
-    top: 24,
+    left: 8,
+    top: 8,
   },
   chatRoomIconContainer: {
     width: 48,

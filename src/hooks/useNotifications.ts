@@ -21,10 +21,16 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     if (!user) {
+      // 인증 정보가 아직 없을 때는 알림 상태를 초기화하고,
+      // initialized를 false로 두어 UI에서 '불러오는 중...'만 보이도록 유지한다.
+      setNotifications([]);
+      setError(null);
       setLoading(false);
+      setInitialized(false);
       return;
     }
 
@@ -41,11 +47,13 @@ export const useNotifications = () => {
         })) as Notification[];
         setNotifications(notificationsData);
         setLoading(false);
+        setInitialized(true);
       },
       (err) => {
         console.error('알림 로드 실패:', err);
         setError(err.message);
         setLoading(false);
+        setInitialized(true);
       }
     );
 
@@ -120,6 +128,7 @@ export const useNotifications = () => {
   return {
     notifications,
     loading,
+    initialized,
     error,
     markAsRead,
     markAllAsRead,

@@ -106,7 +106,8 @@ export type ChatMessage = {
   senderId: string;
   senderName: string;
   type?: 'text' | 'image' | 'system';
-  createdAt?: any;
+  createdAt?: any; // 서버 기준 생성 시각 (serverTimestamp)
+  clientCreatedAt?: any; // 클라이언트 기준 생성 시각 (Date), UI용 보조 필드
   readBy?: string[]; // userId 배열
   direction?: 'mc_to_app' | 'app_to_mc' | 'system';
   source?: 'minecraft' | 'app';

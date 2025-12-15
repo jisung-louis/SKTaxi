@@ -1,5 +1,20 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import firestore, { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc, getDocs, updateDoc, setDoc, arrayUnion, writeBatch, limit, startAfter, where } from '@react-native-firebase/firestore';
+import firestore, {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  doc,
+  getDocs,
+  updateDoc,
+  setDoc,
+  limit,
+  startAfter,
+  where,
+  arrayUnion,
+} from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
@@ -217,25 +232,7 @@ export function useChatMessages(chatRoomId: string | undefined, enabled: boolean
     };
   }, [chatRoomId, enabled, loadInitialMessages]);
 
-  // 메시지의 readBy 업데이트 (읽음 처리 후 로컬 상태 업데이트용)
-  const updateMessageReadBy = useCallback((messageId: string, userId: string) => {
-    setMessages(prev => {
-      return prev.map(msg => {
-        if (msg.id === messageId) {
-          const readBy = msg.readBy || [];
-          if (!readBy.includes(userId)) {
-            return {
-              ...msg,
-              readBy: [...readBy, userId],
-            };
-          }
-        }
-        return msg;
-      });
-    });
-  }, []);
-
-  return { messages, loading, loadingMore, hasMore, error, loadMore, updateMessageReadBy } as const;
+  return { messages, loading, loadingMore, hasMore, error, loadMore } as const;
 }
 
 // 채팅방에 최초 접속 시 members 배열에 추가
@@ -306,14 +303,14 @@ export async function sendChatMessage(chatRoomId: string, text: string): Promise
     const senderName = userData?.displayName || userData?.email || '익명';
 
     const messagesRef = collection(firestore(getApp()), 'chatRooms', chatRoomId, 'messages');
-    
+
     const messageData: Omit<ChatMessage, 'id'> = {
       text: text.trim(),
       senderId: user.uid,
       senderName,
       type: 'text',
-      createdAt: serverTimestamp(),
-      readBy: [user.uid], // 전송자는 자동으로 읽음 처리
+      createdAt: serverTimestamp(),       // 서버 기준 시간
+      clientCreatedAt: new Date(),        // 클라이언트 기준 임시 시간 (UI용)
     };
 
     await addDoc(messagesRef, messageData);
@@ -382,97 +379,6 @@ export async function updateChatRoomNotificationSetting(chatRoomId: string, enab
     console.log('✅ 알림 설정 업데이트 완료:', enabled);
   } catch (error) {
     console.error('알림 설정 업데이트 실패:', error);
-    throw error;
-  }
-}
-
-// 채팅방 읽음 처리 (unreadCount를 0으로 리셋하고 모든 메시지의 readBy 업데이트)
-export async function markChatRoomAsRead(chatRoomId: string): Promise<void> {
-  const user = auth(getApp()).currentUser;
-  if (!user) {
-    throw new Error('로그인이 필요합니다.');
-  }
-
-  try {
-    const chatRoomRef = doc(firestore(getApp()), 'chatRooms', chatRoomId);
-    const chatRoomSnap = await chatRoomRef.get();
-    
-    if (!chatRoomSnap.exists()) {
-      throw new Error('채팅방을 찾을 수 없습니다.');
-    }
-
-    const chatRoomData = chatRoomSnap.data() as ChatRoom;
-    
-    // 멤버인지 확인
-    if (!chatRoomData.members?.includes(user.uid)) {
-      throw new Error('채팅방 멤버가 아닙니다.');
-    }
-
-    // unreadCount 업데이트: 현재 사용자의 unreadCount를 0으로 설정
-    const currentUnreadCount = chatRoomData.unreadCount || {};
-    const updatedUnreadCount = {
-      ...currentUnreadCount,
-      [user.uid]: 0,
-    };
-
-    await updateDoc(chatRoomRef, {
-      unreadCount: updatedUnreadCount,
-    });
-
-    // 모든 메시지의 readBy 배열에 현재 사용자 추가
-    const messagesRef = collection(firestore(getApp()), 'chatRooms', chatRoomId, 'messages');
-    const messagesSnap = await getDocs(messagesRef);
-    
-    // Firestore 배치 제한(500개)을 고려하여 여러 번 실행
-    const batches: Promise<void>[] = [];
-    let currentBatch = writeBatch(firestore(getApp()));
-    let currentBatchCount = 0;
-    let totalCount = 0;
-
-    messagesSnap.forEach((messageDoc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-      const messageData = messageDoc.data() as ChatMessage;
-      
-      // 시스템 메시지는 제외
-      if (messageData.type === 'system') {
-        return;
-      }
-
-      // 이미 readBy에 포함되어 있으면 스킵
-      const readBy = messageData.readBy || [];
-      if (readBy.includes(user.uid)) {
-        return;
-      }
-
-      const messageRef = doc(firestore(getApp()), 'chatRooms', chatRoomId, 'messages', messageDoc.id);
-      currentBatch.update(messageRef, {
-        readBy: arrayUnion(user.uid),
-      });
-      
-      currentBatchCount++;
-      totalCount++;
-
-      // 배치 제한에 도달하면 커밋하고 새 배치 시작
-      if (currentBatchCount >= 500) {
-        batches.push(currentBatch.commit());
-        currentBatch = writeBatch(firestore(getApp()));
-        currentBatchCount = 0;
-      }
-    });
-
-    // 마지막 배치 커밋
-    if (currentBatchCount > 0) {
-      batches.push(currentBatch.commit());
-    }
-
-    // 모든 배치 완료 대기
-    if (batches.length > 0) {
-      await Promise.all(batches);
-      console.log(`✅ ${totalCount}개 메시지 읽음 처리 완료`);
-    }
-
-    console.log('✅ 채팅방 읽음 처리 완료:', chatRoomId);
-  } catch (error) {
-    console.error('채팅방 읽음 처리 실패:', error);
     throw error;
   }
 }
