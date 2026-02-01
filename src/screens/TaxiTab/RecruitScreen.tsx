@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Modal, TouchableWithoutFeedback, KeyboardAvoidingView } from 'react-native';
-//import { Text } from '../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TimePicker, formatTimeToSelect } from '../../components/common/TimePicker';
+import { TimePicker } from '../../components/common/TimePicker';
 import { CustomTooltip } from '../../components/common/CustomTooltip';
 import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
@@ -13,11 +12,9 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import { DEPARTURE_OPTIONS, DESTINATION_OPTIONS, DEPARTURE_LOCATION, DESTINATION_LOCATION } from '../../constants/constants';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-// SKTaxi: Firestore 저장 로직 추가
-import { getApp } from '@react-native-firebase/app';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
-import { sendSystemMessage } from '../../hooks/useMessages';
+import { useAuth } from '../../hooks/auth';
+import { usePartyActions } from '../../hooks/party';
+import { sendSystemMessage } from '../../hooks/chat';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useScreenView } from '../../hooks/useScreenView';
 import { logEvent } from '../../lib/analytics';
@@ -27,6 +24,9 @@ type RecruitScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList,
 export const RecruitScreen = () => {
   useScreenView();
   const navigation = useNavigation<RecruitScreenNavigationProp>();
+  const { user } = useAuth();
+  const { createParty, loading: isCreating } = usePartyActions();
+
   const scrollViewRef = useRef<ScrollView>(null);
   const keywordInputRef = useRef<TextInput>(null);
   const [departure, setDeparture] = useState('');
@@ -37,14 +37,12 @@ export const RecruitScreen = () => {
   const [customDestination, setCustomDestination] = useState('');
   const [customDestinationCoord, setCustomDestinationCoord] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isCustomDestination, setIsCustomDestination] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [detail, setDetail] = useState('');
   const [showKeywordInfo, setShowKeywordInfo] = useState(false);
   const [customKeyword, setCustomKeyword] = useState('');
   const [showKeywordInput, setShowKeywordInput] = useState(false);
   const [maxMembers, setMaxMembers] = useState(4);
-  const [isCreating, setIsCreating] = useState(false);
 
   const now = new Date();
   const currentHour = now.getHours().toString().padStart(2, '0');
@@ -90,8 +88,7 @@ export const RecruitScreen = () => {
       Alert.alert('알림', '도착지 좌표가 없습니다. 지도를 통해 위치를 선택해주세요.');
       return;
     }
-    
-    const user = auth(getApp()).currentUser;
+
     if (!user) {
       Alert.alert('알림', '로그인이 필요합니다.');
       return;
@@ -102,10 +99,10 @@ export const RecruitScreen = () => {
     }
 
     try {
-      setIsCreating(true);
       const departureTimeISO = new Date(new Date().toDateString() + ' ' + time).toISOString();
-      const partyDoc = {
-        // SKTaxi: 실제 Firestore 저장 필드 구성
+
+      // Repository 패턴 적용 - createParty 사용
+      const partyId = await createParty({
         leaderId: user.uid,
         departure: { name: departure, lat: departureCoord?.latitude ?? 0, lng: departureCoord?.longitude ?? 0 },
         destination: { name: destination, lat: destinationCoord?.latitude ?? 0, lng: destinationCoord?.longitude ?? 0 },
@@ -114,16 +111,14 @@ export const RecruitScreen = () => {
         members: [user.uid],
         tags: keywords,
         detail,
-        status: 'open' as const,
-        createdAt: firestore.FieldValue.serverTimestamp(),
-        updatedAt: firestore.FieldValue.serverTimestamp(),
-      };
+        status: 'open',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
-      const ref = await firestore(getApp()).collection('parties').add(partyDoc);
-      
       // Analytics: 파티 생성 이벤트 로깅
       await logEvent('party_created', {
-        party_id: ref.id,
+        party_id: partyId,
         departure: departure,
         destination: destination,
         max_members: maxMembers,
@@ -131,23 +126,19 @@ export const RecruitScreen = () => {
         keyword_count: keywords.length,
         has_detail: !!detail.trim(),
       });
-      
-      // SKTaxi: 채팅방 생성 시스템 메시지 전송
+
+      // 채팅방 생성 시스템 메시지 전송
       try {
-        await sendSystemMessage(ref.id, '채팅방이 생성되었어요!');
+        await sendSystemMessage(partyId, '채팅방이 생성되었어요!');
       } catch (error) {
-        console.error('SKTaxi RecruitScreen: Error sending system message:', error);
-        // 시스템 메시지 전송 실패해도 전체 프로세스는 계속 진행
+        console.error('RecruitScreen: Error sending system message:', error);
       }
-      
+
       Alert.alert('알림', '택시 모집이 시작되었습니다.');
-      // 스택에서 RecruitScreen을 제거하고 Chat으로 대체하여 뒤로가기로 중복 생성 방지
-      navigation.replace('Chat', { partyId: ref.id });
+      navigation.replace('Chat', { partyId });
     } catch (e) {
       Alert.alert('오류', '파티 생성 중 오류가 발생했습니다. 다시 시도해주세요.');
-      console.warn('create party failed', e); // SKTaxi: 디버깅 로그
-    } finally {
-      setIsCreating(false);
+      console.warn('create party failed', e);
     }
   };
 

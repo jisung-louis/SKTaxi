@@ -1,3 +1,10 @@
+// SKTaxi: Minecraft 서버 지도 화면
+//
+// ⚠️ 특수 케이스 - Firebase Realtime Database 사용:
+// 이 화면은 마인크래프트 서버의 실시간 지도 URL을 가져옵니다.
+// Firebase Realtime Database는 마인크래프트 서버 연동용 별도 시스템으로,
+// Spring 마이그레이션 대상이 아닙니다.
+
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

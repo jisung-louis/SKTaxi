@@ -4,18 +4,39 @@ import { Text } from '../../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import Modal from 'react-native-modal';
-import { authInstance } from '../../libs/firebase';
+import { useAuthRepository } from '../../di';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { useScreenView } from '../../hooks/useScreenView';
+
+/**
+ * Firebase 에러 코드를 사용자 친화적 메시지로 변환
+ * RepositoryError의 context.firebaseCode도 지원
+ */
+const getFirebaseErrorMessage = (error: any): string => {
+  // RepositoryError의 context에서 firebaseCode 추출, 없으면 code 사용
+  const firebaseCode = error?.context?.firebaseCode || error?.code;
+
+  const errorMap: Record<string, string> = {
+    'auth/wrong-password': '비밀번호가 올바르지 않습니다.',
+    'auth/user-not-found': '등록되지 않은 이메일입니다.',
+    'auth/invalid-email': '올바른 이메일 형식이 아닙니다.',
+    'auth/too-many-requests': '잠시 후 다시 시도해주세요.',
+    'auth/invalid-credential': '이메일 또는 비밀번호가 올바르지 않습니다.',
+    'auth/user-disabled': '비활성화된 계정입니다.',
+    'auth/network-request-failed': '네트워크 연결을 확인해주세요.',
+  };
+  return errorMap[firebaseCode] || '로그인에 실패했습니다.';
+};
 
 export const LoginScreen = ({ navigation }: any) => {
   useScreenView();
   const [loading, setLoading] = useState(false);
   const { signInWithGoogle } = useAuth();
+  const authRepository = useAuthRepository();
   const [adminVisible, setAdminVisible] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -185,11 +206,11 @@ export const LoginScreen = ({ navigation }: any) => {
                       Alert.alert('입력 필요', '이메일과 비밀번호를 입력해주세요.');
                       return;
                     }
-                    await authInstance().signInWithEmailAndPassword(adminEmail.trim(), adminPassword);
+                    // Repository 패턴: 이메일/비밀번호 로그인
+                    await authRepository.signInWithEmailAndPassword(adminEmail.trim(), adminPassword);
                     setAdminVisible(false);
                   } catch (e: any) {
-                    const message: string = e?.message || '다시 시도해주세요.';
-                    Alert.alert('관리자 로그인 실패', message);
+                    Alert.alert('관리자 로그인 실패', getFirebaseErrorMessage(e));
                   } finally {
                     setAdminLoading(false);
                   }

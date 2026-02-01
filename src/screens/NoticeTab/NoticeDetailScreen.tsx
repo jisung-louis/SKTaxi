@@ -6,22 +6,18 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import PageHeader from '../../components/common/PageHeader';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { getFirestore, doc, onSnapshot } from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Notice } from '../../hooks/useNotices';
+import { useNotice, useNoticeLike, useNoticeComments, Notice } from '../../hooks/notice';
 import { convertToSubviewURL } from '../../utils/linkConverter';
 import RenderHTML from 'react-native-render-html';
 import Button from '../../components/common/Button';
 import CustomImageRenderer from '../../components/htmlRender/CustomImageRenderer';
-//import CustomTableRenderer from '../../components/htmlRender/CustomTableRenderer';
 import { WebView } from 'react-native-webview';
 import { domNodeToHTMLString } from 'react-native-render-html';
 import { ToggleButton } from '../../components/common/ToggleButton';
-import { useNoticeLike } from '../../hooks/useNoticeLike';
 import CommentInput, { CommentInputRef } from '../../components/common/CommentInput';
 import UniversalCommentList from '../../components/common/UniversalCommentList';
-import { useComments } from '../../hooks/useComments';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/auth';
 import { useScreenView } from '../../hooks/useScreenView';
 import { incrementNoticeViewCount } from '../../lib/noticeViews';
 import { ImageViewer } from '../../components/board/ImageViewer';
@@ -34,9 +30,6 @@ export const NoticeDetailScreen = () => {
   const { width } = useWindowDimensions();
   const { user } = useAuth();
 
-  const [notice, setNotice] = useState<Notice | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [replyingTo, setReplyingTo] = useState<{ commentId: string; authorName: string; isAnonymous: boolean } | null>(null);
   const commentInputRef = useRef<CommentInputRef>(null);
@@ -48,19 +41,22 @@ export const NoticeDetailScreen = () => {
   const [inlineImageViewerVisible, setInlineImageViewerVisible] = useState(false);
   const [inlineImageSelectedIndex, setInlineImageSelectedIndex] = useState(0);
 
-  // 좋아요 기능
+  // 공지사항 데이터 (Repository 패턴)
+  const { notice, loading, error } = useNotice(noticeId);
+
+  // 좋아요 기능 (Repository 패턴)
   const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(noticeId || '');
-  
-  // 댓글 기능
-  const { 
-    comments: rawComments, 
-    loading: commentsLoading, 
+
+  // 댓글 기능 (Repository 패턴)
+  const {
+    comments: rawComments,
+    loading: commentsLoading,
     submitting: commentsSubmitting,
-    addComment, 
-    addReply, 
-    updateComment, 
-    deleteComment 
-  } = useComments('notice', noticeId || '');
+    addComment,
+    addReply,
+    updateComment,
+    deleteComment
+  } = useNoticeComments(noticeId || '');
 
   const handleReply = useCallback((commentId: string, authorName: string, isAnonymous: boolean) => {
     setReplyingTo({ commentId, authorName, isAnonymous });
@@ -115,40 +111,7 @@ export const NoticeDetailScreen = () => {
     setInlineImageViewerVisible(true);
   }, []);
 
-  useEffect(() => {
-    if (!noticeId) {
-      setError('잘못된 접근입니다.');
-      setLoading(false);
-      return;
-    }
-
-    const db = getFirestore();
-    const noticeRef = doc(db, 'notices', noticeId);
-
-    setLoading(true);
-    setError(null);
-
-    const unsubscribe = onSnapshot(
-      noticeRef,
-      (snap) => {
-        if (!snap.exists()) {
-          setError('공지사항을 찾을 수 없습니다.');
-          setLoading(false);
-        } else {
-          setNotice({ id: snap.id, ...(snap.data() as any) });
-          setLoading(false);
-        }
-      },
-      (err) => {
-        console.error('공지사항 구독 실패:', err);
-        setError(err?.message || '로딩 중 오류가 발생했습니다.');
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [noticeId]);
-
+  // 조회수 증가 (한 번만)
   useEffect(() => {
     if (!noticeId || hasTrackedViewRef.current) return;
     hasTrackedViewRef.current = true;

@@ -1,0 +1,203 @@
+FirestoreAuthRepository.ts:45 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `onAuthStateChanged`. Please use `onAuthStateChanged()` instead. Error Component Stack:
+    at AuthProvider (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:164482:24)
+    at RepositoryProvider (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:159399:24)
+    at RNCSafeAreaProvider (<anonymous>)
+    at SafeAreaProvider (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:159139:24)
+    at RCTView (<anonymous>)
+    at View (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:52306:43)
+    at GestureHandlerRootView (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:157532:21)
+    at App (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:98296:41)
+    at RCTView (<anonymous>)
+    at View (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:52306:43)
+    at RCTView (<anonymous>)
+    at View (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:52306:43)
+    at AppContainer (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:52196:25)
+    at SKTaxi(RootComponent) (172.16.98.213:8081/index.bundle//&platform=ios&dev=true&lazy=true&minify=false&inlineSourceMap=false&modulesOnly=false&runModule=true&excludeSource=true&sourcePaths=url-server&app=com.jisung.sktaxi:69229:28)
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+deprecationConsoleWarning @ index.js:481
+anonymous @ index.js:665
+subscribeToAuthState @ FirestoreAuthRepository.ts:45
+anonymous @ useAuth.ts:29
+reactStackBottomFrame @ ReactFabric-dev.js:14849
+runWithFiberInDEV @ ReactFabric-dev.js:571
+commitHookEffectListMount @ ReactFabric-dev.js:9575
+commitHookPassiveMountEffects @ ReactFabric-dev.js:9695
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10863
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10976
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10856
+recursivelyTraversePassiveMountEffects @ ReactFabric-dev.js:10837
+commitPassiveMountOnFiber @ ReactFabric-dev.js:10867
+flushPassiveEffects @ ReactFabric-dev.js:12564
+commitRootImpl @ ReactFabric-dev.js:12494
+commitRootWhenReady @ ReactFabric-dev.js:11705
+performWorkOnRoot @ ReactFabric-dev.js:11652
+performSyncWorkOnRoot @ ReactFabric-dev.js:2822
+flushSyncWorkAcrossRoots_impl @ ReactFabric-dev.js:2689
+processRootScheduleInMicrotask @ ReactFabric-dev.js:2717
+anonymous @ ReactFabric-dev.js:2839
+Show 60 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+warnIfNotModularCall @ index.js:708
+getApp @ app.js:89
+firebaseModuleWithApp @ namespace.js:145
+?anon_0_ @ analytics.ts:27
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+setUserId @ analytics.ts:25
+?anon_0_ @ useAuth.ts:39
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+onData @ useAuth.ts:30
+anonymous @ FirestoreAuthRepository.ts:47
+anonymous @ index.js:240
+Show 17 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `setUserId`. Please use `setUserId()` instead.
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+deprecationConsoleWarning @ index.js:481
+anonymous @ index.js:665
+?anon_0_ @ analytics.ts:27
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+setUserId @ analytics.ts:25
+?anon_0_ @ useAuth.ts:39
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+onData @ useAuth.ts:30
+anonymous @ FirestoreAuthRepository.ts:47
+anonymous @ index.js:240
+Show 16 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+warnIfNotModularCall @ index.js:708
+getApp @ app.js:89
+firebaseModuleWithApp @ namespace.js:145
+?anon_0_ @ analytics.ts:27
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+setUserId @ analytics.ts:25
+?anon_0_ @ useAuth.ts:39
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+onData @ useAuth.ts:30
+anonymous @ FirestoreAuthRepository.ts:47
+anonymous @ index.js:240
+Show 17 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `setUserId`. Please use `setUserId()` instead.
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+deprecationConsoleWarning @ index.js:481
+anonymous @ index.js:665
+?anon_0_ @ analytics.ts:27
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+setUserId @ analytics.ts:25
+?anon_0_ @ useAuth.ts:39
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+onData @ useAuth.ts:30
+anonymous @ FirestoreAuthRepository.ts:47
+anonymous @ index.js:240
+Show 16 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22 Please use `getApp()` instead.
+anonymous @ console.js:654
+overrideMethod @ backend.js:17042
+anonymous @ setUpDeveloperTools.js:40
+registerWarning @ LogBox.js:171
+anonymous @ LogBox.js:84
+warnIfNotModularCall @ index.js:708
+getApp @ app.js:89
+firebaseModuleWithApp @ namespace.js:145
+?anon_0_ @ analytics.ts:27
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+setUserId @ analytics.ts:25
+?anon_0_ @ useAuth.ts:39
+asyncGeneratorStep @ asyncToGenerator.js:3
+_next @ asyncToGenerator.js:17
+anonymous @ asyncToGenerator.js:22
+anonymous @ asyncToGenerator.js:14
+onData @ useAuth.ts:30
+anonymous @ FirestoreAuthRepository.ts:47
+anonymous @ index.js:240
+Show 17 more frames
+Show less
+analytics.ts:27 This method is deprecated (as well as all React Native Firebase namespaced API) and will be removed in the next major release as part of move to match Firebase Web modular SDK API. Please see migration guide for more details: https://rnfirebase.io/migrating-to-v22. Method called was `setUserId`. Please use `setUserId()` instead.

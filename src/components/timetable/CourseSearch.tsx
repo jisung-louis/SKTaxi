@@ -6,7 +6,7 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useCourseSearch } from '../../hooks/useCourseSearch';
 import { CourseCard } from './CourseCard';
 import { Course } from '../../types/timetable';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/auth';
 
 interface CourseSearchProps {
   onCourseSelect?: (course: Course) => void;

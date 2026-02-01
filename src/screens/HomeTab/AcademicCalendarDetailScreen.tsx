@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useAcademicSchedules } from '../../hooks/useAcademicSchedules';
+import { useAcademicSchedules } from '../../hooks/setting';
 import { CalendarView, AcademicScheduleWithColor } from '../../types/academic';
 import { WeekCalendar } from '../../components/academic/WeekCalendar';
 import { MonthCalendar } from '../../components/academic/MonthCalendar';

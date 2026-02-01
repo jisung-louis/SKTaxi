@@ -1,3 +1,12 @@
+// SKTaxi: 설정 화면
+//
+// ⚠️ 특수 케이스 - Firebase Crashlytics 사용:
+// 이 화면은 개발/디버깅 목적으로 Crashlytics를 직접 사용합니다.
+// - 강제 크래시 테스트 (개발자 기능)
+//
+// Crashlytics는 클라이언트 전용 모니터링 도구로,
+// Spring 마이그레이션과 무관합니다.
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { COLORS } from '../../constants/colors';

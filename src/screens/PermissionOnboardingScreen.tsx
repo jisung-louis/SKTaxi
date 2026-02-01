@@ -5,10 +5,11 @@ import { Text } from '../components/common/Text';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { usePermissionStatus } from '../hooks/usePermissionStatus';
+import { usePermissionStatus } from '../hooks/common';
 import { ensureFcmTokenSaved } from '../lib/fcm';
-import { requestLocationPermission } from '../components/section/TaxiTab/hooks/useCurrentLocation';
-import { updateUserProfile, authInstance } from '../libs/firebase';
+import { requestLocationPermission } from '../hooks/common/useCurrentLocation';
+import { useAuth } from '../hooks/auth';
+import { useUserRepository } from '../di';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, Easing, runOnJS } from 'react-native-reanimated';
 import { useScreenView } from '../hooks/useScreenView';
 import { requestATTPermission } from '../lib/att';
@@ -22,6 +23,8 @@ type OnboardingStep = 'intro' | 'notification' | 'att' | 'location' | 'complete'
 
 export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProps> = ({ navigation }) => {
   useScreenView();
+  const { user } = useAuth();
+  const userRepository = useUserRepository();
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('intro');
   const [isLoading, setIsLoading] = useState(false);
   const {
@@ -56,11 +59,11 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
       const handleComplete = async () => {
         try {
           await ensureFcmTokenSaved();
-          const uid = authInstance().currentUser?.uid;
-          if (uid) {
-            // UX: 완료 안내를 잠시 보여주기 위해 2초 지연
+          if (user?.uid) {
+            // UX: 완료 안내를 잠시 보여주기 위해 1초 지연
             await new Promise(resolve => setTimeout(resolve, 1000));
-            await updateUserProfile(uid, { onboarding: { permissionsComplete: true } } as any);
+            // Repository 패턴: 프로필 업데이트
+            await userRepository.updateUserProfile(user.uid, { onboarding: { permissionsComplete: true } } as any);
           }
           // 로컬 상태도 완료 처리 (루트 분기 가속)
           completeOnboarding();
@@ -72,10 +75,10 @@ export const PermissionOnboardingScreen: React.FC<PermissionOnboardingScreenProp
           completeOnboarding();
         }
       };
-      
+
       handleComplete();
     }
-  }, [currentStep, completeOnboarding]);
+  }, [currentStep, completeOnboarding, user?.uid, userRepository]);
 
   const handleNotificationPermission = async () => {
     setIsLoading(true);

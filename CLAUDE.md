@@ -82,3 +82,5 @@ docs/           Specs, guides, legal documents
 - `docs/firestore-data-structure.md` - Firestore schema (single source of truth)
 - `docs/SKTaxi-backend-spec.md` - Mobile-backend API contract
 - `docs/android-build-guide.md` - Android build/deploy checklist
+
+## 복잡한 질문이나 작업은 sequential-thinking mcp를 사용해서 step by step으로 문제를 해결해줘.

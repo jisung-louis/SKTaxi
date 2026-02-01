@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
@@ -7,23 +7,11 @@ import PageHeader from '../../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getFirestore, collection, query, orderBy, onSnapshot } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
-import { ja, ko } from 'date-fns/locale';
+import { ko } from 'date-fns/locale';
 import { useScreenView } from '../../../hooks/useScreenView';
-
-interface AppNotice {
-  id: string;
-  title: string;
-  content: string;
-  category: 'update' | 'service' | 'event' | 'policy';
-  priority: 'urgent' | 'normal' | 'info';
-  publishedAt: Date;
-  updatedAt?: Date;
-  imageUrl?: string;
-  actionUrl?: string;
-}
+import { useAppNotices } from '../../../hooks/setting';
+import { AppNotice } from '../../../repositories/interfaces/IAppNoticeRepository';
 
 const CATEGORY_LABELS = {
   update: '앱 업데이트',
@@ -47,35 +35,10 @@ const PRIORITY_COLORS = {
 export const AppNoticeScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [notices, setNotices] = useState<AppNotice[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  useEffect(() => {
-    const db = getFirestore();
-    const noticesRef = collection(db, 'appNotices');
-    const q = query(noticesRef, orderBy('publishedAt', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
-      const noticesData: AppNotice[] = [];
-      snapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-        const data: any = docSnap.data();
-        noticesData.push({
-          id: docSnap.id,
-          ...data,
-          publishedAt: data.publishedAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt ? data.updatedAt.toDate?.() || new Date(data.updatedAt) : undefined,
-        } as AppNotice);
-      });
-      setNotices(noticesData);
-      setLoading(false);
-    }, (error) => {
-      console.error('공지사항 로드 실패:', error);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Repository 패턴 훅 사용
+  const { notices, loading } = useAppNotices();
 
   const filteredNotices = selectedCategory 
     ? notices.filter(notice => notice.category === selectedCategory)

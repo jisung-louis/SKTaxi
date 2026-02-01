@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, ScrollView, View, Switch, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { Text, StyleSheet, ScrollView, View, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typhograpy';
@@ -7,107 +7,15 @@ import PageHeader from '../../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useAuth } from '../../../hooks/useAuth';
-import { getFirestore, doc, getDoc, setDoc } from '@react-native-firebase/firestore';
 import { useScreenView } from '../../../hooks/useScreenView';
-
-interface NotificationSettings {
-  allNotifications: boolean;
-  partyNotifications: boolean;
-  noticeNotifications: boolean;
-  boardLikeNotifications: boolean;
-  boardCommentNotifications: boolean;
-  systemNotifications: boolean;
-  marketingNotifications: boolean;
-}
+import { useNotificationSettings, NotificationSettings } from '../../../hooks/user';
 
 export const NofiticationSettingScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { user } = useAuth();
-  const [settings, setSettings] = useState<NotificationSettings>({
-    allNotifications: true,
-    partyNotifications: true,
-    noticeNotifications: true,
-    boardLikeNotifications: true,
-    boardCommentNotifications: true,
-    systemNotifications: true,
-    marketingNotifications: false,
-  });
-  const [loading, setLoading] = useState(true);
 
-  // 알림 설정 로드
-  useEffect(() => {
-    const loadNotificationSettings = async () => {
-      if (!user?.uid) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const notificationSettings = userData?.notificationSettings;
-          
-          if (notificationSettings) {
-            setSettings(prev => ({ ...prev, ...notificationSettings }));
-          }
-        }
-      } catch (error) {
-        console.error('알림 설정 로드 실패:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadNotificationSettings();
-  }, [user?.uid]);
-
-  // 알림 설정 저장
-  const updateSetting = async (key: keyof NotificationSettings, value: boolean) => {
-    if (!user?.uid) return;
-
-    const newSettings = { ...settings, [key]: value };
-    
-    // allNotifications가 false가 되면 모든 알림을 끔
-    if (key === 'allNotifications' && !value) {
-      newSettings.partyNotifications = false;
-      newSettings.noticeNotifications = false;
-      newSettings.boardLikeNotifications = false;
-      newSettings.boardCommentNotifications = false;
-      newSettings.systemNotifications = false;
-      newSettings.marketingNotifications = false;
-    }
-    
-    // allNotifications가 true가 되면 모든 알림을 켜짐
-    if (key === 'allNotifications' && value) {
-      newSettings.partyNotifications = true;
-      newSettings.noticeNotifications = true;
-      newSettings.boardLikeNotifications = true;
-      newSettings.boardCommentNotifications = true;
-      newSettings.systemNotifications = true;
-      newSettings.marketingNotifications = true;
-    }
-    
-    // 개별 알림 변경 시에는 allNotifications를 자동으로 조정하지 않음
-    // 사용자가 직접 allNotifications를 조작할 때만 다른 알림들을 제어
-
-    setSettings(newSettings);
-
-    try {
-      const db = getFirestore();
-      await setDoc(doc(db, 'users', user.uid), {
-        notificationSettings: newSettings
-      }, { merge: true });
-    } catch (error) {
-      console.error('알림 설정 저장 실패:', error);
-      // 실패 시 원래 상태로 복구
-      setSettings(settings);
-    }
-  };
+  // Repository 패턴 훅 사용
+  const { settings, loading, updateSetting } = useNotificationSettings();
 
   const SettingItem = ({ 
     title, 

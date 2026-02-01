@@ -35,11 +35,11 @@ export interface BoardComment {
   content: string;
   authorId: string;
   authorName: string;
-  authorProfileImage?: string;
+  authorProfileImage: string | null;
   isAnonymous?: boolean;
-  anonId?: string;
+  anonId: string | null;
   anonymousOrder?: number; // 익명 댓글 순서 (익명1, 익명2, ...)
-  parentId?: string; // 대댓글용
+  parentId: string | null; // 대댓글용
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

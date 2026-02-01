@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { useRoute } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { NoticeStackParamList } from '../../navigations/types';
-import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
-import { Notice } from '../../hooks/useNotices';
+import { useNotice } from '../../hooks/notice';
 import { COLORS } from '../../constants/colors';
 import PageHeader from '../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
@@ -19,23 +18,9 @@ const NoticeDetailWebViewScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
   const route = useRoute<NativeStackScreenProps<NoticeStackParamList, 'NoticeDetailWebView'>['route']>();
   const noticeId: string | undefined = route?.params?.noticeId;
-  const [notice, setNotice] = useState<Notice | null>(null);
-  useEffect(() => {
-    if (!noticeId) {
-      setNotice(null);
-      return;
-    }
-    loadNotice();
-  }, [noticeId]);
-  const loadNotice = async () => {
-    const db = getFirestore();
-    const snap = await getDoc(doc(db, 'notices', noticeId));
-    if (!snap.exists()) {
-      setNotice(null);
-      return;
-    }
-    setNotice({ id: snap.id, ...(snap.data() as any) });
-  };
+
+  // Repository 패턴 적용 훅
+  const { notice } = useNotice(noticeId);
 
   const processedHtml = notice?.contentDetail
     ?.replace(/src="\/(.*?)"/g, 'src="https://www.sungkyul.ac.kr/$1"')

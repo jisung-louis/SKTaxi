@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+// SKTaxi: Root Navigator (SRP 개선)
+// 인증 상태에 따른 라우팅만 담당, 알림/모달 로직은 훅으로 분리
+
+import React from 'react';
+import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { MainNavigator } from './MainNavigator';
@@ -10,441 +13,85 @@ import { useProfileCompletion } from '../hooks/useProfileCompletion';
 import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
 import { TermsOfUseForAuthScreen } from '../screens/auth/TermsOfUseForAuthScreen';
 import { PermissionOnboardingScreen } from '../screens/PermissionOnboardingScreen';
-import { Alert } from 'react-native';
-import { initForegroundMessageHandler, initBackgroundMessageHandler, initNotificationOpenedAppHandler, checkInitialNotification } from '../lib/notifications';
-import { ensureFcmTokenSaved, subscribeFcmTokenRefresh } from '../lib/fcm';
 import { JoinRequestModal } from '../components/common/JoinRequestModal';
 import { ForegroundNotification } from '../components/common/ForegroundNotification';
-import { acceptJoin, declineJoin, deleteJoinRequestNotifications } from '../lib/notifications';
-import firestore, { doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
-import { useNavigation } from '@react-navigation/native';
-import { requestATTPermission } from '../lib/att';
-import { useAuth } from '../hooks/useAuth';
+
+// 분리된 훅들
+import {
+  useForegroundNotification,
+  useJoinRequestModal,
+  useFcmSetup,
+} from './hooks';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
   const { user, loading }: AuthState = useAuthContext();
-  const { user: authUser } = useAuth();
   const { needsProfile } = useProfileCompletion();
   const permissionsComplete = !!(user as any)?.onboarding?.permissionsComplete;
-  const [joinData, setJoinData] = useState<any | null>(null);
-  const [requesterName, setRequesterName] = useState<string>('');
-  const [foregroundNotification, setForegroundNotification] = useState<{
-    visible: boolean;
-    title: string;
-    body: string;
-    noticeId?: string;
-    partyId?: string;
-    postId?: string;
-    chatRoomId?: string;
-    type?: 'notice' | 'chat' | 'settlement' | 'kicked' | 'party_created' | 'board_notification' | 'notice_notification' | 'app_notice' | 'chat_room_message';
-  }>({
-    visible: false,
-    title: '',
-    body: '',
-  });
-  const navigation = useNavigation();
-  
-  // SKTaxi: 현재 화면 이름 가져오기
-  const getCurrentScreen = () => {
-    const state = (navigation as any).getState?.();
-    if (!state) return undefined;
-    
-    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
-    
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
-    
-    const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute) return undefined;
-    
-    const stackState = tabRoute.state;
-    if (!stackState) return undefined;
-    
-    const stackRoute = stackState.routes?.[stackState.index];
-    return stackRoute?.name;
-  };
 
-  // SKTaxi: 현재 ChatDetail 화면의 chatRoomId 가져오기
-  const getCurrentChatRoomId = () => {
-    const state = (navigation as any).getState?.();
-    if (!state) return undefined;
-    
-    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
-    
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
-    
-    const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute || tabRoute.name !== '채팅') return undefined;
-    
-    const stackState = tabRoute.state;
-    if (!stackState) return undefined;
-    
-    const stackRoute = stackState.routes?.[stackState.index];
-    if (stackRoute?.name === 'ChatDetail') {
-      return stackRoute.params?.chatRoomId;
-    }
-    return undefined;
-  };
+  // 포그라운드 알림 관리
+  const {
+    foregroundNotification,
+    handleForegroundNotificationPress,
+    handleForegroundNotificationDismiss,
+    handlePartyDeleted: handlePartyDeletedBase,
+    handleNoticeReceived,
+    handleAppNoticeNotificationReceived,
+    handleChatMessageReceived,
+    handleSettlementCompleted,
+    handleMemberKicked,
+    handlePartyCreated,
+    handleBoardNotificationReceived,
+    handleNoticeNotificationReceived,
+    handleChatRoomMessageReceived,
+    getCurrentScreen,
+    getCurrentChatRoomId,
+  } = useForegroundNotification();
 
-  // SKTaxi: 파티 삭제 알림 핸들러
+  // 동승 요청 모달 관리
+  const {
+    joinData,
+    setJoinData,
+    requesterName,
+    handleAccept,
+    handleDecline,
+    handleRequestClose,
+    handleJoinRequestAccepted,
+    handleJoinRequestRejected,
+  } = useJoinRequestModal(user?.uid);
+
+  // 파티 삭제 알림 핸들러 (Alert 포함)
   const handlePartyDeleted = () => {
+    handlePartyDeletedBase();
     Alert.alert(
       '파티가 해체되었어요',
       '리더가 파티를 해체했습니다.',
-      [
-        {
-          text: '확인',
-          onPress: () => {
-            // SKTaxi: 앱 상태를 리셋하여 메인 화면으로 이동
-            // 네비게이션은 자동으로 처리됨
-          },
-        },
-      ]
+      [{ text: '확인' }]
     );
   };
 
-  // SKTaxi: 공지사항 알림 핸들러
-  const handleNoticeReceived = (noticeId: string, noticeTitle?: string, noticeCategory?: string) => {
-    console.log('🔔 포그라운드에서 공지사항 알림 수신:', noticeId);
-    
-    // FCM 메시지에서 받은 정보 사용
-    const title = noticeTitle || '새로운 공지사항';
-    const category = noticeCategory || '일반';
-    
-    // 포그라운드 알림 표시
-    setForegroundNotification({
-      visible: true,
-      title: `📢 새 성결대 ${category} 공지`,
-      body: title,
-      noticeId: noticeId,
-    });
-    
-    console.log('🔔 포그라운드 알림 상태 업데이트:', {
-      visible: true,
-      title: `📢 새 성결대 ${category} 공지`,
-      body: title,
-      noticeId: noticeId,
-    });
-  };
-
-  // SKTaxi: 포그라운드 알림 클릭 핸들러
-  const handleForegroundNotificationPress = () => {
-    if (foregroundNotification.type === 'notice' && foregroundNotification.noticeId) {
-      // Main 탭의 공지 스택으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '공지',
-        params: {
-          screen: 'NoticeDetail',
-          params: { noticeId: foregroundNotification.noticeId }
-        }
-      });
-    } else if (foregroundNotification.type === 'chat' && foregroundNotification.partyId) {
-      // Main 탭의 택시 스택의 Chat 화면으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '택시',
-        params: {
-          screen: 'Chat',
-          params: { partyId: foregroundNotification.partyId }
-        }
-      });
-    } else if (foregroundNotification.type === 'settlement' && foregroundNotification.partyId) {
-      // Main 탭의 택시 스택의 Chat 화면으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '택시',
-        params: {
-          screen: 'Chat',
-          params: { partyId: foregroundNotification.partyId }
-        }
-      });
-    } else if (foregroundNotification.type === 'kicked') {
-      // 강퇴 알림 클릭 시 메인 화면으로 이동
-      (navigation as any).popToTop();
-    } else if (foregroundNotification.type === 'party_created' && foregroundNotification.partyId) {
-      // 새 파티 생성 알림 클릭 시 택시 탭의 파티 목록으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '택시',
-      });
-    } else if (foregroundNotification.type === 'board_notification' && foregroundNotification.postId) {
-      // 게시판 알림 클릭 시 게시판 상세 화면으로 이동
-      console.log('🔔 게시판 알림 클릭 - postId:', foregroundNotification.postId);
-      try {
-        (navigation as any).navigate('Main', {
-          screen: '게시판',
-          params: {
-            screen: 'BoardDetail',
-            params: { postId: foregroundNotification.postId }
-          }
-        });
-        console.log('✅ 게시판 네비게이션 성공');
-      } catch (error) {
-        console.error('❌ 게시판 네비게이션 실패:', error);
-        // 대체 방법: 게시판 탭으로 먼저 이동
-        (navigation as any).navigate('Main', { screen: '게시판' });
-      }
-    } else if (foregroundNotification.type === 'notice_notification' && foregroundNotification.noticeId) {
-      // 공지사항 알림 클릭 시 공지사항 상세 화면으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '공지',
-        params: {
-          screen: 'NoticeDetail',
-          params: { noticeId: foregroundNotification.noticeId }
-        }
-      });
-    } else if (foregroundNotification.type === 'app_notice' && foregroundNotification.noticeId) {
-      // 앱 공지 알림 클릭 시 앱 공지 상세 화면으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '홈',
-        params: {
-          screen: 'AppNoticeDetail',
-          params: { noticeId: foregroundNotification.noticeId }
-        }
-      });
-    } else if (foregroundNotification.type === 'chat_room_message' && foregroundNotification.chatRoomId) {
-      // 채팅방 메시지 알림 클릭 시 채팅방 상세 화면으로 이동
-      (navigation as any).navigate('Main', {
-        screen: '채팅',
-        params: {
-          screen: 'ChatDetail',
-          params: { chatRoomId: foregroundNotification.chatRoomId }
-        }
-      });
-    }
-    setForegroundNotification(prev => ({ ...prev, visible: false }));
-  };
-
-  // SKTaxi: 포그라운드 알림 닫기 핸들러
-  const handleForegroundNotificationDismiss = () => {
-    setForegroundNotification(prev => ({ ...prev, visible: false }));
-  };
-
-  // SKTaxi: 테스트용 포그라운드 알림 표시 함수
-  const testForegroundNotification = () => {
-    console.log('🧪 테스트 포그라운드 알림 표시');
-    setForegroundNotification({
-      visible: true,
-      title: '🧪 테스트 알림',
-      body: '포그라운드 알림 테스트입니다',
-      noticeId: 'test',
-    });
-  };
-
-  // SKTaxi: 동승 요청 승인 핸들러
-  const handleJoinRequestAccepted = (partyId: string) => {
-    (navigation as any).navigate('Main', {
-      screen: '택시',
-      params: {
-        screen: 'Chat',
-        params: { partyId },
-      },
-    });
-  };
-
-  // SKTaxi: 동승 요청 거절 핸들러
-  const handleJoinRequestRejected = () => {
-    // AcceptancePendingScreen에서 이미 Alert를 표시하므로 여기서는 네비게이션만 처리
-    (navigation as any).popToTop();
-  };
-
-  // SKTaxi: 채팅 메시지 수신 핸들러
-  const handleChatMessageReceived = (data: { senderName: string; messageText: string; partyId: string }) => {
-    setForegroundNotification({
-      visible: true,
-      title: `${data.senderName}님의 메시지`,
-      body: data.messageText,
-      partyId: data.partyId,
-      type: 'chat',
-    });
-  };
-
-  // SKTaxi: 정산 완료 수신 핸들러
-  const handleSettlementCompleted = (partyId: string) => {
-    setForegroundNotification({
-      visible: true,
-      title: '모든 정산이 완료되었어요',
-      body: '동승 파티 종료 준비가 되었습니다.',
-      partyId: partyId,
-      type: 'settlement',
-    });
-  };
-
-  // SKTaxi: 멤버 강퇴 알림 핸들러
-  const handleMemberKicked = () => {
-    setForegroundNotification({
-      visible: true,
-      title: '파티에서 강퇴되었어요',
-      body: '리더가 당신을 파티에서 나가게 했습니다.',
-      type: 'kicked',
-    });
-  };
-
-  // SKTaxi: 새 파티 생성 알림 핸들러
-  const handlePartyCreated = (data: { partyId: string; title: string; body: string }) => {
-    setForegroundNotification({
-      visible: true,
-      title: data.title,
-      body: data.body,
-      partyId: data.partyId,
-      type: 'party_created',
-    });
-  };
-
-  // SKTaxi: 게시판 알림 핸들러
-  const handleBoardNotificationReceived = (data: { postId: string; type: string; title: string; body: string }) => {
-    setForegroundNotification({
-      visible: true,
-      title: data.title,
-      body: data.body,
-      postId: data.postId,
-      type: 'board_notification',
-    });
-  };
-
-  // SKTaxi: 공지사항 알림 핸들러
-  const handleNoticeNotificationReceived = (data: { noticeId: string; type: string; title: string; body: string }) => {
-    setForegroundNotification({
-      visible: true,
-      title: data.title,
-      body: data.body,
-      noticeId: data.noticeId,
-      type: 'notice_notification',
-    });
-  };
-
-  // SKTaxi: 채팅방 메시지 알림 핸들러
-  const handleChatRoomMessageReceived = async (data: { chatRoomId: string; senderName: string; messageText: string }) => {
-    try {
-      // 채팅방 정보 조회
-      const chatRoomDoc = await getDoc(doc(firestore(getApp()), 'chatRooms', data.chatRoomId));
-      const chatRoomData = chatRoomDoc.data();
-      
-      // 채팅방 이름 결정
-      let chatRoomName = '채팅방';
-      if (chatRoomData) {
-        if (chatRoomData.type === 'university') {
-          chatRoomName = '성결대 전체 채팅방';
-        } else if (chatRoomData.type === 'department' && authUser?.department) {
-          chatRoomName = `${authUser.department} 채팅방`;
-        } else {
-          chatRoomName = chatRoomData.name || '채팅방';
-        }
-      }
-      
-      // body 형식: "송신자명 : 메시지 내용"
-      const body = `${data.senderName || '익명'} : ${data.messageText}`;
-      
-      setForegroundNotification({
-        visible: true,
-        title: chatRoomName,
-        body: body,
-        chatRoomId: data.chatRoomId,
-        type: 'chat_room_message',
-      });
-    } catch (error) {
-      console.error('채팅방 정보 조회 실패:', error);
-      // 실패 시 기본값 사용
-      setForegroundNotification({
-        visible: true,
-        title: '채팅방',
-        body: `${data.senderName || '익명'} : ${data.messageText}`,
-        chatRoomId: data.chatRoomId,
-        type: 'chat_room_message',
-      });
-    }
-  };
-  // SKTaxi: 앱 공지 알림 핸들러
-  const handleAppNoticeNotificationReceived = (data: { appNoticeId: string; title: string }) => {
-    setForegroundNotification({
-      visible: true,
-      title: '새 앱 공지',
-      body: data.title,
-      noticeId: data.appNoticeId,
-      type: 'app_notice',
-    });
-  };
-
-  // SKTaxi: FCM 메시지 핸들러 등록
-  useEffect(() => {
-    let unsubscribeTokenRefresh: (() => void) | undefined;
-    if (user && !needsProfile && permissionsComplete) {
-      // // iOS: Main 스택 진입 시 ATT 권한 상태가 not-determined이면 요청 
-      // 일단 주석 후 나중에 CTA (온보딩) 페이지 만들어보기
-      // if (Platform.OS === 'ios') {
-      //   requestATTPermission().catch(() => {});
-      // }
-      // 포그라운드 알림 처리
-      initForegroundMessageHandler(
-        setJoinData, 
-        handlePartyDeleted, 
-        handleNoticeReceived,
-        handleAppNoticeNotificationReceived,
-        handleJoinRequestAccepted,
-        handleJoinRequestRejected,
-        handleChatMessageReceived,
-        getCurrentScreen,
-        handleSettlementCompleted,
-        handleMemberKicked,
-        handlePartyCreated,
-        handleBoardNotificationReceived,
-        handleNoticeNotificationReceived,
-        handleChatRoomMessageReceived,
-        getCurrentChatRoomId
-      );
-      
-      // 백그라운드 알림 처리
-      initBackgroundMessageHandler(setJoinData);
-      
-      // 앱이 백그라운드에서 알림을 클릭했을 때 처리
-      initNotificationOpenedAppHandler(navigation, setJoinData);
-      
-      // 앱이 완전히 종료된 상태에서 알림을 클릭했을 때 처리
-      checkInitialNotification(navigation, setJoinData);
-      
-      // SKTaxi: 프로필 완료 + 권한 온보딩 완료 후에만 토큰 확인+저장
-      ensureFcmTokenSaved().catch(() => {});
-      // SKTaxi: 토큰 회전 즉시 저장
-      unsubscribeTokenRefresh = subscribeFcmTokenRefresh();
-    }
-    return () => {
-      if (unsubscribeTokenRefresh) unsubscribeTokenRefresh();
-    };
-  }, [user, needsProfile, permissionsComplete, navigation]);
-
-  // SKTaxi: 요청자 displayName 조회 (모달용)
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!joinData?.requesterId) { setRequesterName(''); return; }
-      try {
-        const snap = await getDoc(doc(firestore(), 'users', String(joinData.requesterId)));
-        if (!cancelled) setRequesterName((snap.data() as any)?.displayName || '익명');
-      } catch {
-        if (!cancelled) setRequesterName('익명');
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [joinData?.requesterId]);
-
-  // SKTaxi: joinRequest 상태 실시간 구독 (취소 상태 감지)
-  useEffect(() => {
-    if (!joinData?.requestId) return;
-
-    const requestDocRef = doc(firestore(), 'joinRequests', joinData.requestId);
-    const unsubscribe = onSnapshot(requestDocRef, (snap) => {
-      const data = snap.data();
-      if (data?.status === 'canceled') {
-        // SKTaxi: 요청이 취소되면 모달 닫기
-        setJoinData(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [joinData?.requestId]);
+  // FCM 설정 및 토큰 관리
+  useFcmSetup({
+    userId: user?.uid,
+    needsProfile,
+    permissionsComplete,
+    setJoinData,
+    handlePartyDeleted,
+    handleNoticeReceived,
+    handleAppNoticeNotificationReceived,
+    handleJoinRequestAccepted,
+    handleJoinRequestRejected,
+    handleChatMessageReceived,
+    getCurrentScreen,
+    handleSettlementCompleted,
+    handleMemberKicked,
+    handlePartyCreated,
+    handleBoardNotificationReceived,
+    handleNoticeNotificationReceived,
+    handleChatRoomMessageReceived,
+    getCurrentChatRoomId,
+  });
 
   if (loading) {
     return null; // TODO: 로딩 화면 추가
@@ -457,7 +104,7 @@ export const RootNavigator = () => {
           <Stack.Screen name="Auth" component={AuthNavigator} />
         ) : needsProfile ? (
           <>
-          <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
+            <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
             <Stack.Screen name="TermsOfUseForAuth" component={TermsOfUseForAuthScreen} />
           </>
         ) : !permissionsComplete ? (
@@ -466,30 +113,17 @@ export const RootNavigator = () => {
           <Stack.Screen name="Main" component={MainNavigator} />
         )}
       </Stack.Navigator>
-      {/* SKTaxi: 포그라운드 푸시 → 동승요청 모달 (네비게이터 바깥에 위치) */}
+
+      {/* 동승요청 모달 */}
       <JoinRequestModal
         visible={!!joinData}
         requesterName={requesterName}
-        onDecline={async () => { 
-          if (joinData && user?.uid) {
-            await declineJoin(joinData.requestId);
-            // SKTaxi: 리더(현재 사용자)의 동승 요청 알림 삭제
-            await deleteJoinRequestNotifications(user.uid, joinData.partyId);
-          }
-          setJoinData(null); 
-        }}
-        onAccept={async () => { 
-          if (joinData && user?.uid) {
-            await acceptJoin(joinData.requestId, joinData.partyId, joinData.requesterId);
-            // SKTaxi: 리더(현재 사용자)의 동승 요청 알림 삭제
-            await deleteJoinRequestNotifications(user.uid, joinData.partyId);
-          }
-          setJoinData(null); 
-        }}
-        onRequestClose={() => setJoinData(null)}
+        onDecline={handleDecline}
+        onAccept={handleAccept}
+        onRequestClose={handleRequestClose}
       />
-      
-      {/* SKTaxi: 포그라운드 알림 */}
+
+      {/* 포그라운드 알림 */}
       <ForegroundNotification
         visible={foregroundNotification.visible}
         title={foregroundNotification.title}
@@ -497,24 +131,6 @@ export const RootNavigator = () => {
         onPress={handleForegroundNotificationPress}
         onDismiss={handleForegroundNotificationDismiss}
       />
-      
-      {/* SKTaxi: 테스트 버튼 (개발용) */}
-      {/* {__DEV__ && (
-        <TouchableOpacity
-          style={{
-            position: 'absolute',
-            top: 100,
-            right: 20,
-            backgroundColor: 'red',
-            padding: 10,
-            borderRadius: 5,
-            zIndex: 10000,
-          }}
-          onPress={testForegroundNotification}
-        >
-          <Text style={{ color: 'white', fontSize: 12 }}>테스트 알림</Text>
-        </TouchableOpacity>
-      )} */}
     </>
   );
-}; 
+};

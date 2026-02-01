@@ -1,22 +1,19 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import firestore, { collection, doc, updateDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import PageHeader from '../../components/common/PageHeader';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { TaxiStackParamList } from '../../navigations/types';
-import { getApp } from '@react-native-firebase/app';
-
-const firestoreInstance = firestore();
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { formatKoreanAmPmTime } from '../../utils/datetime'; // SKTaxi: 시간 포맷 유틸 추가
+import { formatKoreanAmPmTime } from '../../utils/datetime';
 import Button from '../../components/common/Button';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../constants/constants';
-import { useUserDisplayNames } from '../../hooks/useUserDisplayNames';
+import { useUserDisplayNames } from '../../hooks/user';
 import { useScreenView } from '../../hooks/useScreenView';
+import { useJoinRequestStatus } from '../../hooks/party';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;
 type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'AcceptancePending'>;
@@ -28,11 +25,15 @@ export const AcceptancePendingScreen = () => {
   const { party, requestId } = route.params as any;
   const insets = useSafeAreaInsets();
   const { displayNameMap } = useUserDisplayNames([party?.leaderId]);
+
+  // Repository 패턴 훅 사용
+  const { requestStatus, cancelRequest } = useJoinRequestStatus(requestId);
+
   const onBack = () => {
     navigation.goBack();
   };
 
-  // SKTaxi: 동승 요청 취소 핸들러
+  // 동승 요청 취소 핸들러
   const handleCancelRequest = async () => {
     Alert.alert(
       '동승 요청 취소',
@@ -47,10 +48,9 @@ export const AcceptancePendingScreen = () => {
           style: 'destructive',
           onPress: async () => {
             if (!requestId) return;
-            
+
             try {
-              const requestRef = doc(collection(firestoreInstance, 'joinRequests'), requestId);
-              await updateDoc(requestRef, { status: 'canceled' });
+              await cancelRequest();
               navigation.goBack();
             } catch (error) {
               console.error('동승 요청 취소 실패:', error);
@@ -62,28 +62,23 @@ export const AcceptancePendingScreen = () => {
     );
   };
 
-  // SKTaxi: 요청 상태 구독 - accepted 시 채팅 화면으로 이동, declined 시 이전 화면으로
+  // 요청 상태 변경 감지 - accepted 시 채팅 화면으로 이동, declined 시 이전 화면으로
   useEffect(() => {
-    if (!requestId) return;
-    const requestDocRef = doc(collection(firestore(getApp()), 'joinRequests'), requestId);
-    const unsub = onSnapshot(requestDocRef, (snap) => {
-      const data = snap.data() as any;
-      if (data?.status === 'accepted') {
-        navigation.reset({
-          index: 1,
-          routes: [
-            { name: 'TaxiMain' as any },
-            { name: 'Chat' as any, params: { partyId: party?.id } },
-          ],
-        });
-      } else if (data?.status === 'declined') {
-        // SKTaxi: 거절당한 경우 이전 화면으로 돌아가기
-        Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.');
-        navigation.popToTop();
-      }
-    });
-    return () => unsub();
-  }, [requestId, party?.id, navigation]);
+    if (!requestStatus) return;
+
+    if (requestStatus.status === 'accepted') {
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'TaxiMain' as any },
+          { name: 'Chat' as any, params: { partyId: party?.id } },
+        ],
+      });
+    } else if (requestStatus.status === 'declined') {
+      Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.');
+      navigation.popToTop();
+    }
+  }, [requestStatus, party?.id, navigation]);
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView 

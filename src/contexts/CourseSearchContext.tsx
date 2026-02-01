@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { getFirestore, collection, query, where, orderBy, getDocs } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { useCourseRepository } from '../di/useRepository';
 import { Course } from '../types/timetable';
 
 interface CourseSearchContextType {
@@ -23,6 +22,7 @@ export const CourseSearchProvider: React.FC<CourseSearchProviderProps> = ({ chil
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const courseRepository = useCourseRepository();
 
   // 전체 수업 데이터 로드
   const loadAllCourses = useCallback(async (semester: string) => {
@@ -38,37 +38,8 @@ export const CourseSearchProvider: React.FC<CourseSearchProviderProps> = ({ chil
       setError(null);
       console.log('📚 수업 데이터를 로드하는 중...');
 
-      const db = getFirestore();
-      const coursesRef = collection(db, 'courses');
-      const q = query(
-        coursesRef,
-        where('semester', '==', semester),
-        orderBy('name', 'asc')
-      );
-
-      const querySnapshot = await getDocs(q);
-      const coursesData: Course[] = [];
-      
-      querySnapshot.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-        const data: any = docSnap.data();
-        coursesData.push({
-          id: docSnap.id,
-          grade: data.grade || 1,
-          category: data.category || '',
-          code: data.code || '',
-          division: data.division || '',
-          name: data.name || '',
-          credits: data.credits || 0,
-          professor: data.professor || '',
-          schedule: data.schedule || [],
-          location: data.location || '',
-          note: data.note,
-          semester: data.semester || '',
-          department: data.department,
-          createdAt: (data.createdAt as any)?.toDate?.() || new Date(),
-          updatedAt: (data.updatedAt as any)?.toDate?.() || new Date(),
-        });
-      });
+      // Repository를 통해 수업 데이터 조회
+      const coursesData = await courseRepository.getCoursesBySemester(semester);
 
       setAllCourses(coursesData);
       setIsInitialized(true);
@@ -79,7 +50,7 @@ export const CourseSearchProvider: React.FC<CourseSearchProviderProps> = ({ chil
     } finally {
       setLoading(false);
     }
-  }, [isInitialized, allCourses.length]);
+  }, [isInitialized, allCourses.length, courseRepository]);
 
   // 캐시 초기화
   const clearCache = useCallback(() => {

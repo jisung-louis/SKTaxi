@@ -7,9 +7,8 @@ import PageHeader from '../../../components/common/PageHeader';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useAuth } from '../../../hooks/useAuth';
-import { getFirestore, collection, addDoc } from '@react-native-firebase/firestore';
 import { useScreenView } from '../../../hooks/useScreenView';
+import { useSubmitInquiry } from '../../../hooks/setting';
 
 const INQUIRY_TYPES = [
   { id: 'feature', label: '기능 제안', icon: 'bulb-outline' },
@@ -23,12 +22,13 @@ export const InquiriesScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
-  const { user } = useAuth();
-  
+
+  // Repository 패턴 훅 사용
+  const { submitting, submitInquiry } = useSubmitInquiry();
+
   const [selectedType, setSelectedType] = useState<string>('');
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
-  const [submitting, setSubmitting] = useState(false);
 
   // 파라미터로 받은 타입에 따라 자동 선택
   useEffect(() => {
@@ -43,41 +43,26 @@ export const InquiriesScreen = () => {
       Alert.alert('알림', '문의 유형을 선택해주세요.');
       return;
     }
-    
+
     if (!subject.trim()) {
       Alert.alert('알림', '제목을 입력해주세요.');
       return;
     }
-    
+
     if (!content.trim()) {
       Alert.alert('알림', '문의 내용을 입력해주세요.');
       return;
     }
 
     try {
-      setSubmitting(true);
-      
-      const db = getFirestore();
-      const inquiriesRef = collection(db, 'inquiries');
-      
-      const inquiryData = {
+      await submitInquiry({
         type: selectedType,
         subject: subject.trim(),
         content: content.trim(),
-        userId: user?.uid || null,
-        userEmail: user?.email || null,
-        userName: user?.displayName || null,
-        userRealname: user?.linkedAccounts?.[0]?.displayName || null,
-        userStudentId: user?.studentId || null,
-        status: 'pending', // pending, in_progress, resolved
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      });
 
-      await addDoc(inquiriesRef, inquiryData);
-      
       Alert.alert(
-        '문의 전송 완료', 
+        '문의 전송 완료',
         '보내주셔서 감사해요!',
         [
           {
@@ -88,15 +73,12 @@ export const InquiriesScreen = () => {
               setSubject('');
               setContent('');
               navigation.goBack();
-            }
-          }
+            },
+          },
         ]
       );
     } catch (error) {
-      console.error('문의 접수 실패:', error);
       Alert.alert('오류', '문의사항 접수에 실패했습니다. 다시 시도해주세요.');
-    } finally {
-      setSubmitting(false);
     }
   };
 

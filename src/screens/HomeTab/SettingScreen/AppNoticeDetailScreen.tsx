@@ -1,3 +1,19 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking, Image, Dimensions } from 'react-native';
+import { ImageViewer } from '../../../components/board/ImageViewer';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS } from '../../../constants/colors';
+import { TYPOGRAPHY } from '../../../constants/typhograpy';
+import PageHeader from '../../../components/common/PageHeader';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { format } from 'date-fns';
+import { useScreenView } from '../../../hooks/useScreenView';
+import { useAppNotice } from '../../../hooks/setting';
+
+const WINDOW_WIDTH = Dimensions.get('window').width;
+
 const NoticeImage = ({
   uri,
   ratio,
@@ -18,34 +34,6 @@ const NoticeImage = ({
     />
   </TouchableOpacity>
 );
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking, Image, Dimensions } from 'react-native';
-import { ImageViewer } from '../../../components/board/ImageViewer';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typhograpy';
-import PageHeader from '../../../components/common/PageHeader';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
-import { formatDistanceToNow, format } from 'date-fns';
-import { ko } from 'date-fns/locale';
-import { useScreenView } from '../../../hooks/useScreenView';
-
-const WINDOW_WIDTH = Dimensions.get('window').width;
-
-interface AppNotice {
-  id: string;
-  title: string;
-  content: string;
-  category: 'update' | 'service' | 'event' | 'policy';
-  priority: 'urgent' | 'normal' | 'info';
-  publishedAt: Date;
-  updatedAt?: Date;
-  imageUrls?: string[];
-  actionUrl?: string;
-}
 
 const CATEGORY_LABELS = {
   update: '앱 업데이트',
@@ -71,10 +59,10 @@ export const AppNoticeDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
   const noticeId = route?.params?.noticeId;
-  
-  const [notice, setNotice] = useState<AppNotice | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Repository 패턴 훅 사용
+  const { notice, loading, error } = useAppNotice(noticeId);
+
   const [imageRatios, setImageRatios] = useState<Record<string, number>>({});
   const [imageMetadata, setImageMetadata] = useState<Record<string, { width: number; height: number }>>({});
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -85,57 +73,23 @@ export const AppNoticeDetailScreen = () => {
     return notice?.updatedAt && notice?.updatedAt > notice?.publishedAt;
   }, [notice]);
 
+  // 이미지 메타데이터 로드
   useEffect(() => {
-    const loadNotice = async () => {
-      if (!noticeId) {
-        setError('공지사항 ID가 없습니다.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const db = getFirestore();
-        const noticeDoc = await getDoc(doc(db, 'appNotices', noticeId));
-        
-        if (!noticeDoc.exists()) {
-          setError('공지사항을 찾을 수 없습니다.');
-        } else {
-          const data = noticeDoc.data();
-          const parsedImageUrls = Array.isArray(data?.imageUrls) ? data.imageUrls.filter(Boolean) : [];
-
-          setNotice({
-            id: noticeDoc.id,
-            ...data,
-            imageUrls: parsedImageUrls,
-            publishedAt: data?.publishedAt?.toDate() || new Date(),
-            updatedAt: data?.updatedAt ? data?.updatedAt.toDate?.() || new Date(data?.updatedAt) : undefined,
-          } as AppNotice);
-
-          if (parsedImageUrls.length) {
-            parsedImageUrls.forEach((url: string) => {
-              Image.getSize(
-                url,
-                (width, height) => {
-                  if (width > 0 && height > 0) {
-                    setImageRatios((prev) => ({ ...prev, [url]: width / height }));
-                    setImageMetadata((prev) => ({ ...prev, [url]: { width, height } }));
-                  }
-                },
-                () => {}
-              );
-            });
-          }
-        }
-      } catch (err) {
-        console.error('공지사항 로드 실패:', err);
-        setError('공지사항을 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadNotice();
-  }, [noticeId]);
+    if (notice?.imageUrls?.length) {
+      notice.imageUrls.forEach((url: string) => {
+        Image.getSize(
+          url,
+          (width, height) => {
+            if (width > 0 && height > 0) {
+              setImageRatios((prev) => ({ ...prev, [url]: width / height }));
+              setImageMetadata((prev) => ({ ...prev, [url]: { width, height } }));
+            }
+          },
+          () => {}
+        );
+      });
+    }
+  }, [notice?.imageUrls]);
 
   const handleActionPress = () => {
     if (notice?.actionUrl) {

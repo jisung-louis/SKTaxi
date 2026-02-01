@@ -1,9 +1,13 @@
-import database from '@react-native-firebase/database';
-import firestore from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
-import auth from '@react-native-firebase/auth';
+// SKTaxi: 마인크래프트 채팅 유틸리티
+// IMinecraftRepository를 사용하여 Firebase 직접 의존 제거
 
-const MC_MESSAGES_PATH = 'mc_chat/messages';
+import auth from '@react-native-firebase/auth';
+import { getApp } from '@react-native-firebase/app';
+import firestore from '@react-native-firebase/firestore';
+import { FirestoreMinecraftRepository } from '../repositories/firestore/FirestoreMinecraftRepository';
+
+// 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
+const minecraftRepository = new FirestoreMinecraftRepository();
 
 export async function sendMinecraftMessage(chatRoomId: string, text: string): Promise<void> {
   const user = auth(getApp()).currentUser;
@@ -25,22 +29,16 @@ export async function sendMinecraftMessage(chatRoomId: string, text: string): Pr
         ? profileData.displayName.trim()
         : fallbackDisplayName;
 
-    const userDoc = await database(getApp())
-      .ref(MC_MESSAGES_PATH)
-      .push({
-        username: resolvedDisplayName,
-        message: trimmed,
-        timestamp: Date.now(),
-        direction: 'app_to_mc',
-        appUserId: user.uid,
-        appUserDisplayName: resolvedDisplayName,
-        chatRoomId,
-      });
+    await minecraftRepository.sendMessage({
+      chatRoomId,
+      userId: user.uid,
+      displayName: resolvedDisplayName,
+      text: trimmed,
+    });
 
-    console.log('✅ 마인크래프트 메시지 전송 완료:', userDoc.key);
+    console.log('✅ 마인크래프트 메시지 전송 완료');
   } catch (error) {
     console.error('마인크래프트 메시지 전송 실패:', error);
     throw error;
   }
 }
-

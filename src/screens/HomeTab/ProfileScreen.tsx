@@ -34,6 +34,10 @@ export const ProfileScreen = () => {
 
   /**
    * 사용자의 로그인 방식 확인
+   * 
+   * 주의: Firebase Auth의 providerData에 직접 접근합니다.
+   * Spring 마이그레이션 시 IAuthRepository에 getUserLoginProvider 메서드 추가 필요.
+   * 예: authRepository.getUserLoginProvider(userId) -> 'google' | 'email' | 'unknown'
    */
   const getUserLoginProvider = (): 'google' | 'email' | 'unknown' => {
     const currentUser = auth().currentUser;

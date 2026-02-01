@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import IconFA6 from 'react-native-vector-icons/FontAwesome6';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useCafeteriaMenu } from '../../hooks/useCafeteriaMenu';
+import { useCafeteriaMenu } from '../../hooks/setting';
 import { CAFETERIA_CATEGORIES } from '../../types/cafeteria';
 
 export const CafeteriaSection = () => {

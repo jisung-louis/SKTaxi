@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, FlatList, Pressable } from 'react-native';
-import { collection, query, where, getCountFromServer } from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { BOARD_CATEGORIES, SORT_OPTIONS } from '../../constants/board';
-import { BoardCategory, BoardSearchFilters } from '../../types/board';
-import { db } from '../../config/firebase';
+import { BoardCategory } from '../../types/board';
+import { useBoardCategoryCounts } from '../../hooks/board';
 
 interface BoardHeaderProps {
   selectedCategory: string | null;
@@ -27,53 +26,17 @@ export const BoardHeader: React.FC<BoardHeaderProps> = ({
 }) => {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [loadingCounts, setLoadingCounts] = useState(true);
   const [categoryModalReady, setCategoryModalReady] = useState(false);
   const [sortModalReady, setSortModalReady] = useState(false);
 
-  const selectedCategoryData = selectedCategory 
+  // Repository 패턴을 통한 카테고리별 게시물 수 조회
+  const { counts: categoryCounts, loading: loadingCounts } = useBoardCategoryCounts();
+
+  const selectedCategoryData = selectedCategory
     ? BOARD_CATEGORIES.find(cat => cat.id === selectedCategory)
     : null;
 
   const selectedSortData = SORT_OPTIONS.find(option => option.value === sortBy);
-
-  // 각 카테고리별 게시물 수 가져오기
-  useEffect(() => {
-    const fetchCategoryCounts = async () => {
-      try {
-        setLoadingCounts(true);
-        const counts: Record<string, number> = {};
-
-        // 전체 게시물 수
-        const allQuery = query(
-          collection(db, 'boardPosts'),
-          where('isDeleted', '==', false)
-        );
-        const allSnapshot = await getCountFromServer(allQuery);
-        counts['all'] = allSnapshot.data().count;
-
-        // 각 카테고리별 게시물 수
-        for (const category of BOARD_CATEGORIES) {
-          const categoryQuery = query(
-            collection(db, 'boardPosts'),
-            where('isDeleted', '==', false),
-            where('category', '==', category.id)
-          );
-          const categorySnapshot = await getCountFromServer(categoryQuery);
-          counts[category.id] = categorySnapshot.data().count;
-        }
-
-        setCategoryCounts(counts);
-      } catch (error) {
-        console.error('카테고리별 게시물 수 조회 실패:', error);
-      } finally {
-        setLoadingCounts(false);
-      }
-    };
-
-    fetchCategoryCounts();
-  }, []);
 
   // 모달 상태 변화 감지
   useEffect(() => {

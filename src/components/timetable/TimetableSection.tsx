@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useTimetable } from '../../hooks/useTimetable';
+import { useTimetable } from '../../hooks/timetable';
 import { TimableViewMode, TimetableCourse, CourseSchedule } from '../../types/timetable';
 import { getWeekdayName, generatePeriods, getCurrentSemester, getCurrentAcademicWeek, getPeriodTimeInfo, getCurrentTimeInfo, coursesToTimetableBlocks, arrangeBlocksInRows } from '../../utils/timetableUtils';
 import { TimetableGrid } from './TimetableGrid';

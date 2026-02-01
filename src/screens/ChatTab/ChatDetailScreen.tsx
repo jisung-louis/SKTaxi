@@ -1,4 +1,14 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+// SKTaxi: 채팅방 상세 화면
+//
+// ⚠️ 부분 특수 케이스 - Firebase Realtime Database 사용:
+// 이 화면은 대부분 Repository 패턴을 사용하지만,
+// 마인크래프트 게임 채팅방의 서버 상태 구독에만 RTDB를 직접 사용합니다.
+// - serverStatus: 마인크래프트 서버 접속자 수, 상태 (RTDB)
+// - 채팅 메시지: Repository 패턴 사용 (Firestore)
+//
+// 마인크래프트 서버 상태는 Spring 마이그레이션 대상이 아닙니다.
+
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,10 +23,9 @@ import {
   ActionSheetIOS,
   Image,
   ActivityIndicator,
-  AppState,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useIsFocused, useRoute, RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useIsFocused, useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
@@ -24,16 +33,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { ChatStackParamList } from '../../navigations/types';
 import {
   useChatMessages,
-  joinChatRoom,
   sendChatMessage,
-  getChatRoomNotificationSetting,
-  updateChatRoomNotificationSetting,
-} from '../../hooks/useChatMessages';
-import { ChatMessage, ChatRoom } from '../../types/firestore';
-import { useAuth } from '../../hooks/useAuth';
+  useChatRoom,
+  useChatRoomLastRead,
+  useChatRoomNotifications,
+} from '../../hooks/chat';
+import { ChatMessage } from '../../types/firestore';
+import { useAuth } from '../../hooks/auth';
 import { useScreenView } from '../../hooks/useScreenView';
-import firestore, { doc, onSnapshot, setDoc, serverTimestamp } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 import database from '@react-native-firebase/database';
 import { createReport } from '../../lib/moderation';
 import { sendMinecraftMessage } from '../../lib/minecraftChat';
@@ -73,12 +80,14 @@ export const ChatDetailScreen = () => {
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
 
+  // Repository 패턴 훅 사용
+  const { chatRoom, hasJoined, joinRoom } = useChatRoom(chatRoomId);
+  const { isNotificationEnabled, updateNotificationSetting } = useChatRoomNotifications();
+  useChatRoomLastRead(chatRoomId, isFocused);
+
   // 상태
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
-  const [notificationEnabled, setNotificationEnabled] = useState(true);
-  const [hasJoined, setHasJoined] = useState(false);
   const [serverCurrentPlayers, setServerCurrentPlayers] = useState<number | null>(null);
   const [serverMaxPlayers, setServerMaxPlayers] = useState<number | null>(null);
   const [serverStatus, setServerStatus] = useState<{ online: boolean } | null>(null);
@@ -92,6 +101,8 @@ export const ChatDetailScreen = () => {
 
   // 메시지 훅 (inverted를 위해 내림차순으로 반환)
   const isGameRoom = chatRoom?.type === 'game';
+  // 알림 설정 (chatRoomId가 있을 때만)
+  const notificationEnabled = chatRoomId ? isNotificationEnabled(chatRoomId) : true;
   // 화면이 포커스될 때만 구독을 활성화하여, 다시 포커스될 때 최신 30개를 다시 불러오도록 함
   const { messages, loading: messagesLoading, loadingMore, hasMore, loadMore } =
     useChatMessages(chatRoomId, isFocused);
@@ -101,111 +112,21 @@ export const ChatDetailScreen = () => {
     loadChatSound();
   }, []);
 
-  // 채팅방 정보 구독
+  // 최초 접속 시 members에 추가
   useEffect(() => {
-    if (!chatRoomId) return;
+    if (!chatRoomId || !user?.uid || hasJoined) {return;}
 
-    const chatRoomRef = doc(firestore(getApp()), 'chatRooms', chatRoomId);
-    const unsubscribe = onSnapshot(chatRoomRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as ChatRoom;
-        setChatRoom({ id: snap.id, ...data });
-
-        if (user?.uid && data.members?.includes(user.uid)) {
-          setHasJoined(true);
-        }
-      }
-    }, (error) => {
-      console.error('채팅방 정보 구독 실패:', error);
-    });
-
-    return () => unsubscribe();
-  }, [chatRoomId, user?.uid]);
-
-  // 최초 접속 시 members에 추가 및 읽음 처리
-  useEffect(() => {
-    if (!chatRoomId || !user?.uid || hasJoined) return;
-
-    const joinRoom = async () => {
+    const join = async () => {
       try {
-        await joinChatRoom(chatRoomId);
-        setHasJoined(true);
+        await joinRoom();
       } catch (error) {
         console.error('채팅방 참여 실패:', error);
         Alert.alert('오류', '채팅방에 참여할 수 없습니다.');
       }
     };
 
-    joinRoom();
-  }, [chatRoomId, user?.uid, hasJoined]);
-
-  // 포커스 수명주기(입장/퇴장) + 앱 백그라운드 전환 시 lastReadAt/lastOpenedAt 업데이트
-  useFocusEffect(
-    useCallback(() => {
-      if (!chatRoomId || !user?.uid) return;
-
-      const stateRef = doc(firestore(getApp()), 'users', user.uid, 'chatRoomStates', chatRoomId);
-
-      // 포커스 획득 시점
-      setDoc(
-        stateRef,
-        {
-          lastReadAt: serverTimestamp(),
-          lastOpenedAt: serverTimestamp(),
-        },
-        { merge: true }
-      ).catch((error) => {
-        console.error('채팅방 lastReadAt 업데이트 실패(focus):', error);
-      });
-
-      // 앱 상태 변경 시(백그라운드/비활성 전환)
-      const subscription = AppState.addEventListener('change', (state) => {
-        if (state === 'background' || state === 'inactive') {
-          setDoc(
-            stateRef,
-            {
-              lastReadAt: serverTimestamp(),
-              lastOpenedAt: serverTimestamp(),
-            },
-            { merge: true }
-          ).catch((error) => {
-            console.error('채팅방 lastReadAt 업데이트 실패(appstate):', error);
-          });
-        }
-      });
-
-      // 포커스 해제 또는 화면 언마운트 시
-      return () => {
-        subscription.remove();
-        setDoc(
-          stateRef,
-          {
-            lastReadAt: serverTimestamp(),
-            lastOpenedAt: serverTimestamp(),
-          },
-          { merge: true }
-        ).catch((error) => {
-          console.error('채팅방 lastReadAt 업데이트 실패(blur/unmount):', error);
-        });
-      };
-    }, [chatRoomId, user?.uid])
-  );
-
-  // 알림 설정 로드
-  useEffect(() => {
-    if (!chatRoomId || !user?.uid) return;
-
-    const loadNotificationSetting = async () => {
-      try {
-        const enabled = await getChatRoomNotificationSetting(chatRoomId);
-        setNotificationEnabled(enabled);
-      } catch (error) {
-        console.error('알림 설정 로드 실패:', error);
-      }
-    };
-
-    loadNotificationSetting();
-  }, [chatRoomId, user?.uid]);
+    join();
+  }, [chatRoomId, user?.uid, hasJoined, joinRoom]);
 
   // 게임 채팅방일 때 서버 상태 구독
   useEffect(() => {
@@ -320,12 +241,11 @@ export const ChatDetailScreen = () => {
 
   // 알림 설정 토글
   const handleToggleNotification = async () => {
-    if (!chatRoomId) return;
+    if (!chatRoomId) {return;}
 
     try {
       const newValue = !notificationEnabled;
-      await updateChatRoomNotificationSetting(chatRoomId, newValue);
-      setNotificationEnabled(newValue);
+      await updateNotificationSetting(chatRoomId, newValue);
     } catch (error) {
       console.error('알림 설정 변경 실패:', error);
       Alert.alert('오류', '알림 설정 변경에 실패했습니다.');

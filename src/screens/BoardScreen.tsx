@@ -10,8 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { COLORS } from '../constants/colors';
 import { BoardSearchFilters } from '../types/board';
-import { useBoardPosts } from '../hooks/useBoardPosts';
-import { usePostActions } from '../hooks/usePostActions';
+import { useBoardPosts, usePostActions } from '../hooks/board';
 import { BoardHeader } from '../components/board/BoardHeader';
 import { BoardSearch } from '../components/board/BoardSearch';
 import { PostCard } from '../components/board/PostCard';

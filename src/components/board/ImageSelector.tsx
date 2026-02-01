@@ -13,7 +13,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, w
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { SelectedImage } from '../../hooks/useImageUpload';
+import { SelectedImage } from '../../hooks/storage';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 
 interface ImageSelectorProps {

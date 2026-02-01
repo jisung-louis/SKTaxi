@@ -8,7 +8,7 @@ import IconFA6 from 'react-native-vector-icons/FontAwesome6';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import PageHeader from '../../components/common/PageHeader';
-import { useCafeteriaMenu } from '../../hooks/useCafeteriaMenu';
+import { useCafeteriaMenu } from '../../hooks/setting';
 import { CAFETERIA_CATEGORIES } from '../../types/cafeteria';
 import { useScreenView } from '../../hooks/useScreenView';
 

@@ -1,300 +1,48 @@
-import React, { useEffect, useState, useMemo } from 'react';
+// SKTaxi: ChatListScreen - SRP 리팩토링 완료
+// 
+// 리팩토링 내용:
+// 1. UI 컴포넌트 분리 (ChatRoomCard, ChatListHeader, EmptyChatList)
+// 2. 비즈니스 로직은 hooks/useChatListPresenter 로 위임
+// 3. UI 상태 관리와 레이아웃에 집중
+
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ChatStackParamList } from '../navigations/types';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import Icon from 'react-native-vector-icons/Ionicons';
+import { useIsFocused } from '@react-navigation/native';
+
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typhograpy';
-import Icon from 'react-native-vector-icons/Ionicons';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useScreenView } from '../hooks/useScreenView';
-import { useChatRooms } from '../hooks/useChatRooms';
-import { ChatRoom } from '../types/firestore';
-import { useAuth } from '../hooks/useAuth';
-import firestore, { collection, doc, onSnapshot } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
-import { getChatRoomNotificationSetting } from '../hooks/useChatMessages';
-import { Dot } from '../components/common/Dot';
 
-const formatTimeAgo = (timestamp: any) => {
-  if (!timestamp) return '';
-  
-  try {
-    const now = new Date();
-    const createdAt = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    const diffMs = now.getTime() - createdAt.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffDays > 0) return `${diffDays}일 전`;
-    if (diffHours > 0) return `${diffHours}시간 전`;
-    if (diffMinutes > 0) return `${diffMinutes}분 전`;
-    return '방금 전';
-  } catch {
-    return '';
-  }
-};
-
-const getChatRoomIcon = (type: ChatRoom['type']) => {
-  switch (type) {
-    case 'university':
-      return 'school-outline';
-    case 'department':
-      return 'people-outline';
-    case 'game':
-      return 'game-controller-outline';
-    case 'custom':
-      return 'chatbubbles-outline';
-    default:
-      return 'chatbubble-outline';
-  }
-};
-
-const getChatRoomColor = (type: ChatRoom['type']) => {
-  switch (type) {
-    case 'university':
-      return COLORS.accent.blue;
-    case 'department':
-      return COLORS.accent.green;
-    case 'game':
-      return COLORS.accent.orange;
-    case 'custom':
-    default:
-      return COLORS.accent.red;
-  }
-};
-
-type ChatListScreenNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'ChatList'>;
+import { useChatListPresenter } from './ChatTab/hooks/useChatListPresenter';
+import { ChatRoomCard, ChatListHeader, EmptyChatList } from './ChatTab/components';
 
 export const ChatListScreen = () => {
   useScreenView();
-  const { user } = useAuth();
-  const navigation = useNavigation<ChatListScreenNavigationProp>();
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
   const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [showAllRooms, setShowAllRooms] = useState(false); // 관리자 모드 토글
-  const [notificationSettings, setNotificationSettings] = useState<{ [chatRoomId: string]: boolean }>({});
-  const [chatRoomStates, setChatRoomStates] = useState<{ [chatRoomId: string]: { lastReadAt?: any } }>({});
 
-  // 관리자 여부 확인
-  useEffect(() => {
-    if (!user?.uid) {
-      setIsAdmin(false);
-      return;
-    }
+  const {
+    isAdmin,
+    showAllRooms,
+    loading,
+    refreshing,
+    fixedRooms,
+    gameRooms,
+    customRooms,
+    adminRooms,
+    chatRoomStates,
+    handleRefresh,
+    handleChatRoomPress,
+    toggleAdminMode,
+  } = useChatListPresenter();
 
-    const userDocRef = doc(firestore(getApp()), 'users', user.uid);
-    const unsubscribe = onSnapshot(
-      userDocRef,
-      (snap) => {
-        if (snap.exists()) {
-          const userData = snap.data();
-          setIsAdmin(!!userData?.isAdmin);
-        } else {
-          setIsAdmin(false);
-        }
-      },
-      (error) => {
-        console.error('관리자 여부 확인 실패:', error);
-        setIsAdmin(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [user?.uid]);
-
-  // 관리자인 경우: 모든 채팅방 조회
-  const { chatRooms: allRoomsRaw, loading: loadingAll } = useChatRooms('all');
-  
-  // 일반 사용자인 경우: 각 카테고리별 채팅방 조회
-  const { chatRooms: universityRooms, loading: loadingUniversity } = useChatRooms('university');
-  const { chatRooms: departmentRooms, loading: loadingDepartment } = useChatRooms('department');
-  const { chatRooms: gameRooms, loading: loadingGame } = useChatRooms('game');
-  const { chatRooms: customRooms, loading: loadingCustom } = useChatRooms('custom');
-
-  // 내 방 읽음 상태(lastReadAt) 구독
-  useEffect(() => {
-    if (!user?.uid) {
-      setChatRoomStates({});
-      return;
-    }
-
-    const statesRef = collection(firestore(getApp()), 'users', user.uid, 'chatRoomStates');
-    const unsubscribe = onSnapshot(
-      statesRef,
-      (snap) => {
-        const next: { [chatRoomId: string]: { lastReadAt?: any } } = {};
-        snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-          next[docSnap.id] = docSnap.data() as any;
-        });
-        setChatRoomStates(next);
-      },
-      (error) => {
-        console.error('채팅방 읽음 상태 구독 실패:', error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [user?.uid]);
-
-  // 관리자 모드가 켜져있을 때는 allRooms 사용, 아닐 때는 기존 로직
-  const loading = (isAdmin && showAllRooms)
-    ? loadingAll 
-    : (loadingUniversity || loadingDepartment || loadingGame || loadingCustom);
-
-  // 관리자 모드: 채팅방을 타입별로 정렬 (university > department > custom)
-  const allRooms = useMemo(() => {
-    if (!isAdmin || !showAllRooms) return [];
-    
-    const sorted = [...allRoomsRaw].sort((a, b) => {
-      // 타입 우선순위: university > department > game > custom
-      const typeOrder = { university: 0, department: 1, game: 2, custom: 3 };
-      const aOrder = typeOrder[a.type] ?? 3;
-      const bOrder = typeOrder[b.type] ?? 3;
-      
-      if (aOrder !== bOrder) {
-        return aOrder - bOrder;
-      }
-      
-      // 같은 타입 내에서는 updatedAt 기준 내림차순
-      const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
-      const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
-      return bTime - aTime;
-    });
-    
-    return sorted;
-  }, [isAdmin, showAllRooms, allRoomsRaw]);
-  
-  // 상단 고정 채팅방: 전체 채팅방, 학과 채팅방
-  const fixedRooms = useMemo(() => {
-    // 관리자 모드가 켜져있으면 고정 채팅방 없음
-    if (isAdmin && showAllRooms) {
-      return [];
-    }
-    
-    const rooms: ChatRoom[] = [];
-    
-    // 전체 채팅방 (첫 번째)
-    if (universityRooms.length > 0) {
-      rooms.push(universityRooms[0]);
-    }
-    
-    // 학과 채팅방 (두 번째)
-    if (departmentRooms.length > 0) {
-      rooms.push(departmentRooms[0]);
-    }
-    
-    return rooms;
-  }, [isAdmin, showAllRooms, universityRooms, departmentRooms]);
-
-  // 게임 채팅방: updatedAt 기준 정렬
-  const sortedGameRooms = useMemo(() => {
-    // 관리자 모드가 켜져있으면 게임 채팅방 없음
-    if (isAdmin && showAllRooms) return [];
-
-    return [...gameRooms].sort((a, b) => {
-      const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
-      const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
-      return bTime - aTime;
-    });
-  }, [isAdmin, showAllRooms, gameRooms]);
-  
-  // 일반 사용자 모드: 커스텀 채팅방을 updatedAt 기준으로 정렬
-  const sortedCustomRooms = useMemo(() => {
-    // 관리자 모드가 켜져있으면 커스텀 채팅방 없음
-    if (isAdmin && showAllRooms) return [];
-    
-    return [...customRooms].sort((a, b) => {
-      const aTime = a.updatedAt?.toDate?.()?.getTime() || 0;
-      const bTime = b.updatedAt?.toDate?.()?.getTime() || 0;
-      return bTime - aTime; // 내림차순
-    });
-  }, [isAdmin, showAllRooms, customRooms]);
-
-  const adminRoomsWithSettings = useMemo(() => {
-    if (!isAdmin || !showAllRooms) return [];
-
-    return allRooms.map(room => ({
-      ...room,
-      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-    }));
-  }, [isAdmin, showAllRooms, allRooms, notificationSettings]);
-
-  const gameRoomsWithSettings = useMemo(() => {
-    if (isAdmin && showAllRooms) return [];
-
-    return sortedGameRooms.map(room => ({
-      ...room,
-      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-    }));
-  }, [isAdmin, showAllRooms, sortedGameRooms, notificationSettings]);
-
-  const customRoomsWithSettings = useMemo(() => {
-    if (isAdmin && showAllRooms) return [];
-
-    return sortedCustomRooms.map(room => ({
-      ...room,
-      notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-    }));
-  }, [isAdmin, showAllRooms, sortedCustomRooms, notificationSettings]);
-
-  // 각 채팅방의 알림 설정 구독
-  useEffect(() => {
-    if (!user?.uid) {
-      setNotificationSettings({});
-      return;
-    }
-
-    const allRoomsToCheck = (isAdmin && showAllRooms) ? allRooms : [...fixedRooms, ...sortedGameRooms, ...sortedCustomRooms];
-    const unsubscribes: (() => void)[] = [];
-
-    allRoomsToCheck.forEach((room) => {
-      if (!room.id) return;
-
-      const settingRef = doc(firestore(getApp()), 'users', user.uid, 'chatRoomNotifications', room.id);
-      const unsubscribe = onSnapshot(
-        settingRef,
-        (snap) => {
-          if (snap.exists()) {
-            const data = snap.data();
-            setNotificationSettings(prev => ({
-              ...prev,
-              [room.id!]: data?.enabled !== false,
-            }));
-          } else {
-            // 문서가 없으면 기본값 true
-            setNotificationSettings(prev => ({
-              ...prev,
-              [room.id!]: true,
-            }));
-          }
-        },
-        (error) => {
-          console.error(`채팅방 ${room.id} 알림 설정 구독 실패:`, error);
-          // 에러 시 기본값 true
-          setNotificationSettings(prev => ({
-            ...prev,
-            [room.id!]: true,
-          }));
-        }
-      );
-      unsubscribes.push(unsubscribe);
-    });
-
-    return () => {
-      unsubscribes.forEach(unsub => unsub());
-    };
-  }, [user?.uid, isAdmin, showAllRooms, allRooms, fixedRooms, sortedGameRooms, sortedCustomRooms]);
-
+  // 화면 포커스 애니메이션
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
     translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
@@ -305,190 +53,11 @@ export const ChatListScreen = () => {
     transform: [{ translateY: translateY.value }],
   }));
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  };
-
-  const handleChatRoomPress = (chatRoom: ChatRoom) => {
-    if (!chatRoom.id) return;
-    navigation.navigate('ChatDetail', { chatRoomId: chatRoom.id });
-  };
-
-  const renderChatRoomCard = ({ item, useDisplayName }: { item: ChatRoom & { displayName?: string; notificationEnabled?: boolean }; useDisplayName?: boolean }) => {
-    const roomState = item.id ? chatRoomStates[item.id] : undefined;
-    const lastReadAt = roomState?.lastReadAt;
-    const lastMessageAt = item.lastMessage?.timestamp;
-
-    const toMillis = (ts: any) => {
-      try {
-        if (!ts) return null;
-        if (ts.toMillis) return ts.toMillis();
-        if (ts.toDate) return ts.toDate().getTime();
-        return new Date(ts).getTime();
-      } catch {
-        return null;
-      }
-    };
-
-    const lastReadMillis = toMillis(lastReadAt);
-    const lastMessageMillis = toMillis(lastMessageAt);
-    const hasUnread = lastMessageMillis ? (lastReadMillis ? lastMessageMillis > lastReadMillis : true) : false;
-
-    const lastMessageTime = lastMessageAt ? formatTimeAgo(lastMessageAt) : '';
-    const displayName = useDisplayName && item.displayName ? item.displayName : item.name;
-    const iconColor = getChatRoomColor(item.type);
-
-    return (
-      <TouchableOpacity
-        style={styles.chatRoomCard}
-        onPress={() => handleChatRoomPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={[styles.chatRoomIconContainer, { backgroundColor: `${iconColor}20` }]}>
-          <Icon 
-            name={getChatRoomIcon(item.type)} 
-            size={24} 
-            color={iconColor} 
-          />
-        </View>
-        
-        <View style={styles.chatRoomContent}>
-          <View style={styles.chatRoomHeader}>
-            <View style={styles.chatRoomNameContainer}>
-              <Text style={styles.chatRoomName} numberOfLines={1}>
-                {displayName}
-              </Text>
-              {item.notificationEnabled === false && (
-                <Icon 
-                  name="notifications-off" 
-                  size={16} 
-                  color={COLORS.text.secondary} 
-                  style={styles.notificationOffIcon}
-                />
-              )}
-            </View>
-            {lastMessageTime ? (
-              <Text style={styles.chatRoomTime}>{lastMessageTime}</Text>
-            ) : null}
-          </View>
-          
-          {item.lastMessage ? (
-            <Text style={styles.chatRoomLastMessage} numberOfLines={1}>
-              {item.lastMessage.text}
-            </Text>
-          ) : (
-            <Text style={styles.chatRoomLastMessage} numberOfLines={1}>
-              {item.description || '아직 메시지가 없어요'}
-            </Text>
-          )}
-          
-          <View style={styles.chatRoomFooter}>
-            <View style={styles.chatRoomMembers}>
-              <Icon name="people-outline" size={14} color={COLORS.text.secondary} />
-              <Text style={styles.chatRoomMembersText}>
-                {item.members.length}명
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* 새 메시지 여부 도트 (우측 아래) */}
-        <View style={styles.badgeContainer}>
-          <Dot visible={hasUnread} size="large" />
-        </View>
-      </TouchableOpacity>
-    );
-  };
-
-  const renderListHeader = () => {
-    // 관리자 모드가 켜져있으면 헤더 없음
-    if (isAdmin && showAllRooms) {
-      return null;
-    }
-
-    // 고정 채팅방 이름 설정
-    const fixedRoomsWithNames = fixedRooms.map((room, index) => {
-      const roomWithSettings = {
-        ...room,
-        displayName: room.type === 'university' 
-          ? '성결대 전체 채팅방' 
-          : (room.type === 'department' && user?.department 
-            ? `${user.department} 채팅방` 
-            : room.name),
-        notificationEnabled: room.id ? (notificationSettings[room.id] ?? true) : true,
-      };
-      return roomWithSettings;
-    });
-
-    return (
-      <View>
-        {/* 고정 채팅방 (전체 채팅방, 학과 채팅방) */}
-        {fixedRoomsWithNames.map((room) => (
-          <View key={room.id}>
-            {renderChatRoomCard({ item: room, useDisplayName: true })}
-          </View>
-        ))}
-
-        {/* 게임 채팅방 */}
-        {gameRoomsWithSettings.length > 0 && (
-          <View>
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>게임 채팅방</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            {gameRoomsWithSettings.map((room) => (
-              <View key={room.id}>
-                {renderChatRoomCard({ item: room })}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* 구분선 */}
-        {sortedCustomRooms.length > 0 && (
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>내 채팅방</Text>
-            <View style={styles.dividerLine} />
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const renderEmpty = () => {
-    // 고정 채팅방만 있고 나머지 채팅방이 없을 때
-    if (fixedRooms.length > 0 && sortedGameRooms.length === 0 && sortedCustomRooms.length === 0) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Icon name="chatbubbles-outline" size={64} color={COLORS.text.disabled} />
-          <Text style={styles.emptyTitle}>참여 중인 채팅방이 없어요</Text>
-          <Text style={styles.emptyMessage}>
-            새로운 채팅방을 만들거나 초대를 받아보세요
-          </Text>
-        </View>
-      );
-    }
-    
-    // 모든 채팅방이 없을 때
-    return (
-      <View style={styles.emptyContainer}>
-        <Icon name="chatbubbles-outline" size={64} color={COLORS.text.disabled} />
-        <Text style={styles.emptyTitle}>채팅방이 없어요</Text>
-        <Text style={styles.emptyMessage}>
-          새로운 채팅방이 있으면 여기에 표시됩니다
-        </Text>
-      </View>
-    );
-  };
-
-  const isAdminListEmpty = adminRoomsWithSettings.length === 0;
-  const isNonAdminListEmpty = customRoomsWithSettings.length === 0;
   const shouldShowEmpty = (isAdmin && showAllRooms)
-    ? isAdminListEmpty
-    : (fixedRooms.length === 0 && sortedGameRooms.length === 0 && isNonAdminListEmpty);
+    ? adminRooms.length === 0
+    : (fixedRooms.length === 0 && gameRooms.length === 0 && customRooms.length === 0);
+
+  const flatListData = (isAdmin && showAllRooms) ? adminRooms : customRooms;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -499,13 +68,13 @@ export const ChatListScreen = () => {
           {isAdmin && (
             <TouchableOpacity
               style={styles.adminToggleButton}
-              onPress={() => setShowAllRooms(!showAllRooms)}
+              onPress={toggleAdminMode}
               activeOpacity={0.7}
             >
-              <Icon 
-                name={showAllRooms ? "eye-off" : "eye"} 
-                size={20} 
-                color={showAllRooms ? COLORS.text.secondary : COLORS.accent.blue} 
+              <Icon
+                name={showAllRooms ? "eye-off" : "eye"}
+                size={20}
+                color={showAllRooms ? COLORS.text.secondary : COLORS.accent.blue}
               />
               <Text style={[
                 styles.adminToggleText,
@@ -518,22 +87,38 @@ export const ChatListScreen = () => {
         </View>
 
         {/* Chat List */}
-        {loading && ((isAdmin && showAllRooms) ? allRooms.length === 0 : (fixedRooms.length === 0 && sortedGameRooms.length === 0 && sortedCustomRooms.length === 0)) ? (
+        {loading && shouldShowEmpty ? (
           <View style={styles.loadingContainer}>
             <Text style={styles.loadingText}>채팅방을 불러오는 중...</Text>
           </View>
         ) : (
           <FlatList
-            data={(isAdmin && showAllRooms) ? adminRoomsWithSettings : customRoomsWithSettings}
+            data={flatListData}
             keyExtractor={(item) => item.id || ''}
-            renderItem={renderChatRoomCard}
-            ListHeaderComponent={renderListHeader}
+            renderItem={({ item }) => (
+              <ChatRoomCard
+                item={item}
+                roomState={item.id ? chatRoomStates[item.id] : undefined}
+                onPress={handleChatRoomPress}
+              />
+            )}
+            ListHeaderComponent={
+              <ChatListHeader
+                isAdmin={isAdmin}
+                showAllRooms={showAllRooms}
+                fixedRooms={fixedRooms}
+                gameRooms={gameRooms}
+                customRooms={customRooms}
+                chatRoomStates={chatRoomStates}
+                onRoomPress={handleChatRoomPress}
+              />
+            }
             contentContainerStyle={[
               styles.listContent,
               shouldShowEmpty && styles.listContentEmpty,
               { paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20 }
             ]}
-            ListEmptyComponent={shouldShowEmpty ? renderEmpty : null}
+            ListEmptyComponent={shouldShowEmpty ? <EmptyChatList type="no-participation" /> : null}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -590,122 +175,8 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    marginHorizontal: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border.default,
-  },
-  dividerText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    marginHorizontal: 12,
-    fontWeight: '600',
-  },
   listContentEmpty: {
     flex: 1,
-  },
-  chatRoomCard: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.background.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-    position: 'relative',
-  },
-  badgeContainer: {
-    position: 'absolute',
-    left: 8,
-    top: 8,
-  },
-  chatRoomIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.accent.blue + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  chatRoomContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  chatRoomHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  chatRoomNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  chatRoomName: {
-    ...TYPOGRAPHY.body1,
-    fontWeight: '700',
-    color: COLORS.text.primary,
-    flex: 1,
-  },
-  notificationOffIcon: {
-    marginLeft: 6,
-  },
-  chatRoomTime: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    marginLeft: 8,
-  },
-  chatRoomLastMessage: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    marginBottom: 8,
-  },
-  chatRoomFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  chatRoomMembers: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  chatRoomMembersText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 60,
-  },
-  emptyTitle: {
-    ...TYPOGRAPHY.title2,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyMessage: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
   },
   loadingContainer: {
     flex: 1,
@@ -717,18 +188,4 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body1,
     color: COLORS.text.secondary,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingVertical: 40,
-  },
-  errorText: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-    marginTop: 16,
-  },
 });
-

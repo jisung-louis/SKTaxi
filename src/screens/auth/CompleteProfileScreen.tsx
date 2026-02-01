@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Text } from '../../components/common/Text';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useAuth } from '../../hooks/useAuth';
-import { updateUserProfile, getUserProfile, createUserProfile, assertDisplayNameAvailable } from '../../libs/firebase';
+import { useAuth } from '../../hooks/auth';
+import { useUserRepository } from '../../di';
 import { useScreenView } from '../../hooks/useScreenView';
 import { Dropdown } from '../../components/common/Dropdown';
 import { DEPARTMENT_OPTIONS } from '../../constants/constants';
@@ -17,6 +17,7 @@ export const CompleteProfileScreen = () => {
   useScreenView();
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const userRepository = useUserRepository();
   const [displayName, setDisplayName] = useState('');
   const [department, setDepartment] = useState('');
   const [studentId, setStudentId] = useState('');
@@ -44,19 +45,19 @@ export const CompleteProfileScreen = () => {
     try {
       setLoading(true);
 
-      // 닉네임 중복 검사
-      await assertDisplayNameAvailable(displayName);
-
       // uid 안전 확보 (useAuth와 Firebase Auth가 잠시 엇갈리는 상황 대비)
       const authUid = user.uid || (user as any)?.uid;
       if (!authUid) {
         throw new Error('사용자 정보를 불러오지 못했습니다. 다시 로그인해 주세요.');
       }
 
-      // 사용자 문서가 없으면 먼저 생성
-      const existing = await getUserProfile(authUid);
+      // 닉네임 중복 검사 (Repository 패턴)
+      await userRepository.checkDisplayNameAvailable(displayName, authUid);
+
+      // 사용자 문서가 없으면 먼저 생성 (Repository 패턴)
+      const existing = await userRepository.getUserProfile(authUid);
       if (!existing) {
-        await createUserProfile(authUid, {
+        await userRepository.createUserProfile(authUid, {
           uid: authUid,
           email: user.email ?? null,
           displayName: displayName.trim(),
@@ -72,12 +73,12 @@ export const CompleteProfileScreen = () => {
           },
         } as any);
       }
-      await updateUserProfile(authUid, {
+      await userRepository.updateUserProfile(authUid, {
         displayName: displayName.trim(),
         studentId: studentId.trim(),
         department: department.trim(),
       } as any);
-      await updateUserProfile(authUid, {
+      await userRepository.updateUserProfile(authUid, {
         agreements: {
           termsAccepted: true,
           ageConfirmed: true,

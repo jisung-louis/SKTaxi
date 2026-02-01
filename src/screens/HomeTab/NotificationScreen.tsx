@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useNotifications, Notification } from '../../hooks/useNotifications';
+import { useNotifications, Notification } from '../../hooks/common';
 import { useScreenView } from '../../hooks/useScreenView';
 
 const formatTimeAgo = (timestamp: any) => {

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Alert,
   KeyboardAvoidingView,
@@ -15,17 +15,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { doc, getDoc, updateDoc, serverTimestamp } from '@react-native-firebase/firestore';
 
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { BOARD_CATEGORIES } from '../../constants/board';
-import { BoardFormData, BoardPost } from '../../types/board';
-import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../config/firebase';
+import { BoardFormData } from '../../types/board';
+import { useBoardEdit } from '../../hooks/board';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
-import { useImageUpload } from '../../hooks/useImageUpload';
 import { ImageSelector } from '../../components/board/ImageSelector';
 import { useScreenView } from '../../hooks/useScreenView';
 
@@ -41,99 +38,38 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
-  const { user } = useAuth();
   const postId = route?.params?.postId;
 
-  const [post, setPost] = useState<BoardPost | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  
   const [formData, setFormData] = useState<BoardFormData>({
     title: '',
     content: '',
     category: 'general',
   });
 
+  // Repository 패턴 적용 훅
   const {
+    post,
+    loading,
+    error,
+    updatePost,
+    submitting,
     selectedImages,
-    uploading: imageUploading,
+    imageUploading,
     pickImages,
     removeImage,
     reorderImages,
-    uploadImages,
-    clearImages,
-    setImages,
-  } = useImageUpload({ maxImages: 10 });
+  } = useBoardEdit(postId);
 
-  // 게시글 로드
+  // 게시글 로드 시 폼 데이터 초기화
   useEffect(() => {
-    const loadPost = async () => {
-      if (!postId || !user) return;
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        const postRef = doc(db, 'boardPosts', postId);
-        const snapshot = await getDoc(postRef);
-
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (data) {
-            const postData = {
-              id: snapshot.id,
-              ...data,
-              createdAt: data.createdAt?.toDate() || new Date(),
-              updatedAt: data.updatedAt?.toDate() || new Date(),
-              lastCommentAt: data.lastCommentAt?.toDate(),
-            } as BoardPost;
-
-            // 작성자 확인
-            if (postData.authorId !== user.uid) {
-              setError('수정 권한이 없습니다.');
-              return;
-            }
-
-            setPost(postData);
-            setFormData({
-              title: postData.title,
-              content: postData.content,
-              category: postData.category,
-            });
-
-            // 기존 이미지가 있으면 편집용 상태에 주입
-            if (postData.images && postData.images.length > 0) {
-              const existing = postData.images.map((img, idx) => ({
-                id: `existing-${idx}`,
-                localUri: img.url,
-                width: img.width,
-                height: img.height,
-                size: img.size || 0,
-                mime: img.mime || 'image/jpeg',
-                status: 'uploaded' as const,
-                progress: 100,
-                remoteUrl: img.url,
-                thumbUrl: img.thumbUrl || img.url,
-              }));
-              setImages(existing);
-            } else {
-              setImages([]);
-            }
-          }
-        } else {
-          setError('게시글을 찾을 수 없습니다.');
-        }
-      } catch (err) {
-        console.error('게시글 로드 실패:', err);
-        setError('게시글을 불러오는데 실패했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPost();
-  }, [postId, user]);
+    if (post) {
+      setFormData({
+        title: post.title,
+        content: post.content,
+        category: post.category,
+      });
+    }
+  }, [post]);
 
   const handleTitleChange = useCallback((text: string) => {
     setFormData(prev => ({ ...prev, title: text }));
@@ -149,7 +85,7 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
 
 
   const handleSubmit = useCallback(async () => {
-    if (!postId || !user) return;
+    if (!postId) return;
 
     if (!formData.title.trim()) {
       Alert.alert('오류', '제목을 입력해주세요.');
@@ -162,43 +98,10 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
     }
 
     try {
-      setSubmitting(true);
-
-      const postRef = doc(db, 'boardPosts', postId);
-
-      // 1) 업로드 수행 후 결과를 사용해 최종 메타 구성 (순서 유지, 상태 타이밍 이슈 방지)
-      let uploadedImagesAll = [] as typeof selectedImages;
-      if (selectedImages.length > 0) {
-        try {
-          uploadedImagesAll = await uploadImages(postId);
-        } catch (imageError) {
-          console.error('이미지 업로드 실패:', imageError);
-          Alert.alert('경고', '이미지 업로드에 실패했지만 텍스트 수정은 반영됩니다.');
-        }
-      }
-
-      const sourceList = uploadedImagesAll.length > 0 ? uploadedImagesAll : selectedImages;
-      const finalImages = sourceList
-        .filter(img => (img.status === 'uploaded' && (img.remoteUrl || img.localUri)))
-        .map(img => ({
-          url: img.remoteUrl || img.localUri,
-          width: img.width,
-          height: img.height,
-          thumbUrl: img.thumbUrl,
-          size: img.size,
-          mime: img.mime,
-        }));
-
-      await updateDoc(postRef, {
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        category: formData.category,
-        images: finalImages,
-        updatedAt: serverTimestamp(),
-      });
+      await updatePost(formData);
 
       Alert.alert(
-        '성공', 
+        '성공',
         '게시글이 수정되었습니다.',
         [
           {
@@ -213,15 +116,11 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
           }
         ]
       );
-
     } catch (err) {
       console.error('게시글 수정 실패:', err);
-      Alert.alert('오류', '게시글 수정에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
-      clearImages();
+      Alert.alert('오류', err instanceof Error ? err.message : '게시글 수정에 실패했습니다.');
     }
-  }, [postId, user, formData, navigation, selectedImages, uploadImages, clearImages]);
+  }, [postId, formData, navigation, updatePost]);
 
   const handleCancel = useCallback(() => {
     const hasChanges = 

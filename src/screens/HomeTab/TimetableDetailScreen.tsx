@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { useTimetable } from '../../hooks/useTimetable';
+import { useTimetable } from '../../hooks/timetable';
 import { useCourseSearchContext } from '../../contexts/CourseSearchContext';
 import PageHeader from '../../components/common/PageHeader';
 import { SemesterDropdown } from '../../components/common/SemesterDropdown';

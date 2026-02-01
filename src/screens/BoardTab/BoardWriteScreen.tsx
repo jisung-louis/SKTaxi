@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   TextInput,
   Alert,
   KeyboardAvoidingView,
@@ -15,42 +15,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { addDoc, collection, serverTimestamp } from '@react-native-firebase/firestore';
 
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { BOARD_CATEGORIES } from '../../constants/board';
 import { BoardFormData } from '../../types/board';
-import { useAuth } from '../../hooks/useAuth';
-import { db } from '../../config/firebase';
-import { useImageUpload } from '../../hooks/useImageUpload';
+import { useAuth } from '../../hooks/auth';
+import { useBoardWrite } from '../../hooks/board';
 import { ImageSelector } from '../../components/board/ImageSelector';
 import { useScreenView } from '../../hooks/useScreenView';
-import { logEvent } from '../../lib/analytics';
 
 export const BoardWriteScreen: React.FC = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const { user } = useAuth();
-  
+
   const [formData, setFormData] = useState<BoardFormData>({
     title: '',
     content: '',
     category: 'general',
     isAnonymous: true,
   });
-  const [submitting, setSubmitting] = useState(false);
 
-  // 이미지 업로드 훅
+  // Repository 패턴 적용 훅
   const {
+    createPost,
+    submitting,
     selectedImages,
-    uploading: imageUploading,
+    imageUploading,
     pickImages,
     removeImage,
     reorderImages,
-    uploadImages,
     clearImages,
-  } = useImageUpload({ maxImages: 10 });
+  } = useBoardWrite();
 
   const handleTitleChange = useCallback((text: string) => {
     setFormData(prev => ({ ...prev, title: text }));
@@ -86,79 +83,10 @@ export const BoardWriteScreen: React.FC = () => {
     }
 
     try {
-      setSubmitting(true);
+      const postId = await createPost(formData);
 
-      // 먼저 게시글 문서 생성
-      const postData = {
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        category: formData.category,
-        authorId: user.uid,
-        authorName: user.displayName || '익명',
-        authorProfileImage: user.photoURL || null,
-        isAnonymous: !!formData.isAnonymous,
-        viewCount: 0,
-        likeCount: 0,
-        commentCount: 0,
-        bookmarkCount: 0,
-        isPinned: false,
-        isDeleted: false,
-        images: [], // 초기에는 빈 배열
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      };
-
-      const docRef = await addDoc(collection(db, 'boardPosts'), postData);
-      const postId = docRef.id;
-
-      // Analytics: 게시글 작성 이벤트 로깅
-      await logEvent('board_post_created', {
-        post_id: postId,
-        category: formData.category,
-        is_anonymous: formData.isAnonymous ?? false,
-        has_images: selectedImages.length > 0,
-        image_count: selectedImages.length,
-      });
-
-      // 익명 설정이면 anonId 업데이트
-      if (formData.isAnonymous) {
-        await docRef.update({
-          anonId: `${postId}:${user.uid}`,
-          isAnonymous: true,
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      // 이미지가 있으면 업로드
-      if (selectedImages.length > 0) {
-        try {
-          const uploadedImages = await uploadImages(postId);
-          
-          // 업로드된 이미지 정보로 게시글 업데이트
-          const imageData = uploadedImages.map(img => ({
-            url: img.remoteUrl!,
-            width: img.width,
-            height: img.height,
-            thumbUrl: img.thumbUrl,
-            size: img.size,
-            mime: img.mime,
-          }));
-
-          await docRef.update({
-            images: imageData,
-            updatedAt: serverTimestamp(),
-          });
-        } catch (imageError) {
-          console.error('이미지 업로드 실패:', imageError);
-          Alert.alert('경고', '이미지 업로드에 실패했지만 게시글은 작성되었습니다.');
-        }
-      }
-      
-      // 이미지 초기화
-      clearImages();
-      
       Alert.alert(
-        '성공', 
+        '성공',
         '게시글이 작성되었습니다.',
         [
           {
@@ -167,20 +95,17 @@ export const BoardWriteScreen: React.FC = () => {
               index: 1,
               routes: [
                 { name: 'BoardMain' },
-                { name: 'BoardDetail', params: { postId: docRef.id } },
+                { name: 'BoardDetail', params: { postId } },
               ],
             })
           }
         ]
       );
-
     } catch (err) {
       console.error('게시글 작성 실패:', err);
-      Alert.alert('오류', '게시글 작성에 실패했습니다.');
-    } finally {
-      setSubmitting(false);
+      Alert.alert('오류', err instanceof Error ? err.message : '게시글 작성에 실패했습니다.');
     }
-  }, [user, formData, navigation, selectedImages, uploadImages, clearImages]);
+  }, [user, formData, navigation, createPost]);
 
   const handleCancel = useCallback(() => {
     if (formData.title.trim() || formData.content.trim()) {

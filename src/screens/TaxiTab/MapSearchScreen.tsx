@@ -6,7 +6,7 @@ import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import PageHeader from '../../components/common/PageHeader';
-import { useCurrentLocation } from '../../components/section/TaxiTab/hooks/useCurrentLocation';
+import { useCurrentLocation } from '../../hooks/common/useCurrentLocation';
 import { useScreenView } from '../../hooks/useScreenView';
 
 interface MapSearchScreenProps {

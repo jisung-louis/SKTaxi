@@ -1,18 +1,16 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   ActivityIndicator,
   Alert,
   Share,
   Linking,
   Image
 } from 'react-native';
-import { doc, updateDoc, increment } from '@react-native-firebase/firestore';
-import { db } from '../../config/firebase';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,10 +21,8 @@ import { ko } from 'date-fns/locale';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { POST_CATEGORY_LABELS } from '../../constants/board';
-import { useBoardPost } from '../../hooks/useBoardPost';
-import { useComments } from '../../hooks/useComments';
-import { useAuth } from '../../hooks/useAuth';
-import { useUserBoardInteractions } from '../../hooks/useUserBoardInteractions';
+import { useBoardPost, usePostActions, useBoardComments } from '../../hooks/board';
+import { useAuth } from '../../hooks/auth';
 import { ToggleButton } from '../../components/common/ToggleButton';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
@@ -64,12 +60,17 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     post,
     loading,
     error,
-    incrementViewCount,
-    deletePost,
     refresh,
   } = useBoardPost(postId);
 
-  const { isLiked, isBookmarked, toggleLike, toggleBookmark } = useUserBoardInteractions(postId);
+  const {
+    isLiked,
+    isBookmarked,
+    toggleLike,
+    toggleBookmark,
+    incrementViewCount,
+    deletePost,
+  } = usePostActions(postId);
 
   const {
     comments: rawComments,
@@ -79,7 +80,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
     addReply,
     updateComment,
     deleteComment,
-  } = useComments('board', postId);
+  } = useBoardComments(postId);
 
   // Comment 타입을 UniversalComment 타입으로 변환 (재귀적으로 답글의 답글도 변환)
   const convertComment = (comment: any): any => {
@@ -111,53 +112,23 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
 
   const handleLike = useCallback(async () => {
     if (!post) return;
-    
+
     try {
-      // 사용자 상호작용 토글
       await toggleLike();
-      
-      // 게시글의 좋아요 수 업데이트
-      const postRef = doc(db, 'boardPosts', post.id);
-      if (isLiked) {
-        // 좋아요 취소 - 수 감소
-        await updateDoc(postRef, {
-          likeCount: increment(-1),
-        });
-      } else {
-        // 좋아요 - 수 증가
-        await updateDoc(postRef, {
-          likeCount: increment(1),
-        });
-      }
     } catch (err) {
       console.error('좋아요 처리 실패:', err);
     }
-  }, [post, isLiked, toggleLike]);
+  }, [post, toggleLike]);
 
   const handleBookmark = useCallback(async () => {
     if (!post) return;
-    
+
     try {
-      // 사용자 상호작용 토글
       await toggleBookmark();
-      
-      // 게시글의 북마크 수 업데이트
-      const postRef = doc(db, 'boardPosts', post.id);
-      if (isBookmarked) {
-        // 북마크 취소 - 수 감소
-        await updateDoc(postRef, {
-          bookmarkCount: increment(-1),
-        });
-      } else {
-        // 북마크 - 수 증가
-        await updateDoc(postRef, {
-          bookmarkCount: increment(1),
-        });
-      }
     } catch (err) {
       console.error('북마크 처리 실패:', err);
     }
-  }, [post, isBookmarked, toggleBookmark]);
+  }, [post, toggleBookmark]);
 
   const handleReport = useCallback(() => {
     if (!post) return;

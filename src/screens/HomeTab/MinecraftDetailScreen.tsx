@@ -1,15 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// SKTaxi: Minecraft 서버 상세 화면
+//
+// ⚠️ 특수 케이스 - Firebase Realtime Database 사용:
+// 이 화면은 마인크래프트 서버 상태를 실시간으로 모니터링합니다.
+// - 서버 상태 (online/offline, 접속자 수)
+// - 화이트리스트 플레이어 목록
+// - 서버 주소 및 버전 정보
+//
+// Firebase Realtime Database는 마인크래프트 서버와의 실시간 연동에 특화된
+// 별도의 시스템으로, Spring 마이그레이션 대상이 아닙니다.
+// (마인크래프트 서버 플러그인이 RTDB에 직접 데이터를 쓰는 구조)
+
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Clipboard, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import database from '@react-native-firebase/database';
-import firestore from '@react-native-firebase/firestore';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { MinecraftServerStatus, MinecraftWhitelistPlayer } from '../../types/minecraft';
 import { useScreenView } from '../../hooks/useScreenView';
+import { useUserRepository } from '../../di/useRepository';
 
 type PlayerWithMeta = MinecraftWhitelistPlayer & {
   addedByDisplayName?: string;
@@ -18,6 +30,7 @@ type PlayerWithMeta = MinecraftWhitelistPlayer & {
 export const MinecraftDetailScreen = () => {
   useScreenView();
   const navigation = useNavigation();
+  const userRepository = useUserRepository();
   const [whitelistEnabled, setWhitelistEnabled] = useState<boolean | null>(null);
   const [players, setPlayers] = useState<PlayerWithMeta[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
@@ -142,35 +155,27 @@ export const MinecraftDetailScreen = () => {
     };
   }, [userCache]);
 
+  // Repository 패턴을 사용한 사용자 표시 이름 조회
   useEffect(() => {
     const missingUserIds = Array.from(new Set(players.map((player) => player.addedBy)))
       .filter((uid) => uid && !userCache[uid]);
 
-    if (missingUserIds.length === 0) return;
+    if (missingUserIds.length === 0) {return;}
 
     setFetchingUsers(true);
-    Promise.all(
-      missingUserIds.map(async (uid) => {
-        try {
-          const snap = await firestore().collection('users').doc(uid).get();
-          const displayName = snap.data()?.displayName || '관리자';
-          return { uid, displayName };
-        } catch {
-          return { uid, displayName: '알 수 없음' };
-        }
+    userRepository
+      .getUserDisplayNames(missingUserIds)
+      .then((displayNameMap) => {
+        setUserCache((prev) => ({
+          ...prev,
+          ...displayNameMap,
+        }));
       })
-    )
-      .then((results) => {
-        setUserCache((prev) => {
-          const next = { ...prev };
-          results.forEach(({ uid, displayName }) => {
-            next[uid] = displayName;
-          });
-          return next;
-        });
+      .catch((error) => {
+        console.error('사용자 이름 조회 실패:', error);
       })
       .finally(() => setFetchingUsers(false));
-  }, [players, userCache]);
+  }, [players, userCache, userRepository]);
 
   // 온라인 플레이어 Set 생성 (UUID와 username으로 빠른 조회)
   const onlinePlayerSet = useMemo(() => {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, TextInput, Alert, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
@@ -6,16 +6,24 @@ import { TYPOGRAPHY } from '../../../constants/typhograpy';
 import PageHeader from '../../../components/common/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
-import IconMaterial from 'react-native-vector-icons/MaterialIcons';
 import { useScreenView } from '../../../hooks/useScreenView';
+import { useAccountInfo } from '../../../hooks/user';
 
 export const AccountModificationScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const user = auth().currentUser;
+
+  // Repository 패턴 훅 사용
+  const {
+    accountInfo,
+    hasAccount,
+    loading: accountLoading,
+    saving: accountSaving,
+    deleting: accountDeleting,
+    saveAccountInfo,
+    deleteAccountInfo,
+  } = useAccountInfo();
 
   const BANKS = useMemo(
     () => [
@@ -29,50 +37,26 @@ export const AccountModificationScreen = () => {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountHolder, setAccountHolder] = useState('');
   const [hideName, setHideName] = useState(false);
-  
+
   const [errors, setErrors] = useState<{holder?: string; bank?: string; number?: string}>({});
   const [open, setOpen] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [hasAccount, setHasAccount] = useState(false);
+
+  // 로컬 상태 별칭 (기존 코드 호환)
+  const fetching = accountLoading;
+  const saving = accountSaving;
+  const deleting = accountDeleting;
 
   const onlyDigits = (v: string) => v.replace(/[^0-9]/g, '');
 
-  // 초기값 로드: Firestore users/{uid}.account
-  React.useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        setFetching(true);
-        if (!user?.uid) return;
-        const snap = await firestore().collection('users').doc(user.uid).get();
-        const data = snap.data() as any;
-        const account = data?.account || {};
-        if (cancelled) return;
-        
-        // Firestore에 account 필드가 존재하는지 확인
-        const accountExists = !!data?.account && 
-          (account.bankName || account.accountNumber || account.accountHolder);
-        setHasAccount(accountExists);
-        
-        setBankName(account.bankName || '');
-        setAccountNumber(account.accountNumber || '');
-        setAccountHolder(account.accountHolder || '');
-        // boolean 타입(hideName) 우선 사용, 없으면 nameVisibility 호환 처리
-        if (typeof account.hideName === 'boolean') {
-          setHideName(account.hideName);
-        } else if (typeof account.nameVisibility === 'string') {
-          setHideName(account.nameVisibility === 'hidden');
-        }
-      } catch (e) {
-        // 무시: 초기 로드 실패 시 빈 값 유지
-      } finally {
-        if (!cancelled) setFetching(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user?.uid]);
+  // Repository 패턴: accountInfo가 로드되면 로컬 상태에 반영
+  useEffect(() => {
+    if (accountInfo) {
+      setBankName(accountInfo.bankName);
+      setAccountNumber(accountInfo.accountNumber);
+      setAccountHolder(accountInfo.accountHolder);
+      setHideName(accountInfo.hideName);
+    }
+  }, [accountInfo]);
 
   const validate = () => {
     const next: typeof errors = {};
@@ -84,70 +68,52 @@ export const AccountModificationScreen = () => {
   };
 
   const handleSave = async () => {
-    if (!user?.uid) {
-      Alert.alert('오류', '로그인이 필요합니다.');
-      return;
-    }
     if (!validate()) {
       Alert.alert('알림', '입력값을 확인해주세요.');
       return;
     }
     try {
-      setSaving(true);
-      await firestore().collection('users').doc(user.uid).set({
-        account: { accountHolder: accountHolder.trim(), bankName, accountNumber: accountNumber.trim(), hideName },
-      }, { merge: true });
-      
-      // 저장 성공 후 hasAccount 업데이트
-      setHasAccount(true);
-      
+      // Repository 패턴: saveAccountInfo 훅 사용
+      await saveAccountInfo({
+        bankName,
+        accountNumber: accountNumber.trim(),
+        accountHolder: accountHolder.trim(),
+        hideName,
+      });
+
       Alert.alert('완료', '계좌 정보가 저장되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
     } catch (e) {
       Alert.alert('오류', '저장 중 오류가 발생했어요.');
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!user?.uid) {
-      Alert.alert('오류', '로그인이 필요합니다.');
-      return;
-    }
-
     Alert.alert(
       '계좌 정보 삭제',
       '저장된 계좌 정보를 삭제할까요?',
       [
         { text: '취소', style: 'cancel' },
-        { 
-          text: '삭제', 
+        {
+          text: '삭제',
           style: 'destructive',
           onPress: async () => {
             try {
-              setDeleting(true);
-              await firestore().collection('users').doc(user.uid).update({
-                account: firestore.FieldValue.delete()
-              });
-              
+              // Repository 패턴: deleteAccountInfo 훅 사용
+              await deleteAccountInfo();
+
               // 로컬 상태 초기화
               setBankName('');
               setAccountNumber('');
               setAccountHolder('');
               setHideName(false);
               setErrors({});
-              
-              // 삭제 성공 후 hasAccount 업데이트
-              setHasAccount(false);
-              
+
               Alert.alert('완료', '계좌 정보가 삭제되었어요.', [{ text: '확인', onPress: () => navigation.goBack() }]);
             } catch (e) {
               Alert.alert('오류', '삭제 중 오류가 발생했어요.');
-            } finally {
-              setDeleting(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };

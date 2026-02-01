@@ -1,6 +1,12 @@
-import { getFirestore, doc, updateDoc, increment } from '@react-native-firebase/firestore';
+// SKTaxi: 공지사항 조회수 관리 유틸리티
+// INoticeRepository를 사용하여 Firebase Firestore 직접 의존 제거
 
-// SKTaxi: 세션 내에서 중복 조회 증가를 방지하기 위한 메모리 캐시
+import { FirestoreNoticeRepository } from '../repositories/firestore/FirestoreNoticeRepository';
+
+// 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
+const noticeRepository = new FirestoreNoticeRepository();
+
+// 세션 내에서 중복 조회 증가를 방지하기 위한 메모리 캐시
 const viewedNoticeIds = new Set<string>();
 
 /**
@@ -12,16 +18,10 @@ export async function incrementNoticeViewCount(noticeId: string | undefined | nu
 
   viewedNoticeIds.add(noticeId);
   try {
-    const db = getFirestore();
-    const noticeRef = doc(db, 'notices', noticeId);
-    await updateDoc(noticeRef, {
-      viewCount: increment(1),
-    });
+    await noticeRepository.incrementViewCount(noticeId);
   } catch (error) {
     console.error('공지 조회수 증가 실패:', error);
     // 실패 시 다시 시도할 수 있도록 캐시에서 제거
     viewedNoticeIds.delete(noticeId);
   }
 }
-
-

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from './auth';
 
 export const useProfileCompletion = () => {
   const { user } = useAuth();
