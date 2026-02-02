@@ -1,8 +1,20 @@
-// SKTaxi: Minecraft Repository Firebase 구현체
+// SKTaxi: Minecraft Repository Firebase 구현체 - v22 Modular API
 // Firestore + Realtime Database를 사용한 마인크래프트 기능 구현
 
-import firestore from '@react-native-firebase/firestore';
-import database from '@react-native-firebase/database';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+} from '@react-native-firebase/firestore';
+import {
+  getDatabase,
+  ref,
+  get,
+  set,
+  push,
+  remove,
+} from '@react-native-firebase/database';
 import {
   IMinecraftRepository,
   RegisterAccountParams,
@@ -19,11 +31,12 @@ const RTDB_BE_WHITELIST_PATH = 'whitelist/BEPlayers';
 const MC_MESSAGES_PATH = 'mc_chat/messages';
 
 export class FirestoreMinecraftRepository implements IMinecraftRepository {
-  private db = firestore();
-  private rtdb = database();
+  private db = getFirestore();
+  private rtdb = getDatabase();
 
   async getUserMinecraftAccounts(uid: string): Promise<MinecraftAccountEntry[]> {
-    const userDoc = await this.db.collection('users').doc(uid).get();
+    const userDocRef = doc(this.db, 'users', uid);
+    const userDoc = await getDoc(userDocRef);
     const minecraftAccount = (userDoc.data()?.minecraftAccount || { accounts: [] }) as UserMinecraftAccount;
     return Array.isArray(minecraftAccount.accounts) ? minecraftAccount.accounts : [];
   }
@@ -39,8 +52,8 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
     const { uuid, nickname: resolvedNickname, storedName } = lookupResult;
 
     // Firestore에서 기존 계정 조회
-    const userDocRef = this.db.collection('users').doc(uid);
-    const userSnap = await userDocRef.get();
+    const userDocRef = doc(this.db, 'users', uid);
+    const userSnap = await getDoc(userDocRef);
     const minecraftAccount = (userSnap.data()?.minecraftAccount || { accounts: [] }) as UserMinecraftAccount;
     const existingAccounts = Array.isArray(minecraftAccount.accounts) ? minecraftAccount.accounts : [];
 
@@ -68,13 +81,13 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
       if (!storedName) {
         throw new Error('BE 계정의 storedName이 생성되지 않았습니다.');
       }
-      playerRef = this.rtdb.ref(`${RTDB_BE_WHITELIST_PATH}/${storedName}`);
+      playerRef = ref(this.rtdb, `${RTDB_BE_WHITELIST_PATH}/${storedName}`);
     } else {
-      playerRef = this.rtdb.ref(`${RTDB_WHITELIST_PATH}/${uuid}`);
+      playerRef = ref(this.rtdb, `${RTDB_WHITELIST_PATH}/${uuid}`);
     }
 
     // RTDB 중복 확인
-    const playerSnap = await playerRef.once('value');
+    const playerSnap = await get(playerRef);
     if (playerSnap.exists()) {
       throw new Error('이미 화이트리스트에 등록된 계정입니다.');
     }
@@ -112,17 +125,18 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
     }
 
     // RTDB에 저장
-    await playerRef.set(rtdbData);
+    await set(playerRef, rtdbData);
 
     try {
       // Firestore에 저장
-      await userDocRef.set(
+      await setDoc(
+        userDocRef,
         { minecraftAccount: { accounts: updatedAccounts } },
         { merge: true }
       );
     } catch (error) {
       // 롤백
-      await playerRef.remove().catch(() => {});
+      await remove(playerRef).catch(() => {});
       throw error;
     }
 
@@ -136,8 +150,8 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
       throw new Error('로그인이 필요합니다.');
     }
 
-    const userDocRef = this.db.collection('users').doc(uid);
-    const userSnap = await userDocRef.get();
+    const userDocRef = doc(this.db, 'users', uid);
+    const userSnap = await getDoc(userDocRef);
     const minecraftAccount = (userSnap.data()?.minecraftAccount || { accounts: [] }) as UserMinecraftAccount;
     const existingAccounts = Array.isArray(minecraftAccount.accounts) ? minecraftAccount.accounts : [];
 
@@ -160,25 +174,26 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
       if (!accountToDelete.storedName) {
         throw new Error('BE 계정의 storedName을 찾을 수 없습니다.');
       }
-      playerRef = this.rtdb.ref(`${RTDB_BE_WHITELIST_PATH}/${accountToDelete.storedName}`);
+      playerRef = ref(this.rtdb, `${RTDB_BE_WHITELIST_PATH}/${accountToDelete.storedName}`);
     } else {
-      playerRef = this.rtdb.ref(`${RTDB_WHITELIST_PATH}/${uuid}`);
+      playerRef = ref(this.rtdb, `${RTDB_WHITELIST_PATH}/${uuid}`);
     }
 
-    const playerSnap = await playerRef.once('value');
+    const playerSnap = await get(playerRef);
 
     if (playerSnap.exists()) {
       const playerData = playerSnap.val();
       if (playerData?.addedBy !== uid) {
         throw new Error('본인이 등록한 계정만 삭제할 수 있습니다.');
       }
-      await playerRef.remove();
+      await remove(playerRef);
     }
 
     const updatedAccounts = existingAccounts.filter((acc: MinecraftAccountEntry) => acc.uuid !== uuid);
 
     try {
-      await userDocRef.set(
+      await setDoc(
+        userDocRef,
         { minecraftAccount: { accounts: updatedAccounts } },
         { merge: true }
       );
@@ -197,7 +212,7 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
         if (accountToDelete.whoseFriend) {
           rtdbData.whoseFriend = accountToDelete.whoseFriend;
         }
-        await playerRef.set(rtdbData).catch(() => {});
+        await set(playerRef, rtdbData).catch(() => {});
       }
       throw error;
     }
@@ -208,12 +223,12 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
   async isWhitelistRegistered(uuid: string, edition: string, storedName?: string): Promise<boolean> {
     let playerRef;
     if (edition === 'BE' && storedName) {
-      playerRef = this.rtdb.ref(`${RTDB_BE_WHITELIST_PATH}/${storedName}`);
+      playerRef = ref(this.rtdb, `${RTDB_BE_WHITELIST_PATH}/${storedName}`);
     } else {
-      playerRef = this.rtdb.ref(`${RTDB_WHITELIST_PATH}/${uuid}`);
+      playerRef = ref(this.rtdb, `${RTDB_WHITELIST_PATH}/${uuid}`);
     }
 
-    const snap = await playerRef.once('value');
+    const snap = await get(playerRef);
     return snap.exists();
   }
 
@@ -226,7 +241,8 @@ export class FirestoreMinecraftRepository implements IMinecraftRepository {
     }
 
     try {
-      await this.rtdb.ref(MC_MESSAGES_PATH).push({
+      const messagesRef = ref(this.rtdb, MC_MESSAGES_PATH);
+      await push(messagesRef, {
         username: displayName,
         message: trimmed,
         timestamp: Date.now(),

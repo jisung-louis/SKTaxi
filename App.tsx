@@ -15,8 +15,8 @@ import { CourseSearchProvider } from './src/contexts/CourseSearchContext';
 import { RepositoryProvider } from './src/di/RepositoryProvider';
 import { RootNavigator } from './src/navigations/RootNavigator';
 import './src/config/firebase';
-import auth from '@react-native-firebase/auth';
-import crashlytics from '@react-native-firebase/crashlytics';
+import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
+import { getCrashlytics, log } from '@react-native-firebase/crashlytics';
 import { configureGoogleSignin } from './src/config/google';
 import { checkVersionUpdate, VersionModalConfig } from './src/lib/versionCheck';
 import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
@@ -29,16 +29,24 @@ const App = () => {
 
   useEffect(() => {
     configureGoogleSignin();
-    crashlytics().log('App mounted');
+
+    // Firebase Crashlytics - Modular API
+    const crashlyticsInstance = getCrashlytics();
+    log(crashlyticsInstance, 'App mounted');
+
     // SKTaxi: 간소화 정책 - 앱 시작 즉시 저장 로직은 제거하고 로그인 성공 시점에서만 저장
     // SKTaxi: 포그라운드 메시지 처리 핸들러는 RootNavigator에서 등록
     // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제
     // const unsub = subscribeFcmTokenRefresh();
-    const unsubAuth = auth().onAuthStateChanged(() => {});
+
+    // Firebase Auth - Modular API
+    const authInstance = getAuth();
+    const unsubAuth = onAuthStateChanged(authInstance, () => {});
+
     if (Platform.OS === 'android') {
       ImmersiveMode.setBarMode('BottomSticky');
     }
-    
+
     // SKTaxi: 버전 체크 및 강제 업데이트 확인
     checkVersionUpdate().then((result) => {
       if (result.forceUpdate) {
@@ -49,7 +57,7 @@ const App = () => {
     }).catch((error) => {
       console.error('버전 체크 실패:', error);
     });
-    
+
     return () => { unsubAuth(); };
   }, []);
 

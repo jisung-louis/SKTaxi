@@ -16,7 +16,7 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import database from '@react-native-firebase/database';
+import { getDatabase, ref, onValue } from '@react-native-firebase/database';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { MinecraftServerStatus, MinecraftWhitelistPlayer } from '../../types/minecraft';
@@ -42,14 +42,15 @@ export const MinecraftDetailScreen = () => {
   const [userCache, setUserCache] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const enabledRef = database().ref('whitelist/enabled');
-    const playersRef = database().ref('whitelist/players');
-    const bePlayersRef = database().ref('whitelist/BEPlayers');
-    const statusRef = database().ref('serverStatus');
-    const serverUrlRef = database().ref('serverStatus/serverUrl');
-    const mapUriRef = database().ref('serverStatus/mapUri');
+    const db = getDatabase();
+    const enabledRef = ref(db, 'whitelist/enabled');
+    const playersRef = ref(db, 'whitelist/players');
+    const bePlayersRef = ref(db, 'whitelist/BEPlayers');
+    const statusRef = ref(db, 'serverStatus');
+    const serverUrlRef = ref(db, 'serverStatus/serverUrl');
+    const mapUriRef = ref(db, 'serverStatus/mapUri');
 
-    const handleEnabled = enabledRef.on('value', (snap) => {
+    const unsubscribeEnabled = onValue(enabledRef, (snap) => {
       if (snap.exists()) {
         setWhitelistEnabled(!!snap.val());
       } else {
@@ -67,7 +68,7 @@ export const MinecraftDetailScreen = () => {
       setLoadingPlayers(false);
     };
 
-    const handleJePlayers = playersRef.on('value', (snap) => {
+    const unsubscribeJePlayers = onValue(playersRef, (snap) => {
       const value = snap.val();
       if (!value) {
         jePlayers = [];
@@ -89,7 +90,7 @@ export const MinecraftDetailScreen = () => {
       updatePlayers();
     });
 
-    const handleBePlayers = bePlayersRef.on('value', (snap) => {
+    const unsubscribeBePlayers = onValue(bePlayersRef, (snap) => {
       const value = snap.val();
       if (!value) {
         bePlayers = [];
@@ -111,7 +112,7 @@ export const MinecraftDetailScreen = () => {
       updatePlayers();
     });
 
-    const handleStatus = statusRef.on('value', (snap) => {
+    const unsubscribeStatus = onValue(statusRef, (snap) => {
       const data = snap.val();
       if (!data) {
         setServerStatus(null);
@@ -129,7 +130,7 @@ export const MinecraftDetailScreen = () => {
       if (data.version) setServerVersion(data.version);
     });
 
-    const handleServerUrl = serverUrlRef.on('value', (snap) => {
+    const unsubscribeServerUrl = onValue(serverUrlRef, (snap) => {
       if (snap.exists()) {
         setServerUrl(snap.val() as string);
       } else {
@@ -137,7 +138,7 @@ export const MinecraftDetailScreen = () => {
       }
     });
 
-    const handleMapUri = mapUriRef.on('value', (snap) => {
+    const unsubscribeMapUri = onValue(mapUriRef, (snap) => {
       if (snap.exists()) {
         setMapUri(snap.val() as string);
       } else {
@@ -146,12 +147,12 @@ export const MinecraftDetailScreen = () => {
     });
 
     return () => {
-      enabledRef.off('value', handleEnabled);
-      playersRef.off('value', handleJePlayers);
-      bePlayersRef.off('value', handleBePlayers);
-      statusRef.off('value', handleStatus);
-      serverUrlRef.off('value', handleServerUrl);
-      mapUriRef.off('value', handleMapUri);
+      unsubscribeEnabled();
+      unsubscribeJePlayers();
+      unsubscribeBePlayers();
+      unsubscribeStatus();
+      unsubscribeServerUrl();
+      unsubscribeMapUri();
     };
   }, [userCache]);
 

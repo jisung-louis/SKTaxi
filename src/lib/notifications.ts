@@ -1,12 +1,23 @@
 // SKTaxi: FCM 포그라운드 메시지 처리 및 join 요청 수락/거절 유틸
 // INotificationActionRepository를 사용하여 Firebase 직접 의존 제거
+// v22 Modular API
 
-import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import {
+  getMessaging,
+  onMessage,
+  setBackgroundMessageHandler,
+  onNotificationOpenedApp,
+  getInitialNotification,
+} from '@react-native-firebase/messaging';
+import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 import { sendSystemMessage } from '../hooks/chat';
 
 // 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
 const notificationActionRepository = new FirestoreNotificationActionRepository();
+
+// Messaging 인스턴스
+const messaging = getMessaging();
 
 // === 콜백 타입 정의 ===
 
@@ -74,7 +85,7 @@ function handleChatMessage(
   callbacks: ForegroundMessageCallbacks
 ) {
   console.log('🔔 채팅 메시지 처리:', data.partyId);
-  
+
   // 현재 화면이 Chat이면 알림 숨김
   const currentScreen = callbacks.getCurrentScreen?.();
   if (currentScreen === 'Chat') {
@@ -96,7 +107,7 @@ function handleChatRoomMessage(
   callbacks: ForegroundMessageCallbacks
 ) {
   console.log('🔔 채팅방 메시지 처리:', data.chatRoomId);
-  
+
   // 현재 화면이 ChatDetail이고 같은 채팅방이면 알림 숨김
   const currentScreen = callbacks.getCurrentScreen?.();
   if (currentScreen === 'ChatDetail') {
@@ -190,7 +201,6 @@ export function initForegroundMessageHandler(
   onChatRoomMessageReceived?: (data: { chatRoomId: string; senderName: string; messageText: string }) => void,
   getCurrentChatRoomId?: () => string | undefined
 ) {
-  console.log('🔔 포그라운드 메시지 핸들러 등록됨');
 
   const callbacks: ForegroundMessageCallbacks = {
     showModal,
@@ -210,7 +220,7 @@ export function initForegroundMessageHandler(
     getCurrentChatRoomId,
   };
 
-  messaging().onMessage(async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+  return onMessage(messaging, async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
     console.log('🔔 포그라운드에서 FCM 메시지 수신:', JSON.stringify(remoteMessage, null, 2));
 
     const data = remoteMessage.data || {};
@@ -300,7 +310,7 @@ export async function deleteJoinRequestNotifications(userId: string, partyId: st
 // === 백그라운드/알림 클릭 핸들러 ===
 
 export function initBackgroundMessageHandler(onJoinRequestReceived?: (joinData: any) => void) {
-  messaging().setBackgroundMessageHandler(async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
+  setBackgroundMessageHandler(messaging, async (remoteMessage: FirebaseMessagingTypes.RemoteMessage) => {
     const data = remoteMessage.data || {};
     console.log('백그라운드에서 받은 알림:', data);
 
@@ -374,7 +384,7 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
 }
 
 export function initNotificationOpenedAppHandler(navigation: any, onJoinRequestReceived?: (joinData: any) => void) {
-  messaging().onNotificationOpenedApp(remoteMessage => {
+  return onNotificationOpenedApp(messaging, remoteMessage => {
     console.log('알림을 통해 앱이 열렸습니다:', remoteMessage);
     const data = remoteMessage.data || {};
     handleNotificationNavigation(navigation, data, onJoinRequestReceived);
@@ -382,7 +392,7 @@ export function initNotificationOpenedAppHandler(navigation: any, onJoinRequestR
 }
 
 export async function checkInitialNotification(navigation: any, onJoinRequestReceived?: (joinData: any) => void) {
-  const remoteMessage = await messaging().getInitialNotification();
+  const remoteMessage = await getInitialNotification(messaging);
 
   if (remoteMessage) {
     console.log('앱 종료 상태에서 알림을 통해 앱이 열렸습니다:', remoteMessage);

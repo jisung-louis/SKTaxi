@@ -14,7 +14,7 @@ import { WebView } from 'react-native-webview';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useScreenView } from '../../hooks/useScreenView';
-import database from '@react-native-firebase/database';
+import { getDatabase, ref, onValue } from '@react-native-firebase/database';
 
 export const MinecraftMapDetailScreen = () => {
   useScreenView();
@@ -22,9 +22,10 @@ export const MinecraftMapDetailScreen = () => {
   const [mapUri, setMapUri] = useState<string | null>(null);
 
   useEffect(() => {
-    const mapUriRef = database().ref('serverStatus/mapUri');
+    const db = getDatabase();
+    const mapUriRef = ref(db, 'serverStatus/mapUri');
 
-    const handleMapUri = mapUriRef.on('value', (snap) => {
+    const unsubscribe = onValue(mapUriRef, (snap) => {
       if (snap.exists()) {
         setMapUri(snap.val() as string);
       } else {
@@ -33,7 +34,7 @@ export const MinecraftMapDetailScreen = () => {
     });
 
     return () => {
-      mapUriRef.off('value', handleMapUri);
+      unsubscribe();
     };
   }, []);
 

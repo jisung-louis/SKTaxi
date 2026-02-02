@@ -1,7 +1,7 @@
 // SKTaxi: App Config Repository Firebase 구현체
 // 앱 버전 정보 Firebase Firestore 구현
 
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import {
   IAppConfigRepository,
   AppVersionInfo,
@@ -9,14 +9,12 @@ import {
 } from '../interfaces/IAppConfigRepository';
 
 export class FirestoreAppConfigRepository implements IAppConfigRepository {
-  private db = firestore();
+  private db = getFirestore();
 
   async getMinimumRequiredVersion(platform: 'ios' | 'android'): Promise<AppVersionInfo | null> {
     try {
-      const versionDoc = await this.db
-        .collection('appVersion')
-        .doc(platform)
-        .get();
+      const versionDocRef = doc(this.db, 'appVersion', platform);
+      const versionDoc = await getDoc(versionDocRef);
 
       if (!versionDoc.exists()) {
         return null;

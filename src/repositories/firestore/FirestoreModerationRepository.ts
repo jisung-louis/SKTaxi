@@ -1,7 +1,19 @@
 // SKTaxi: Moderation Repository Firebase 구현체
 // 신고/차단 관리 Firebase Firestore 구현
 
-import firestore from '@react-native-firebase/firestore';
+import {
+  getFirestore,
+  serverTimestamp,
+  collection,
+  doc,
+  addDoc,
+  setDoc,
+  deleteDoc,
+  getDoc,
+  query,
+  where,
+  getDocs,
+} from '@react-native-firebase/firestore';
 import {
   IModerationRepository,
   ReportPayload,
@@ -9,77 +21,54 @@ import {
 } from '../interfaces/IModerationRepository';
 
 export class FirestoreModerationRepository implements IModerationRepository {
-  private db = firestore();
+  private db = getFirestore();
 
   async createReport(reporterId: string, payload: ReportPayload): Promise<string> {
-    const ref = await this.db.collection('reports').add({
+    const reportsCol = collection(this.db, 'reports');
+    const docRef = await addDoc(reportsCol, {
       ...payload,
       reporterId,
       status: 'open',
-      createdAt: firestore.FieldValue.serverTimestamp(),
-      updatedAt: firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     } as ReportDoc);
-    return ref.id;
+    return docRef.id;
   }
 
   async blockUser(blockerId: string, blockedUserId: string): Promise<void> {
-    const ref = this.db
-      .collection('blocks')
-      .doc(blockerId)
-      .collection('blockedUsers')
-      .doc(blockedUserId);
+    const ref = doc(this.db, 'blocks', blockerId, 'blockedUsers', blockedUserId);
 
-    await ref.set({
+    await setDoc(ref, {
       blockedUserId,
       blockedBy: blockerId,
-      createdAt: firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
     }, { merge: true });
   }
 
   async unblockUser(blockerId: string, blockedUserId: string): Promise<void> {
-    const ref = this.db
-      .collection('blocks')
-      .doc(blockerId)
-      .collection('blockedUsers')
-      .doc(blockedUserId);
-
-    await ref.delete();
+    const ref = doc(this.db, 'blocks', blockerId, 'blockedUsers', blockedUserId);
+    await deleteDoc(ref);
   }
 
   async isBlocked(viewerId: string, authorId: string): Promise<boolean> {
-    const ref = this.db
-      .collection('blocks')
-      .doc(viewerId)
-      .collection('blockedUsers')
-      .doc(authorId);
-
-    const snap = await ref.get();
+    const ref = doc(this.db, 'blocks', viewerId, 'blockedUsers', authorId);
+    const snap = await getDoc(ref);
     return snap.exists();
   }
 
   async isMutuallyBlocked(viewerId: string, authorId: string): Promise<boolean> {
-    const aRef = this.db
-      .collection('blocks')
-      .doc(viewerId)
-      .collection('blockedUsers')
-      .doc(authorId);
+    const aRef = doc(this.db, 'blocks', viewerId, 'blockedUsers', authorId);
+    const bRef = doc(this.db, 'blocks', authorId, 'blockedUsers', viewerId);
 
-    const bRef = this.db
-      .collection('blocks')
-      .doc(authorId)
-      .collection('blockedUsers')
-      .doc(viewerId);
-
-    const [aSnap, bSnap] = await Promise.all([aRef.get(), bRef.get()]);
+    const [aSnap, bSnap] = await Promise.all([getDoc(aRef), getDoc(bRef)]);
     return aSnap.exists() || bSnap.exists();
   }
 
   async countOpenReports(): Promise<number> {
-    const q = this.db
-      .collection('reports')
-      .where('status', '==', 'open');
+    const reportsCol = collection(this.db, 'reports');
+    const q = query(reportsCol, where('status', '==', 'open'));
 
-    const snaps = await q.get();
+    const snaps = await getDocs(q);
     return snaps.size;
   }
 }

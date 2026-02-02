@@ -35,9 +35,6 @@ export const TimetableSection = () => {
     setShowNightClasses(hasTodayNightClasses);
   }, [hasTodayNightClasses]);
 
-  console.log('showNightClasses', showNightClasses);
-  console.log('hasTodayNightClasses', hasTodayNightClasses);
-
   const handleViewAll = () => {
     navigation.navigate('TimetableDetail');
   };

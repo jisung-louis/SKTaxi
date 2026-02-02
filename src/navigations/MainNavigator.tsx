@@ -30,7 +30,7 @@ import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, hasPermission, requestPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
 import PermissionBubble from '../components/common/PermissionBubble';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -49,9 +49,8 @@ import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useChatRooms } from '../hooks/chat';
 import { useAuth } from '../hooks/auth';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import firestore, { collection, onSnapshot } from '@react-native-firebase/firestore';
+import { getFirestore, collection, onSnapshot } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -149,7 +148,8 @@ const MainNavigatorContent = () => {
       return;
     }
 
-    const statesRef = collection(firestore(getApp()), 'users', user.uid, 'chatRoomStates');
+    const db = getFirestore();
+    const statesRef = collection(db, 'users', user.uid, 'chatRoomStates');
     const unsubscribe = onSnapshot(
       statesRef,
       (snap) => {
@@ -209,8 +209,9 @@ const MainNavigatorContent = () => {
     const checkPermission = async () => {
       try {
         if (Platform.OS === 'ios') {
-          const status = await messaging().hasPermission();
-          const granted = status === messaging.AuthorizationStatus.AUTHORIZED;
+          const messagingInstance = getMessaging();
+          const status = await hasPermission(messagingInstance);
+          const granted = status === AuthorizationStatus.AUTHORIZED;
           if (mounted) setBubbleVisible(!granted);
         } else {
           // Android: POST_NOTIFICATIONS 권한 확인 (API 33+)
@@ -253,8 +254,9 @@ const MainNavigatorContent = () => {
   const handleAllowNotification = React.useCallback(async () => {
     try {
       if (Platform.OS === 'ios') {
-        const req = await messaging().requestPermission();
-        const ok = req === messaging.AuthorizationStatus.AUTHORIZED;
+        const messagingInstance = getMessaging();
+        const req = await requestPermission(messagingInstance);
+        const ok = req === AuthorizationStatus.AUTHORIZED;
         if (ok) {
           setBubbleVisible(false);
           return;

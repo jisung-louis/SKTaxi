@@ -1,8 +1,7 @@
 // SKTaxi: 파티 채팅 메시지 유틸리티 함수
 // IPartyRepository를 사용하여 Firebase Firestore 직접 의존 제거
 
-import auth from '@react-native-firebase/auth';
-import { getApp } from '@react-native-firebase/app';
+import { getAuth } from '@react-native-firebase/auth';
 import { logEvent } from '../lib/analytics';
 import {
   AccountMessageData,
@@ -19,7 +18,7 @@ const partyRepository = new FirestorePartyRepository();
  * @param text - 메시지 텍스트
  */
 export async function sendMessage(partyId: string, text: string): Promise<void> {
-  const user = auth(getApp()).currentUser;
+  const user = getAuth().currentUser;
   if (!user) {
     throw new Error('로그인이 필요합니다.');
   }
@@ -64,7 +63,7 @@ export async function sendAccountMessage(
   partyId: string,
   accountData: AccountMessageData
 ): Promise<void> {
-  const user = auth(getApp()).currentUser;
+  const user = getAuth().currentUser;
   if (!user) {
     throw new Error('로그인이 필요합니다.');
   }
@@ -86,7 +85,7 @@ export async function sendArrivedMessage(
   partyId: string,
   arrivalData: ArrivalMessageData
 ): Promise<void> {
-  const user = auth(getApp()).currentUser;
+  const user = getAuth().currentUser;
   if (!user) {
     throw new Error('로그인이 필요합니다.');
   }
@@ -105,7 +104,7 @@ export async function sendArrivedMessage(
  * @param partyArrived - 도착 여부
  */
 export async function sendEndMessage(partyId: string, partyArrived: boolean): Promise<void> {
-  const user = auth(getApp()).currentUser;
+  const user = getAuth().currentUser;
   if (!user) {
     throw new Error('로그인이 필요합니다.');
   }

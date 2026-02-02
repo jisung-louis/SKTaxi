@@ -1,4 +1,4 @@
-import firestore from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc, arrayRemove } from '@react-native-firebase/firestore';
 
 /**
  * 학과명을 기반으로 채팅방 문서 ID를 생성합니다.
@@ -55,18 +55,19 @@ export async function leaveDepartmentRoom(department: string, uid: string): Prom
 
   try {
     const docId = getDepartmentRoomId(department);
-    const roomRef = firestore().collection('chatRooms').doc(docId);
-    
+    const db = getFirestore();
+    const roomRef = doc(db, 'chatRooms', docId);
+
     // 문서 존재 여부 확인 (선택적)
-    const docSnap = await roomRef.get();
-    if (!docSnap.exists) {
+    const docSnap = await getDoc(roomRef);
+    if (!docSnap.exists()) {
       console.log(`ℹ️ 채팅방이 존재하지 않습니다: ${docId} (학과: ${department})`);
       return;
     }
-    
+
     // members 배열에서 uid 제거
-    await roomRef.update({
-      members: firestore.FieldValue.arrayRemove(uid),
+    await updateDoc(roomRef, {
+      members: arrayRemove(uid),
     });
     
     console.log(`✅ 사용자 ${uid}가 ${department} 채팅방에서 탈퇴했습니다. (docId: ${docId})`);

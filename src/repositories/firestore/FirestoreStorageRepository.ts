@@ -1,7 +1,6 @@
-// SKTaxi: Storage Repository Firebase 구현체
+// SKTaxi: Storage Repository Firebase 구현체 - v22 Modular API
 
-import storage from '@react-native-firebase/storage';
-import { getApp } from '@react-native-firebase/app';
+import { getStorage, ref } from '@react-native-firebase/storage';
 
 import {
   IStorageRepository,
@@ -14,7 +13,7 @@ import { RepositoryError, RepositoryErrorCode } from '../../errors';
  * Firebase Storage 기반 Storage Repository 구현체
  */
 export class FirestoreStorageRepository implements IStorageRepository {
-  private readonly storageRef = storage(getApp());
+  private readonly storage = getStorage();
 
   async uploadImage(uri: string, options: UploadOptions): Promise<UploadResult> {
     return this.uploadFile(uri, {
@@ -32,7 +31,7 @@ export class FirestoreStorageRepository implements IStorageRepository {
     const fullPath = `${path}${finalFilename}`;
 
     try {
-      const reference = this.storageRef.ref(fullPath);
+      const reference = ref(this.storage, fullPath);
       const task = reference.putFile(uri);
 
       // 진행률 콜백
@@ -75,7 +74,7 @@ export class FirestoreStorageRepository implements IStorageRepository {
 
   async deleteFile(path: string): Promise<void> {
     try {
-      const reference = this.storageRef.ref(path);
+      const reference = ref(this.storage, path);
       await reference.delete();
     } catch (error: any) {
       // 파일이 이미 없는 경우 무시
@@ -88,7 +87,7 @@ export class FirestoreStorageRepository implements IStorageRepository {
 
   async getDownloadUrl(path: string): Promise<string> {
     try {
-      const reference = this.storageRef.ref(path);
+      const reference = ref(this.storage, path);
       return await reference.getDownloadURL();
     } catch (error: any) {
       throw RepositoryError.fromFirebaseError(error, { path });

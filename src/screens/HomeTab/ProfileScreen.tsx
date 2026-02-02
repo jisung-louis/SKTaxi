@@ -11,7 +11,7 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Button from '../../components/common/Button';
 import { useScreenView } from '../../hooks/useScreenView';
 import { withdrawUser } from '../../utils/withdrawUtils';
-import auth from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 import Modal from 'react-native-modal';
 
 export const ProfileScreen = () => {
@@ -34,19 +34,20 @@ export const ProfileScreen = () => {
 
   /**
    * 사용자의 로그인 방식 확인
-   * 
+   *
    * 주의: Firebase Auth의 providerData에 직접 접근합니다.
    * Spring 마이그레이션 시 IAuthRepository에 getUserLoginProvider 메서드 추가 필요.
    * 예: authRepository.getUserLoginProvider(userId) -> 'google' | 'email' | 'unknown'
    */
   const getUserLoginProvider = (): 'google' | 'email' | 'unknown' => {
-    const currentUser = auth().currentUser;
+    const authInstance = getAuth();
+    const currentUser = authInstance.currentUser;
     if (!currentUser) return 'unknown';
-    
+
     const providerData = currentUser.providerData;
     const hasGoogleProvider = providerData.some(provider => provider.providerId === 'google.com');
     const hasEmailProvider = providerData.some(provider => provider.providerId === 'password');
-    
+
     if (hasGoogleProvider) return 'google';
     if (hasEmailProvider) return 'email';
     return 'unknown';

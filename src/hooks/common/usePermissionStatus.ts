@@ -11,7 +11,7 @@
 
 import { useState, useCallback } from 'react';
 import { Platform, PermissionsAndroid } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
+import { getMessaging, requestPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
 import Geolocation from '@react-native-community/geolocation';
 
 export interface PermissionStatus {
@@ -30,8 +30,8 @@ export const usePermissionStatus = () => {
   const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
     try {
       if (Platform.OS === 'ios') {
-        const authStatus = await messaging().requestPermission();
-        const granted = authStatus === messaging.AuthorizationStatus.AUTHORIZED;
+        const authStatus = await requestPermission(getMessaging());
+        const granted = authStatus === AuthorizationStatus.AUTHORIZED;
 
         setPermissionStatus((prev) => ({
           ...prev,

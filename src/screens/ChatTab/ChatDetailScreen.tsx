@@ -41,7 +41,7 @@ import {
 import { ChatMessage } from '../../types/firestore';
 import { useAuth } from '../../hooks/auth';
 import { useScreenView } from '../../hooks/useScreenView';
-import database from '@react-native-firebase/database';
+import { getDatabase, ref, onValue, off } from '@react-native-firebase/database';
 import { createReport } from '../../lib/moderation';
 import { sendMinecraftMessage } from '../../lib/minecraftChat';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
@@ -139,50 +139,59 @@ export const ChatDetailScreen = () => {
       return;
     }
 
-    const statusRef = database().ref('serverStatus');
-    const serverUrlRef = database().ref('serverStatus/serverUrl');
-    
-    const handleStatus = statusRef.on('value', (snap) => {
-      const data = snap.val();
-      if (data) {
-        setServerCurrentPlayers(data.currentPlayers ?? data.playerCount ?? 0);
-        setServerMaxPlayers(data.maxPlayers ?? data.currentPlayers ?? 0);
-        setServerStatus({
-          online: data.online ?? true,
-        });
-        if (data.version) {
-          setServerVersion(data.version);
+    const db = getDatabase();
+    const statusRef = ref(db, 'serverStatus');
+    const serverUrlRef = ref(db, 'serverStatus/serverUrl');
+
+    const unsubscribeStatus = onValue(
+      statusRef,
+      (snap) => {
+        const data = snap.val();
+        if (data) {
+          setServerCurrentPlayers(data.currentPlayers ?? data.playerCount ?? 0);
+          setServerMaxPlayers(data.maxPlayers ?? data.currentPlayers ?? 0);
+          setServerStatus({
+            online: data.online ?? true,
+          });
+          if (data.version) {
+            setServerVersion(data.version);
+          } else {
+            setServerVersion(null);
+          }
         } else {
+          setServerCurrentPlayers(null);
+          setServerMaxPlayers(null);
+          setServerStatus(null);
           setServerVersion(null);
         }
-      } else {
+      },
+      (error) => {
+        console.error('서버 상태 구독 실패:', error);
         setServerCurrentPlayers(null);
         setServerMaxPlayers(null);
         setServerStatus(null);
         setServerVersion(null);
       }
-    }, (error) => {
-      console.error('서버 상태 구독 실패:', error);
-      setServerCurrentPlayers(null);
-      setServerMaxPlayers(null);
-      setServerStatus(null);
-      setServerVersion(null);
-    });
+    );
 
-    const handleServerUrl = serverUrlRef.on('value', (snap) => {
-      if (snap.exists()) {
-        setServerUrl(snap.val() as string);
-      } else {
+    const unsubscribeServerUrl = onValue(
+      serverUrlRef,
+      (snap) => {
+        if (snap.exists()) {
+          setServerUrl(snap.val() as string);
+        } else {
+          setServerUrl(null);
+        }
+      },
+      (error) => {
+        console.error('서버 주소 구독 실패:', error);
         setServerUrl(null);
       }
-    }, (error) => {
-      console.error('서버 주소 구독 실패:', error);
-      setServerUrl(null);
-    });
+    );
 
     return () => {
-      statusRef.off('value', handleStatus);
-      serverUrlRef.off('value', handleServerUrl);
+      unsubscribeStatus();
+      unsubscribeServerUrl();
     };
   }, [isGameRoom]);
 

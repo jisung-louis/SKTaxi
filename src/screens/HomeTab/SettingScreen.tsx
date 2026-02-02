@@ -18,7 +18,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useScreenView } from '../../hooks/useScreenView';
 import { getCurrentAppVersion } from '../../lib/versionCheck';
-import crashlytics from '@react-native-firebase/crashlytics';
+import { getCrashlytics, log, crash } from '@react-native-firebase/crashlytics';
 
 export const SettingScreen = () => {
   useScreenView();
@@ -71,8 +71,9 @@ export const SettingScreen = () => {
           text: '강제 크래시',
           style: 'destructive',
           onPress: async () => {
-            await crashlytics().log('Manual crash test triggered on SettingScreen');
-            crashlytics().crash();
+            const crashlyticsInstance = getCrashlytics();
+            log(crashlyticsInstance, 'Manual crash test triggered on SettingScreen');
+            crash(crashlyticsInstance);
           },
         },
       ],

@@ -1,7 +1,7 @@
 // SKTaxi: 신고/차단 관리 유틸리티
 // IModerationRepository를 사용하여 Firebase Firestore 직접 의존 제거
 
-import auth from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 import { FirestoreModerationRepository } from '../repositories/firestore/FirestoreModerationRepository';
 import {
   ReportPayload,
@@ -20,26 +20,26 @@ const moderationRepository = new FirestoreModerationRepository();
 
 // 신고 생성
 export async function createReport(payload: ReportPayload): Promise<string> {
-  const current = auth().currentUser;
+  const current = getAuth().currentUser;
   if (!current) throw new Error('Not signed in');
   return moderationRepository.createReport(current.uid, payload);
 }
 
 // 차단 문서: blocks/{uid}/blockedUsers/{blockedUid}
 export async function blockUser(blockedUserId: string): Promise<void> {
-  const current = auth().currentUser;
+  const current = getAuth().currentUser;
   if (!current) throw new Error('Not signed in');
   await moderationRepository.blockUser(current.uid, blockedUserId);
 }
 
 export async function unblockUser(blockedUserId: string): Promise<void> {
-  const current = auth().currentUser;
+  const current = getAuth().currentUser;
   if (!current) throw new Error('Not signed in');
   await moderationRepository.unblockUser(current.uid, blockedUserId);
 }
 
 export async function isBlocked(authorId: string, byUserId?: string): Promise<boolean> {
-  const current = auth().currentUser;
+  const current = getAuth().currentUser;
   const viewerId = byUserId ?? current?.uid;
   if (!viewerId) return false;
   return moderationRepository.isBlocked(viewerId, authorId);
@@ -47,7 +47,7 @@ export async function isBlocked(authorId: string, byUserId?: string): Promise<bo
 
 // 상호차단(양방향) 여부 확인: viewer가 author를 차단했거나, author가 viewer를 차단했으면 숨김
 export async function isMutuallyBlocked(authorId: string): Promise<boolean> {
-  const current = auth().currentUser;
+  const current = getAuth().currentUser;
   const viewerId = current?.uid;
   if (!viewerId) return false;
   return moderationRepository.isMutuallyBlocked(viewerId, authorId);

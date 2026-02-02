@@ -1,8 +1,7 @@
 // SKTaxi: Cafeteria Repository Firestore 구현체
 
-import firestore, { doc, getDoc } from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 
 import { ICafeteriaRepository } from '../interfaces/ICafeteriaRepository';
 import { WeeklyMenu } from '../../types/cafeteria';
@@ -15,7 +14,7 @@ export class FirestoreCafeteriaRepository implements ICafeteriaRepository {
   private readonly menusCollection = 'cafeteriaMenus';
 
   constructor() {
-    this.db = firestore(getApp());
+    this.db = getFirestore();
   }
 
   async getWeeklyMenu(weekId: string): Promise<WeeklyMenu | null> {

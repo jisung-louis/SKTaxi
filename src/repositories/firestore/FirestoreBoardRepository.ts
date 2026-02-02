@@ -12,7 +12,8 @@
 // - RESTful API 엔드포인트 설계
 // - 이 파일의 구현 방식이 아닌, IBoardRepository 인터페이스만 참고
 
-import firestore, {
+import {
+  getFirestore,
   collection,
   query,
   orderBy,
@@ -32,8 +33,7 @@ import firestore, {
   getCountFromServer,
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
-import storage from '@react-native-firebase/storage';
+import { getStorage, ref } from '@react-native-firebase/storage';
 
 import { BoardPost, BoardComment, BoardImage } from '../../types/board';
 import {
@@ -53,7 +53,7 @@ export class FirestoreBoardRepository implements IBoardRepository {
   private readonly commentsCollection = 'boardComments'; // Top-level collection
 
   constructor() {
-    this.db = firestore(getApp());
+    this.db = getFirestore();
   }
 
   // === 게시물 관련 ===
@@ -365,10 +365,10 @@ export class FirestoreBoardRepository implements IBoardRepository {
 
   async uploadImage(uri: string, postId?: string): Promise<BoardImage> {
     const filename = `board/${postId || 'temp'}/${Date.now()}.jpg`;
-    const ref = storage().ref(filename);
+    const storageRef = ref(getStorage(), filename);
 
-    await ref.putFile(uri);
-    const url = await ref.getDownloadURL();
+    await storageRef.putFile(uri);
+    const url = await storageRef.getDownloadURL();
 
     return {
       url,
@@ -378,8 +378,8 @@ export class FirestoreBoardRepository implements IBoardRepository {
   }
 
   async deleteImage(imageUrl: string): Promise<void> {
-    const ref = storage().refFromURL(imageUrl);
-    await ref.delete();
+    const storageRef = ref(getStorage(), imageUrl);
+    await storageRef.delete();
   }
 
   // === 통계 관련 ===

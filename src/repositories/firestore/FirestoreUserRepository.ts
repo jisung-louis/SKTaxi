@@ -1,22 +1,22 @@
 // SKTaxi: User Repository Firestore 구현체
-// Phase 3에서 완전히 구현 예정, 현재는 스텁
-
-import firestore, {
+import {
+  getFirestore,
   collection,
   doc,
   getDoc,
   getDocs,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   serverTimestamp,
   arrayUnion,
   arrayRemove,
+  deleteField,
   query,
   where,
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 
 import {
   IUserRepository,
@@ -33,7 +33,7 @@ export class FirestoreUserRepository implements IUserRepository {
   private readonly usersCollection = 'users';
 
   constructor() {
-    this.db = firestore(getApp());
+    this.db = getFirestore();
   }
 
   subscribeToUserProfile(
@@ -168,7 +168,7 @@ export class FirestoreUserRepository implements IUserRepository {
       'bookmarks',
       postId
     );
-    await bookmarkRef.delete();
+    await deleteDoc(bookmarkRef);
   }
 
   subscribeToBookmarks(
@@ -190,7 +190,7 @@ export class FirestoreUserRepository implements IUserRepository {
   async deleteAccountInfo(userId: string): Promise<void> {
     const docRef = doc(this.db, this.usersCollection, userId);
     await updateDoc(docRef, {
-      account: firestore.FieldValue.delete(),
+      account: deleteField(),
     });
   }
 

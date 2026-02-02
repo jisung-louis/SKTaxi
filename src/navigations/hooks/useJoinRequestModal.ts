@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import firestore, { doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
+import { getFirestore, doc, getDoc, onSnapshot } from '@react-native-firebase/firestore';
 import { acceptJoin, declineJoin, deleteJoinRequestNotifications } from '../../lib/notifications';
 
 export interface JoinRequestData {
@@ -40,7 +40,7 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
       }
 
       try {
-        const snap = await getDoc(doc(firestore(), 'users', String(joinData.requesterId)));
+        const snap = await getDoc(doc(getFirestore(), 'users', String(joinData.requesterId)));
         if (!cancelled) {
           setRequesterName((snap.data() as any)?.displayName || '익명');
         }
@@ -60,7 +60,7 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
   useEffect(() => {
     if (!joinData?.requestId) return;
 
-    const requestDocRef = doc(firestore(), 'joinRequests', joinData.requestId);
+    const requestDocRef = doc(getFirestore(), 'joinRequests', joinData.requestId);
     const unsubscribe = onSnapshot(requestDocRef, (snap) => {
       const data = snap.data();
       if (data?.status === 'canceled') {

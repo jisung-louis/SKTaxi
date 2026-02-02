@@ -1,8 +1,7 @@
 // SKTaxi: 채팅방 유틸리티 함수
 // IChatRepository를 사용하여 Firebase Firestore 직접 의존 제거
 
-import auth from '@react-native-firebase/auth';
-import { getApp } from '@react-native-firebase/app';
+import { getAuth } from '@react-native-firebase/auth';
 import { FirestoreChatRepository } from '../repositories/firestore/FirestoreChatRepository';
 
 // 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
@@ -17,7 +16,7 @@ export async function sendChatMessage(
   chatRoomId: string,
   text: string
 ): Promise<void> {
-  const user = auth(getApp()).currentUser;
+  const user = getAuth().currentUser;
 
   if (!user) {
     throw new Error('로그인이 필요합니다.');
@@ -29,9 +28,10 @@ export async function sendChatMessage(
 
   try {
     // 사용자 정보 조회
-    const firestore = (await import('@react-native-firebase/firestore')).default;
-    const db = firestore(getApp());
-    const userDoc = await db.collection('users').doc(user.uid).get();
+    const { getFirestore, doc, getDoc } = await import('@react-native-firebase/firestore');
+    const db = getFirestore();
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
     const userData = userDoc.data();
     const senderName = userData?.displayName || userData?.email || '익명';
 

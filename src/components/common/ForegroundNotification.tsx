@@ -25,7 +25,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = ({
   const [opacityAnim] = useState(new Animated.Value(0));
 
   useEffect(() => {
-    console.log('🔔 ForegroundNotification useEffect:', { visible, title, body });
+    // console.log('🔔 ForegroundNotification useEffect:', { visible, title, body });
     
     if (visible) {
       console.log('🔔 알림 표시 애니메이션 시작');
@@ -76,7 +76,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = ({
   console.log('🔔 ForegroundNotification render:', { visible, title, body });
   
   if (!visible) {
-    console.log('🔔 ForegroundNotification: visible=false, 렌더링하지 않음');
+    // console.log('🔔 ForegroundNotification: visible=false, 렌더링하지 않음');
     return null;
   }
 

@@ -3,8 +3,7 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import firestore, { doc, getDoc } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
+import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import { useAuth } from '../../hooks/auth';
 
 export type ForegroundNotificationType = 
@@ -295,7 +294,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   const handleChatRoomMessageReceived = useCallback(
     async (data: { chatRoomId: string; senderName: string; messageText: string }) => {
       try {
-        const chatRoomDoc = await getDoc(doc(firestore(getApp()), 'chatRooms', data.chatRoomId));
+        const chatRoomDoc = await getDoc(doc(getFirestore(), 'chatRooms', data.chatRoomId));
         const chatRoomData = chatRoomDoc.data();
 
         let chatRoomName = '채팅방';

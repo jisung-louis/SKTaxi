@@ -29,8 +29,9 @@ export interface IFcmRepository {
 
   /**
    * iOS에서 원격 메시지 등록을 보장합니다
+   * @deprecated 더 이상 필요하지 않음 - auto-registration이 기본 활성화됨
    */
-  registerDeviceForRemoteMessages(): Promise<void>;
+  registerDeviceForRemoteMessages?(): Promise<void>;
 
   /**
    * 사용자의 FCM 토큰을 삭제합니다 (로그아웃 시 호출)

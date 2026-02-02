@@ -1,8 +1,7 @@
 // SKTaxi: Academic Repository Firestore 구현체
 
-import firestore, { collection, getDocs, query, orderBy } from '@react-native-firebase/firestore';
+import { getFirestore, collection, getDocs, query, orderBy } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 
 import { IAcademicRepository } from '../interfaces/IAcademicRepository';
 import { AcademicSchedule } from '../../types/academic';
@@ -15,7 +14,7 @@ export class FirestoreAcademicRepository implements IAcademicRepository {
   private readonly schedulesCollection = 'academicSchedules';
 
   constructor() {
-    this.db = firestore(getApp());
+    this.db = getFirestore();
   }
 
   async getSchedules(): Promise<AcademicSchedule[]> {

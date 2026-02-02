@@ -1,9 +1,14 @@
-// SKTaxi: Auth Repository Firebase 구현체
+// SKTaxi: Auth Repository Firebase 구현체 - v22 Modular API
 
-import auth from '@react-native-firebase/auth';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithCredential,
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+} from '@react-native-firebase/auth';
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { getApp } from '@react-native-firebase/app';
 
 import {
   IAuthRepository,
@@ -17,13 +22,13 @@ import { RepositoryError, RepositoryErrorCode } from '../../errors';
  * Firebase 기반 Auth Repository 구현체
  */
 export class FirestoreAuthRepository implements IAuthRepository {
-  private readonly authInstance = auth(getApp());
+  private readonly authInstance = getAuth();
 
   /**
    * Firebase User를 AuthUser로 변환
    */
   private toAuthUser(user: FirebaseAuthTypes.User | null): AuthUser | null {
-    if (!user) return null;
+    if (!user) {return null;}
 
     return {
       uid: user.uid,
@@ -42,7 +47,7 @@ export class FirestoreAuthRepository implements IAuthRepository {
   subscribeToAuthState(
     callbacks: SubscriptionCallbacks<AuthUser | null>
   ): Unsubscribe {
-    return this.authInstance.onAuthStateChanged((user) => {
+    return onAuthStateChanged(this.authInstance, (user) => {
       try {
         callbacks.onData(this.toAuthUser(user));
       } catch (error) {
@@ -56,10 +61,10 @@ export class FirestoreAuthRepository implements IAuthRepository {
       // Google Sign-In 시작
       await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
       const signInResult = await GoogleSignin.signIn();
-      
+
       // signInResult.data에서 idToken 추출 (최신 API)
       const idToken = signInResult.data?.idToken;
-      
+
       if (!idToken) {
         throw new RepositoryError(
           RepositoryErrorCode.UNAUTHENTICATED,
@@ -68,8 +73,8 @@ export class FirestoreAuthRepository implements IAuthRepository {
       }
 
       // Firebase credential 생성 및 로그인
-      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-      const userCredential = await this.authInstance.signInWithCredential(googleCredential);
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(this.authInstance, googleCredential);
 
       const user = this.toAuthUser(userCredential.user);
       if (!user) {
@@ -93,11 +98,11 @@ export class FirestoreAuthRepository implements IAuthRepository {
           { originalError: error }
         );
       }
-      
+
       if (error instanceof RepositoryError) {
         throw error;
       }
-      
+
       throw RepositoryError.fromFirebaseError(error);
     }
   }
@@ -106,9 +111,9 @@ export class FirestoreAuthRepository implements IAuthRepository {
     try {
       // Google Sign-Out (에러 무시)
       await GoogleSignin.signOut().catch(() => {});
-      
+
       // Firebase Sign-Out
-      await this.authInstance.signOut();
+      await firebaseSignOut(this.authInstance);
     } catch (error: any) {
       throw RepositoryError.fromFirebaseError(error);
     }
@@ -138,7 +143,7 @@ export class FirestoreAuthRepository implements IAuthRepository {
   async refreshToken(forceRefresh = false): Promise<string | null> {
     try {
       const user = this.authInstance.currentUser;
-      if (!user) return null;
+      if (!user) {return null;}
 
       return await user.getIdToken(forceRefresh);
     } catch (error: any) {

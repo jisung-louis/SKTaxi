@@ -1,24 +1,24 @@
 // SKTaxi: 앱 시작 시 사용자 FCM 토큰을 users 문서에 중복 없이 저장하는 유틸
 // IFcmRepository를 사용하여 Firebase 직접 의존 제거
+// v22 Modular API
 
-import auth from '@react-native-firebase/auth';
+import { getAuth } from '@react-native-firebase/auth';
 import { FirestoreFcmRepository } from '../repositories/firestore/FirestoreFcmRepository';
 
 // 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
 const fcmRepository = new FirestoreFcmRepository();
 
+// Auth 인스턴스
+const auth = getAuth();
+
 export async function ensureFcmTokenSaved(): Promise<void> {
-  const user = auth().currentUser;
-  if (!user) return;
-
-  console.log('ensureFcmTokenSaved');
+  const user = auth.currentUser;
+  if (!user) {return;}
   try {
-    // iOS에서 원격 메시지 등록 보장 (안드로이드는 무시됨)
-    await fcmRepository.registerDeviceForRemoteMessages();
-
+    // registerDeviceForRemoteMessages()는 더 이상 필요하지 않음
+    // auto-registration이 firebase.json에서 활성화되어 있음
     const token = await fcmRepository.getFcmToken();
-    console.log('token:', token);
-    if (!token) return;
+    if (!token) {return;}
 
     // 단일기기 정책 - 현재 토큰만 유지
     await fcmRepository.saveFcmToken(user.uid, token);
@@ -29,7 +29,7 @@ export async function ensureFcmTokenSaved(): Promise<void> {
 
 // FCM 토큰이 회전될 때(users 문서에 중복 없이) 자동 저장
 export function subscribeFcmTokenRefresh() {
-  const user = auth().currentUser;
+  const user = auth.currentUser;
   if (!user) {
     return () => {};
   }
