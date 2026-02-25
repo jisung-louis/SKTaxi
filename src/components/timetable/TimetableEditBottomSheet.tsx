@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Alert, Keyboard, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -20,13 +20,14 @@ interface TimetableEditBottomSheetProps {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> = ({
+export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> = React.memo(({
   visible,
   onClose,
   onCourseAdd,
   currentCourses,
   semester,
 }) => {
+
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const translateY = useSharedValue(0);
 
@@ -76,7 +77,7 @@ export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> =
     try {
       // 겹치는 수업들 확인
       const overlappingCourses = findOverlappingCourses(course, currentCourses);
-      
+
       if (overlappingCourses.length > 0) {
         // 겹치는 수업이 있는 경우 사용자에게 확인
         const overlappingNames = overlappingCourses.map(c => c.name).join(', ');
@@ -152,7 +153,17 @@ export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> =
       </SafeAreaView>
     </Modal>
   );
-};
+}, (prevProps, nextProps) => {
+  if (prevProps.visible !== nextProps.visible) return false;
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.onCourseAdd !== nextProps.onCourseAdd) return false;
+  if (prevProps.semester !== nextProps.semester) return false;
+  // currentCourses는 ID 목록으로 비교 (참조 대신 내용 비교)
+  const prevIds = prevProps.currentCourses.map(c => c.id).join(',');
+  const nextIds = nextProps.currentCourses.map(c => c.id).join(',');
+  if (prevIds !== nextIds) return false;
+  return true;
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -187,6 +198,3 @@ const styles = StyleSheet.create({
     flex: 0.6, // 하단 60%
   },
 });
-
-
-

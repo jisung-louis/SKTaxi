@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -7,7 +7,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useTimetable } from '../../hooks/timetable';
-import { useCourseSearchContext } from '../../contexts/CourseSearchContext';
 import PageHeader from '../../components/common/PageHeader';
 import { SemesterDropdown } from '../../components/common/SemesterDropdown';
 import { TimetableEditBottomSheet } from '../../components/timetable/TimetableEditBottomSheet';
@@ -25,26 +24,28 @@ export const TimetableDetailScreen = () => {
   const route = useRoute();
   const [selectedSemester, setSelectedSemester] = useState(getCurrentSemester());
   const { courses, loading, error, addCourse, removeCourse } = useTimetable(selectedSemester);
-  const { loadAllCourses, isInitialized } = useCourseSearchContext();
   const [showEditBottomSheet, setShowEditBottomSheet] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const periods = generatePeriods();
   const semesterOptions = generateSemesterOptions();
 
+  // addCourse와 courses를 ref로 래핑 → 안정적인 콜백 참조 유지
+  const addCourseRef = useRef(addCourse);
+  addCourseRef.current = addCourse;
+  const coursesRef = useRef(courses);
+  coursesRef.current = courses;
+
   const handleBack = () => {
     navigation.goBack();
   };
 
-  const handleEdit = async () => {
-    // 최초 1회만 수업 데이터 캐시 로드
-    if (!isInitialized) {
-      console.log('📚 수업 데이터를 최초 로드합니다...');
-      await loadAllCourses(selectedSemester);
-    } else {
-      console.log('📚 수업 데이터가 이미 캐시되어 있습니다.');
-    }
+  const handleEdit = () => {
     setShowEditBottomSheet(true);
   };
+
+  const handleEditClose = useCallback(() => {
+    setShowEditBottomSheet(false);
+  }, []);
 
   const handleShare = () => {
     setShowShareModal(true);
@@ -56,15 +57,13 @@ export const TimetableDetailScreen = () => {
     // 학기 변경 시 시간표는 useTimetable 훅에서 자동으로 다시 로드됩니다
   };
 
-  const handleCourseAdd = async (course: Course) => {
+  const handleCourseAdd = useCallback(async (course: Course) => {
     try {
-      await addCourse(course);
-      //setShowEditBottomSheet(false);
+      await addCourseRef.current(course);
     } catch (error) {
       console.error('Failed to add course:', error);
-      //setShowEditBottomSheet(false);
     }
-  };
+  }, []);
 
   const handleCourseRemove = (course: Course) => {
     Alert.alert(
@@ -96,35 +95,27 @@ export const TimetableDetailScreen = () => {
     return <TimetableGrid courses={courses} onBlockPress={handleCourseRemove} onFooterItemPress={handleCourseRemove} />;
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PageHeader onBack={handleBack} title="내 시간표" borderBottom />
+  const renderContent = () => {
+    if (loading) {
+      return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.accent.blue} />
           <Text style={styles.loadingText}>시간표를 불러오는 중...</Text>
         </View>
-      </SafeAreaView>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PageHeader onBack={handleBack} title="내 시간표" borderBottom />
+    if (error) {
+      return (
         <View style={styles.errorContainer}>
           <Icon name="alert-circle" size={48} color={COLORS.text.secondary} />
           <Text style={styles.errorText}>시간표를 불러올 수 없습니다.</Text>
           <Text style={styles.errorSubtext}>잠시 후 다시 시도해주세요.</Text>
         </View>
-      </SafeAreaView>
-    );
-  }
+      );
+    }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader onBack={handleBack} title="내 시간표" borderBottom />
-
+    return (
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 학기 선택 및 액션 버튼 */}
         <View style={styles.headerActions}>
@@ -133,13 +124,13 @@ export const TimetableDetailScreen = () => {
             onSemesterChange={handleSemesterChange}
             semesterOptions={semesterOptions}
           />
-          
+
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
               <Icon name="add-outline" size={20} color={COLORS.accent.blue} />
               <Text style={styles.actionButtonText}>추가</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
               <Icon name="share-outline" size={20} color={COLORS.accent.green} />
               <Text style={styles.actionButtonText}>공유</Text>
@@ -166,13 +157,21 @@ export const TimetableDetailScreen = () => {
           )}
         </View>
       </ScrollView>
+    );
+  };
 
-      {/* 편집 바텀시트 */}
+  return (
+    <SafeAreaView style={styles.container}>
+      <PageHeader onBack={handleBack} title="내 시간표" borderBottom />
+
+      {renderContent()}
+
+      {/* 편집 바텀시트 — loading/error 상태에서도 unmount되지 않음 */}
       <TimetableEditBottomSheet
         visible={showEditBottomSheet}
-        onClose={() => setShowEditBottomSheet(false)}
+        onClose={handleEditClose}
         onCourseAdd={handleCourseAdd}
-        currentCourses={courses}
+        currentCourses={coursesRef.current}
         semester={selectedSemester}
       />
 
