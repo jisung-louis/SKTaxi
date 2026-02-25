@@ -14,7 +14,7 @@ interface ForegroundNotificationProps {
 
 const { width } = Dimensions.get('window');
 
-export const ForegroundNotification: React.FC<ForegroundNotificationProps> = ({
+export const ForegroundNotification: React.FC<ForegroundNotificationProps> = React.memo(({
   visible,
   title,
   body,
@@ -50,9 +50,6 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = ({
       }, 5000);
 
       return () => clearTimeout(timer);
-    } else {
-      console.log('🔔 알림 숨김');
-      handleDismiss();
     }
   }, [visible]);
 
@@ -116,7 +113,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = ({
       </TouchableOpacity>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
