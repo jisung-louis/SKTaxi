@@ -8,7 +8,7 @@
 
 | 경로 | 설명 | 주요 필드/하위 구조 |
 | --- | --- | --- |
-| `users/{uid}` | 사용자 기본 프로필, 온보딩 상태, 디바이스 토큰, 버전 정보, 계좌/마인크래프트 정보 등 모든 계정 메타데이터를 저장 | `uid`, `email`, `displayName`, `studentId`, `department`, `photoURL`, `realname` (nullable), `isAdmin`, `linkedAccounts[]`(displayName(구글 계정에 등록된 이름)·email·photoURL·provider·providerId), `agreements.{termsAccepted,termsVersion,ageConfirmed,acceptedAt}`, `account.{bankName,accountNumber,accountHolder,hideName}`, `onboarding.permissionsComplete`, `fcmTokens[]`, `joinedAt`, `updatedAt`, `currentVersion`, `lastLogin`, `lastLoginOS`, `minecraftAccount.accounts[]`(닉네임·uuid·edition·whoseFriend·linkedAt·storedName(edition이 "BE"일 때만 존재)) |
+| `users/{uid}` | 사용자 기본 프로필, 온보딩 상태, 디바이스 토큰, 버전 정보, 계좌/마인크래프트 정보 등 모든 계정 메타데이터를 저장 | `uid`, `email`, `displayName`, `studentId`, `department`, `photoURL`, `realname` (nullable), `isAdmin`, `linkedAccounts[]`(displayName(구글 계정에 등록된 이름)·email·photoURL·provider·providerId), `agreements.{termsAccepted,termsVersion,ageConfirmed,acceptedAt}`, `account.{bankName,accountNumber,accountHolder,hideName}`, `onboarding.permissionsComplete`, `fcmTokens[]`, `createdAt`, `updatedAt`, `currentVersion`, `lastLogin`, `lastLoginOS`, `minecraftAccount.accounts[]`(닉네임·uuid·edition·whoseFriend·linkedAt·storedName(edition이 "BE"일 때만 존재)) |
 | `users/{uid}.notificationSettings` | 알림 토글 묶음 | `allNotifications`, `partyNotifications`, `noticeNotifications`, `boardLikeNotifications`, `boardCommentNotifications`, `systemNotifications`, `marketingNotifications`, (선택) `noticeNotificationsDetail.{카테고리}` |
 | `users/{uid}/chatRoomNotifications/{chatRoomId}` | 공개 채팅방별 mute 상태 | `enabled` (기본 true) |
 | `userNotifications/{uid}/notifications/{notificationId}` | 클라우드 함수/앱에서 발송하는 사용자별 알림 인박스 | `type`, `title`, `message`, `data`, `isRead`, `readAt`, `createdAt` |
@@ -69,5 +69,6 @@
 - **보안 규칙**: `appVersion` 컬렉션만 익명 읽기 허용, 그 외 문서는 모두 인증 필요.
 - **Cloud Functions**: `users`, `parties`, `joinRequests`, `userNotifications` 등을 트리거하여 토큰 정리·푸시 발송을 수행하므로, 해당 컬렉션의 필드 변경 시 함수 로직도 함께 검토해야 합니다.
 - **마이그레이션 히스토리**: `userBookmarks` 컬렉션은 `userBoardInteractions`로 통합되었습니다 (좋아요+북마크 단일 컬렉션).
+- **필드 변경 히스토리**: `users/{uid}`의 가입 시각 필드가 v1.2.6 이하에서는 `joinedAt`, v1.2.7 이상에서는 `createdAt`으로 저장됩니다. v1.2.6 이하 가입자 문서에는 `createdAt`이 없고 `joinedAt`만 존재할 수 있습니다.
 - **새 기능 추가 시**: `rg "collection(" -n src` 등으로 Firestore 경로 사용 현황을 확인하고, 컬렉션·필드 충돌을 피하세요.
 

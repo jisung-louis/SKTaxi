@@ -103,6 +103,10 @@ export const LoginScreen = ({ navigation }: any) => {
               try {
                 setLoading(true);
                 const { firstLogin } = await signInWithGoogle();
+                if (__DEV__) {
+                  const firebaseIdToken = await authRepository.refreshToken();
+                  console.log('[DEV] Firebase ID Token:', firebaseIdToken);
+                }
                 if (firstLogin) {
                   navigation.navigate('CompleteProfile');
                 }
@@ -208,6 +212,10 @@ export const LoginScreen = ({ navigation }: any) => {
                     }
                     // Repository 패턴: 이메일/비밀번호 로그인
                     await authRepository.signInWithEmailAndPassword(adminEmail.trim(), adminPassword);
+                    if (__DEV__) {
+                      const firebaseIdToken = await authRepository.refreshToken();
+                      console.log('[DEV] Firebase ID Token:', firebaseIdToken);
+                    }
                     setAdminVisible(false);
                   } catch (e: any) {
                     Alert.alert('관리자 로그인 실패', getFirebaseErrorMessage(e));
