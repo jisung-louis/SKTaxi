@@ -1,0 +1,365 @@
+# SKURI Phase 9 배포 / 운영 가이드
+
+## 1. 확정 전략
+
+| 항목 | 결정 |
+|------|------|
+| 로컬 실행 | 평소 개발은 호스트 앱(`bootRun`/IDE) + `docker-compose.yml`의 `MySQL + Redis` 조합을 기본으로 사용 |
+| 운영 구조 | `OCI Compute 1대`에서 `docker-compose.prod.yml`로 `app + MySQL + Redis` 기동 |
+| Redis 운영 반영 | 현재 앱 로직에는 미연결이지만 단일 인스턴스 운영 compose에 포함 |
+| 프로필 | `application / local / local-emulator / prod / test` |
+| CD 방식 | 반자동. `main` 반영 후 GitHub `production` 환경 승인 시 멀티플랫폼 이미지로 배포하고, 새 run이 시작되면 이전 run은 자동 취소 |
+| OpenAPI 노출 | `local/local-emulator` 노출, `prod` 기본 비노출 |
+| Firebase 자격증명 | 서버 파일 + `GOOGLE_APPLICATION_CREDENTIALS` 경로 주입 |
+
+## 2. 환경변수 원칙
+
+- 로컬 개발: `.env`
+- 운영 서버: 서버 안의 `.env`
+- GitHub Actions: GitHub Secrets
+- 프로필 파일(`application-*.yaml`)은 환경별 정책을 공유하고, `.env`는 실제 값을 주입한다.
+- 실제 비밀값은 Git 저장소에 넣지 않는다.
+- Firebase 서비스 계정 JSON은 `.env`에 본문을 넣지 않고 파일로 두고 경로만 `.env`에 넣는다.
+- 브라우저 관리자 페이지가 REST API를 호출하면 `API_ALLOWED_ORIGIN_PATTERNS`를, WebSocket을 사용하면 `CHAT_WS_ALLOWED_ORIGIN_PATTERNS`를 각각 설정한다.
+- CD의 admin REST CORS smoke check는 `CD_SMOKE_CORS_ORIGIN`을 우선 사용하고, 비어 있으면 `API_ALLOWED_ORIGIN_PATTERNS`의 첫 번째 exact origin을 재사용한다.
+
+예시:
+
+```env
+SPRING_PROFILES_ACTIVE=prod
+APP_HOST_BIND=127.0.0.1
+APP_HOST_PORT=8080
+OPENAPI_ENABLED=false
+API_ALLOWED_ORIGIN_PATTERNS=https://admin.skuri.example
+CHAT_WS_ALLOWED_ORIGIN_PATTERNS=https://admin.skuri.example
+CD_SMOKE_CORS_ORIGIN=https://admin.skuri.example
+MYSQL_DATABASE=skuri
+MYSQL_USER=skuri
+MYSQL_PASSWORD=<db-user-password>
+MYSQL_ROOT_PASSWORD=<db-root-password>
+MYSQL_HOST_BIND=127.0.0.1
+MYSQL_HOST_PORT=3307
+FIREBASE_CREDENTIALS_FILE=/opt/skuri/secrets/firebase-admin.json
+GOOGLE_APPLICATION_CREDENTIALS=/app/secrets/firebase-admin.json
+FIREBASE_CREDENTIALS_PATH=/app/secrets/firebase-admin.json
+```
+
+- 운영 MySQL은 앱 컨테이너가 내부 네트워크 `mysql:3306`으로 사용한다.
+- 운영 app 포트도 `${APP_HOST_BIND:-127.0.0.1}:${APP_HOST_PORT:-8080}` loopback 바인딩을 유지해 Nginx만 접근하게 한다.
+- Workbench 같은 운영자 접속은 호스트 loopback `${MYSQL_HOST_BIND:-127.0.0.1}:${MYSQL_HOST_PORT:-3307}` 로만 열고 SSH를 통해 접근한다.
+- `0.0.0.0:3306` 같은 공용 바인딩은 사용하지 않는다.
+
+## 3. 로컬 실행
+
+1. 루트의 `.env.example`를 기준으로 `.env`를 준비한다.
+2. 평소 개발은 아래처럼 MySQL/Redis만 Docker로 올리고, 앱은 IDE 또는 `bootRun`으로 실행하는 방식을 권장한다.
+
+```bash
+docker compose up -d mysql redis
+```
+
+3. 앱을 호스트에서 직접 실행할 때는 필요한 값만 쉘 환경변수나 IDE 실행 설정에 주입한다.
+   IntelliJ 환경 변수 칸에는 `.env` 파일 경로를 넣지 말고 `KEY=value` 형식으로 직접 입력한다.
+
+`local` 프로필 예시:
+
+```bash
+DB_URL=jdbc:mysql://localhost:3306/skuri?serverTimezone=Asia/Seoul&characterEncoding=UTF-8 \
+DB_USERNAME=root \
+DB_PASSWORD=1234 \
+FIREBASE_PROJECT_ID=sktaxi-acb4c \
+FIREBASE_CREDENTIALS_PATH=/Users/<user>/skuri-backend/serviceAccountKey.json \
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+```
+
+`local-emulator` 프로필 예시:
+
+```bash
+DB_URL=jdbc:mysql://localhost:3306/skuri?serverTimezone=Asia/Seoul&characterEncoding=UTF-8 \
+DB_USERNAME=root \
+DB_PASSWORD=1234 \
+FIREBASE_PROJECT_ID=sktaxi-acb4c \
+FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 \
+FIREBASE_CREDENTIALS_PATH= \
+GOOGLE_APPLICATION_CREDENTIALS= \
+SPRING_PROFILES_ACTIVE=local-emulator ./gradlew bootRun
+```
+
+4. 로컬에서도 app까지 Docker로 띄워서 "배포와 비슷한 방식"을 확인하고 싶다면 아래처럼 전체 compose를 올린다.
+
+```bash
+docker compose up -d --build
+```
+
+확인 포인트:
+
+- `http://localhost:8080/actuator/health`
+- `http://localhost:8080/swagger-ui/index.html`
+- `http://localhost:8080/scalar`
+
+참고:
+
+- `local`은 프론트와 함께 실제 Firebase ID Token 흐름을 검증하는 통합 테스트용이다. 이때는 실제 서비스 계정 파일 경로가 필요하다.
+- `local-emulator`는 백엔드 단독 인증 테스트용이다. 이 프로필에서는 `FIREBASE_CREDENTIALS_PATH`와 `GOOGLE_APPLICATION_CREDENTIALS`를 비워 두는 것이 안전하다.
+- `local-emulator`에서는 전체 `.env`를 그대로 로드하지 말고 emulator에 필요한 값만 별도로 주입하는 편이 안전하다.
+- 두 로컬 프로필 모두 기본 DB는 `localhost:3306`을 바라보지만, 필요하면 `DB_URL`로 다른 포트(예: Docker MySQL `3307`)를 덮어쓸 수 있다.
+- 현재 기본 `docker-compose.yml`은 Firebase 자격증명 파일을 자동 마운트하지 않는다. Docker에서 실제 Firebase 인증까지 검증하려면 자격증명 파일 volume mount를 별도로 추가하거나, 앱은 호스트에서 `bootRun`으로 실행한다.
+- Redis는 아직 앱 로직에 연결되지 않았지만, 운영 compose에서는 향후 캐시 도입 자리를 미리 확보하기 위해 함께 기동한다.
+- 로컬 개발/검증은 `local`과 `local-emulator` 두 프로필로만 운영한다.
+- `local-emulator`는 기본적으로 로컬 DB 스키마를 재생성하지 않는다. 초기화가 필요하면 emulator 전용 DB를 별도로 사용한다.
+
+## 4. 운영 서버 준비
+
+운영 서버는 다음을 미리 준비해야 한다.
+
+- Docker Engine
+- Docker Compose Plugin
+- 앱 배포 디렉터리
+  - 기본값: `/opt/skuri/app`
+- 운영 `.env`
+  - 기본 위치: `/opt/skuri/app/.env`
+- Firebase 서비스 계정 JSON
+  - 예: `/opt/skuri/secrets/firebase-admin.json`
+- OCI 인스턴스 안의 Docker 영속 볼륨
+  - `mysql-prod-data`
+  - `redis-prod-data`
+- 공개 도메인용 reverse proxy
+  - 예: Nginx `80/443` -> 앱 `127.0.0.1:8080`
+- Cloudflare를 쓰는 경우 SSL/TLS 모드
+  - 권장: `Full (strict)`
+
+운영 서버에 두는 파일:
+
+- `/opt/skuri/app/.env`
+- `/opt/skuri/app/docker-compose.prod.yml`
+- `/opt/skuri/secrets/firebase-admin.json`
+
+운영 공개 권장:
+
+- `api.<domain>`은 Cloudflare DNS에 연결하고, Nginx가 `80/443`을 받아 앱 `8080`으로 프록시한다.
+- 앱 컨테이너 자체도 `${APP_HOST_BIND:-127.0.0.1}:${APP_HOST_PORT:-8080}` loopback 으로만 bind해 외부 인터페이스 `0.0.0.0:8080` 노출을 방지한다.
+- HTTPS가 정상화되면 OCI 보안 규칙에서 `8080` 외부 공개는 닫고 `22/80/443`만 유지한다.
+- Workbench 접속용 MySQL 포트는 `127.0.0.1:3307` 같은 loopback 바인딩만 허용하고, SSH 터널 없이 직접 공개하지 않는다.
+
+## 5. GitHub Actions CD 흐름
+
+반자동 배포 흐름은 다음과 같다.
+
+1. `main`에 push 또는 merge
+2. `CD` workflow가 자동 시작
+3. Docker 이미지를 GHCR에 push
+4. `Deploy To Production` job이 `production` 환경 승인 대기 상태로 멈춤
+5. GitHub에서 `Review deployments`
+6. `Approve and deploy`
+7. OCI 서버에 접속해서 최신 이미지 pull 및 재기동
+8. 서버 내부에서 `health + 공개 API + admin CORS preflight + prod OpenAPI 비노출` smoke check
+
+추가 정책:
+
+- `concurrency.group = production-deploy`, `cancel-in-progress = true`로 설정해 새 `main` push가 오면 이전 CD run은 자동 취소한다.
+- 승인할 때는 항상 가장 최신 commit의 run만 남아 있는지 확인한다.
+
+중요:
+
+- 이 흐름이 진짜 반자동이 되려면 GitHub Repository Settings에서 `production` Environment에 `Required reviewers`를 설정해야 한다.
+- Environment 보호 규칙이 없으면 deploy job은 자동으로 바로 진행된다.
+
+## 6. GitHub Secrets
+
+`production` Environment 기준으로 아래 Secrets를 준비한다.
+
+- `PROD_HOST`
+- `PROD_SSH_USERNAME`
+- `PROD_SSH_KEY`
+- `PROD_SSH_PORT` (선택, 기본값 `22`)
+- `PROD_DEPLOY_DIR` (선택, 기본값 `/opt/skuri/app`)
+- `PROD_GHCR_USERNAME`
+- `PROD_GHCR_READ_TOKEN`
+
+참고:
+
+- GitHub Actions는 `.env` 자체를 저장하지 않는다.
+- CI/CD에서는 Secrets를 사용하고, 운영 서버는 자신의 `.env`를 유지한다.
+- CD는 `linux/amd64,linux/arm64` 멀티플랫폼 이미지를 push하므로, 나중에 AWS x86 서버로 옮겨도 compose 파일을 크게 바꾸지 않아도 된다.
+
+## 7. OpenAPI 운영 정책
+
+- `local`, `local-emulator`: `/v3/api-docs`, `/swagger-ui/index.html`, `/scalar` 사용 가능
+- `prod`: 기본 비노출
+- 운영에서 임시로 열어야 하면 `.env`의 `OPENAPI_ENABLED=true`로 조정할 수 있다.
+
+## 8. Redis 운영 범위
+
+이번 Phase의 Redis 범위는 아래까지만 포함한다.
+
+- 로컬 `docker-compose.yml`에 Redis 컨테이너 추가
+- 공통 설정 파일에 Redis host/port 환경변수 자리 확보
+- 운영 설계 문서에 “후속 캐시 도입 후보”로 정리
+
+이번 Phase에서 하지 않는 것:
+
+- `@Cacheable` 적용
+- 캐시 무효화 정책 설계
+- 외부 관리형 Redis 연결
+
+후속 후보:
+
+- 파티 목록 캐시
+- 공지 목록 캐시
+- FCM 토큰 조회 캐시
+
+## 9. 배포 전 체크리스트
+
+- `./gradlew build` 성공
+- Docker 이미지 빌드 성공
+- 운영 `.env` 값 최신화 확인
+- Firebase 자격증명 파일 존재 확인
+- `MYSQL_*` 값과 Docker 영속 볼륨 상태 확인
+- OpenAPI 노출 정책(`OPENAPI_ENABLED`) 확인
+- GitHub `production` Environment 보호 규칙 확인
+
+## 10. Phase 10 회원 lifecycle 마이그레이션
+
+Phase 10 이전 버전에서 운영 중이던 DB를 업그레이드할 때는 `members.status`를 앱 기동 전에 수동으로 채워야 한다.
+
+- 배경:
+  - `Member.status`는 엔티티 기준 `nullable = false`다.
+  - 현재 앱은 `spring.jpa.hibernate.ddl-auto=update`를 사용한다.
+  - 따라서 legacy `members` row가 있는 상태에서 선행 SQL 없이 새 버전을 먼저 띄우면 schema update가 실패할 수 있다.
+- 적용 시점:
+  - Phase 10 코드가 포함된 버전을 서버에 올리기 전에 MySQL에서 먼저 실행한다.
+- 권장 순서:
+  1. 앱을 내린다.
+  2. 아래 SQL을 운영 DB에 적용한다.
+  3. 결과를 검증한다.
+  4. 새 앱 버전을 기동한다.
+
+```sql
+ALTER TABLE members
+    ADD COLUMN status VARCHAR(20) NULL AFTER is_admin;
+
+UPDATE members
+SET status = 'ACTIVE'
+WHERE status IS NULL;
+
+ALTER TABLE members
+    MODIFY COLUMN status VARCHAR(20) NOT NULL;
+```
+
+검증 SQL:
+
+```sql
+SELECT status, COUNT(*) AS count
+FROM members
+GROUP BY status;
+```
+
+추가 메모:
+
+- 이미 `status` 컬럼이 있는 환경이면 `UPDATE ... WHERE status IS NULL`과 `MODIFY COLUMN ... NOT NULL`만 적용하면 된다.
+- `withdrawn_at`은 nullable 컬럼이라 기존 운영 DB에서는 Hibernate update에 맡겨도 되지만, 운영 표준 절차상 상태 컬럼 선행 마이그레이션은 필수로 본다.
+- 관련 정책 설명은 [`member-withdrawal-policy.md`](./member-withdrawal-policy.md)를 함께 참조한다.
+
+## 11. 배포 후 체크리스트
+
+- `docker ps`에서 `skuri-backend` 정상 실행 확인
+- `docker compose -f docker-compose.prod.yml ps`에서 app가 `127.0.0.1:<APP_HOST_PORT>->8080/tcp` 로만 열렸는지 확인
+- `curl http://127.0.0.1:<APP_HOST_PORT>/actuator/health`
+- 공개 API smoke check
+  - `GET /v1/app-versions/{platform}`
+- admin REST CORS preflight
+  - `OPTIONS /v1/app-versions/{platform}` with `Origin: ${CD_SMOKE_CORS_ORIGIN}` 또는 `API_ALLOWED_ORIGIN_PATTERNS`의 첫 번째 exact origin
+- 인증 API smoke check
+  - 토큰이 있으면 `GET /v1/members/me`
+- 컨테이너 로그 확인
+  - `docker logs --tail 200 skuri-backend`
+- OpenAPI가 prod에서 의도대로 닫혀 있는지 확인
+- `ss -ltnp | grep <APP_HOST_PORT>` 결과가 `127.0.0.1:<APP_HOST_PORT>`만 가리키는지 확인
+- MySQL 운영자 접속이 필요하면 `docker compose -f docker-compose.prod.yml ps`로 `127.0.0.1:3307->3306/tcp` 같은 loopback 바인딩만 노출되는지 확인
+
+## 12. MySQL Workbench 접속
+
+현재 운영 compose는 MySQL을 인터넷에 직접 공개하지 않고, 서버 자신의 loopback 포트로만 바인딩한다.
+권장 방식은 `Standard TCP/IP over SSH`다.
+
+1. OCI 서버에서 MySQL 포트가 loopback으로만 열렸는지 확인한다.
+
+```bash
+cd /opt/skuri/app
+docker compose -f docker-compose.prod.yml ps
+ss -ltnp | grep 3307
+```
+
+기대 결과:
+- `127.0.0.1:3307->3306/tcp` 처럼 loopback만 노출
+- `0.0.0.0:3307` 이 아니어야 함
+
+2. 운영 `.env`에서 접속 정보를 확인한다.
+
+```bash
+cd /opt/skuri/app
+grep -E '^(MYSQL_USER|MYSQL_PASSWORD|MYSQL_HOST_PORT|MYSQL_HOST_BIND)=' .env
+```
+
+3. MySQL Workbench에서 새 연결을 만든다.
+
+- Connection Name: `SKURI Production DB`
+- Connection Method: `Standard TCP/IP over SSH`
+- SSH Hostname: `<운영서버도메인또는IP>:22`
+- SSH Username: `<운영서버 SSH 계정>`
+- SSH Key File: `<로컬 개인키 경로>`
+- MySQL Hostname: `127.0.0.1`
+- MySQL Server Port: `3307`
+- Username: `.env`의 `MYSQL_USER`
+- Password: `.env`의 `MYSQL_PASSWORD`
+
+4. `Test Connection`을 누른다.
+
+5. 접속이 안 되면 아래 순서로 확인한다.
+
+```bash
+cd /opt/skuri/app
+docker compose -f docker-compose.prod.yml ps
+docker logs --tail 100 skuri-mysql
+ss -ltnp | grep 3307
+```
+
+주의:
+- Workbench 연결을 위해 MySQL을 `0.0.0.0:3306` 으로 공개하지 않는다.
+- 컨테이너 내부 DB 주소는 계속 `mysql:3306` 이며, Workbench용 loopback 포트와는 용도가 다르다.
+
+## 13. 롤백
+
+롤백은 “이전 이미지 태그로 다시 기동” 방식으로 진행한다.
+
+1. GHCR에서 이전 정상 이미지 태그를 확인한다.
+2. 서버에서 해당 태그를 지정해 다시 배포한다.
+
+예시:
+
+```bash
+cd /opt/skuri/app
+IMAGE_URI=ghcr.io/<owner>/<repo>:<previous-sha> docker compose -f docker-compose.prod.yml up -d
+```
+
+롤백 후 반드시 다시 확인할 것:
+
+- `/actuator/health`
+- 공개 API 1개
+- 인증 API 1개
+- 최근 에러 로그
+- MySQL 컨테이너와 볼륨이 유지됐는지 확인
+
+## 14. 향후 외부 AI 서비스 메모
+
+향후 Python 기반 AI 서버를 붙일 가능성이 있다면 지금 단계에서 최소한 아래 환경변수 네이밍만 확보해두면 충분하다.
+
+- `AI_SERVICE_BASE_URL`
+- `AI_SERVICE_AUTH_TOKEN`
+- `AI_SERVICE_TIMEOUT_MS`
+
+권장 원칙:
+
+- Spring과 Python은 HTTP API로 통신
+- AI 장애가 공지 기본 조회를 깨지 않도록 fallback 유지
+- 운영에서는 가능하면 같은 VPC/사설망에 배치

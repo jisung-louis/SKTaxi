@@ -1,0 +1,842 @@
+# SKURI 백엔드 구현 로드맵
+
+> 최종 수정일: 2026-03-09
+> 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [API 명세](./api-specification.md) | [기술 전략](./tech-strategy.md) | [역할 정의](./role-definition.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
+
+---
+
+## 1. 현재 상태
+
+| 항목 | 상태 |
+|------|------|
+| Spring Boot | 4.0.3 |
+| Java | 21 |
+| 빌드 도구 | Gradle |
+| 현재 의존성 | JPA, Web MVC, Validation, Security, Firebase Admin, Springdoc OpenAPI(Swagger UI/Scalar), Lombok, MySQL Connector |
+| 구현 상태 | Phase 0 완료 (공통 기반 구축), Phase 1 완료, Phase 2 완료 (TaxiParty + SSE 반영), Phase 3 완료 (Chat + WebSocket 반영), Phase 4 완료 (Board 반영), Phase 5 완료 (Notice + AppNotice + 공통 Comment 정책 반영), Phase 6 완료 (Academic + 시간표/학사일정/관리자 강의 bulk 반영), Phase 7 완료 (Support + 문의/신고/앱 버전/학식 운영 API 반영), Phase 8 완료 (Notification 인프라), Phase 9 완료 (인프라/배포 기준 정리), Phase 10 완료 (Member 탈퇴/계정 라이프사이클) |
+
+---
+
+## 2. 구현 순서 총괄
+
+```
+Phase 0: 프로젝트 기반 구축
+    ↓
+Phase 1: Member 도메인 (인증 + 회원)
+    ↓
+Phase 2: TaxiParty 도메인 (핵심 비즈니스)
+    ↓
+Phase 3: Chat 도메인 (WebSocket 채팅 엔진)
+    ↓
+Phase 4: Board 도메인 (커뮤니티 게시판)
+    ↓
+Phase 5: Notice 도메인 (공지 + RSS 크롤러)
+    ↓
+Phase 6: Academic 도메인 (학사 정보)
+    ↓
+Phase 7: Support 도메인 (문의/신고/운영)
+    ↓
+Phase 8: Notification 인프라 (이벤트 기반 알림)
+    ↓
+Phase 9: 인프라 및 배포
+    ↓
+Phase 10: Member 탈퇴/계정 라이프사이클
+    ↓
+Phase 11: 운영 공통 인프라 (Admin 공통)
+```
+
+---
+
+## 3. Phase 상세
+
+---
+
+### Phase 0: 프로젝트 기반 구축
+
+> 모든 도메인의 공통 기반을 먼저 구축한다.
+
+#### 0-1. 추가 의존성
+
+| 의존성 | 용도 |
+|--------|------|
+| `spring-boot-starter-validation` | Bean Validation (`@Valid`, `@NotBlank` 등) - 적용 완료 |
+| `spring-boot-starter-security` | Spring Security (인증/인가 필터 체인) - Phase 1에서 추가 |
+| `firebase-admin` | Firebase Admin SDK (ID Token 검증, FCM 발송) - Phase 1에서 추가 |
+| `springdoc-openapi-starter-webmvc-ui` | OpenAPI 스펙 + Swagger UI 자동 노출 |
+| `springdoc-openapi-starter-webmvc-scalar` | Scalar API 문서 UI 자동 노출 |
+
+#### 0-2. 패키지 구조 생성 (Phase 0 범위)
+
+```
+com.skuri.skuri_backend
+├── common/
+│   ├── entity/
+│   │   └── BaseTimeEntity.java
+│   ├── dto/
+│   │   └── ApiResponse.java
+│   │   └── PageResponse.java
+│   ├── exception/
+│   │   ├── ErrorCode.java              (enum)
+│   │   ├── BusinessException.java
+│   │   └── GlobalExceptionHandler.java
+│   └── config/
+│       └── JpaAuditingConfig.java
+└── SkuriBackendApplication.java
+```
+
+> `domain/`, `infra/` 패키지는 각 Phase 구현 시점에 순차적으로 생성한다.
+
+#### 0-3. 구현 항목
+
+| # | 항목 | 파일 | 설명 |
+|---|------|------|------|
+| 1 | BaseTimeEntity | `common/entity/BaseTimeEntity.java` | `createdAt`, `updatedAt` 자동 관리 (`@MappedSuperclass` + JPA Auditing) |
+| 2 | JPA Auditing 설정 | `common/config/JpaAuditingConfig.java` | `@EnableJpaAuditing` |
+| 3 | ApiResponse | `common/dto/ApiResponse.java` | 공통 응답 래퍼 (`success`, `data`, `message`) |
+| 4 | PageResponse | `common/dto/PageResponse.java` | 페이지네이션 응답 (`content`, `page`, `size`, `totalElements`, `hasNext`) |
+| 5 | ErrorCode | `common/exception/ErrorCode.java` | 에러 코드 enum (`UNAUTHORIZED`, `NOT_FOUND`, `CONFLICT` 등) |
+| 6 | BusinessException | `common/exception/BusinessException.java` | 비즈니스 예외 기본 클래스 |
+| 7 | GlobalExceptionHandler | `common/exception/GlobalExceptionHandler.java` | `@RestControllerAdvice` 글로벌 예외 처리 |
+| 8 | application.yml | `resources/application.yml` | MySQL, JPA, 서버 설정 |
+
+#### 0-4. 완료 기준
+
+- [x] 빌드 성공 (`./gradlew build`)
+- [x] 애플리케이션 정상 기동
+- [x] 존재하지 않는 API 호출 시 `ApiResponse` 형태의 에러 응답 반환
+
+#### 0-5. OpenAPI 문서화 고정 규칙
+
+- 모든 REST 엔드포인트는 선언한 responseCode마다 `@ApiResponse`의 `content + examples`를 제공한다.
+- `@ApiResponse`의 description-only 선언을 금지한다. (Scalar/Swagger 상태코드별 예시 혼선 방지)
+- 공통 에러 코드(`401/403/404/409/422/500`) 예시는 공통 상수/컴포넌트로 재사용한다.
+- 하나의 상태코드에 여러 비즈니스 에러코드가 매핑되면 `@ExampleObject`를 복수로 선언해 에러코드별 예시를 분리한다.
+- `CONFLICT/NOT_FOUND/FORBIDDEN` 같은 포괄 예시는 최소화하고, 가능한 경우 도메인별 실제 `errorCode/message` 예시를 우선한다.
+- SSE(`text/event-stream`)는 이벤트 스트림 예시를 별도로 제공하고, 에러 응답은 `application/json` 예시를 제공한다.
+- SSE `200` 문서화는 `stream_full`(연속 스트림 흐름)과 이벤트별 단건 예시(`SNAPSHOT`, `HEARTBEAT`, 도메인 이벤트)를 함께 제공한다.
+- SSE 이벤트별 예시는 런타임 발행 이벤트(`SseEmitter.event().name(...)`)와 payload 구조를 그대로 반영한다.
+- 머지 전 `/v3/api-docs` 기준으로 responseCode별 example 누락이 없는지 자동 검증한다.
+- 머지 전 Scalar에서 대표 API를 열어 200/4xx 탭의 예시가 동일하게 보이지 않는지 수동 확인한다.
+
+#### 0-6. OpenAPI 예시 상수 구조 규칙
+
+- OpenAPI 예시 상수는 단일 파일 집중을 피하고 도메인별 파일로 분리 유지한다.
+  - 예: `infra/openapi/OpenApiCommonExamples.java`, `OpenApiMemberExamples.java`, `OpenApiTaxiPartyExamples.java`
+- 신규 도메인 API를 추가할 때 해당 도메인 예시 상수 파일을 함께 추가/갱신한다.
+- Service/Entity 예외 규칙(`BusinessException`, `ErrorCode`) 변경 시 예시 상수와 Controller `@ApiResponses`를 동일 PR에서 동기화한다.
+- 커스텀 예외 메시지를 사용하는 경우, 예시 메시지도 실제 런타임 메시지와 동일하게 유지한다.
+
+#### 0-7. 계약/보안/범위 운영 정책
+
+- API 계약의 런타임 기준은 `/v3/api-docs`로 고정하고, `docs/api-specification.md`는 같은 PR에서 반드시 동기화한다.
+- WebSocket은 CONNECT 인증만으로 종료하지 않고 목적지(`SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`)별 인가를 서버에서 강제한다.
+- 브라우저 REST API CORS와 WebSocket CORS는 `*`를 금지하고, 프로필/환경별 허용 Origin(`API_ALLOWED_ORIGIN_PATTERNS`, `CHAT_WS_ALLOWED_ORIGIN_PATTERNS`)을 명시한다.
+- 요청 범위 외 수정은 별도 PR 분리를 원칙으로 하며, 불가피하게 포함할 경우 PR에 근거와 영향 범위를 명시한다.
+
+---
+
+### Phase 1: Member 도메인
+
+> 모든 도메인의 기반. Firebase ID Token 검증 + 회원 관리.
+
+#### 1-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Member` | `members` | 회원 기본 정보 + `BankAccount`(Embedded) + `NotificationSetting`(Embedded) |
+| `LinkedAccount` | `linked_accounts` | 로그인 계정 연결 (`GOOGLE`/`PASSWORD`/`UNKNOWN`, 비소셜 provider 부가정보는 null 저장) |
+
+#### 1-2. 인프라 (Auth)
+
+| # | 항목 | 파일 | 설명 |
+|---|------|------|------|
+| 1 | Firebase 초기화 | `infra/auth/config/FirebaseConfig.java` | Firebase Admin SDK 초기화 (`@Bean FirebaseApp`) |
+| 2 | Token 검증 | `infra/auth/firebase/FirebaseTokenVerifier.java` | `FirebaseAuth.verifyIdToken()` 래핑 |
+| 3 | 인증 필터 | `infra/auth/firebase/FirebaseAuthenticationFilter.java` | `OncePerRequestFilter` — ID Token 추출, 검증, SecurityContext 설정 |
+| 4 | Security 설정 | `infra/auth/config/SecurityConfig.java` | 필터 체인 (`/v1/app-versions/**`, `/v1/app-notices/**` permitAll, 나머지 인증 필수) |
+| 5 | OpenAPI 설정 | `infra/openapi/OpenApiConfig.java` | 전역 API 메타데이터, Bearer 보안 스키마, GroupedOpenApi 설정 |
+| 6 | Emulator 가드 | `infra/auth/config/FirebaseAuthEnvironmentGuard.java` | `local-emulator` 전용 허용 + emulator host 오염 차단 |
+
+#### 1-3. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/v1/members` | 회원 가입 (ID Token에서 정보 추출, 멱등) |
+| `GET` | `/v1/members/me` | 내 프로필 조회 (lastLogin 갱신) |
+| `PATCH` | `/v1/members/me` | 프로필 부분 수정 (닉네임, 학번, 학과, photoUrl) |
+| `PUT` | `/v1/members/me/bank-account` | 계좌 정보 수정 |
+| `PATCH` | `/v1/members/me/notification-settings` | 알림 설정 부분 수정 |
+| `GET` | `/v1/members/{id}` | 특정 회원 공개 프로필 조회 |
+
+#### 1-4. 완료 기준
+
+- [x] Firebase ID Token으로 인증 성공/실패 동작
+- [x] `@sungkyul.ac.kr` 이메일 도메인 제한 동작
+- [x] 회원 가입 → 프로필 조회 → 프로필 수정 플로우 동작
+- [x] 인증 없이 보호된 API 호출 시 401 반환
+- [x] OpenAPI JSON(`/v3/api-docs`) + Swagger UI + Scalar 노출
+- [x] `local-emulator` 프로필에서만 Auth Emulator 사용 가능하고, 다른 프로필에서 emulator host 사용 시 기동 차단
+
+---
+
+### Phase 2: TaxiParty 도메인
+
+> 앱의 핵심 비즈니스. 상태 머신, 동시성 제어, 정산 로직.
+
+#### 2-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Party` | `parties` | 파티 정보 + `Location`(Embedded) + `Settlement`(Embedded) |
+| `PartyMember` | `party_members` | 파티 멤버 (N:M) |
+| `PartyTag` | `party_tags` | 파티 태그 |
+| `MemberSettlement` | `member_settlements` | 멤버별 정산 상태 |
+| `JoinRequest` | `join_requests` | 동승 요청 |
+
+#### 2-2. 핵심 비즈니스 로직
+
+| 로직 | 설명 |
+|------|------|
+| 파티 상태 머신 | `OPEN → CLOSED → ARRIVED → ENDED` 전이 규칙 |
+| 파티 수정 정책 | `PATCH /v1/parties/{id}`는 `departureTime`, `detail`만 허용 (리더, OPEN/CLOSED) |
+| 정원 자동 마감 | 동승 요청 수락 후 `currentMembers == maxMembers` 시 자동 `CLOSED` 전이 |
+| 동시성 제어 | Optimistic Lock (`@Version`) — 동시 동승 신청 방어 |
+| Aggregate 저장 정책 | `PartyMember/PartyTag/MemberSettlement`는 `Party` aggregate(cascade/orphanRemoval)로 일괄 저장 |
+| 정산 | 도착 시 택시비 입력 → 인원수 자동 나눔(정수 나눗셈/버림) → 멤버별 정산 확인 → 전체 완료 시 정산 상태 `COMPLETED` (파티 종료는 `/end`에서만) |
+| 자동 종료 | `@Scheduled` 4시간마다 — 12시간 초과 파티 자동 `ENDED` (endReason=TIMEOUT) |
+| 권한 분리 | 파티 리더만: 마감/재개/도착/정산/강퇴/종료/취소, 요청자만: 요청 취소 |
+| SSE 이벤트 정책 | 강퇴(`KICKED`) 이벤트는 강퇴 당사자를 포함한 기존 파티 멤버에게 전송 |
+
+#### 2-3. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/v1/parties` | 파티 생성 |
+| `GET` | `/v1/parties` | 파티 목록 조회 (status, 출발지/도착지 필터) |
+| `GET` | `/v1/parties/{id}` | 파티 상세 조회 |
+| `PATCH` | `/v1/parties/{id}` | 파티 수정 (출발시각/상세, 리더) |
+| `PATCH` | `/v1/parties/{id}/close` | 모집 마감 (리더) |
+| `PATCH` | `/v1/parties/{id}/reopen` | 모집 재개 (리더) |
+| `PATCH` | `/v1/parties/{id}/arrive` | 도착 처리 + 정산 시작 (리더) |
+| `PATCH` | `/v1/parties/{id}/end` | 파티 강제 종료 (리더) |
+| `POST` | `/v1/parties/{id}/cancel` | 파티 취소 (리더) |
+| `DELETE` | `/v1/parties/{id}/members/{memberId}` | 멤버 강퇴 (리더) |
+| `DELETE` | `/v1/parties/{id}/members/me` | 파티 탈퇴 (본인) |
+| `POST` | `/v1/parties/{partyId}/join-requests` | 동승 요청 |
+| `PATCH` | `/v1/join-requests/{id}/accept` | 요청 수락 (리더) |
+| `PATCH` | `/v1/join-requests/{id}/decline` | 요청 거절 (리더) |
+| `PATCH` | `/v1/join-requests/{id}/cancel` | 요청 취소 (요청자) |
+| `GET` | `/v1/parties/{partyId}/join-requests` | 파티 요청 목록 (리더) |
+| `GET` | `/v1/members/me/join-requests` | 내 요청 목록 |
+| `PATCH` | `/v1/parties/{id}/settlement/members/{memberId}/confirm` | 개별 정산 확인 (리더) |
+| `GET` | `/v1/members/me/parties` | 내 파티 목록 |
+| `GET` | `/v1/sse/parties` | 파티 목록/상태 실시간 구독 (SSE) |
+| `GET` | `/v1/sse/parties/{partyId}/join-requests` | 특정 파티 동승 요청 실시간 구독 (SSE, 리더 전용) |
+| `GET` | `/v1/sse/members/me/join-requests` | 내 동승 요청 상태 실시간 구독 (SSE) |
+
+#### 2-4. 완료 기준
+
+- [x] 파티 생성 → 동승 요청 → 수락 → 마감 → 도착 → 정산 → 종료 전체 플로우 동작
+- [x] 상태 머신 규칙 위반 시 적절한 에러 반환
+- [x] Optimistic Lock으로 동시 요청 방어
+- [x] 파티 자동 종료 스케줄러 동작
+- [x] `/v1/sse/parties` 연결 + heartbeat + SNAPSHOT/변경 이벤트 전송 동작
+- [x] 동승 요청 SSE 2종(`/v1/sse/parties/{partyId}/join-requests`, `/v1/sse/members/me/join-requests`) 연결 + snapshot/변경 이벤트 전송 동작
+
+#### 2-5. 운영 모니터링 기준 (확정)
+
+| 항목 | 수집 지표 | Warning | Critical |
+|------|-----------|---------|----------|
+| API 동시성 충돌 | `PARTY_CONCURRENT_MODIFICATION` 응답 건수(10분) + TaxiParty 변경 API 대비 비율 | 10분 5건 초과 또는 2% 초과 | 10분 20건 초과 또는 10% 초과 |
+| 스케줄러 충돌률 | `conflicted/target` (배치 1회 기준) | `target >= 10` 이고 20% 이상 | 40% 이상 |
+| 스케줄러 처리 실패 | `target > 0`인데 `ended = 0` 연속 횟수 | 2회 연속 | 3회 연속 |
+| 스케줄러 미실행 | 최근 배치 실행 로그 기준 | - | 5시간 이상 실행 로그 없음 |
+| SSE SNAPSHOT 지연 | `/v1/sse/parties`, `/v1/sse/parties/{partyId}/join-requests`, `/v1/sse/members/me/join-requests` SNAPSHOT 생성 시간(p95) | 500ms 초과 | 1s 초과 |
+| SSE 활성 연결 수 | 인스턴스별 party/join-request SSE 동시 연결 수 합계 | 500 초과 | 1,000 초과 |
+| JoinRequest SSE 전송 실패율 | 5분 윈도우 `failed/total` (eventType별 집계 로그) | 5% 초과 | 10% 초과 |
+
+운영 목표(SLO):
+- TaxiParty 변경 API 대비 동시성 충돌 비율 월 평균 1% 미만 유지
+- timeout 배치 처리 성공률(`ended/target`) 월 평균 95% 이상 유지
+
+운영/감사 로그 정책:
+- Phase 2에서는 파티 수정 감사 로그를 별도 저장하지 않음
+- 사용자 활동 로그 도메인 도입 시 수정 이력 로깅을 확장 예정
+
+SSE 운영 제약:
+- 현재 구현은 인스턴스 메모리(`ConcurrentHashMap`) 기반 구독 관리(단일 인스턴스 전제)
+- 수평 확장 시 Redis Pub/Sub 또는 메시지 브로커 기반 fan-out 구조로 전환 필요
+
+#### 2-6. 테스트 구현 기준 (고정 규칙)
+
+- API 추가/수정 시 Contract 테스트를 엔드포인트 단위로 추가한다.
+  - 최소: 정상 1, 인증/권한 1, 검증/비즈니스 예외 1
+- 상태 전이/권한/정산/동시성 로직 변경 시 Service 테스트를 추가한다.
+  - 최소: 성공 1, 실패 1
+- 응답 스키마 변경 시 필드 존재/미노출 조건을 Contract 테스트로 검증한다.
+- OpenAPI 응답 예시를 수정한 경우, 상태코드별 `errorCode/message` 정합성(명세/실응답/문서)을 함께 검증한다.
+- 머지 전 검증 명령은 `./gradlew build`를 기준으로 한다. (테스트는 `application-test.yaml` 사용)
+
+#### 2-7. 후속 확장 구현 완료 내역 (동승 요청 SSE)
+
+- [x] `/v1/sse/parties/{partyId}/join-requests` 구현 (리더 화면: 요청 목록 실시간 갱신)
+- [x] `/v1/sse/members/me/join-requests` 구현 (요청자 화면: 수락/거절/취소 상태 실시간 갱신)
+- [x] 이벤트 계약 확정: `JOIN_REQUEST_CREATED`, `JOIN_REQUEST_UPDATED`, `MY_JOIN_REQUEST_CREATED`, `MY_JOIN_REQUEST_UPDATED`, `SNAPSHOT`, `HEARTBEAT`
+- [x] 권한 규칙 확정: 파티별 구독은 리더만 허용(`NOT_PARTY_LEADER`), 내 요청 구독은 본인만 허용
+
+---
+
+### Phase 3: Chat 도메인
+
+> 공개 채팅방 + 파티 채팅 엔진. WebSocket(STOMP) 기반 실시간 통신.
+
+#### 3-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `ChatRoom` | `chat_rooms` | 채팅방 (UNIVERSITY, DEPARTMENT, GAME, CUSTOM, PARTY) |
+| `ChatMessage` | `chat_messages` | 채팅 메시지 (TEXT, IMAGE, SYSTEM, ACCOUNT, ARRIVED, END) |
+| `ChatRoomMember` | `chat_room_members` | 채팅방 멤버 (lastReadAt, muted) |
+
+#### 3-2. 핵심 구현
+
+| 항목 | 설명 |
+|------|------|
+| WebSocket 설정 | STOMP + SockJS, Firebase ID Token 인증 |
+| WebSocket 인가 | CONNECT 이후 SEND/SUBSCRIBE 목적지별 멤버십 검증 |
+| 브라우저/실시간 CORS | 프로필/환경별 허용 Origin 설정 (`API_ALLOWED_ORIGIN_PATTERNS`, `CHAT_WS_ALLOWED_ORIGIN_PATTERNS`) |
+| ChatService | 공통 채팅 엔진 (메시지 저장, 전송, 읽음 처리) |
+| PartyMessageService | 파티 채팅 규칙 (계좌 공유, 도착 메시지, 종료 메시지) — Chat 엔진 사용 |
+| 채팅방 목록 요약 스트림 | 목록 화면은 `/user/queue/chat-rooms` 단일 구독으로 카드 요약(이름/인원/마지막 메시지/미읽음) 수신 |
+| 읽음 처리 | `ChatRoomMember.lastReadAt` 기반 미읽음 수 계산 |
+
+#### 3-3. API (REST + WebSocket)
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `GET` | `/v1/chat-rooms` | 채팅방 목록 (타입 필터) |
+| `GET` | `/v1/chat-rooms/{id}` | 채팅방 상세 |
+| `GET` | `/v1/chat-rooms/{id}/messages` | 메시지 목록 (커서 기반 페이지네이션) |
+| `PATCH` | `/v1/chat-rooms/{id}/read` | 읽음 처리 (`lastReadAt` 단조 증가) |
+| `PATCH` | `/v1/chat-rooms/{id}/settings` | 채팅방 설정(음소거 등) |
+| WebSocket | `SUBSCRIBE /user/queue/chat-rooms` | 내 채팅방 목록 요약 실시간 수신 |
+| WebSocket | `SUBSCRIBE /topic/chat/{chatRoomId}` | 채팅방 상세 메시지 실시간 수신 |
+| WebSocket | `SEND /app/chat/{chatRoomId}` | 채팅방 메시지 전송 |
+| `POST` | `/v1/admin/chat-rooms` | 공개 채팅방 생성 (관리자) |
+| `DELETE` | `/v1/admin/chat-rooms/{chatRoomId}` | 공개 채팅방 삭제 (관리자) |
+
+#### 3-4. 완료 기준
+
+- [x] WebSocket 연결 및 실시간 메시지 송수신 동작
+- [x] 채팅방 목록 화면이 `/user/queue/chat-rooms` 단일 구독으로 카드 요약을 실시간 반영
+- [x] 채팅방 상세 화면 진입 시 해당 room topic만 구독하고, 이탈 시 구독 해제
+- [x] 파티 채팅방 자동 생성 (파티 생성 시) 동작
+- [x] 읽음/미읽음 처리 동작
+- [x] 파티 채팅 특수 메시지 (계좌, 도착, 종료) 동작
+- [x] 관리자 공개 채팅방 API (`POST/DELETE /v1/admin/chat-rooms`) + `ADMIN_REQUIRED` 권한 정책 동작
+
+---
+
+### Phase 4: Board 도메인
+
+> 커뮤니티 게시판. CRUD + 익명 + 좋아요/북마크.
+
+#### 4-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Post` | `posts` | 게시글 |
+| `PostImage` | `post_images` | 게시글 이미지 |
+| `Comment` | `comments` | 댓글/대댓글 (self-reference) |
+| `PostInteraction` | `post_interactions` | 좋아요 + 북마크 통합 |
+
+#### 4-2. 핵심 로직
+
+| 로직 | 설명 |
+|------|------|
+| 익명 처리 | `anonId` = `{postId}:{userId}`, `anonymousOrder` 서버 계산 (글 단위 순번) |
+| 좋아요/북마크 | `PostInteraction` 단일 테이블, 등록/취소 방식 |
+| 카운트 관리 | `viewCount`, `likeCount`, `commentCount`, `bookmarkCount` 동기화 |
+| 댓글 구조 | 무제한 depth 저장 + flat list 조회 응답 (`parentId`, `depth`) |
+| 부모 삭제 정책(B) | 부모 댓글은 placeholder soft delete(`삭제된 댓글입니다`), 자식 댓글은 유지 |
+
+#### 4-3. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/v1/posts` | 게시글 작성 |
+| `GET` | `/v1/posts` | 게시글 목록 (카테고리 필터, 페이지네이션) |
+| `GET` | `/v1/posts/{postId}` | 게시글 상세 (조회수 증가) |
+| `PATCH` | `/v1/posts/{postId}` | 게시글 부분 수정 (작성자) |
+| `DELETE` | `/v1/posts/{postId}` | 게시글 삭제 (작성자) |
+| `POST` | `/v1/posts/{postId}/like` | 좋아요 토글 |
+| `POST` | `/v1/posts/{postId}/bookmark` | 북마크 토글 |
+| `DELETE` | `/v1/posts/{postId}/like` | 좋아요 취소 |
+| `DELETE` | `/v1/posts/{postId}/bookmark` | 북마크 취소 |
+| `GET` | `/v1/posts/bookmarked` | 북마크한 게시글 목록 |
+| `GET` | `/v1/posts/{postId}/comments` | 댓글 목록 |
+| `POST` | `/v1/posts/{postId}/comments` | 댓글 작성 |
+| `PATCH` | `/v1/comments/{commentId}` | 댓글 부분 수정 |
+| `DELETE` | `/v1/comments/{commentId}` | 댓글 삭제 |
+| `GET` | `/v1/members/me/posts` | 내가 작성한 게시글 목록 |
+| `GET` | `/v1/members/me/bookmarks` | 내가 북마크한 게시글 목록 |
+| `POST` | `/v1/images` | 이미지 업로드 (후속 범위) |
+| `GET` | `/v1/sse/posts` | 게시물 목록/조회수 실시간 구독 (후속 범위) |
+
+#### 4-4. 완료 기준
+
+- [x] 게시글 CRUD + 댓글/상호작용 API 동작
+- [x] 익명 댓글 순번 부여 규칙(`anonId`, `anonymousOrder`) 동작
+- [x] 좋아요/북마크 등록/취소 + 카운트 동기화 동작
+- [x] 무제한 depth 댓글 + flat list 조회 + 부모 삭제 정책(B) 동작
+
+---
+
+### Phase 5: Notice 도메인
+
+> 학교 공지 크롤링 + 앱 공지 관리.
+
+#### 5-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Notice` | `notices` | 학교 공지 (크롤링) |
+| `NoticeComment` | `notice_comments` | 공지 댓글 |
+| `NoticeReadStatus` | `notice_read_status` | 읽음 상태 |
+| `NoticeLike` | `notice_likes` | 공지 좋아요 |
+| `AppNotice` | `app_notices` | 앱 운영 공지 |
+
+#### 5-2. 핵심 구현
+
+| 항목 | 설명 |
+|------|------|
+| RSS 크롤러 | `@Scheduled` 평일 08:00~19:50, 10분마다 RSS 피드 파싱 → DB 저장 |
+| rssFingerprint | 레거시(`title|fullLink|rawDate`) 기준 변경 감지 |
+| contentHash | 링크를 제외한 실제 내용 + 상세 본문/첨부 기반 SHA1 해시로 dedup |
+| detail 재검증 | 신규/메타 변경/`detailHash` 없음/24시간 초과 시 재크롤링 |
+| 공지 ID | `Base64(link).replace(/=+$/, '').slice(0, 120)` — 링크 기반 안정 ID |
+| 저장 구조 | `rssPreview`(RSS 미리보기), `bodyHtml`(원문 HTML), `bodyText`(정규화 text), `summary`(향후 AI 요약 예약) |
+
+#### 5-3. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `GET` | `/v1/notices` | 공지 목록 (카테고리/검색 필터) |
+| `GET` | `/v1/notices/{id}` | 공지 상세 조회 |
+| `POST` | `/v1/notices/{id}/read` | 읽음 표시 |
+| `POST` | `/v1/notices/{id}/like` | 좋아요 등록 |
+| `DELETE` | `/v1/notices/{id}/like` | 좋아요 취소 |
+| `GET` | `/v1/notices/{noticeId}/comments` | 공지 댓글 목록 |
+| `POST` | `/v1/notices/{noticeId}/comments` | 공지 댓글 작성 |
+| `DELETE` | `/v1/notice-comments/{id}` | 공지 댓글 삭제 |
+| `GET` | `/v1/app-notices` | 앱 공지 목록 (**Public**) |
+| `GET` | `/v1/app-notices/{id}` | 앱 공지 상세 |
+| `POST` | `/v1/admin/app-notices` | 앱 공지 생성 (관리자) |
+| `PATCH` | `/v1/admin/app-notices/{appNoticeId}` | 앱 공지 부분 수정 (관리자) |
+| `DELETE` | `/v1/admin/app-notices/{appNoticeId}` | 앱 공지 삭제 (관리자) |
+| `POST` | `/v1/admin/notices/sync` | 학교 공지 동기화 실행 (관리자) |
+
+#### 5-4. 완료 기준
+
+- [x] RSS 크롤러가 주기적으로 공지 수집 동작
+- [x] 중복 공지 필터링 동작
+- [x] 공지 댓글 + 익명 순번 동작
+- [x] AppNotice 비인증 조회 동작
+
+#### 5-5. 공통 Comment 정책 (Board/Notice 공통)
+
+- Comment 도메인은 Board/Notice에 종속된 부가 기능이 아니라 공통 정책을 공유하는 독립 하위 도메인으로 본다.
+- 저장 정책:
+  - `parentId` self-reference를 유지하되 depth 제한은 제거한다.
+  - Board / Notice 모두 무제한 대댓글을 허용한다.
+- 조회 정책:
+  - 댓글 조회 API는 flat list를 반환한다.
+  - 각 댓글은 최소 `id`, `parentId`, `depth`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
+  - 서버는 thread 순서를 보장한 flat list를 반환하고, 클라이언트가 이를 트리처럼 렌더링한다.
+- 삭제 정책:
+  - 부모 삭제 시 placeholder soft delete는 유지한다.
+  - 하위 댓글은 depth와 무관하게 모두 보존한다.
+- 알림 정책:
+  - Board / Notice 공통 댓글 알림 마스터는 `commentNotifications`로 통일한다.
+  - Board 게시글 북마크 기반 댓글 알림은 `bookmarkedPostCommentNotifications`로 분리한다.
+  - 댓글 작성 시 수신 대상이 중복되면 푸시/인앱 인박스는 1회만 생성한다.
+
+#### 5-5. AI / RAG 준비 메모
+
+- `summary` 컬럼은 추후 AI가 생성한 공지 요약 저장용으로 예약한다.
+- `bodyText`는 `bodyHtml`을 정규화한 plain text로 저장하고, 추후 chunking/embedding의 원본으로 사용한다.
+- `contentHash`가 변하면 기존 AI 요약/임베딩은 재생성 대상으로 간주한다.
+- 공지 챗봇(RAG)은 `title`, `category`, `postedAt`, `link`를 citation 메타데이터로 사용한다.
+- `bodyHtml`은 RN 앱의 웹형 렌더링 요구 때문에 유지한다. AI/RAG는 `bodyText`를 기준으로 처리한다.
+
+---
+
+### Phase 6: Academic 도메인
+
+> 학사 정보 조회 + 시간표 관리 + 관리자 운영 API 제공.
+
+#### 6-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Course` | `courses` + `course_schedules` | 강의 정보 |
+| `UserTimetable` | `user_timetables` + `user_timetable_courses` | 사용자 시간표 |
+| `AcademicSchedule` | `academic_schedules` | 학사 일정 |
+
+#### 6-2. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `GET` | `/v1/courses` | 강의 검색 (학기, 학과, 교수, 키워드) |
+| `GET` | `/v1/timetables/my` | 내 시간표 조회 |
+| `POST` | `/v1/timetables/my/courses` | 시간표에 강의 추가 |
+| `DELETE` | `/v1/timetables/my/courses/{courseId}` | 시간표에서 강의 삭제 |
+| `GET` | `/v1/academic-schedules` | 학사 일정 목록 |
+| `POST` | `/v1/admin/academic-schedules` | 학사 일정 추가 (관리자) |
+| `PUT` | `/v1/admin/academic-schedules/{scheduleId}` | 학사 일정 수정 (관리자) |
+| `DELETE` | `/v1/admin/academic-schedules/{scheduleId}` | 학사 일정 삭제 (관리자) |
+| `POST` | `/v1/admin/courses/bulk` | 학기 강의 일괄 등록 (관리자) |
+| `DELETE` | `/v1/admin/courses` | 학기 강의 전체 삭제 (관리자) |
+
+#### 6-3. 완료 기준
+
+- [x] 강의 검색 필터(`semester`, `department`, `professor`, `search`, `dayOfWeek`, `grade`) 동작
+- [x] 내 시간표 조회/강의 추가/강의 삭제 동작
+- [x] 시간표 무결성 규칙 적용
+  - [x] 같은 사용자 + 학기 조합은 시간표 1개만 허용
+  - [x] 같은 시간표 내 동일 강의 중복 추가 차단
+  - [x] 같은 요일/교시 겹침 시간 충돌 차단
+- [x] 학사 일정 조회 동작
+- [x] 관리자 학사 일정 CRUD 동작
+- [x] 관리자 학기 강의 bulk 업서트/전체 삭제 동작
+- [x] OpenAPI (`/v3/api-docs`, Swagger UI, Scalar) 반영
+- [x] Phase 6 Postman 수동 검증 컬렉션(`etc/postman_collection.json > 06. Academic`) 반영
+
+구현 계약 메모:
+- 강의 bulk 등록 계약은 `credits` + 강의 단위 `location`으로 통일한다.
+- 시간표 조회/추가/삭제는 동일한 시간표 응답(`courses[] + slots[]`)을 반환한다.
+- 시간표 색상 결정 책임은 백엔드가 아닌 프론트엔드(RN 앱)에 둔다.
+- `GET /v1/timetables/my`의 semester 기본값은 서버 규칙(`2~7월 -> yyyy-1`, `8~12월 -> yyyy-2`, `1월 -> 전년도 yyyy-2`)을 사용한다.
+- 실제 학교 학기 시작은 3월/9월이지만, 스쿠리는 수강신청/시간표 준비 수요를 반영해 학기 기준을 한 달 앞당겨 사용한다.
+
+#### 6-4. 학사 일정 알림 정책 (Phase 8 연동 예정)
+
+- 기본 트리거 기준일은 `AcademicSchedule.startDate`로 본다.
+- 기본 발송 시각은 `오전 09:00`이다.
+- 기본 발송 대상은 중요 일정(`isPrimary = true`)이다.
+- 기본 발송 시점은 일정 당일 `오전 09:00`이다.
+- 사용자 옵션으로 다음 정책을 추가 허용한다.
+  - 일정 전날 `오전 09:00` 추가
+  - 중요 일정만이 아니라 모든 일정 대상 확장
+- 실제 FCM/인앱 인박스 발송은 Phase 8 Notification 인프라에서 구현한다.
+
+---
+
+### Phase 7: Support 도메인
+
+> 문의/신고, 앱 버전, 학식 메뉴 관리.
+
+#### 7-1. 엔티티
+
+| 엔티티 | 테이블 | 설명 |
+|--------|--------|------|
+| `Inquiry` | `inquiries` | 문의 |
+| `Report` | `reports` | 신고 |
+| `AppVersion` | `app_versions` | 앱 버전 (ios, android) |
+| `CafeteriaMenu` | `cafeteria_menus` | 학식 메뉴 |
+
+`Report` 기준 enum:
+- `targetType`: `POST`, `COMMENT`, `MEMBER`
+- `status`: `PENDING`, `REVIEWING`, `ACTIONED`, `REJECTED`
+- duplicate policy: `reporterId + targetType + targetId` 전 상태 기준 재신고 금지
+- `GET /v1/app-versions/{platform}`는 저장 데이터가 없으면 기본 `minimumVersion=1.0.0` 응답
+
+#### 7-2. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/v1/inquiries` | 문의 접수 |
+| `GET` | `/v1/inquiries/my` | 내 문의 목록 |
+| `POST` | `/v1/reports` | 신고 접수 |
+| `GET` | `/v1/app-versions/{platform}` | 앱 버전 정보 (**Public**) |
+| `GET` | `/v1/cafeteria-menus` | 학식 메뉴 (이번 주) |
+| `GET` | `/v1/cafeteria-menus/{weekId}` | 특정 주차 학식 메뉴 |
+| `GET` | `/v1/admin/inquiries` | 문의 전체 목록 조회 (관리자) |
+| `PATCH` | `/v1/admin/inquiries/{inquiryId}/status` | 문의 상태 처리 (관리자) |
+| `GET` | `/v1/admin/reports` | 신고 전체 목록 조회 (관리자) |
+| `PATCH` | `/v1/admin/reports/{reportId}/status` | 신고 상태 처리 (관리자) |
+| `PUT` | `/v1/admin/app-versions/{platform}` | 앱 버전 정보 업데이트 (관리자) |
+| `POST` | `/v1/admin/cafeteria-menus` | 학식 메뉴 등록 (관리자) |
+| `PUT` | `/v1/admin/cafeteria-menus/{weekId}` | 학식 메뉴 수정 (관리자) |
+| `DELETE` | `/v1/admin/cafeteria-menus/{weekId}` | 학식 메뉴 삭제 (관리자) |
+
+#### 7-3. 완료 기준
+
+- [x] 문의/신고 접수 동작
+- [x] 앱 버전 비인증 조회 동작
+- [x] 학식 메뉴 조회 동작
+- [x] 관리자 문의/신고 목록 조회 및 상태 처리 동작
+- [x] 관리자 앱 버전/학식 메뉴 운영 API 동작
+- [x] Admin 권한 정책(`ROLE_ADMIN`, `403 ADMIN_REQUIRED`) 및 공개 버전 조회(`permitAll`) 반영
+- [x] Support 페이지 응답 포맷 `PageResponse` 일관화 및 수동 검증 컬렉션(`etc/postman_collection.json > 07. Support`) 반영
+
+---
+
+### Phase 8: Notification 인프라
+
+> 도메인 이벤트 기반 알림 시스템. FCM + 인앱 인박스.
+> 기본 이관 원칙: 기존 RN + Firebase Cloud Functions 운영 정책을 우선 보존한다. 다만 `allNotifications` 및 도메인 토글 반영이 현행 구현에서 일관되지 않은 항목은 Phase 8 설계에서 명시적으로 정규화한다.
+
+#### 8-1. 구현 범위
+
+| 항목 | 설명 |
+|------|------|
+| `UserNotification` 엔티티 | 알림 인박스 테이블 |
+| `FcmToken` 엔티티 | FCM 토큰 관리 |
+| `PushNotificationService` | Firebase Admin SDK로 FCM 발송 |
+| `NotificationService` | 인박스 저장 + 조회 |
+| `DomainEventNotificationListener` | `@EventListener` 기반 수신 + 실패 격리 처리 |
+
+#### 8-2. 도메인 이벤트 → 알림 매핑
+
+| 이벤트 | 알림 타입 | FCM | 인박스 |
+|--------|-----------|-----|--------|
+| PartyCreatedEvent | PARTY_CREATED | O | X |
+| JoinRequestCreatedEvent | PARTY_JOIN_REQUEST | O | O |
+| JoinRequestAcceptedEvent | PARTY_JOIN_ACCEPTED | O | O |
+| JoinRequestDeclinedEvent | PARTY_JOIN_DECLINED | O | O |
+| PartyStatusChangedEvent | PARTY_CLOSED / PARTY_ARRIVED | O | O |
+| SettlementCompletedEvent | SETTLEMENT_COMPLETED | O | O |
+| MemberKickedEvent | MEMBER_KICKED | O | O |
+| ChatMessageCreatedEvent | CHAT_MESSAGE | O | X |
+| PostLikedEvent | POST_LIKED | O | O |
+| CommentCreatedEvent | COMMENT_CREATED | O | O |
+| NoticeCreatedEvent | NOTICE | O | O |
+| AppNoticeCreatedEvent | APP_NOTICE | O | O |
+| AcademicScheduleReminderEvent | ACADEMIC_SCHEDULE | O | O |
+
+#### 8-2-1. 알림 정책 상세 (현행 운영 정책 기준)
+
+| 알림 타입 | 기본 트리거 | 기본 수신 대상 | 제외/예외 | 설정 반영 | 인앱 인박스 |
+|-----------|-------------|----------------|-----------|-----------|-------------|
+| `PARTY_CREATED` | 새 파티 생성 | 생성자 제외 전체 사용자 | 생성자 제외 | `allNotifications` + `partyNotifications` | X |
+| `PARTY_JOIN_REQUEST` | 동승 요청 생성 | 파티 리더 | 토큰 없음 시 푸시 없음 | `allNotifications` + `partyNotifications` | O |
+| `PARTY_JOIN_ACCEPTED` / `PARTY_JOIN_DECLINED` | 동승 요청 상태 변경 | 요청자 | `accepted` / `declined` 외 상태 미발송 | `allNotifications` + `partyNotifications` | O |
+| `PARTY_CLOSED` | 파티 상태 `open -> closed` | 리더 제외 파티 멤버 | 해당 상태 전이 외 미발송 | `allNotifications` + `partyNotifications` | X |
+| `PARTY_ARRIVED` | 파티 상태 `* -> arrived` | 리더 제외 파티 멤버 | 해당 상태 전이 외 미발송 | `allNotifications` + `partyNotifications` | O |
+| `SETTLEMENT_COMPLETED` | 마지막 정산 완료 | 파티 전체 멤버 | 이미 정산 완료 상태였으면 미발송 | `allNotifications` + `partyNotifications` | O |
+| `MEMBER_KICKED` | 파티 멤버 강퇴 | 강퇴된 멤버 | 자진 이탈(`_selfLeaveMemberId`)과 리더 제외 | `allNotifications` + `partyNotifications` | O |
+| `PARTY_ENDED` | 파티 해체 | 리더 제외 파티 멤버 | 리더만 남은 파티는 제외 | `allNotifications` + `partyNotifications` | O |
+| `CHAT_MESSAGE` (공개 채팅) | 공개 채팅방 메시지 생성 | 채팅방 멤버(송신자 제외) | 채팅방 mute 대상 제외 | `allNotifications` + 채팅방 mute | X |
+| `CHAT_MESSAGE` (파티 채팅) | 파티 채팅 메시지 생성 | 파티 멤버(송신자 제외) | 파티 채팅 mute 대상 제외 | 채팅 mute 중심 parity 우선, 전역 토글은 현재 미반영 | X |
+| `POST_LIKED` | 게시글 좋아요 생성 | 게시글 작성자 | 자기 글 좋아요 제외 | `allNotifications` + `boardLikeNotifications` | O |
+| `COMMENT_CREATED` (게시글) | 게시글 댓글/답글 생성 | 게시글 작성자, 부모 댓글 작성자, 게시글 북마크 사용자 | 자기 자신 대상 제외, 동일 사용자 중복 수신은 1회로 dedupe | `allNotifications` + `commentNotifications` + `bookmarkedPostCommentNotifications` | O |
+| `COMMENT_CREATED` (공지) | 공지 댓글 답글 생성 | 부모 댓글 작성자 | `Notice.author`가 회원 식별자가 아니어서 루트 공지 작성자 알림은 현재 미지원 | `allNotifications` + `commentNotifications` | O |
+| `NOTICE` | 새 학교 공지 생성 | 공지 허용 사용자 | 카테고리 상세 토글 비활성 사용자 제외 | `allNotifications` + `noticeNotifications` + `noticeNotificationsDetail` | O |
+| `APP_NOTICE` | 앱 공지 생성 | 일반: 시스템 알림 허용 사용자 / `HIGH`: 전체 사용자 | `HIGH`는 설정 무시 강제 발송 | 일반: `allNotifications` + `systemNotifications` / `HIGH`: 설정 무시 | O |
+| `ACADEMIC_SCHEDULE` | 학사 일정 리마인더 시각 도달 | 학사 일정 알림 허용 사용자 | 기본은 중요 일정만 대상 | `allNotifications` + `academicScheduleNotifications` | O |
+
+- 저장 구조는 Firestore가 아니라 RDB 테이블(`user_notifications`, `fcm_tokens`)을 사용한다.
+- FCM 전송은 `sendEachForMulticast` 500개 배치와 invalid token 정리 정책을 유지한다.
+- 로컬/테스트에서 Firebase Messaging bean이 없으면 no-op sender로 기동/테스트를 허용한다.
+- FCM raw push payload는 canonical `NotificationType` + 리소스 식별자(`partyId`, `noticeId`, `chatRoomId` 등)를 사용하며, 특정 RN legacy payload에 맞추지 않는다.
+- 플랫폼별 sound/channel은 `PushPresentationProfile`로 관리한다. `PARTY`, `CHAT`, `NOTICE`, `DEFAULT` 프로필을 사용하고, `DEFAULT`는 현재 Android channel override를 두지 않는다.
+
+#### 8-2-2. 학사 일정 알림 사용자 옵션 (계획)
+
+- `academicScheduleNotifications`: 학사 일정 알림 마스터 토글
+- `academicScheduleDayBeforeEnabled`: 전날 오전 09:00 추가 여부
+- `academicScheduleAllEventsEnabled`: 중요 일정만이 아니라 모든 일정 대상으로 확장할지 여부
+- 기본값:
+  - `academicScheduleNotifications = true`
+  - `academicScheduleDayBeforeEnabled = true`
+  - `academicScheduleAllEventsEnabled = false`
+
+#### 8-3. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `GET` | `/v1/notifications` | 알림 인박스 목록 |
+| `POST` | `/v1/notifications/{id}/read` | 알림 읽음 처리 |
+| `POST` | `/v1/notifications/read-all` | 전체 읽음 처리 |
+| `DELETE` | `/v1/notifications/{id}` | 알림 삭제 |
+| `GET` | `/v1/notifications/unread-count` | 미읽음 수 |
+| `POST` | `/v1/members/me/fcm-tokens` | FCM 토큰 등록 |
+| `DELETE` | `/v1/members/me/fcm-tokens` | FCM 토큰 해제 |
+| `GET` | `/v1/sse/notifications` | 알림 실시간 구독 (SSE) |
+
+#### 8-4. 완료 기준
+
+- [x] 도메인 이벤트 발행 → after-commit 리스너 수신 동작
+- [x] FCM 푸시 발송 동작
+- [x] 알림 인박스 CRUD 동작
+- [x] 알림 설정 반영 (mute, 카테고리별 on/off)
+- [x] 학사 일정 리마인더 정책 반영 (기본: 중요 일정 당일 09:00, 옵션: 전날 추가 / 모든 일정)
+- [x] 기존 Cloud Functions 운영 정책과의 parity 검증 (수신 대상, 예외 조건, 인앱 생성 여부)
+- [x] `/v1/sse/notifications`로 인앱 실시간 알림/미읽음 수 반영 동작
+
+---
+
+### Phase 9: 인프라 및 배포
+
+> Docker, OCI, CI/CD.
+> 확정 전략: `OCI 1대 + docker-compose.prod.yml(app + MySQL + Redis)`, GitHub `production` 환경 승인 기반 반자동 배포.
+
+#### 9-1. 구현 항목
+
+| # | 항목 | 설명 | 상태 |
+|---|------|------|------|
+| 1 | Dockerfile | Spring Boot 멀티스테이지 빌드 | [x] |
+| 2 | docker-compose.yml | app + MySQL + Redis 로컬 개발 환경 | [x] |
+| 3 | Redis 범위 정리 | 이번 Phase는 컨테이너/환경변수/문서화까지만 반영 | [x] |
+| 4 | OCI 배포 설계 | `OCI 단일 인스턴스 + docker-compose.prod.yml(app + MySQL + Redis)`, 운영 `.env`, Firebase 파일 주입 전략 | [x] |
+| 5 | GitHub Actions CD | `main` 반영 후 `production` 환경 승인 기반 OCI/AWS 멀티플랫폼 배포 + `health/public API/CORS/OpenAPI` smoke check | [x] |
+| 6 | OpenAPI 운영 정책 | `local/local-emulator` 노출, `prod` 기본 비노출 | [x] |
+| 7 | 프로필 / `.env` 전략 정리 | `application/local/local-emulator/prod/test` 체계 + env 기반 local 정리 | [x] |
+| 8 | 배포 가이드 / 체크리스트 | 배포 전/후 점검, smoke check, rollback 문서화 | [x] |
+| 9 | OCI 실제 리소스 생성 및 최초 배포 | 서버/네트워크/운영 파일 실 배포 | [x] |
+
+#### 9-2. 완료 기준
+
+- [x] `docker compose up` 기준의 로컬 환경 파일/문서 준비
+- [x] CI/CD 파이프라인 초안 반영
+- [x] OCI 배포 및 정상 동작
+- [x] 운영 smoke check 수행 확인 (`/actuator/health`, `GET /v1/app-versions/android`, admin REST CORS preflight, prod OpenAPI 비노출)
+- [ ] rollback 실제 수행 확인
+
+---
+
+### Phase 10: Member 탈퇴/계정 라이프사이클
+
+> 회원 탈퇴 정책 문서화, lifecycle 모델 반영, `DELETE /v1/members/me`, 연관 도메인 정합성 처리 구현 완료.
+
+> 운영 rollout 주의: Phase 10 이전 운영 DB는 앱 기동 전에 `members.status`를 수동 SQL로 `ACTIVE` 백필해야 한다. 상세 절차는 [배포 가이드](./deployment-guide.md#10-phase-10-회원-lifecycle-마이그레이션)를 참조한다.
+
+#### 10-1. 구현 항목
+
+| # | 항목 | 설명 |
+|---|------|------|
+| 1 | 탈퇴 정책 문서화 | [Member 탈퇴 정책](./member-withdrawal-policy.md)로 soft delete, 재가입, 개인정보 처리, Firebase 후처리 정책 확정 |
+| 2 | 도메인 영향 반영 | TaxiParty/Chat/Board/Notice/Support/Notification/Academic 정합성 처리 구현 |
+| 3 | `DELETE /v1/members/me` API | 인증 사용자 본인 탈퇴 처리 및 정책 기반 예외 응답 구현 |
+| 4 | 개인정보 처리 | Member PII 스크럽, linked_accounts/알림/FCM/시간표 삭제, 콘텐츠 익명화 반영 |
+| 5 | 회귀 검증 | Contract/Service/도메인 정합성 테스트 추가 및 빌드 검증 |
+
+#### 10-2. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `DELETE` | `/v1/members/me` | 회원 탈퇴 (즉시 탈퇴, soft delete tombstone + 도메인 후처리) |
+
+#### 10-3. 완료 기준
+
+- [x] 탈퇴 정책이 문서로 확정됨
+- [x] `DELETE /v1/members/me` 동작 및 예외 케이스 검증 완료
+- [x] 연관 도메인 데이터 정합성/개인정보 처리 규칙 검증 완료
+
+---
+
+### Phase 11: 운영 공통 인프라 (Admin 공통)
+
+> 도메인별 Admin API를 횡단하는 공통 권한/감사/백오피스 기능을 구축한다.
+
+#### 11-1. 구현 항목
+
+| # | 항목 | 설명 |
+|---|------|------|
+| 1 | Admin 권한 공통화 | `ADMIN_REQUIRED` 정책, 공통 인가 컴포넌트, 실패 응답 표준화 |
+| 2 | 운영 감사 로그 | Admin API 호출자/대상/변경 diff 기록, 추적성 확보 |
+| 3 | 운영 백오피스 연동 기준 | 페이지네이션/검색/필터/정렬 규약, CSV 내보내기 등 운영 UX 규약 |
+| 4 | Admin Contract Guard | 관리자/비관리자/미인증 시나리오 테스트 및 OpenAPI 예시 일관성 검증 |
+| 5 | 운영 데이터 접근 정책 | 문의/신고/공지/학사 데이터의 접근 범위, 보존 기간, 개인정보 마스킹 규칙 |
+
+#### 11-2. 비고
+
+- 현재 `docs/api-specification.md`에 정의된 Admin API는 Phase 3/5/6/7에 도메인별로 배치한다.
+- 특정 도메인에 귀속되지 않는 운영 공통 기능/엔드포인트만 Phase 11 대상으로 관리한다.
+- 2안 적용 기준:
+  - Firebase 인증 필터에서 `members.isAdmin=true` 사용자에 `ROLE_ADMIN` authority를 부여한다.
+  - Admin 엔드포인트는 `@PreAuthorize("hasRole('ADMIN')")`로 보호한다.
+  - Admin 경로 접근 거부는 `ADMIN_REQUIRED`(`403`)를 반환한다.
+
+#### 11-3. 완료 기준
+
+- [ ] Admin 공통 인가/감사 로그가 모든 Admin API에 일관 적용됨
+- [ ] 운영 대상(문의/신고) 조회/처리 API 계약 및 권한 검증 완료
+- [ ] 백오피스 연동 시나리오(검색/필터/처리/재처리) 회귀 검증 완료
+
+---
+
+## 4. Phase 간 의존 관계
+
+```
+Phase 0 ─── 필수 선행 ──→ Phase 1 (Member)
+Phase 1 ─── 필수 선행 ──→ Phase 2 (TaxiParty)
+Phase 2 ─── 필수 선행 ──→ Phase 3 (Chat)
+Phase 1 ─── 필수 선행 ──→ Phase 4 (Board)
+Phase 1 ─── 필수 선행 ──→ Phase 5 (Notice)
+Phase 1 ─── 필수 선행 ──→ Phase 6 (Academic)
+Phase 1 ─── 필수 선행 ──→ Phase 7 (Support)
+Phase 2~7 ── 연동 ──→ Phase 8 (Notification)
+전체 ───────────────→ Phase 9 (인프라/배포)
+Phase 1~9 ─────────────→ Phase 10 (Member 탈퇴)
+Phase 3/5/6/7 ── 연동 ──→ Phase 11 (운영 공통 Admin 인프라)
+```
+
+**참고:** Phase 4~7 (Board, Notice, Academic, Support)은 서로 독립적이므로 **병렬 구현 가능**합니다.
+단, Phase 2 → Phase 3은 파티 채팅 연동 때문에 **순차 구현 필수**입니다.
+
+---
+
+## 5. 각 Phase의 내부 구현 순서 (공통 패턴)
+
+모든 도메인은 아래 순서로 bottom-up 구현합니다:
+
+```
+1. Entity + Enum          (도메인 모델)
+2. Repository             (데이터 접근)
+3. Service                (비즈니스 로직)
+4. DTO (Request/Response) (API 계약)
+5. Controller             (API 엔드포인트)
+6. Event (필요 시)         (도메인 이벤트 발행)
+7. OpenAPI 문서화          (`@Tag`, `@Operation`, `@ApiResponses`, DTO `@Schema`, GroupedOpenApi 반영)
+8. Serena Memory 동기화    (`.serena/memories/*.md`에서 영향받는 항목 갱신)
+```
+
+---
+
+## 6. Serena Memory 운영 규칙
+
+- Serena Memory는 코드 구현 문서가 아니라, "현재 프로젝트 상태를 빠르게 회복하기 위한 온보딩 요약"으로 유지한다.
+- 기능/정책/운영 규칙 변경 시 아래 매핑으로 같은 PR에서 함께 갱신한다.
+  - 아키텍처/도메인: `project_overview`, `codebase_structure`
+  - 스타일/정책/검증 기준: `code_style_and_conventions`, `task_completion_checklist`
+  - 실행/테스트/운영 명령: `suggested_commands`
+- 머지 전 점검:
+  - `serena.check_onboarding_performed`
+  - `serena.list_memories`
+  - 최근 변경과 메모리 내용 불일치 여부 확인
+
+---
+
+## 참고 문서
+
+- [도메인 분석](./domain-analysis.md) — 도메인 상세 및 엔티티 설계
+- [ERD](./erd.md) — 테이블 스키마 및 인덱스
+- [API 명세](./api-specification.md) — 전체 API 상세 스펙
+- [기술 전략](./tech-strategy.md) — 기술 선택 근거 및 포트폴리오 전략
+- [역할 정의](./role-definition.md) — Spring 백엔드의 책임 범위
+
+---
+
+> **문서 이력**
+> - 2026-02-26: 초안 작성
+> - 2026-03-05: Admin API를 도메인 Phase(3/5/6/7)에 배치, Phase 11(운영 공통 Admin 인프라) 추가, Phase 4/6/7/8 API 경로·메서드 동기화
+> - 2026-03-05: Support Phase에 관리자 문의/신고 조회·처리 API 추가 (`/v1/admin/inquiries`, `/v1/admin/reports`)
+> - 2026-03-05: Admin 권한 정책 구현 반영 — `ROLE_ADMIN + @PreAuthorize`, `ADMIN_REQUIRED` 표준화, Chat Admin API(`POST/DELETE /v1/admin/chat-rooms`) 완료 기준 반영
+> - 2026-03-05: Phase 4(Board) 구현 반영 — 댓글 depth 1 제한, 부모 삭제 정책(B: placeholder soft delete), `/v1/members/me/posts|bookmarks` API 및 카운트 동기화 전략 문서화
+> - 2026-03-06: README/로드맵 현재 상태를 Phase 4 완료 기준으로 동기화하고, Board API 경로 변수명을 코드 기준(`postId/commentId`)으로 정렬
+> - 2026-03-07: Board/Notice 공통 Comment 정책 구현 반영 — 무제한 depth, flat list 응답, 댓글 알림 설정 분리(`commentNotifications`, `bookmarkedPostCommentNotifications`)
+> - 2026-03-08: Phase 7 완료 기준으로 현재 상태를 갱신하고, Support 운영 API/기본 앱 버전 fallback/Postman 수동 검증 컬렉션 경로를 반영
+> - 2026-03-08: Phase 8 Notification 구현 반영 — `PARTY_*` canonical enum, RDB 저장 구조, FCM token/no-op sender, 학사 일정 리마인더, Notification SSE/인박스/정책 parity 동기화
+> - 2026-03-08: Phase 8 Push payload 계약 보강 — canonical `type + data`, `contractVersion`, platform별 sound/channel presentation profile 문서화

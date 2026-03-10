@@ -1,7 +1,7 @@
 # Spring 백엔드 ERD (Entity Relationship Diagram)
 
-> 최종 수정일: 2026-02-03
-> 관련 문서: [도메인 분석](./domain-analysis.md)
+> 최종 수정일: 2026-03-09
+> 관련 문서: [도메인 분석](./domain-analysis.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
 
@@ -24,12 +24,13 @@ erDiagram
     members {
         varchar(36) id PK "UUID or Firebase UID"
         varchar(255) email UK "NOT NULL"
-        varchar(50) display_name
+        varchar(50) nickname
         varchar(20) student_id
         varchar(50) department
-        varchar(500) photo_url
+        varchar(500) photo_url "nullable, 가입 시 null"
         varchar(50) realname
         boolean is_admin "DEFAULT false"
+        enum status "ACTIVE,WITHDRAWN"
         varchar(20) bank_name
         varchar(30) account_number
         varchar(50) account_holder
@@ -38,11 +39,16 @@ erDiagram
         boolean party_notifications "DEFAULT true"
         boolean notice_notifications "DEFAULT true"
         boolean board_like_notifications "DEFAULT true"
-        boolean board_comment_notifications "DEFAULT true"
+        boolean comment_notifications "DEFAULT true"
+        boolean bookmarked_post_comment_notifications "DEFAULT true"
         boolean system_notifications "DEFAULT true"
+        boolean academic_schedule_notifications "DEFAULT true"
+        boolean academic_schedule_day_before_enabled "DEFAULT true"
+        boolean academic_schedule_all_events_enabled "DEFAULT false"
         json notice_notifications_detail
         datetime joined_at
         datetime last_login
+        datetime withdrawn_at
         datetime created_at
         datetime updated_at
     }
@@ -50,12 +56,13 @@ erDiagram
     linked_accounts {
         bigint id PK "AUTO_INCREMENT"
         varchar(36) member_id FK
-        varchar(20) provider "google"
+        varchar(20) provider "GOOGLE/PASSWORD/UNKNOWN"
         varchar(255) provider_id
         varchar(255) email
-        varchar(50) display_name
+        varchar(50) provider_display_name
         varchar(500) photo_url
         datetime created_at
+        datetime updated_at
     }
 
     members ||--o{ linked_accounts : "has"
@@ -79,6 +86,7 @@ erDiagram
         datetime ended_at
         enum settlement_status "PENDING,COMPLETED"
         int per_person_amount
+        bigint version "Optimistic Lock"
         datetime created_at
         datetime updated_at
     }
@@ -134,6 +142,7 @@ erDiagram
         varchar(500) last_message_text
         varchar(36) last_message_sender_id
         varchar(50) last_message_sender_name
+        enum last_message_type "TEXT,IMAGE,SYSTEM,ACCOUNT,ARRIVED,END"
         datetime last_message_timestamp
         datetime created_at
         datetime updated_at
@@ -216,7 +225,7 @@ erDiagram
         boolean is_anonymous "DEFAULT false"
         varchar(36) anon_id
         int anonymous_order "익명1, 익명2..."
-        varchar(36) parent_id FK "대댓글용"
+        varchar(36) parent_id FK "무제한 self-reference"
         boolean is_deleted "DEFAULT false"
         datetime created_at
         datetime updated_at
@@ -234,22 +243,27 @@ erDiagram
     posts ||--o{ post_images : "has"
     posts ||--o{ comments : "has"
     posts ||--o{ post_interactions : "has"
-    comments ||--o{ comments : "replies to"
+    comments ||--o{ comments : "parent-child"
 
     %% ===== NOTICE 도메인 =====
     notices {
         varchar(120) id PK "Base64(link).replace(/=+$/,'').slice(0,120)"
         varchar(500) title "NOT NULL"
-        text content
+        text rss_preview "RSS 미리보기 텍스트"
+        text summary "AI 요약 텍스트 (nullable)"
         varchar(500) link "NOT NULL"
         datetime posted_at
         varchar(50) category
         varchar(50) department
         varchar(100) author
         varchar(20) source "RSS"
+        varchar(40) rss_fingerprint "legacy SHA1(title|link|rawDate)"
+        varchar(40) detail_hash "HTML + attachments SHA1"
         varchar(40) content_hash "SHA1"
-        text content_detail "크롤링된 HTML"
-        json content_attachments "첨부파일 목록"
+        datetime detail_checked_at
+        longtext body_text "HTML 정규화 plain text"
+        longtext body_html "크롤링된 HTML"
+        json attachments "첨부파일 목록"
         int view_count "DEFAULT 0"
         int like_count "DEFAULT 0"
         int comment_count "DEFAULT 0"
@@ -273,11 +287,15 @@ erDiagram
         boolean is_anonymous "DEFAULT false"
         varchar(36) anon_id
         int anonymous_order "익명1, 익명2..."
-        int reply_count "DEFAULT 0"
         varchar(36) parent_id FK
         boolean is_deleted "DEFAULT false"
         datetime created_at
         datetime updated_at
+    }
+
+    notice_likes {
+        varchar(36) user_id PK "회원 ID"
+        varchar(120) notice_id PK,FK
     }
 
     app_notices {
@@ -289,12 +307,14 @@ erDiagram
         json image_urls "string[]"
         varchar(500) action_url
         datetime published_at
+        datetime created_at
         datetime updated_at
     }
 
     notices ||--o{ notice_read_status : "has"
     notices ||--o{ notice_comments : "has"
-    notice_comments ||--o{ notice_comments : "replies to"
+    notices ||--o{ notice_likes : "has"
+    notice_comments ||--o{ notice_comments : "parent-child"
 ```
 
 ### 1.3 Generic 도메인 (Academic, Support)
@@ -356,6 +376,10 @@ erDiagram
     user_timetables ||--o{ user_timetable_courses : "contains"
     courses ||--o{ user_timetable_courses : "included in"
 
+    %% runtime contract note:
+    %% 강의 일괄 등록 계약은 credits + 강의 단위 location을 사용하며,
+    %% 개별 course_schedules에는 강의실 컬럼을 두지 않는다.
+
     %% ===== SUPPORT 도메인 =====
     inquiries {
         varchar(36) id PK "UUID"
@@ -368,18 +392,22 @@ erDiagram
         varchar(50) user_realname
         varchar(20) user_student_id
         enum status "PENDING,IN_PROGRESS,RESOLVED"
+        varchar(500) admin_memo
         datetime created_at
         datetime updated_at
     }
 
     reports {
         varchar(36) id PK "UUID"
-        enum target_type "POST,COMMENT,CHAT_MESSAGE,PROFILE"
-        varchar(36) target_id "NOT NULL"
+        enum target_type "POST,COMMENT,MEMBER"
+        varchar(100) target_id "NOT NULL"
         varchar(36) target_author_id
         varchar(50) category
-        varchar(36) reporter_id FK "NOT NULL"
-        enum status "PENDING,REVIEWED,RESOLVED,DISMISSED"
+        text reason "NOT NULL"
+        varchar(36) reporter_id FK "NOT NULL, UK(reporter_id,target_type,target_id)"
+        enum status "PENDING,REVIEWING,ACTIONED,REJECTED"
+        varchar(100) action
+        varchar(500) admin_memo
         datetime created_at
         datetime updated_at
     }
@@ -389,7 +417,6 @@ erDiagram
         varchar(20) minimum_version "NOT NULL"
         boolean force_update "DEFAULT false"
         varchar(500) message
-        varchar(100) icon
         varchar(100) title
         boolean show_button "DEFAULT false"
         varchar(100) button_text
@@ -415,7 +442,7 @@ erDiagram
     user_notifications {
         varchar(36) id PK "UUID"
         varchar(36) user_id FK "NOT NULL"
-        enum type "PARTY_CREATED,JOIN_REQUEST,..."
+        enum type "PARTY_CREATED,PARTY_JOIN_REQUEST,PARTY_JOIN_ACCEPTED,PARTY_JOIN_DECLINED,PARTY_CLOSED,PARTY_ARRIVED,PARTY_ENDED,MEMBER_KICKED,SETTLEMENT_COMPLETED,CHAT_MESSAGE,POST_LIKED,COMMENT_CREATED,NOTICE,APP_NOTICE,ACADEMIC_SCHEDULE"
         varchar(200) title "NOT NULL"
         varchar(500) message
         json data "추가 데이터"
@@ -462,12 +489,13 @@ erDiagram
 |------|------|---------|------|
 | id | VARCHAR(36) | PK | Firebase UID 또는 UUID |
 | email | VARCHAR(255) | UK, NOT NULL | 이메일 (로그인 식별자) |
-| display_name | VARCHAR(50) | | 닉네임 |
+| nickname | VARCHAR(50) | | 앱 내 닉네임 |
 | student_id | VARCHAR(20) | | 학번 |
 | department | VARCHAR(50) | | 학과 |
-| photo_url | VARCHAR(500) | | 프로필 이미지 URL |
+| photo_url | VARCHAR(500) | | 프로필 이미지 URL (가입 시 기본 null) |
 | realname | VARCHAR(50) | | 실명 (계좌 예금주) |
 | is_admin | BOOLEAN | DEFAULT false | 관리자 여부 |
+| status | ENUM | NOT NULL | 회원 상태 (`ACTIVE`, `WITHDRAWN`) |
 | bank_name | VARCHAR(20) | | 은행명 |
 | account_number | VARCHAR(30) | | 계좌번호 |
 | account_holder | VARCHAR(50) | | 예금주 |
@@ -476,11 +504,34 @@ erDiagram
 | party_notifications | BOOLEAN | DEFAULT true | 파티 알림 |
 | notice_notifications | BOOLEAN | DEFAULT true | 공지 알림 |
 | board_like_notifications | BOOLEAN | DEFAULT true | 좋아요 알림 |
-| board_comment_notifications | BOOLEAN | DEFAULT true | 댓글 알림 |
+| comment_notifications | BOOLEAN | DEFAULT true | Board/Notice 공통 댓글 알림 |
+| bookmarked_post_comment_notifications | BOOLEAN | DEFAULT true | 북마크한 게시글의 새 댓글 알림 |
 | system_notifications | BOOLEAN | DEFAULT true | 시스템 알림 |
+| academic_schedule_notifications | BOOLEAN | DEFAULT true | 학사 일정 알림 마스터 |
+| academic_schedule_day_before_enabled | BOOLEAN | DEFAULT true | 학사 일정 전날 리마인더 허용 |
+| academic_schedule_all_events_enabled | BOOLEAN | DEFAULT false | 중요 일정 외 일반 일정 알림 허용 |
 | notice_notifications_detail | JSON | | 공지 카테고리별 설정 |
 | joined_at | DATETIME | | 가입일 |
 | last_login | DATETIME | | 마지막 로그인 |
+| withdrawn_at | DATETIME | | 탈퇴 시각 (soft delete tombstone) |
+| created_at | DATETIME | NOT NULL | 생성일 |
+| updated_at | DATETIME | NOT NULL | 수정일 |
+
+> Phase 8부터 학사 일정 알림용 `academic_schedule_notifications`, `academic_schedule_day_before_enabled`, `academic_schedule_all_events_enabled` 컬럼을 사용한다.
+
+> Phase 10부터 회원 탈퇴는 hard delete 대신 `status`, `withdrawn_at` 기반 soft delete tombstone으로 관리한다.
+
+**linked_accounts 테이블 상세:**
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | 연결 계정 식별자 |
+| member_id | VARCHAR(36) | FK, NOT NULL | 회원 ID (`members.id`) |
+| provider | VARCHAR(20) | NOT NULL | 로그인 제공자 (`GOOGLE`, `PASSWORD`, `UNKNOWN`) |
+| provider_id | VARCHAR(255) | | provider 계정 고유 ID (예: `firebase.identities[sign_in_provider][0]`, 비소셜 로그인은 `NULL`) |
+| email | VARCHAR(255) | | provider 이메일 (비소셜 로그인은 `NULL`) |
+| provider_display_name | VARCHAR(50) | | provider 프로필 이름 (비소셜 로그인은 `NULL`) |
+| photo_url | VARCHAR(500) | | provider 프로필 이미지 URL (`picture`, 비소셜 로그인은 `NULL`) |
 | created_at | DATETIME | NOT NULL | 생성일 |
 | updated_at | DATETIME | NOT NULL | 수정일 |
 
@@ -514,6 +565,7 @@ erDiagram
 | ended_at | DATETIME | | 종료 시간 |
 | settlement_status | ENUM | | PENDING, COMPLETED |
 | per_person_amount | INT | | 1인당 요금 |
+| version | BIGINT | NOT NULL | Optimistic Lock 버전 |
 | created_at | DATETIME | NOT NULL | 생성일 |
 | updated_at | DATETIME | NOT NULL | 수정일 |
 
@@ -570,6 +622,7 @@ erDiagram
 | `notices` | 학교 공지 | ~10,000 |
 | `notice_read_status` | 읽음 상태 | ~500,000 |
 | `notice_comments` | 공지 댓글 | ~5,000/년 |
+| `notice_likes` | 공지 좋아요 | ~200,000 |
 | `app_notices` | 앱 공지 | ~100 |
 
 ### 2.6 Academic 도메인
@@ -599,6 +652,31 @@ erDiagram
 | `fcm_tokens` | FCM 토큰 | ~10,000 |
 | `admin_audit_logs` | 감사 로그 | ~10,000/년 |
 
+**user_notifications 주요 컬럼**
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | VARCHAR(36) | PK | 알림 ID |
+| user_id | VARCHAR(36) | FK, NOT NULL | 수신 회원 ID |
+| type | VARCHAR(40) | NOT NULL | 알림 타입 (`PARTY_*`, `CHAT_MESSAGE`, `ACADEMIC_SCHEDULE` 등 canonical enum) |
+| title | VARCHAR(200) | NOT NULL | 알림 제목 |
+| message | VARCHAR(500) | NOT NULL | 알림 메시지 |
+| data | JSON | | 이동/연결용 payload (`partyId`, `requestId`, `chatRoomId`, `postId`, `commentId`, `noticeId`, `appNoticeId`, `academicScheduleId`) |
+| is_read | BOOLEAN | DEFAULT false | 읽음 여부 |
+| read_at | DATETIME | | 읽음 시각 |
+| created_at | DATETIME | NOT NULL | 생성 시각 |
+
+**fcm_tokens 주요 컬럼**
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | BIGINT | PK, AUTO_INCREMENT | 토큰 식별자 |
+| user_id | VARCHAR(36) | FK, NOT NULL | 소유 회원 ID |
+| token | VARCHAR(500) | UK, NOT NULL | FCM 디바이스 토큰 |
+| platform | VARCHAR(10) | NOT NULL | `ios` 또는 `android` |
+| created_at | DATETIME | NOT NULL | 최초 등록 시각 |
+| last_used_at | DATETIME | | 마지막 성공 사용 시각 |
+
 ---
 
 ## 3. 테이블 관계 요약
@@ -616,10 +694,11 @@ erDiagram
 | 채팅방-메시지 | chat_rooms | chat_messages | 1:N | 채팅방에 여러 메시지 |
 | 게시글-이미지 | posts | post_images | 1:N | 게시글에 여러 이미지 |
 | 게시글-댓글 | posts | comments | 1:N | 게시글에 여러 댓글 |
-| 댓글-대댓글 | comments | comments | 1:N (self) | 댓글에 여러 대댓글 |
+| 댓글-대댓글 | comments | comments | 1:N (self) | 무제한 self-reference + placeholder soft delete |
 | 게시글-상호작용 | posts | post_interactions | 1:N | 게시글에 여러 좋아요/북마크 |
 | 공지-읽음 | notices | notice_read_status | 1:N | 공지별 읽음 상태 |
 | 공지-댓글 | notices | notice_comments | 1:N | 공지에 여러 댓글 |
+| 공지-좋아요 | notices | notice_likes | 1:N | 공지별 좋아요 |
 | 강의-시간 | courses | course_schedules | 1:N | 강의에 여러 시간 슬롯 |
 | 시간표-강의 | user_timetables | user_timetable_courses | 1:N | 시간표에 여러 강의 |
 | 회원-알림 | members | user_notifications | 1:N | 회원에게 여러 알림 |
@@ -670,7 +749,7 @@ ALTER TABLE comments
 
 ALTER TABLE comments
   ADD CONSTRAINT fk_comments_parent
-  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE;
+  FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE SET NULL;
 
 ALTER TABLE post_interactions
   ADD CONSTRAINT fk_post_interactions_post
@@ -690,6 +769,7 @@ CREATE INDEX idx_members_student_id ON members(student_id);
 CREATE INDEX idx_members_department ON members(department);
 
 -- linked_accounts
+CREATE UNIQUE INDEX uk_linked_account_member_provider ON linked_accounts(member_id, provider);
 CREATE INDEX idx_linked_accounts_member ON linked_accounts(member_id);
 CREATE INDEX idx_linked_accounts_provider ON linked_accounts(provider, provider_id);
 ```
@@ -760,6 +840,7 @@ CREATE INDEX idx_post_interactions_user_bookmarked ON post_interactions(user_id,
 CREATE INDEX idx_notices_category ON notices(category);
 CREATE INDEX idx_notices_posted_at ON notices(posted_at DESC);
 CREATE INDEX idx_notices_category_posted ON notices(category, posted_at DESC);
+CREATE INDEX idx_notices_content_hash ON notices(content_hash);
 
 -- notice_read_status
 CREATE INDEX idx_notice_read_user ON notice_read_status(user_id);
@@ -767,6 +848,9 @@ CREATE INDEX idx_notice_read_user ON notice_read_status(user_id);
 -- notice_comments
 CREATE INDEX idx_notice_comments_notice ON notice_comments(notice_id);
 CREATE INDEX idx_notice_comments_parent ON notice_comments(parent_id);
+
+-- notice_likes
+CREATE INDEX idx_notice_likes_user ON notice_likes(user_id);
 ```
 
 ### 4.6 Academic 도메인
@@ -777,6 +861,7 @@ CREATE INDEX idx_courses_semester ON courses(semester);
 CREATE INDEX idx_courses_department ON courses(department);
 CREATE INDEX idx_courses_professor ON courses(professor);
 CREATE INDEX idx_courses_code ON courses(code);
+CREATE UNIQUE INDEX uk_courses_semester_code_division ON courses(semester, code, division);
 
 -- user_timetables
 CREATE INDEX idx_user_timetables_user ON user_timetables(user_id);
@@ -788,7 +873,14 @@ CREATE INDEX idx_academic_schedules_date ON academic_schedules(start_date, end_d
 CREATE INDEX idx_academic_schedules_primary ON academic_schedules(is_primary);
 ```
 
-### 4.7 Notification 인프라
+### 4.7 Support 도메인
+
+```sql
+-- reports
+CREATE UNIQUE INDEX uk_reports_reporter_target ON reports(reporter_id, target_type, target_id);
+```
+
+### 4.8 Notification 인프라
 
 ```sql
 -- user_notifications
@@ -817,3 +909,6 @@ CREATE INDEX idx_audit_logs_timestamp ON admin_audit_logs(timestamp DESC);
 
 > **문서 이력**
 > - 2026-02-03: 초안 작성
+> - 2026-03-05: Board 댓글 정책 동기화 — `comments.parent_id` 관계를 부모 보존 정책(B)에 맞게 정정(`ON DELETE SET NULL`), depth 1 제약/placeholder soft delete 설명 반영
+> - 2026-03-07: Board/Notice 댓글 정책 구현 반영 — 무제한 self-reference, 댓글 알림 설정 컬럼(`comment_notifications`, `bookmarked_post_comment_notifications`) 반영
+> - 2026-03-08: Phase 8 Notification 인프라 반영 — members 학사 일정 알림 컬럼, `user_notifications`/`fcm_tokens` 상세, notification type canonical enum 동기화
