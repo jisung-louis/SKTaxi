@@ -26,6 +26,7 @@
 2. `target-feature-app-shared-architecture.md`
 3. `refactor-constraints-and-rules.md`
 4. `refactor-roadmap.md`
+5. `migration-status.md`
 
 ## 해석 우선순위
 
@@ -56,6 +57,10 @@
   - 실제 리팩터링 순서와 단계별 작업 범위, 완료 기준을 정의한다.
   - AI가 한 번에 전체를 뒤집지 않고 안전하게 진행하도록 가이드한다.
   - Cloud Functions 리팩터링은 포함하지 않는다.
+
+- `migration-status.md`
+  - 현재 기준선 commit, 현재 phase, source of truth가 전환된 feature를 기록한다.
+  - 다음 AI는 작업 시작 전에 반드시 이 문서를 읽고, phase 경계가 바뀌면 내용을 갱신한다.
 
 ## 작업 원칙
 

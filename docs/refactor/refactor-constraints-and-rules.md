@@ -333,6 +333,17 @@ feature 내부 상태는 해당 feature provider/hook이 소유한다.
 
 한 단계에서 구조 이동과 대규모 기능 변경을 동시에 하지 않는다.
 
+### source of truth 규칙
+
+점진적 마이그레이션 동안에는 feature마다 source of truth가 반드시 하나만 있어야 한다.
+
+- 아직 migration을 시작하지 않은 feature는 legacy 경로가 source of truth다.
+- migration을 시작한 feature는 즉시 `src/features/<feature>` 가 source of truth가 된다.
+- source of truth가 `src/features/<feature>` 로 전환된 뒤에는 legacy 대응 파일에 새 로직을 추가하지 않는다.
+- 전환 이후 legacy 대응 파일에는 re-export shim, import 정리, 삭제 작업만 허용한다.
+- 같은 feature의 old/new 구조를 동시에 수정해서 로직을 분산시키면 안 된다.
+- phase 경계가 바뀌거나 source of truth가 전환되면 `docs/refactor/migration-status.md` 를 함께 갱신한다.
+
 ## 14. 최종 완료 판정 체크리스트
 
 아래 항목이 모두 충족되어야 최종 완료로 본다.
