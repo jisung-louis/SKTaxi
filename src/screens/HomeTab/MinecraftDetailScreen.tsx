@@ -329,7 +329,7 @@ export const MinecraftDetailScreen = () => {
               style={styles.chatRoomButton}
               onPress={() => {
                 (navigation as any).navigate('Main', {
-                  screen: '채팅',
+                  screen: '커뮤니티',
                   params: {
                     screen: 'ChatDetail',
                     params: { chatRoomId: 'game-minecraft' }
@@ -1011,4 +1011,3 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
 });
-

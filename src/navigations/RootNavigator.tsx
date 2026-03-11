@@ -5,7 +5,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
-import { MainNavigator } from './MainNavigator';
+import { MainNavigator, MyNavigator } from './MainNavigator';
 import { AuthNavigator } from './AuthNavigator';
 import { useAuthContext } from '../contexts/AuthContext';
 import { AuthState } from '../types/auth';
@@ -110,7 +110,10 @@ export const RootNavigator = () => {
         ) : !permissionsComplete ? (
           <Stack.Screen name="PermissionOnboarding" component={PermissionOnboardingScreen} />
         ) : (
-          <Stack.Screen name="Main" component={MainNavigator} />
+          <>
+            <Stack.Screen name="Main" component={MainNavigator} />
+            <Stack.Screen name="My" component={MyNavigator} />
+          </>
         )}
       </Stack.Navigator>
 

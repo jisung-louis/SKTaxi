@@ -24,10 +24,13 @@ import { useAuth } from '../../hooks/auth';
 import { useBoardWrite } from '../../hooks/board';
 import { ImageSelector } from '../../components/board/ImageSelector';
 import { useScreenView } from '../../hooks/useScreenView';
+import { CommunityStackParamList } from '../../navigations/types';
+
+type BoardWriteNavigationProp = NativeStackNavigationProp<CommunityStackParamList, 'BoardWrite'>;
 
 export const BoardWriteScreen: React.FC = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
+  const navigation = useNavigation<BoardWriteNavigationProp>();
   const { user } = useAuth();
 
   const [formData, setFormData] = useState<BoardFormData>({
@@ -46,7 +49,6 @@ export const BoardWriteScreen: React.FC = () => {
     pickImages,
     removeImage,
     reorderImages,
-    clearImages,
   } = useBoardWrite();
 
   const handleTitleChange = useCallback((text: string) => {
@@ -94,7 +96,7 @@ export const BoardWriteScreen: React.FC = () => {
             onPress: () => navigation.reset({
               index: 1,
               routes: [
-                { name: 'BoardMain' },
+                { name: 'CommunityMain' },
                 { name: 'BoardDetail', params: { postId } },
               ],
             })
@@ -121,8 +123,6 @@ export const BoardWriteScreen: React.FC = () => {
       navigation.goBack();
     }
   }, [formData, navigation]);
-
-  const selectedCategory = BOARD_CATEGORIES.find(cat => cat.id === formData.category);
 
   return (
     <SafeAreaView style={styles.container}>

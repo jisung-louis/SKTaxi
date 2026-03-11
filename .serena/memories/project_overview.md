@@ -1,0 +1,5 @@
+- Purpose: React Native mobile app for SKURI/SKTaxi campus services, including taxi, notices, community/chat, and related Firebase-backed features.
+- Stack: React Native 0.79.2, React 19, TypeScript 5, Jest, ESLint, Firebase, Android/iOS native folders present.
+- Structure: `src/` app code, `__tests__/` tests, `functions/` backend scripts, `docs/` product and implementation docs, `assets/` static assets, `android/` and `ios/` native projects.
+- Current UI redesign work is documented under `docs/ui-redesign/` with phase-based roadmap and Figma references.
+- Node version in environment: v22.20.0.

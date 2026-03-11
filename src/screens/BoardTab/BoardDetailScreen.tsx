@@ -5,22 +5,19 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Alert,
   Share,
-  Linking,
   Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { format, formatDate, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
-import { POST_CATEGORY_LABELS } from '../../constants/board';
 import { useBoardPost, usePostActions, useBoardComments } from '../../hooks/board';
 import { useAuth } from '../../hooks/auth';
 import { ToggleButton } from '../../components/common/ToggleButton';
@@ -33,19 +30,15 @@ import { ImageViewer } from '../../components/board/ImageViewer';
 import { useScreenView } from '../../hooks/useScreenView';
 import { createReport, blockUser } from '../../lib/moderation';
 import { isPostEdited } from '../../utils/boardUtils';
+import { CommunityStackParamList } from '../../navigations/types';
 
-interface BoardDetailScreenProps {
-  route: {
-    params: {
-      postId: string;
-    };
-  };
-}
+type BoardDetailNavigationProp = NativeStackNavigationProp<CommunityStackParamList, 'BoardDetail'>;
+type BoardDetailRouteProp = RouteProp<CommunityStackParamList, 'BoardDetail'>;
 
-export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
+export const BoardDetailScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<any>();
+  const navigation = useNavigation<BoardDetailNavigationProp>();
+  const route = useRoute<BoardDetailRouteProp>();
   const { user } = useAuth();
   const postId = route?.params?.postId;
   const hasIncrementedView = useRef(false);
@@ -179,7 +172,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
         { text: '취소', style: 'cancel' },
       ]
     );
-  }, [post, user]);
+  }, [navigation, post, user]);
 
   const handleShare = useCallback(async () => {
     if (!post) return;
@@ -195,10 +188,10 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
   }, [post]);
 
   const handleHashtagPress = useCallback((tag: string) => {
-    // BoardMain으로 돌아가서 해시태그로 검색
-    navigation.navigate('BoardMain', { 
+    // Community 메인으로 돌아가서 해시태그로 검색
+    navigation.navigate('CommunityMain', {
       searchText: `#${tag}`,
-      fromHashtag: true 
+      fromHashtag: true,
     });
   }, [navigation]);
 
@@ -250,19 +243,6 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
       ]
     );
   }, [post, user, deletePost, navigation]);
-
-  
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'general': return COLORS.accent.blue;
-      case 'question': return COLORS.accent.green;
-      case 'review': return COLORS.accent.orange;
-      case 'announcement': return COLORS.accent.red;
-      default: return COLORS.text.secondary;
-    }
-  };
-
   const isAuthor = user && post && user.uid === post.authorId;
 
   if (loading) {

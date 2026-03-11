@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused } from '@react-navigation/native';
+import { RouteProp, useIsFocused } from '@react-navigation/native';
 import { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
 import { useEffect } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -10,7 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { COLORS } from '../constants/colors';
 import { BoardSearchFilters } from '../types/board';
-import { useBoardPosts, usePostActions } from '../hooks/board';
+import { useBoardPosts } from '../hooks/board';
 import { BoardHeader } from '../components/board/BoardHeader';
 import { BoardSearch } from '../components/board/BoardSearch';
 import { PostCard } from '../components/board/PostCard';
@@ -19,11 +19,15 @@ import { ErrorMessage } from '../components/common/ErrorMessage';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useScreenView } from '../hooks/useScreenView';
 import { shouldHideContent } from '../lib/moderation';
+import { CommunityStackParamList } from '../navigations/types';
+
+type BoardScreenNavigationProp = NativeStackNavigationProp<CommunityStackParamList, 'CommunityMain'>;
+type BoardScreenRouteProp = RouteProp<CommunityStackParamList, 'CommunityMain'>;
 
 export const BoardScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<any>();
+  const navigation = useNavigation<BoardScreenNavigationProp>();
+  const route = useRoute<BoardScreenRouteProp>();
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -37,7 +41,6 @@ export const BoardScreen = () => {
     posts,
     loading,
     loadingMore,
-    hasMore,
     error,
     loadMore,
     refresh,
@@ -70,7 +73,7 @@ export const BoardScreen = () => {
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
     translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
-  }, [isFocused]);
+  }, [isFocused, opacity, translateY]);
 
   // 해시태그 검색 처리
   useEffect(() => {
@@ -80,7 +83,7 @@ export const BoardScreen = () => {
         ...prev,
         searchText: params.searchText,
       }));
-      // 파라미터 초기화
+      // 같은 route를 재사용하므로 검색 파라미터만 비운다.
       navigation.setParams({ searchText: undefined, fromHashtag: undefined });
     }
   }, [route?.params, navigation]);

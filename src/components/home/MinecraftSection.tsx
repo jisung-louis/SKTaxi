@@ -108,7 +108,7 @@ export const MinecraftSection: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.sectionActionButton}
-          onPress={() => navigation.navigate('홈', { screen: 'MinecraftDetail' })}
+          onPress={() => navigation.navigate('캠퍼스', { screen: 'MinecraftDetail' })}
         >
           <Text style={styles.sectionAction}>자세히</Text>
           <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />

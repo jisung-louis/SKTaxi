@@ -3,6 +3,7 @@ import { Party } from '../types/party';
 
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
+  My: NavigatorScreenParams<MyStackParamList>;
   Auth: undefined;
   CompleteProfile: undefined;
   PermissionOnboarding: undefined;
@@ -10,11 +11,10 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  홈: NavigatorScreenParams<HomeStackParamList>;
+  캠퍼스: NavigatorScreenParams<CampusStackParamList>;
   택시: NavigatorScreenParams<TaxiStackParamList>;
   공지: NavigatorScreenParams<NoticeStackParamList>;
-  게시판: NavigatorScreenParams<BoardStackParamList>;
-  채팅: NavigatorScreenParams<ChatStackParamList>;
+  커뮤니티: NavigatorScreenParams<CommunityStackParamList>;
 };
 
 export type TaxiStackParamList = {
@@ -28,12 +28,10 @@ export type TaxiStackParamList = {
   Chat: { partyId: string };
 };
 
-export type HomeStackParamList = {
-  HomeMain: undefined;
+export type CampusStackParamList = {
+  CampusMain: undefined;
   Notification: undefined;
   Setting: undefined;
-  Profile: undefined;
-  ProfileEdit: undefined;
   AppNotice: undefined;
   AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;
@@ -51,22 +49,37 @@ export type HomeStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   AccountGuide: undefined;
-}; 
+};
 
 export type NoticeStackParamList = {
   NoticeMain: undefined;
   NoticeDetail: { noticeId: string };
   NoticeDetailWebView: { noticeId: string };
-}; 
+};
 
-export type BoardStackParamList = {
-  BoardMain: undefined;
+export type CommunityMainParams = {
+  searchText?: string;
+  fromHashtag?: boolean;
+};
+
+export type CommunityStackParamList = {
+  CommunityMain: CommunityMainParams | undefined;
+  CommunityChatList: undefined;
   BoardDetail: { postId: string };
   BoardWrite: undefined;
   BoardEdit: { postId: string };
+  ChatDetail: { chatRoomId: string };
 };
 
-export type ChatStackParamList = {
-  ChatList: undefined;
-  ChatDetail: { chatRoomId: string };
+export type MyStackParamList = {
+  MyMain: undefined;
+  Setting: undefined;
+  ProfileEdit: undefined;
+  AppNotice: undefined;
+  AppNoticeDetail: { noticeId: string };
+  AccountModification: undefined;
+  NotificationSetting: undefined;
+  Inquiries: { type?: string };
+  TermsOfUse: undefined;
+  PrivacyPolicy: undefined;
 };

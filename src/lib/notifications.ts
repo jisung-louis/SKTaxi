@@ -330,12 +330,18 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
   switch (data.type) {
     case 'notice':
       if (data.noticeId) {
-        navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: data.noticeId } });
+        navigation.navigate('Main', {
+          screen: '공지',
+          params: { screen: 'NoticeDetail', params: { noticeId: data.noticeId } },
+        });
       }
       break;
     case 'app_notice':
       if (data.appNoticeId) {
-        navigation.navigate('홈', { screen: 'AppNoticeDetail', params: { noticeId: data.appNoticeId } });
+        navigation.navigate('Main', {
+          screen: '캠퍼스',
+          params: { screen: 'AppNoticeDetail', params: { noticeId: data.appNoticeId } },
+        });
       }
       break;
     case 'join_request':
@@ -346,14 +352,17 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
       break;
     case 'party_join_accepted':
       if (data.partyId) {
-        navigation.navigate('택시', { screen: 'Chat', params: { partyId: data.partyId } });
+        navigation.navigate('Main', {
+          screen: '택시',
+          params: { screen: 'Chat', params: { partyId: data.partyId } },
+        });
       }
       break;
     case 'party_join_rejected':
       navigation.goBack();
       break;
     case 'party_deleted':
-      navigation.navigate('택시');
+      navigation.navigate('Main', { screen: '택시' });
       break;
     case 'chat_message':
     case 'party_closed':
@@ -364,14 +373,20 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
       break;
     case 'chat_room_message':
       if (data.chatRoomId) {
-        navigation.navigate('Main', { screen: '채팅', params: { screen: 'ChatDetail', params: { chatRoomId: data.chatRoomId } } });
+        navigation.navigate('Main', {
+          screen: '커뮤니티',
+          params: { screen: 'ChatDetail', params: { chatRoomId: data.chatRoomId } },
+        });
       }
       break;
     case 'board_post_comment':
     case 'board_comment_reply':
     case 'board_post_like':
       if (data.postId) {
-        navigation.navigate('Main', { screen: '게시판', params: { screen: 'BoardDetail', params: { postId: data.postId } } });
+        navigation.navigate('Main', {
+          screen: '커뮤니티',
+          params: { screen: 'BoardDetail', params: { postId: data.postId } },
+        });
       }
       break;
     case 'notice_post_comment':

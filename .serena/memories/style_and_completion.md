@@ -1,0 +1,3 @@
+- Conventions: TypeScript-first React Native codebase, existing legacy tokens live under `src/constants/*`; UI 2.0 work is introducing separate `src/design-system/` layers instead of mutating legacy contracts.
+- Docs matter: when work depends on redesign scope, start from `docs/ui-redesign/implementation-roadmap.md` and `figma-reference.md`, then phase-specific docs.
+- Completion checks: at minimum run lint (`npm run lint` or targeted eslint when appropriate) and note any missing test coverage. For UI redesign work, verify against local docs plus canonical Figma nodes and respect `open-questions.md` before calling work complete.

@@ -103,7 +103,7 @@ export const NotificationScreen = () => {
       case 'app_notice':
         // 앱 공지 상세 화면으로 이동
         if (notification.data?.appNoticeId) {
-          (navigation as any).navigate('홈', {
+          (navigation as any).navigate('캠퍼스', {
             screen: 'AppNoticeDetail',
             params: { noticeId: notification.data.appNoticeId },
           });
@@ -114,7 +114,7 @@ export const NotificationScreen = () => {
       case 'board_post_like':
         // 게시판 상세 화면으로 이동
         if (notification.data?.postId) {
-          (navigation as any).navigate('게시판', {
+          (navigation as any).navigate('커뮤니티', {
             screen: 'BoardDetail',
             params: {
               postId: notification.data.postId,

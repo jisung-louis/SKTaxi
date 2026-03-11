@@ -1,0 +1,8 @@
+- Install deps: `npm install`
+- Start Metro: `npm run start`
+- Run Android: `npm run android`
+- Run iOS: `npm run ios`
+- Lint repo: `npm run lint`
+- Run tests: `npm test`
+- Narrow lint for design-system files: `npx eslint src/design-system --ext .ts`
+- Inspect worktree: `git status --short`, `git diff --stat`

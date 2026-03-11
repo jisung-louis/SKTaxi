@@ -30,7 +30,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ChatStackParamList } from '../../navigations/types';
+import { CommunityStackParamList } from '../../navigations/types';
 import {
   useChatMessages,
   sendChatMessage,
@@ -47,8 +47,8 @@ import { sendMinecraftMessage } from '../../lib/minecraftChat';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 import { loadChatSound, playChatSound } from '../../lib/sound/chatSound';
 
-type ChatDetailScreenNavigationProp = NativeStackNavigationProp<ChatStackParamList, 'ChatDetail'>;
-type ChatDetailScreenRouteProp = RouteProp<ChatStackParamList, 'ChatDetail'>;
+type ChatDetailScreenNavigationProp = NativeStackNavigationProp<CommunityStackParamList, 'ChatDetail'>;
+type ChatDetailScreenRouteProp = RouteProp<CommunityStackParamList, 'ChatDetail'>;
 
 // 유틸리티 함수들
 const formatMessageTime = (timestamp: any) => {

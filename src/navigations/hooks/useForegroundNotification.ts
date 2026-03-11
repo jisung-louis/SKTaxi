@@ -6,15 +6,15 @@ import { useNavigation } from '@react-navigation/native';
 import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
 import { useAuth } from '../../hooks/auth';
 
-export type ForegroundNotificationType = 
-  | 'notice' 
-  | 'chat' 
-  | 'settlement' 
-  | 'kicked' 
-  | 'party_created' 
-  | 'board_notification' 
-  | 'notice_notification' 
-  | 'app_notice' 
+export type ForegroundNotificationType =
+  | 'notice'
+  | 'chat'
+  | 'settlement'
+  | 'kicked'
+  | 'party_created'
+  | 'board_notification'
+  | 'notice_notification'
+  | 'app_notice'
   | 'chat_room_message';
 
 export interface ForegroundNotificationState {
@@ -59,50 +59,81 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
     body: '',
   });
 
+  const getActiveRootRoute = useCallback(() => {
+    const state = (navigation as any).getState?.();
+    if (!state?.routes?.length) {
+      return undefined;
+    }
+    return state.routes[state.index];
+  }, [navigation]);
+
   // 현재 화면 이름 가져오기
   const getCurrentScreen = useCallback(() => {
-    const state = (navigation as any).getState?.();
-    if (!state) return undefined;
+    const activeRootRoute = getActiveRootRoute();
+    if (!activeRootRoute) {
+      return undefined;
+    }
 
-    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
+    if (activeRootRoute.name === 'My') {
+      const myState = activeRootRoute.state;
+      if (!myState) {
+        return 'MyMain';
+      }
+      const myRoute = myState.routes?.[myState.index];
+      return myRoute?.name;
+    }
 
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
+    if (activeRootRoute.name !== 'Main') {
+      return undefined;
+    }
+
+    const mainTabState = activeRootRoute.state;
+    if (!mainTabState) {
+      return undefined;
+    }
 
     const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute) return undefined;
+    if (!tabRoute) {
+      return undefined;
+    }
 
     const stackState = tabRoute.state;
-    if (!stackState) return undefined;
+    if (!stackState) {
+      return undefined;
+    }
 
     const stackRoute = stackState.routes?.[stackState.index];
     return stackRoute?.name;
-  }, [navigation]);
+  }, [getActiveRootRoute]);
 
   // 현재 ChatDetail 화면의 chatRoomId 가져오기
   const getCurrentChatRoomId = useCallback(() => {
-    const state = (navigation as any).getState?.();
-    if (!state) return undefined;
+    const activeRootRoute = getActiveRootRoute();
+    if (!activeRootRoute || activeRootRoute.name !== 'Main') {
+      return undefined;
+    }
 
-    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
-
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
+    const mainTabState = activeRootRoute.state;
+    if (!mainTabState) {
+      return undefined;
+    }
 
     const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute || tabRoute.name !== '채팅') return undefined;
+    if (!tabRoute || tabRoute.name !== '커뮤니티') {
+      return undefined;
+    }
 
     const stackState = tabRoute.state;
-    if (!stackState) return undefined;
+    if (!stackState) {
+      return undefined;
+    }
 
     const stackRoute = stackState.routes?.[stackState.index];
     if (stackRoute?.name === 'ChatDetail') {
       return stackRoute.params?.chatRoomId;
     }
     return undefined;
-  }, [navigation]);
+  }, [getActiveRootRoute]);
 
   // 포그라운드 알림 클릭 핸들러
   const handleForegroundNotificationPress = useCallback(() => {
@@ -136,11 +167,11 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
         if (postId) {
           try {
             (navigation as any).navigate('Main', {
-              screen: '게시판',
+              screen: '커뮤니티',
               params: { screen: 'BoardDetail', params: { postId } },
             });
           } catch {
-            (navigation as any).navigate('Main', { screen: '게시판' });
+            (navigation as any).navigate('Main', { screen: '커뮤니티' });
           }
         }
         break;
@@ -155,7 +186,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
       case 'app_notice':
         if (noticeId) {
           (navigation as any).navigate('Main', {
-            screen: '홈',
+            screen: '캠퍼스',
             params: { screen: 'AppNoticeDetail', params: { noticeId } },
           });
         }
@@ -163,7 +194,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
       case 'chat_room_message':
         if (chatRoomId) {
           (navigation as any).navigate('Main', {
-            screen: '채팅',
+            screen: '커뮤니티',
             params: { screen: 'ChatDetail', params: { chatRoomId } },
           });
         }

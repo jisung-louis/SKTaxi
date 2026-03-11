@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { CompositeNavigationProp, useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { MainTabParamList } from '../navigations/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MainTabParamList, RootStackParamList } from '../navigations/types';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typhograpy';
@@ -19,11 +20,16 @@ import { TabBadge } from '../components/common/TabBadge';
 import { useScreenView } from '../hooks/useScreenView';
 import { TaxiSection, NoticeSection, MinecraftSection } from '../components/home';
 
+type HomeScreenNavigationProp = CompositeNavigationProp<
+  BottomTabNavigationProp<MainTabParamList, '캠퍼스'>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
+
 export const HomeScreen = () => {
   useScreenView();
   const { unreadCount } = useNotifications();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -32,7 +38,7 @@ export const HomeScreen = () => {
   useEffect(() => {
     opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
     translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
-  }, [isFocused]);
+  }, [isFocused, opacity, translateY]);
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -55,14 +61,23 @@ export const HomeScreen = () => {
             <Text style={styles.appName}>SKURI Taxi</Text>
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Notification' })}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('캠퍼스', { screen: 'Notification' })}
+            >
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
               <TabBadge count={unreadCount} size="small" style={{ top: 1, right: 1 }} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Setting' })}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('캠퍼스', { screen: 'Setting' })}
+            >
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => navigation.navigate('홈', { screen: 'Profile' })}>
+            <TouchableOpacity
+              style={[styles.headerIconBtn, styles.profileBtn]}
+              onPress={() => navigation.navigate('My', { screen: 'MyMain' })}
+            >
               <Icon name="person-circle-outline" size={26} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
@@ -73,7 +88,7 @@ export const HomeScreen = () => {
           contentContainerStyle={{
             paddingTop: 20,
             paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20,
-            paddingHorizontal: 4
+            paddingHorizontal: 4,
           }}
           showsVerticalScrollIndicator={false}
         >

@@ -12,7 +12,7 @@ import {
   FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -25,19 +25,15 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { ErrorMessage } from '../../components/common/ErrorMessage';
 import { ImageSelector } from '../../components/board/ImageSelector';
 import { useScreenView } from '../../hooks/useScreenView';
+import { CommunityStackParamList } from '../../navigations/types';
 
-interface BoardEditScreenProps {
-  route: {
-    params: {
-      postId: string;
-    };
-  };
-}
+type BoardEditNavigationProp = NativeStackNavigationProp<CommunityStackParamList, 'BoardEdit'>;
+type BoardEditRouteProp = RouteProp<CommunityStackParamList, 'BoardEdit'>;
 
-export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
+export const BoardEditScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<any>();
+  const navigation = useNavigation<BoardEditNavigationProp>();
+  const route = useRoute<BoardEditRouteProp>();
   const postId = route?.params?.postId;
 
   const [formData, setFormData] = useState<BoardFormData>({
@@ -109,7 +105,7 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
             onPress: () => navigation.reset({
               index: 1,
               routes: [
-                { name: 'BoardMain' },
+                { name: 'CommunityMain' },
                 { name: 'BoardDetail', params: { postId } },
               ],
             })
@@ -177,8 +173,6 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
       </SafeAreaView>
     );
   }
-
-  const selectedCategory = BOARD_CATEGORIES.find(cat => cat.id === formData.category);
 
   return (
     <SafeAreaView style={styles.container}>
