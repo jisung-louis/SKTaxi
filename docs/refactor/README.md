@@ -61,6 +61,7 @@
 - `migration-status.md`
   - 현재 기준선 commit, 현재 phase, source of truth가 전환된 feature를 기록한다.
   - 다음 AI는 작업 시작 전에 반드시 이 문서를 읽고, phase 경계가 바뀌면 내용을 갱신한다.
+  - 각 Phase 스레드는 작업 마지막에 반드시 이 문서를 최신 상태로 동기화해야 한다.
 
 ## 작업 원칙
 
@@ -68,3 +69,5 @@
 - 리팩터링 AI는 문서에 없는 임의 구조를 도입하지 않는다.
 - 구조 이동과 책임 정리는 반드시 단계적으로 수행한다.
 - 각 단계가 끝날 때마다 동작 보존, import 경계, 테스트 가능성을 확인한다.
+- 각 Phase 스레드는 작업 종료 전에 `docs/refactor/migration-status.md` 를 반드시 갱신한다.
+- 구조/규칙/로드맵 해석이 실제 구현 과정에서 바뀌었다면 `README.md`, `refactor-constraints-and-rules.md`, `refactor-roadmap.md` 도 함께 동기화한다.

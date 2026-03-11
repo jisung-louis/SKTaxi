@@ -632,6 +632,8 @@ src/features/chat/
 - lint 검증은 전역 `npm run lint` 가 아니라 "이번 Phase에서 추가/수정한 파일에 대한 대상 eslint"를 hard gate로 사용한다.
 - 전역 `npm run lint` 는 참고 지표로만 사용한다. 현재 baseline 자체에 레거시 오류와 대량 warning이 남아 있고, root lint에는 범위 밖인 `firebase-cloud-functions/` 도 포함되기 때문이다.
 - 전역 `npx tsc --noEmit` 는 phase gate로 사용하지 않는다. 현재 리포에는 프론트엔드 리팩터링 범위 밖인 `firebase-cloud-functions/` 와 기존 mock/test 코드의 선행 타입 오류가 남아 있기 때문이다.
+- 각 Phase 스레드는 작업 마지막에 `docs/refactor/migration-status.md` 를 반드시 현재 상태로 갱신한다.
+- 실제 구현 과정에서 구조 규칙이나 phase 해석을 더 명확히 고정했다면 관련 refactor 문서도 같은 턴에서 함께 갱신한다.
 
 ## 최종 목표 상태 요약
 
