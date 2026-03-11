@@ -3,6 +3,7 @@
 
 import React, { useMemo, ReactNode } from 'react';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
+import { FirebaseAuthRepository } from '@/features/auth';
 
 import { FirestorePartyRepository } from '../repositories/firestore/FirestorePartyRepository';
 import { FirestoreChatRepository } from '../repositories/firestore/FirestoreChatRepository';
@@ -17,7 +18,6 @@ import { FirestoreAcademicRepository } from '../repositories/firestore/Firestore
 import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
 import { FirestoreTimetableRepository } from '../repositories/firestore/FirestoreTimetableRepository';
-import { FirestoreAuthRepository } from '../repositories/firestore/FirestoreAuthRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
@@ -51,7 +51,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       inquiryRepository: new FirestoreInquiryRepository(),
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirestoreTimetableRepository(),
-      authRepository: new FirestoreAuthRepository(),
+      authRepository: new FirebaseAuthRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

@@ -1,8 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { AccountGuideScreen } from '@/screens/auth/AccountGuideScreen';
-import { LoginScreen } from '@/screens/auth/LoginScreen';
+import { AccountGuideScreen, LoginScreen } from '@/features/auth';
 
 import { AuthStackParamList } from './types';
 
