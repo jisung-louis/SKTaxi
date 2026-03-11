@@ -4,15 +4,16 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useAuthEntryGuard } from '@/app/guards';
+import {
+  CompleteProfileScreen,
+  PermissionOnboardingScreen,
+  TermsOfUseForAuthScreen,
+} from '@/features/auth';
+
 import { RootStackParamList } from './types';
 import { MainNavigator } from './MainNavigator';
 import { AuthNavigator } from './AuthNavigator';
-import { useAuthContext } from '../contexts/AuthContext';
-import { AuthState } from '../types/auth';
-import { useProfileCompletion } from '../hooks/useProfileCompletion';
-import { CompleteProfileScreen } from '../screens/auth/CompleteProfileScreen';
-import { TermsOfUseForAuthScreen } from '../screens/auth/TermsOfUseForAuthScreen';
-import { PermissionOnboardingScreen } from '../screens/PermissionOnboardingScreen';
 import { JoinRequestModal } from '../components/common/JoinRequestModal';
 import { ForegroundNotification } from '../components/common/ForegroundNotification';
 
@@ -26,9 +27,10 @@ import {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export const RootNavigator = () => {
-  const { user, loading }: AuthState = useAuthContext();
-  const { needsProfile } = useProfileCompletion();
-  const permissionsComplete = !!(user as any)?.onboarding?.permissionsComplete;
+  const {
+    authState: { user, loading },
+    guardResult: { needsProfile, permissionsComplete, route },
+  } = useAuthEntryGuard();
 
   // 포그라운드 알림 관리
   const {
@@ -93,22 +95,31 @@ export const RootNavigator = () => {
     getCurrentChatRoomId,
   });
 
-  if (loading) {
+  if (loading || route === 'loading') {
     return null; // TODO: 로딩 화면 추가
   }
 
   return (
     <>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!user ? (
+        {route === 'auth' ? (
           <Stack.Screen name="Auth" component={AuthNavigator} />
-        ) : needsProfile ? (
+        ) : route === 'completeProfile' ? (
           <>
-            <Stack.Screen name="CompleteProfile" component={CompleteProfileScreen} />
-            <Stack.Screen name="TermsOfUseForAuth" component={TermsOfUseForAuthScreen} />
+            <Stack.Screen
+              name="CompleteProfile"
+              component={CompleteProfileScreen}
+            />
+            <Stack.Screen
+              name="TermsOfUseForAuth"
+              component={TermsOfUseForAuthScreen}
+            />
           </>
-        ) : !permissionsComplete ? (
-          <Stack.Screen name="PermissionOnboarding" component={PermissionOnboardingScreen} />
+        ) : route === 'permissionOnboarding' ? (
+          <Stack.Screen
+            name="PermissionOnboarding"
+            component={PermissionOnboardingScreen}
+          />
         ) : (
           <Stack.Screen name="Main" component={MainNavigator} />
         )}
