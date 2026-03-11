@@ -1,20 +1,9 @@
 // SKTaxi: 앱 설정 Repository 인터페이스
 // 앱 버전 정보, 원격 설정 등을 추상화
 
-export interface VersionModalConfig {
-  icon?: string;
-  title?: string;
-  message?: string;
-  showButton?: boolean;
-  buttonText?: string;
-  buttonUrl?: string;
-}
+import type { AppVersionInfo, VersionModalConfig } from '@/shared/types/version';
 
-export interface AppVersionInfo {
-  minimumVersion: string;
-  forceUpdate: boolean;
-  modalConfig?: VersionModalConfig;
-}
+export type { AppVersionInfo, VersionModalConfig };
 
 export interface IAppConfigRepository {
   /**

@@ -6,81 +6,46 @@
  */
 
 import 'react-native-gesture-handler';
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { NavigationContainer } from '@react-navigation/native';
-import { AuthProvider } from './src/contexts/AuthContext';
-import { CourseSearchProvider } from './src/contexts/CourseSearchContext';
-import { RepositoryProvider } from './src/di/RepositoryProvider';
-import { RootNavigator } from './src/navigations/RootNavigator';
-import './src/config/firebase';
-import { getAuth, onAuthStateChanged } from '@react-native-firebase/auth';
-import { getCrashlytics, log } from '@react-native-firebase/crashlytics';
-import { configureGoogleSignin } from './src/config/google';
-import { checkVersionUpdate, VersionModalConfig } from './src/lib/versionCheck';
-import { ForceUpdateModal } from './src/components/common/ForceUpdateModal';
-import ImmersiveMode from 'react-native-immersive-mode';
-import { Platform } from 'react-native';
+import { AppNavigation } from '@/app/navigation/AppNavigation';
+import { AppProviders } from '@/app/providers/AppProviders';
+import { useAppBootstrap } from '@/app/bootstrap/useAppBootstrap';
+import { ForceUpdateModal } from '@/shared/ui/ForceUpdateModal';
+import '@/shared/lib/firebase';
 
-const App = () => {
-  const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
-  const [modalConfig, setModalConfig] = useState<VersionModalConfig | undefined>();
-
-  useEffect(() => {
-    configureGoogleSignin();
-
-    // Firebase Crashlytics - Modular API
-    const crashlyticsInstance = getCrashlytics();
-    log(crashlyticsInstance, 'App mounted');
-
-    // SKTaxi: 간소화 정책 - 앱 시작 즉시 저장 로직은 제거하고 로그인 성공 시점에서만 저장
-    // SKTaxi: 포그라운드 메시지 처리 핸들러는 RootNavigator에서 등록
-    // SKTaxi: 토큰 리프레시 구독은 생략(간소화). 필요 시 아래 주석 해제
-    // const unsub = subscribeFcmTokenRefresh();
-
-    // Firebase Auth - Modular API
-    const authInstance = getAuth();
-    const unsubAuth = onAuthStateChanged(authInstance, () => {});
-
-    if (Platform.OS === 'android') {
-      ImmersiveMode.setBarMode('BottomSticky');
-    }
-
-    // SKTaxi: 버전 체크 및 강제 업데이트 확인
-    checkVersionUpdate().then((result) => {
-      if (result.forceUpdate) {
-        setForceUpdateRequired(true);
-        setModalConfig(result.modalConfig);
-        console.log('강제 업데이트 필요:', result);
-      }
-    }).catch((error) => {
-      console.error('버전 체크 실패:', error);
-    });
-
-    return () => { unsubAuth(); };
-  }, []);
+const AppContent = () => {
+  const { forceUpdateRequired, modalConfig } = useAppBootstrap();
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <>
+      <AppProviders>
+        <AppNavigation />
+      </AppProviders>
+      <ForceUpdateModal
+        visible={forceUpdateRequired}
+        config={modalConfig}
+      />
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <RepositoryProvider>
-          <AuthProvider>
-            <CourseSearchProvider>
-              <NavigationContainer>
-                <RootNavigator />
-              </NavigationContainer>
-            </CourseSearchProvider>
-          </AuthProvider>
-        </RepositoryProvider>
-        {/* SKTaxi: 강제 업데이트 모달 */}
-        <ForceUpdateModal 
-          visible={forceUpdateRequired} 
-          config={modalConfig}
-        />
+        <AppContent />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 };
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
 
 export default App;
