@@ -6,9 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 commit: `ba49768`
-- 현재 상태: `Phase 0 완료 + 선행 cleanup 커밋 완료`
-- 다음 작업 시작점: `Phase 1`
+- 현재 기준 commit: `2368d4e`
+- 현재 상태: `Phase 1 완료`
+- 현재 구조 상태: `app/shared` 기반 구축 완료, feature source of truth는 아직 legacy 유지
+- 다음 작업 시작점: `Phase 2`
 
 ## source of truth 상태
 
