@@ -26,9 +26,9 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import { useScreenView } from '@/hooks/useScreenView';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { useMinecraftServerOverview } from '../hooks/useMinecraftServerOverview';
 import { useMinecraftWhitelistPlayers } from '../hooks/useMinecraftWhitelistPlayers';

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { logEvent } from '@/lib/analytics';
+import { logEvent } from '@/shared/lib/analytics';
 import type { CommentThreadItem } from '@/shared/ui/comments';
 
 import type { BoardCommentTreeNode } from '../data/repositories/IBoardRepository';

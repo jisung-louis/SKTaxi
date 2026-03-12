@@ -4,7 +4,7 @@ import BottomSheet, { WINDOW_HEIGHT, WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import {
   BOTTOMSHEET_HANDLE_HEIGHT,
   BOTTOM_TAB_BAR_HEIGHT,
-} from '@/constants/constants';
+} from '@/shared/constants/layout';
 
 export const useTaxiBottomSheet = () => {
   const [bottomSheetIndex, setBottomSheetIndex] = useState(0);

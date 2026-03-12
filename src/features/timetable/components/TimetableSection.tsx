@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-import { DAY_CELL_HEIGHT } from '@/constants/constants';
+import { DAY_CELL_HEIGHT } from '@/shared/constants/layout';
 
 import { useTimetable } from '../hooks/useTimetable';
 import { TimableViewMode, TimetableCourse } from '../model/types';

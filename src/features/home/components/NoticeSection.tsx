@@ -5,8 +5,8 @@ import {
   useNoticeReadState,
   useRecentNotices,
 } from '@/features/notice';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 
 export interface NoticeSectionProps {
   onOpenNoticeList: () => void;

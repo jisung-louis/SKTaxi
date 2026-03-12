@@ -16,10 +16,10 @@ import Modal from 'react-native-modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import Button from '@/components/common/Button';
-import PageHeader from '@/components/common/PageHeader';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import Button from '@/shared/ui/Button';
+import PageHeader from '@/shared/ui/PageHeader';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useAuth, useAuthLoginProvider } from '@/features/auth';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 

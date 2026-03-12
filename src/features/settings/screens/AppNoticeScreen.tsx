@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import PageHeader from '@/components/common/PageHeader';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import PageHeader from '@/shared/ui/PageHeader';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useScreenView } from '@/hooks/useScreenView';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { AppNotice } from '../data/repositories/IAppNoticeRepository';
 import { useAppNotices } from '../hooks/useAppNotices';

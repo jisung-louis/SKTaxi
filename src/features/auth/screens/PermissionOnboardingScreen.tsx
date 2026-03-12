@@ -16,8 +16,8 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { Text } from '@/components/common/Text';
-import { requestATTPermission } from '@/lib/att';
+import { Text } from '@/shared/ui/Text';
+import { requestATTPermission } from '@/shared/lib/permissions/att';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks';

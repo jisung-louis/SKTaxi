@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { logEvent } from '@/lib/analytics';
+import { logEvent } from '@/shared/lib/analytics';
 
 import { useBoardRepository } from './useBoardRepository';
 

@@ -2,9 +2,8 @@ import React from 'react';
 import { Alert } from 'react-native';
 
 import { useAuthEntryGuard } from '@/app/guards';
-import { useJoinRequestModal } from '@/features/taxi';
-import { ForegroundNotification } from '@/components/common/ForegroundNotification';
-import { JoinRequestModal } from '@/components/common/JoinRequestModal';
+import { JoinRequestModal, useJoinRequestModal } from '@/features/taxi';
+import { ForegroundNotification } from '@/shared/ui/ForegroundNotification';
 
 import { useRegisterPushHandlers } from './registerPushHandlers';
 import { useForegroundNotificationRuntime } from './useForegroundNotificationRuntime';

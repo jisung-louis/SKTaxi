@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-import { DAY_CELL_HEIGHT } from '@/constants/constants';
+import { DAY_CELL_HEIGHT } from '@/shared/constants/layout';
 
 import { Course, TimetableCourse } from '../model/types';
 import {

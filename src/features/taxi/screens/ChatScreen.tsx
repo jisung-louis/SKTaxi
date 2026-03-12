@@ -5,7 +5,7 @@ import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-na
 import { useIsFocused } from '@react-navigation/native';
 import { COLORS } from '@/shared/constants/colors';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import PageHeader from '@/components/common/PageHeader';
+import PageHeader from '@/shared/ui/PageHeader';
 
 import { ChatInput } from '../components/chat/ChatInput';
 import { ChatMenu } from '../components/chat/ChatMenu';

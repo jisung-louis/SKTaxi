@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconFA6 from 'react-native-vector-icons/FontAwesome6';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 
 import { useCafeteriaMenu } from '../hooks/useCafeteriaMenu';
 import { CAFETERIA_CATEGORIES } from '../model/cafeteria';

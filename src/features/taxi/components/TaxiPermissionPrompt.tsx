@@ -11,7 +11,7 @@ import {
   BOTTOM_TAB_BAR_HEIGHT,
   WINDOW_HEIGHT,
   WINDOW_WIDTH,
-} from '@/constants/constants';
+} from '@/shared/constants/layout';
 
 interface TaxiPermissionPromptProps {
     onRequestPermission: () => void;

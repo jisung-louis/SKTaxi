@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { logEvent } from '@/lib/analytics';
+import { logEvent } from '@/shared/lib/analytics';
 
 import type { BoardFormData, BoardSelectedImage } from '../model/types';
 import { buildBoardPostCreatePayload } from '../services/boardPostService';

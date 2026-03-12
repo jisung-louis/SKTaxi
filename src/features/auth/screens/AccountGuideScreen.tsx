@@ -13,8 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import WebView from 'react-native-webview';
 
-import PageHeader from '@/components/common/PageHeader';
-import { Text } from '@/components/common/Text';
+import PageHeader from '@/shared/ui/PageHeader';
+import { Text } from '@/shared/ui/Text';
 import { COLORS } from '@/shared/constants/colors';
 import {
   WINDOW_HEIGHT,

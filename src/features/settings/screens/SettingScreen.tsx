@@ -8,10 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import PageHeader from '@/components/common/PageHeader';
-import { useScreenView } from '@/hooks/useScreenView';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import PageHeader from '@/shared/ui/PageHeader';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { getCurrentAppVersion } from '../services/appVersionService';
 import { triggerSettingsCrashTest } from '../services/settingsDiagnosticsService';

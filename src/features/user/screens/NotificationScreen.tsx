@@ -13,12 +13,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import PageHeader from '@/components/common/PageHeader';
-import { COLORS } from '@/constants/colors';
+import PageHeader from '@/shared/ui/PageHeader';
+import { COLORS } from '@/shared/constants/colors';
 import { navigateToBoardDetail } from '@/features/board';
 import { navigateToAppNoticeDetail } from '@/features/settings';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import { useScreenView } from '@/hooks/useScreenView';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import type { Notification } from '../data/repositories/INotificationRepository';
 import { useInAppNotifications } from '../hooks/useInAppNotifications';

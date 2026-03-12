@@ -2,8 +2,8 @@ import React from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 
 interface NotificationSettingItemProps {
   title: string;

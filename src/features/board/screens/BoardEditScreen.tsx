@@ -18,8 +18,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import { ErrorMessage } from '@/components/common/ErrorMessage';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { ErrorMessage } from '@/shared/ui/ErrorMessage';
+import { LoadingSpinner } from '@/shared/ui/LoadingSpinner';
 
 import { ImageSelector } from '../components/ImageSelector';
 import { useBoardEdit } from '../hooks/useBoardEdit';

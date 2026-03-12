@@ -13,13 +13,13 @@ import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { logEvent } from '@/shared/lib/analytics';
-import Button from '@/components/common/Button';
+import Button from '@/shared/ui/Button';
 import {
   BOTTOMSHEET_HANDLE_HEIGHT,
   BOTTOM_TAB_BAR_HEIGHT,
   PARTY_CARD_HEIGHT,
-} from '@/constants/constants';
-import { formatKoreanAmPmTime } from '@/utils/datetime';
+} from '@/shared/constants/layout';
+import { formatKoreanAmPmTime } from '@/shared/lib/date';
 
 import { Party } from '../model/types';
 import { getDistanceMeters, getPartyCreatedAtMs } from '../model/selectors';

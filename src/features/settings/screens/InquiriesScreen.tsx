@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, ScrollView, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import PageHeader from '@/components/common/PageHeader';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import PageHeader from '@/shared/ui/PageHeader';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useScreenView } from '@/hooks/useScreenView';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { useSubmitInquiry } from '../hooks/useSubmitInquiry';
 

@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Button from '@/components/common/Button';
+import Button from '@/shared/ui/Button';
 import { useAuth } from '@/features/auth';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import { logEvent } from '@/lib/analytics';
-import { formatKoreanAmPmTime } from '@/utils/datetime';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { logEvent } from '@/shared/lib/analytics';
+import { formatKoreanAmPmTime } from '@/shared/lib/date';
 
 import { useJoinRequest } from '../hooks/useJoinRequest';
 import { useMyParty } from '../hooks/useMyParty';

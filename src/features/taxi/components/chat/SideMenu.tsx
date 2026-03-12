@@ -5,7 +5,7 @@ import { EdgeInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
-import Surface from '@/components/common/Surface';
+import Surface from '@/shared/ui/Surface';
 
 interface SideMenuProps {
   visible: boolean;

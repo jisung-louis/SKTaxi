@@ -8,9 +8,9 @@ import { useUserDisplayNames } from '@/features/user';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import Button from '@/components/common/Button';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/constants/constants';
-import { formatKoreanAmPmTime } from '@/utils/datetime';
+import Button from '@/shared/ui/Button';
+import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
+import { formatKoreanAmPmTime } from '@/shared/lib/date';
 
 import type { TaxiStackParamList } from '../model/navigation';
 import { useJoinRequestStatus } from '../hooks/useJoinRequestStatus';

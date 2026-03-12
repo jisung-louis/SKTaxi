@@ -12,9 +12,9 @@ import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { Dropdown } from '@/components/common/Dropdown';
-import { Text } from '@/components/common/Text';
-import { DEPARTMENT_OPTIONS } from '@/constants/constants';
+import { Dropdown } from '@/shared/ui/Dropdown';
+import { Text } from '@/shared/ui/Text';
+import { DEPARTMENT_OPTIONS } from '@/shared/constants/departments';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks';

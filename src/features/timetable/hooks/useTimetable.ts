@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRepository } from '@/di';
 import { useAuth } from '@/features/auth';
-import { logEvent } from '@/lib/analytics';
+import { logEvent } from '@/shared/lib/analytics';
 
 import { TIMETABLE_COURSE_COLORS, assignColor } from '../model/colorPalettes';
 import { Course, TimetableCourse, UserTimetable } from '../model/types';

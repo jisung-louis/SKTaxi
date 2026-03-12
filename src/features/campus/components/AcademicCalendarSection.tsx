@@ -3,9 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'rea
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import { isDateAfterOrEqual, isDateBeforeOrEqual, isSameDate, normalizeDate } from '@/utils/dateUtils';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { isDateAfterOrEqual, isDateBeforeOrEqual, isSameDate, normalizeDate } from '@/shared/lib/date';
 
 import { useAcademicSchedules } from '../hooks/useAcademicSchedules';
 import { AcademicScheduleWithColor, CalendarView } from '../model/academic';

@@ -30,7 +30,7 @@ import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 import { createReport } from '@/shared/lib/moderation';
-import { loadChatSound, playChatSound } from '@/lib/sound/chatSound';
+import { loadChatSound, playChatSound } from '@/shared/lib/sound/chatSound';
 
 import type { ChatMessage } from '../model/types';
 import type { ChatStackParamList } from '../model/navigation';

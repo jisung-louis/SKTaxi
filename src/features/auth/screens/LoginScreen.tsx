@@ -26,7 +26,7 @@ import { WINDOW_WIDTH } from '@/shared/constants/layout';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks';
-import { Text } from '@/components/common/Text';
+import { Text } from '@/shared/ui/Text';
 
 import { useAuth } from '../hooks/useAuth';
 

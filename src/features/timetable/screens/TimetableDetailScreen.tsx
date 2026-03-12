@@ -4,12 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/constants/colors';
-import { DAY_CELL_HEIGHT } from '@/constants/constants';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
-import PageHeader from '@/components/common/PageHeader';
-import { SemesterDropdown } from '@/components/common/SemesterDropdown';
-import { useScreenView } from '@/hooks/useScreenView';
+import { COLORS } from '@/shared/constants/colors';
+import { DAY_CELL_HEIGHT } from '@/shared/constants/layout';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import PageHeader from '@/shared/ui/PageHeader';
+import { SemesterDropdown } from '../components/SemesterDropdown';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { TimetableEditBottomSheet } from '../components/TimetableEditBottomSheet';
 import { TimetableGrid } from '../components/TimetableGrid';

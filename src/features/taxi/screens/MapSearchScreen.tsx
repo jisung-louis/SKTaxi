@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import Button from '@/components/common/Button';
-import PageHeader from '@/components/common/PageHeader';
+import Button from '@/shared/ui/Button';
+import PageHeader from '@/shared/ui/PageHeader';
 
 import { useTaxiLocation } from '../hooks/useTaxiLocation';
 

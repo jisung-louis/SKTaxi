@@ -10,9 +10,9 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Button from '@/components/common/Button';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import Button from '@/shared/ui/Button';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 
 import type { MinecraftAccountEntry, MinecraftEdition } from '../model/types';
 import { useMinecraftAccounts } from '../hooks/useMinecraftAccounts';

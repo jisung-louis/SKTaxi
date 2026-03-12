@@ -9,10 +9,10 @@ import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import Button from '@/components/common/Button';
-import { CustomTooltip } from '@/components/common/CustomTooltip';
-import PageHeader from '@/components/common/PageHeader';
-import { TimePicker } from '@/components/common/TimePicker';
+import Button from '@/shared/ui/Button';
+import { CustomTooltip } from '@/shared/ui/CustomTooltip';
+import PageHeader from '@/shared/ui/PageHeader';
+import { TimePicker } from '@/shared/ui/TimePicker';
 
 import {
   DEPARTURE_LOCATION,

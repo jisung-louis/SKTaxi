@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { StyleSheet, ScrollView } from 'react-native';
-import { DAY_CELL_HEIGHT } from '@/constants/constants';
+import { DAY_CELL_HEIGHT } from '@/shared/constants/layout';
 
 import { Course } from '../model/types';
 import { TimetableGrid } from './TimetableGrid';

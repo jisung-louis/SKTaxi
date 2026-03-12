@@ -9,11 +9,11 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
-import Surface from '@/components/common/Surface';
-import { TabBadge } from '@/components/common/TabBadge';
-import { COLORS } from '@/constants/colors';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/constants/constants';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import Surface from '@/shared/ui/Surface';
+import { TabBadge } from '@/shared/ui/TabBadge';
+import { COLORS } from '@/shared/constants/colors';
+import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 import {
   AcademicCalendarSection,
   CafeteriaSection,
@@ -22,7 +22,7 @@ import { MinecraftSection } from '@/features/minecraft';
 import type { Party } from '@/features/taxi';
 import { TimetableSection } from '@/features/timetable';
 import { useInAppNotifications } from '@/features/user';
-import { useScreenView } from '@/hooks/useScreenView';
+import { useScreenView } from '@/shared/hooks/useScreenView';
 
 import { NoticeSection } from '../components/NoticeSection';
 import { TaxiSection } from '../components/TaxiSection';

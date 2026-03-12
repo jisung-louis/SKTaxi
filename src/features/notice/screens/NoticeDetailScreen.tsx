@@ -14,9 +14,9 @@ import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-naviga
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import CommentInput, { CommentInputRef } from '@/components/common/CommentInput';
-import PageHeader from '@/components/common/PageHeader';
-import { ToggleButton } from '@/components/common/ToggleButton';
+import CommentInput, { CommentInputRef } from '@/shared/ui/CommentInput';
+import PageHeader from '@/shared/ui/PageHeader';
+import { ToggleButton } from '@/shared/ui/ToggleButton';
 import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';

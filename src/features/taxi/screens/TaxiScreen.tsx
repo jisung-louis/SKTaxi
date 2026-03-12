@@ -15,8 +15,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/constants/constants';
-import { TabBadge } from '@/components/common/TabBadge';
+import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
+import { TabBadge } from '@/shared/ui/TabBadge';
 
 import { PartyList, TaxiPermissionPrompt, TaxiTimeRemaining } from '../components';
 import { useTaxiScreenPresenter } from '../hooks/useTaxiScreenPresenter';

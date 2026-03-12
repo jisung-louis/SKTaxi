@@ -17,7 +17,7 @@ import {
   isDateAfterOrEqual,
   isDateBeforeOrEqual,
   isDateRangeOverlapping,
-} from '@/utils/dateUtils';
+} from '@/shared/lib/date';
 
 export interface UseAcademicSchedulesResult {
   /** 모든 학사일정 (컬러 할당됨) */

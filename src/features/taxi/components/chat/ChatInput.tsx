@@ -3,7 +3,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
-import Button from '@/components/common/Button';
+import Button from '@/shared/ui/Button';
 
 interface ChatInputProps {
   message: string;

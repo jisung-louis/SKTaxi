@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { COLORS } from '@/constants/colors';
-import { TYPOGRAPHY } from '@/constants/typhograpy';
+import { COLORS } from '@/shared/constants/colors';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
-import { isDateRangeOverlapping } from '@/utils/dateUtils';
+import { isDateRangeOverlapping } from '@/shared/lib/date';
 
 import { AcademicScheduleWithColor } from '../model/academic';
 
