@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { useImageUpload } from '@/hooks/storage';
 
-import type { BoardFormData, BoardPost } from '../model/types';
+import type { BoardFormData, BoardPost, BoardSelectedImage } from '../model/types';
 import { buildBoardPostUpdatePayload } from '../services/boardPostService';
+import { useBoardImageUpload } from './useBoardImageUpload';
 import { useBoardRepository } from './useBoardRepository';
 
 export interface UseBoardEditResult {
@@ -13,13 +13,13 @@ export interface UseBoardEditResult {
   error: string | null;
   updatePost: (formData: BoardFormData) => Promise<void>;
   submitting: boolean;
-  selectedImages: ReturnType<typeof useImageUpload>['selectedImages'];
+  selectedImages: BoardSelectedImage[];
   imageUploading: boolean;
-  pickImages: ReturnType<typeof useImageUpload>['pickImages'];
-  removeImage: ReturnType<typeof useImageUpload>['removeImage'];
-  reorderImages: ReturnType<typeof useImageUpload>['reorderImages'];
-  setImages: ReturnType<typeof useImageUpload>['setImages'];
-  clearImages: ReturnType<typeof useImageUpload>['clearImages'];
+  pickImages: () => void;
+  removeImage: (imageId: string) => void;
+  reorderImages: (fromIndex: number, toIndex: number) => void;
+  setImages: (images: BoardSelectedImage[]) => void;
+  clearImages: () => void;
 }
 
 export function useBoardEdit(postId: string): UseBoardEditResult {
@@ -39,7 +39,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
     uploadImages,
     clearImages,
     setImages,
-  } = useImageUpload({ maxImages: 10 });
+  } = useBoardImageUpload({ maxImages: 10 });
 
   useEffect(() => {
     const loadPost = async () => {

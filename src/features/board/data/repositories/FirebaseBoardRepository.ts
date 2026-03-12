@@ -34,7 +34,7 @@ import type {
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from '@/repositories/interfaces/IPartyRepository';
+} from '@/shared/types/subscription';
 import type { PaginatedResult } from '@/shared/types/pagination';
 
 export class FirebaseBoardRepository implements IBoardRepository {

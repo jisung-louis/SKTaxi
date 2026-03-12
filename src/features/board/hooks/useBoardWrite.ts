@@ -1,23 +1,23 @@
 import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { useImageUpload } from '@/hooks/storage';
 import { logEvent } from '@/lib/analytics';
 
-import type { BoardFormData } from '../model/types';
+import type { BoardFormData, BoardSelectedImage } from '../model/types';
 import { buildBoardPostCreatePayload } from '../services/boardPostService';
+import { useBoardImageUpload } from './useBoardImageUpload';
 import { useBoardRepository } from './useBoardRepository';
 
 export interface UseBoardWriteResult {
   createPost: (formData: BoardFormData) => Promise<string>;
   submitting: boolean;
   error: string | null;
-  selectedImages: ReturnType<typeof useImageUpload>['selectedImages'];
+  selectedImages: BoardSelectedImage[];
   imageUploading: boolean;
-  pickImages: ReturnType<typeof useImageUpload>['pickImages'];
-  removeImage: ReturnType<typeof useImageUpload>['removeImage'];
-  reorderImages: ReturnType<typeof useImageUpload>['reorderImages'];
-  clearImages: ReturnType<typeof useImageUpload>['clearImages'];
+  pickImages: () => void;
+  removeImage: (imageId: string) => void;
+  reorderImages: (fromIndex: number, toIndex: number) => void;
+  clearImages: () => void;
 }
 
 export function useBoardWrite(): UseBoardWriteResult {
@@ -34,7 +34,7 @@ export function useBoardWrite(): UseBoardWriteResult {
     reorderImages,
     uploadImages,
     clearImages,
-  } = useImageUpload({ maxImages: 10 });
+  } = useBoardImageUpload({ maxImages: 10 });
 
   const createPost = useCallback(
     async (formData: BoardFormData): Promise<string> => {

@@ -14,10 +14,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
-import type { SelectedImage } from '@/hooks/storage';
+import type { BoardSelectedImage } from '../model/types';
 
 interface ImageSelectorProps {
-  selectedImages: SelectedImage[];
+  selectedImages: BoardSelectedImage[];
   onPickImages: () => void;
   onRemoveImage: (imageId: string) => void;
   onReorderImages: (fromIndex: number, toIndex: number) => void;
@@ -55,7 +55,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
         rotation.value = withTiming(0, { duration: 120 });
         scale.value = withTiming(1, { duration: 120 });
       }
-    }, [active]);
+    }, [active, rotation, scale]);
 
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ rotate: `${rotation.value}deg` }, { scale: scale.value }],
@@ -64,7 +64,7 @@ export const ImageSelector: React.FC<ImageSelectorProps> = ({
     return <Animated.View style={animatedStyle}>{children}</Animated.View>;
   };
 
-  const renderImageItem = ({ item, drag, isActive }: RenderItemParams<SelectedImage>) => {
+  const renderImageItem = ({ item, drag, isActive }: RenderItemParams<BoardSelectedImage>) => {
     const getStatusIcon = () => {
       switch (item.status) {
         case 'uploading':

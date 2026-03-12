@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { SubscriptionCallbacks, Unsubscribe } from '@/repositories/interfaces';
+import type { SubscriptionCallbacks, Unsubscribe } from '@/shared/types/subscription';
 
 export interface SubscriptionState<T> {
   data: T;

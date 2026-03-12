@@ -11,6 +11,19 @@ export interface BoardImage {
   mime?: string;
 }
 
+export interface BoardSelectedImage {
+  id: string;
+  localUri: string;
+  width: number;
+  height: number;
+  size: number;
+  mime: string;
+  status: 'pending' | 'uploading' | 'uploaded' | 'failed';
+  progress: number;
+  remoteUrl?: string;
+  thumbUrl?: string;
+}
+
 export interface BoardPost {
   id: string;
   title: string;

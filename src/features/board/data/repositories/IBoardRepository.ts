@@ -8,7 +8,7 @@ import type {
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from '@/repositories/interfaces/IPartyRepository';
+} from '@/shared/types/subscription';
 
 export interface BoardFilterOptions {
   category?: string;

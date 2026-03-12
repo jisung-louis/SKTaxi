@@ -2,7 +2,7 @@ import type { PaginatedResult } from '@/shared/types/pagination';
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from '@/repositories/interfaces/IPartyRepository';
+} from '@/shared/types/subscription';
 
 import type { BoardComment, BoardImage, BoardPost } from '../../model/types';
 import type {
