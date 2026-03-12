@@ -5,12 +5,13 @@ import { useAuthEntryGuard } from '@/app/guards';
 import { ForegroundNotification } from '@/components/common/ForegroundNotification';
 import { JoinRequestModal } from '@/components/common/JoinRequestModal';
 import {
-  useFcmSetup,
   useForegroundNotification,
   useJoinRequestModal,
 } from '@/navigations/hooks';
 
-export const AppNavigationRuntime = () => {
+import { useRegisterPushHandlers } from './registerPushHandlers';
+
+export const AppRuntimeHost = () => {
   const {
     authState: { user, loading },
     guardResult: { needsProfile, permissionsComplete },
@@ -52,7 +53,7 @@ export const AppNavigationRuntime = () => {
     ]);
   }, [handlePartyDeletedBase]);
 
-  useFcmSetup({
+  useRegisterPushHandlers({
     userId: user?.uid,
     needsProfile,
     permissionsComplete,

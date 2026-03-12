@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { PropsWithChildren } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 
-import { AppNavigationRuntime } from './AppNavigationRuntime';
 import { RootNavigator } from './RootNavigator';
 
-export const AppNavigation = () => {
+export const AppNavigation = ({ children }: PropsWithChildren) => {
   return (
     <NavigationContainer>
       <RootNavigator />
-      <AppNavigationRuntime />
+      {children}
     </NavigationContainer>
   );
 };

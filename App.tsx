@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigation } from '@/app/navigation/AppNavigation';
 import { AppProviders } from '@/app/providers/AppProviders';
+import { AppRuntimeHost } from '@/app/bootstrap/AppRuntimeHost';
 import { useAppBootstrap } from '@/app/bootstrap/useAppBootstrap';
 import { ForceUpdateModal } from '@/shared/ui/ForceUpdateModal';
 import '@/shared/lib/firebase';
@@ -22,7 +23,9 @@ const AppContent = () => {
   return (
     <>
       <AppProviders>
-        <AppNavigation />
+        <AppNavigation>
+          <AppRuntimeHost />
+        </AppNavigation>
       </AppProviders>
       <ForceUpdateModal
         visible={forceUpdateRequired}

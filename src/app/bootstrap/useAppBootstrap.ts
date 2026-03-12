@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import ImmersiveMode from 'react-native-immersive-mode';
 
-import { configureGoogleSignin } from '@/config/google';
-import { checkVersionUpdate } from '@/lib/versionCheck';
 import { logCrashlyticsMessage, subscribeAuthStateChange } from '@/shared/lib/firebase';
 import type { VersionModalConfig } from '@/shared/types/version';
+
+import { configureGoogleSignin } from './configureGoogleSignin';
+import { checkVersionUpdate } from './versionCheck';
 
 export interface AppBootstrapState {
   forceUpdateRequired: boolean;
