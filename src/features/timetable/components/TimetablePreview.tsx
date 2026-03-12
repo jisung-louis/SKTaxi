@@ -8,13 +8,11 @@ import { TimetableGrid } from './TimetableGrid';
 interface TimetablePreviewProps {
   courses: Course[];
   selectedCourse?: Course | null;
-  onCoursePress?: (course: Course) => void;
 }
 
 export const TimetablePreview: React.FC<TimetablePreviewProps> = ({
   courses,
   selectedCourse,
-  onCoursePress,
 }) => {
   const scrollViewRef = useRef<ScrollView>(null);
 

@@ -25,7 +25,6 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
   currentCourses = [],
 }) => {
   const { courses, loading, error, searchQuery, setSearchQuery, executeSearch, isInitialized, initializeCourses } = useCourseSearch();
-  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [filterByMyDepartment, setFilterByMyDepartment] = useState(false);
   const { user } = useAuth();
 
@@ -73,7 +72,6 @@ export const CourseSearch: React.FC<CourseSearchProps> = ({
   };
 
   const handleCoursePress = (course: Course) => {
-    setSelectedCourse(course);
     onCourseSelect?.(course);
   };
 
@@ -280,5 +278,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 });
-
 

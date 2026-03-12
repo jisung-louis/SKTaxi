@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Alert, Keyboard, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, Keyboard, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/constants/colors';
@@ -18,8 +18,6 @@ interface TimetableEditBottomSheetProps {
   currentCourses: Course[];
   semester: string;
 }
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const TimetableEditBottomSheet: React.FC<TimetableEditBottomSheetProps> = React.memo(({
   visible,

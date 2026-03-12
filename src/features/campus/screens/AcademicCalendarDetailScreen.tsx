@@ -19,7 +19,7 @@ export const AcademicCalendarDetailScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
   const route = useRoute<any>();
-  const { schedules, loading, error, getTodayScheduleMessage, getSchedulesForMonth } = useAcademicSchedules();
+  const { schedules, loading, error, getTodayScheduleMessage } = useAcademicSchedules();
   const [viewMode, setViewMode] = useState<CalendarView>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const scrollViewRef = useRef<ScrollView>(null);
@@ -325,7 +325,7 @@ export const AcademicCalendarDetailScreen = () => {
               {activeSchedules.length > 0 && (
                 <View style={styles.schedulesInnerContainer}>
                   {/* <Text style={styles.sectionTitle}>현재/예정 일정</Text> */}
-                  {activeSchedules.map((schedule, index) => (
+                  {activeSchedules.map((schedule) => (
                     <View 
                       key={schedule.id} 
                       ref={(ref) => { scheduleRefs.current[schedule.id] = ref; }}
@@ -360,7 +360,7 @@ export const AcademicCalendarDetailScreen = () => {
               {pastSchedules.length > 0 && (
                 <View style={styles.schedulesInnerContainer}>
                   <Text style={styles.sectionTitle}>지난 일정</Text>
-                  {pastSchedules.map((schedule, index) => (
+                  {pastSchedules.map((schedule) => (
                     <View 
                       key={schedule.id} 
                       ref={(ref) => { scheduleRefs.current[schedule.id] = ref; }}

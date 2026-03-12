@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAcademicRepository } from '@/di/useRepository';
 import {
   assignAcademicScheduleColor,
-  ACADEMIC_SCHEDULE_COLORS,
 } from '../model/colorPalettes';
 import {
   AcademicSchedule,

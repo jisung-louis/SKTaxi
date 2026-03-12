@@ -5,7 +5,7 @@ import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
 
 import { Course } from '../model/types';
-import { formatCourseTime, getWeekdayName } from '../services/timetableUtils';
+import { formatCourseTime } from '../services/timetableUtils';
 
 interface CourseCardProps {
   course: Course;
@@ -302,5 +302,4 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
 });
-
 
