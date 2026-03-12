@@ -45,6 +45,7 @@ export { usePendingJoinRequest } from './hooks/usePendingJoinRequest';
 export type {
   UsePendingJoinRequestResult,
 } from './hooks/usePendingJoinRequest';
+export { useTaxiLocation } from './hooks/useTaxiLocation';
 export { useTaxiScreenPresenter } from './hooks/useTaxiScreenPresenter';
 export { useChatScreenPresenter } from './hooks/useChatScreenPresenter';
 export {

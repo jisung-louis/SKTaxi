@@ -1,6 +1,4 @@
-// SKTaxi: FCM 포그라운드 메시지 처리 및 join 요청 수락/거절 유틸
-// INotificationActionRepository를 사용하여 Firebase 직접 의존 제거
-// v22 Modular API
+// SKTaxi: FCM 포그라운드/백그라운드 메시지 처리 유틸
 
 import {
   getMessaging,
@@ -10,11 +8,6 @@ import {
   getInitialNotification,
 } from '@react-native-firebase/messaging';
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
-import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
-import { sendSystemMessage } from '../hooks/chat';
-
-// 싱글톤 Repository 인스턴스 (DI Provider 외부에서 사용하기 위함)
-const notificationActionRepository = new FirestoreNotificationActionRepository();
 
 // Messaging 인스턴스
 const messaging = getMessaging();
@@ -274,37 +267,6 @@ export function initForegroundMessageHandler(
         console.log('🔔 알 수 없는 메시지 타입:', data.type);
     }
   });
-}
-
-// === 동승 요청 액션 함수 (Repository 사용) ===
-
-export async function acceptJoin(requestId: string, partyId: string, requesterId: string) {
-  try {
-    await notificationActionRepository.acceptJoinRequest(requestId, partyId, requesterId);
-
-    // 사용자 정보 조회하여 시스템 메시지 전송
-    try {
-      const displayName = await notificationActionRepository.getUserDisplayName(requesterId);
-      await sendSystemMessage(partyId, `${displayName}님이 파티에 합류했어요.`);
-    } catch (error) {
-      console.error('SKTaxi acceptJoin: Error sending system message:', error);
-      // 시스템 메시지 전송 실패해도 전체 프로세스는 계속 진행
-    }
-  } catch (error) {
-    console.error('acceptJoin 실패:', error);
-  }
-}
-
-export async function declineJoin(requestId: string) {
-  try {
-    await notificationActionRepository.declineJoinRequest(requestId);
-  } catch (error) {
-    console.error('declineJoin 실패:', error);
-  }
-}
-
-export async function deleteJoinRequestNotifications(userId: string, partyId: string) {
-  await notificationActionRepository.deleteJoinRequestNotifications(userId, partyId);
 }
 
 // === 백그라운드/알림 클릭 핸들러 ===

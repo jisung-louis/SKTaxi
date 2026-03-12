@@ -20,7 +20,6 @@ import {
   BOTTOM_TAB_BAR_HEIGHT,
   PARTY_CARD_HEIGHT,
 } from '@/constants/constants';
-import { useCurrentLocation } from '@/hooks/common/useCurrentLocation';
 import { formatKoreanAmPmTime } from '@/utils/datetime';
 
 import { Party } from '../model/types';
@@ -28,6 +27,7 @@ import { getDistanceMeters, getPartyCreatedAtMs } from '../model/selectors';
 import { useJoinRequest } from '../hooks/useJoinRequest';
 import { useMyParty } from '../hooks/useMyParty';
 import { usePendingJoinRequest } from '../hooks/usePendingJoinRequest';
+import { useTaxiLocation } from '../hooks/useTaxiLocation';
 
 interface PartyListProps {
   parties: Party[];
@@ -68,7 +68,7 @@ export const PartyList: React.FC<PartyListProps> = ({
   const { user } = useAuth();
 
   // SKTaxi: 현재 위치
-  const { location } = useCurrentLocation();
+  const { location } = useTaxiLocation();
   const isLocationAvailable = !!location;
 
   const sortOptions = [

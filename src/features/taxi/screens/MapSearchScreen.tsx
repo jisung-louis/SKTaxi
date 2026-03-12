@@ -7,7 +7,8 @@ import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 import Button from '@/components/common/Button';
 import PageHeader from '@/components/common/PageHeader';
-import { useCurrentLocation } from '@/hooks/common/useCurrentLocation';
+
+import { useTaxiLocation } from '../hooks/useTaxiLocation';
 
 interface MapSearchScreenProps {
   navigation: any;
@@ -32,7 +33,7 @@ export const MapSearchScreen: React.FC<MapSearchScreenProps> = ({ navigation, ro
     longitudeDelta: 0.01,
   });
 
-  const { location } = useCurrentLocation();
+  const { location } = useTaxiLocation();
 
   useEffect(() => {
     if (!location) return;

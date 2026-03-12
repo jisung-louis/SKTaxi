@@ -11,10 +11,6 @@ import { useSharedValue, withTiming, interpolate, Extrapolation, useAnimatedStyl
 import { useIsFocused } from '@react-navigation/native';
 
 import { TaxiStackParamList } from '@/app/navigation/types';
-import {
-  requestLocationPermission,
-  useCurrentLocation,
-} from '@/hooks/common/useCurrentLocation';
 
 import { getPartyTimeRemainingText } from '../model/selectors';
 import { useTaxiBottomSheet } from './useTaxiBottomSheet';
@@ -22,6 +18,7 @@ import { usePartySelection } from './usePartySelection';
 import { useJoinRequestCount } from '../providers/JoinRequestProvider';
 import { useMyParty } from './useMyParty';
 import { useParties } from './useParties';
+import { useTaxiLocation } from './useTaxiLocation';
 
 type TaxiScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'TaxiMain'>;
 
@@ -32,7 +29,7 @@ export function useTaxiScreenPresenter() {
     const isFocused = useIsFocused();
 
     // Hooks
-    const { location, loading, refresh } = useCurrentLocation();
+    const { location, loading, refresh, requestPermission } = useTaxiLocation();
     const { parties } = useParties();
     const { hasParty, partyId, loading: myPartyLoading } = useMyParty();
     const { joinRequestCount } = useJoinRequestCount();
@@ -100,7 +97,7 @@ export function useTaxiScreenPresenter() {
 
     const handleLocationPermissionRequest = async () => {
         try {
-            const hasPermission = await requestLocationPermission();
+            const hasPermission = await requestPermission();
 
             if (!hasPermission) {
                 const message = Platform.OS === 'android'
