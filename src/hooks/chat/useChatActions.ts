@@ -2,7 +2,8 @@
 // 메시지 전송, 채팅방 참여/나가기, 알림 설정 등
 
 import { useCallback, useState } from 'react';
-import { useChatRepository, useUserRepository } from '../../di';
+import { useChatRepository } from '../../di';
+import { useUserRepository } from '@/features/user';
 import { useAuth } from '../auth';
 import { ChatMessage } from '../../types/firestore';
 

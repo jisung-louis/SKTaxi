@@ -2,18 +2,20 @@ import React from 'react';
 import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {
+  AccountModificationScreen,
+  NotificationSettingsScreen,
+  ProfileEditScreen,
+  ProfileScreen,
+} from '@/features/user';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
-import { ProfileScreen } from '../screens/HomeTab/ProfileScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { SettingScreen } from '../screens/HomeTab/SettingScreen';
-import { ProfileEditScreen } from '../screens/HomeTab/SettingScreen/ProfileEditScreen';
 import { AppNoticeScreen } from '../screens/HomeTab/SettingScreen/AppNoticeScreen';
 import { AppNoticeDetailScreen } from '../screens/HomeTab/SettingScreen/AppNoticeDetailScreen';
-import { AccountModificationScreen } from '../screens/HomeTab/SettingScreen/AccountModificationScreen';
-import { NofiticationSettingScreen } from '../screens/HomeTab/SettingScreen/NofiticationSettingScreen';
 import { InquiriesScreen } from '../screens/HomeTab/SettingScreen/InquiriesScreen';
 import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScreen';
 import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
@@ -48,7 +50,6 @@ import { useMyParty } from '../hooks/party';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useChatRooms } from '../hooks/chat';
 import { useAuth } from '../hooks/auth';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFirestore, collection, onSnapshot } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
@@ -58,6 +59,16 @@ const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
 const BoardStack = createNativeStackNavigator<BoardStackParamList>();
 const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+
+const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
+  '택시': ['Recruit', 'MapSearch', 'Chat'],
+  '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit',
+    'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy',
+    'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail', 'MinecraftDetail', 'MinecraftMapDetail'],
+  '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
+  '공지': ['NoticeDetail', 'NoticeDetailWebView'],
+  '채팅': ['ChatDetail'],
+};
 
 const TaxiStackNavigator = () => {
   return (
@@ -82,7 +93,7 @@ const HomeStackNavigator = () => {
       <HomeStack.Screen name="AppNotice" component={AppNoticeScreen} />
       <HomeStack.Screen name="AppNoticeDetail" component={AppNoticeDetailScreen} />
       <HomeStack.Screen name="AccountModification" component={AccountModificationScreen} />
-      <HomeStack.Screen name="NotificationSetting" component={NofiticationSettingScreen} />
+      <HomeStack.Screen name="NotificationSetting" component={NotificationSettingsScreen} />
       <HomeStack.Screen name="Inquiries" component={InquiriesScreen} />
       <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
       <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
@@ -132,11 +143,6 @@ const MainNavigatorContent = () => {
   const { hasParty } = useMyParty();
   const { user } = useAuth();
   const [chatRoomStates, setChatRoomStates] = React.useState<{ [chatRoomId: string]: { lastReadAt?: any } }>({});
-  const insets = useSafeAreaInsets();
-  const bottomInset = React.useMemo(
-    () => (Platform.OS === 'android' && insets.bottom === 0 ? 16 : insets.bottom),
-    [insets.bottom],
-  );
   // 모든 채팅방 조회 (안읽은 메시지 수 계산용)
   const { chatRooms: allChatRooms } = useChatRooms('all');
   const { chatRooms: customChatRooms } = useChatRooms('custom');
@@ -395,17 +401,6 @@ const MainNavigatorContent = () => {
 const AnimatedTabBar = (props: BottomTabBarProps) => {
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const translateY = React.useRef(new Animated.Value(0)).current;
-
-  // 탭별로 숨길 내부 스택 스크린 이름들
-  const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
-    '택시': ['Recruit', 'MapSearch', 'Chat'],
-    '홈': ['Notification', 'Setting', 'Profile', 'ProfileEdit', 
-      'AppNotice', 'AppNoticeDetail', 'AccountModification', 'NotificationSetting', 'Inquiries', 'TermsOfUse', 'PrivacyPolicy', 
-      'CafeteriaDetail', 'AcademicCalendarDetail', 'TimetableDetail', 'MinecraftDetail', 'MinecraftMapDetail'],
-    '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
-    '공지': ['NoticeDetail', 'NoticeDetailWebView'],
-    '채팅': ['ChatDetail'],
-  };
 
   const shouldHide = React.useMemo(() => {
     const currentRoute = props.state.routes[props.state.index];

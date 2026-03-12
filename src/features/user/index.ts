@@ -1,2 +1,64 @@
-// Phase 0 placeholder public API.
-export {};
+export { NotificationSettingItem } from './components/NotificationSettingItem';
+
+export { FirebaseUserRepository } from './data/repositories/FirebaseUserRepository';
+export type {
+  IUserRepository,
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from './data/repositories/IUserRepository';
+
+export { useUserRepository } from './hooks/useUserRepository';
+export {
+  useUserProfile,
+  useUserProfileById,
+} from './hooks/useUserProfile';
+export type { UseUserProfileResult } from './hooks/useUserProfile';
+export { useAccountInfo } from './hooks/useAccountInfo';
+export type {
+  AccountInfo,
+  UseAccountInfoResult,
+} from './hooks/useAccountInfo';
+export { useNotificationSettings } from './hooks/useNotificationSettings';
+export type {
+  NotificationSettings,
+  UseNotificationSettingsResult,
+} from './hooks/useNotificationSettings';
+export { useUserDisplayNames } from './hooks/useUserDisplayNames';
+export type { UseUserDisplayNamesResult } from './hooks/useUserDisplayNames';
+export { useUserBookmarks } from './hooks/useUserBookmarks';
+export type { UseUserBookmarksResult } from './hooks/useUserBookmarks';
+
+export type {
+  UserAccountInfo,
+  UserAgreements,
+  UserDisplayNameMap,
+  UserLoginProvider,
+  UserNotificationSettings,
+  UserOnboardingState,
+  UserProfile,
+} from './model/types';
+
+export { ProfileScreen } from './screens/ProfileScreen';
+export { ProfileEditScreen } from './screens/ProfileEditScreen';
+export { AccountModificationScreen } from './screens/AccountModificationScreen';
+export {
+  NotificationSettingsScreen,
+  NotificationSettingsScreen as NofiticationSettingScreen,
+} from './screens/NotificationSettingsScreen';
+
+export {
+  completeUserPermissionOnboarding,
+  createInitialUserProfile,
+  DEFAULT_NOTIFICATION_SETTINGS,
+  DEFAULT_USER_DISPLAY_NAME,
+  deleteUserAccountInfo,
+  getUserLoginProvider,
+  resolveNotificationSettings,
+  resolveUserAccountInfo,
+  saveCompletedUserProfile,
+  saveUserAccountInfo,
+  saveUserProfileChanges,
+  syncUserLoginMetadata,
+  updateUserNotificationSettings,
+  withdrawCurrentUser,
+} from './services/userProfileService';

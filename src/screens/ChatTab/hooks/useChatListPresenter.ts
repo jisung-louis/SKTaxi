@@ -4,9 +4,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useUserProfile } from '@/features/user';
 import { ChatStackParamList } from '../../../navigations/types';
 import { useAuth } from '../../../hooks/auth';
-import { useUserProfile } from '../../../hooks/user';
 import { useChatRooms, useChatRoomStates, useChatRoomNotifications } from '../../../hooks/chat';
 import { ChatRoom } from '../../../types/firestore';
 

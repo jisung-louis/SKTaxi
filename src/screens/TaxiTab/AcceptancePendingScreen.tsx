@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import PageHeader from '../../components/common/PageHeader';
+import { useUserDisplayNames } from '@/features/user';
 import { COLORS } from '../../constants/colors';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { TaxiStackParamList } from '../../navigations/types';
@@ -11,7 +11,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { formatKoreanAmPmTime } from '../../utils/datetime';
 import Button from '../../components/common/Button';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../constants/constants';
-import { useUserDisplayNames } from '../../hooks/user';
 import { useScreenView } from '../../hooks/useScreenView';
 import { useJoinRequestStatus } from '../../hooks/party';
 
@@ -28,10 +27,6 @@ export const AcceptancePendingScreen = () => {
 
   // Repository 패턴 훅 사용
   const { requestStatus, cancelRequest } = useJoinRequestStatus(requestId);
-
-  const onBack = () => {
-    navigation.goBack();
-  };
 
   // 동승 요청 취소 핸들러
   const handleCancelRequest = async () => {

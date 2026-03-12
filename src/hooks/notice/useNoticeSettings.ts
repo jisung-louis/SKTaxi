@@ -1,7 +1,12 @@
 // SKTaxi: 공지사항 알림 설정 훅 - Repository 패턴 적용
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import { useRepository } from '../../di';
+import {
+  DEFAULT_NOTIFICATION_SETTINGS,
+  resolveNotificationSettings,
+  updateUserNotificationSettings,
+  useUserRepository,
+} from '@/features/user';
 import { useAuth } from '../auth';
 
 export interface NoticeSettingsDetail {
@@ -20,7 +25,7 @@ const DEFAULT_SETTINGS: NoticeSettingsState = {
 
 export function useNoticeSettings() {
   const { user } = useAuth();
-  const { userRepository } = useRepository();
+  const userRepository = useUserRepository();
   
   const [settings, setSettings] = useState<NoticeSettingsState>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,7 +43,7 @@ export function useNoticeSettings() {
 
     const unsubscribe = userRepository.subscribeToUserProfile(user.uid, {
       onData: (profile) => {
-        const ns = (profile as any)?.notificationSettings || {};
+        const ns = resolveNotificationSettings(profile);
         const next: NoticeSettingsState = {
           noticeNotifications: ns.noticeNotifications !== false,
           noticeNotificationsDetail: (ns.noticeNotificationsDetail || {}) as NoticeSettingsDetail,
@@ -59,28 +64,42 @@ export function useNoticeSettings() {
     if (!user?.uid) return;
     
     try {
-      await userRepository.updateUserProfile(user.uid, {
-        notificationSettings: { noticeNotifications: enabled },
-      } as any);
+      await updateUserNotificationSettings({
+        currentSettings: {
+          ...DEFAULT_NOTIFICATION_SETTINGS,
+          ...settings,
+          noticeNotificationsDetail: settings.noticeNotificationsDetail,
+        },
+        patch: { noticeNotifications: enabled },
+        userId: user.uid,
+        userRepository,
+      });
     } catch (e) {
       setError('설정 저장에 실패했습니다.');
       throw e;
     }
-  }, [user?.uid, userRepository]);
+  }, [settings, user?.uid, userRepository]);
 
   const updateDetail = useCallback(async (categoryKey: string, enabled: boolean) => {
     if (!user?.uid) return;
     
     try {
       const currentDetail = { ...settings.noticeNotificationsDetail, [categoryKey]: enabled };
-      await userRepository.updateUserProfile(user.uid, {
-        notificationSettings: { noticeNotificationsDetail: currentDetail },
-      } as any);
+      await updateUserNotificationSettings({
+        currentSettings: {
+          ...DEFAULT_NOTIFICATION_SETTINGS,
+          ...settings,
+          noticeNotificationsDetail: settings.noticeNotificationsDetail,
+        },
+        patch: { noticeNotificationsDetail: currentDetail },
+        userId: user.uid,
+        userRepository,
+      });
     } catch (e) {
       setError('설정 저장에 실패했습니다.');
       throw e;
     }
-  }, [user?.uid, userRepository, settings.noticeNotificationsDetail]);
+  }, [settings, user?.uid, userRepository]);
 
   const value = useMemo(
     () => ({ settings, loading, error, updateMaster, updateDetail }),

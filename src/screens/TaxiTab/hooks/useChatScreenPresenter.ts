@@ -1,17 +1,20 @@
 // SKTaxi: 택시 채팅 화면 훅
 // DIP 준수: Repository 패턴을 통한 데이터 접근
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Alert, Clipboard } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
+import {
+  useUserDisplayNames,
+  useUserRepository,
+} from '@/features/user';
 import { TaxiStackParamList } from '../../../navigations/types';
 import { useMessages, sendMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage } from '../../../hooks/chat';
 import { useParties } from '../../../hooks/party';
-import { useUserDisplayNames } from '../../../hooks/user';
 import { useAuth } from '../../../hooks/auth';
-import { usePartyRepository, useUserRepository, useNotificationRepository } from '../../../di/useRepository';
+import { usePartyRepository, useNotificationRepository } from '../../../di/useRepository';
 import { logEvent } from '../../../lib/analytics';
 import { JoinRequest, SettlementData } from '../../../repositories/interfaces/IPartyRepository';
 
@@ -49,7 +52,7 @@ export const useChatScreenPresenter = () => {
   // 파티 정보
   const { parties } = useParties();
   const currentParty = parties.find(p => p.id === partyId);
-  const memberUids = currentParty?.members || [];
+  const memberUids = useMemo(() => currentParty?.members ?? [], [currentParty?.members]);
 
   // 현재 사용자 (Repository 패턴 적용)
   const currentUser = authUser ? { uid: authUser.uid, displayName: authUser.displayName } : null;
@@ -195,7 +198,7 @@ export const useChatScreenPresenter = () => {
       noticeBarHeight.value = withTiming(52, { duration: 300 });
       settlementListOpacity.value = withTiming(1, { duration: 300 });
     }
-  }, [currentParty?.status, currentParty?.settlement, memberUids, currentParty?.leaderId]);
+  }, [currentParty?.status, currentParty?.settlement, memberUids, currentParty?.leaderId, noticeBarHeight, settlementListOpacity]);
 
   // settlementStatus 변경 시 높이 업데이트
   useEffect(() => {
@@ -204,7 +207,7 @@ export const useChatScreenPresenter = () => {
       const dynamicHeight = calculateNoticeBarHeight(memberCount);
       noticeBarHeight.value = withTiming(dynamicHeight, { duration: 300 });
     }
-  }, [settlementStatus, currentParty?.status, calculateNoticeBarHeight]);
+  }, [settlementStatus, currentParty?.status, calculateNoticeBarHeight, noticeBarHeight]);
 
   // 동승 종료 상태 확인
   useEffect(() => {
@@ -224,7 +227,7 @@ export const useChatScreenPresenter = () => {
       Alert.alert('알림', '리더가 나를 강퇴했어요.');
       navigation.popToTop();
     }
-  }, [currentParty?.members, currentUser?.uid, navigation]);
+  }, [currentParty, currentUser?.uid, navigation]);
 
   // 파티 존재 감지
   useEffect(() => {
@@ -232,16 +235,6 @@ export const useChatScreenPresenter = () => {
       seenPartyRef.current = true;
     }
   }, [currentParty]);
-
-  // 동승 요청 로드 (리더만)
-  useEffect(() => {
-    if (!isLeader || !partyId) return;
-
-    const unsubscribe = loadJoinRequests();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [isLeader, partyId]);
 
   // 동승 요청 로드 함수 (Repository 패턴 적용)
   const loadJoinRequests = useCallback(() => {
@@ -267,6 +260,16 @@ export const useChatScreenPresenter = () => {
       setJoinRequestsLoading(false);
     }
   }, [partyId, isLeader, partyRepository]);
+
+  // 동승 요청 로드 (리더만)
+  useEffect(() => {
+    if (!isLeader || !partyId) return;
+
+    const unsubscribe = loadJoinRequests();
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [isLeader, partyId, loadJoinRequests]);
 
   // 알림 음소거 토글 (Repository 패턴 적용)
   const handleToggleMute = useCallback(async () => {
@@ -557,7 +560,7 @@ export const useChatScreenPresenter = () => {
       console.error('도착 메시지 전송 실패:', error);
       Alert.alert('오류', '도착 메시지 전송에 실패했습니다.');
     }
-  }, [currentUser?.uid, partyId, taxiFare, selectedMembers, arrivalBankName, arrivalAccountNumber, arrivalAccountHolder, arrivalHideName, rememberArrivalAccount, currentParty?.leaderId, calculateNoticeBarHeight, userRepository, partyRepository]);
+  }, [currentUser?.uid, partyId, taxiFare, selectedMembers, arrivalBankName, arrivalAccountNumber, arrivalAccountHolder, arrivalHideName, rememberArrivalAccount, currentParty?.leaderId, calculateNoticeBarHeight, userRepository, partyRepository, noticeBarHeight, settlementListOpacity]);
 
   // 멤버 선택 토글
   const toggleMemberSelection = useCallback((memberId: string) => {

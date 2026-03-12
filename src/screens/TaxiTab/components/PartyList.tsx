@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, TouchableWithoutFeedback, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../../../constants/colors';
@@ -10,9 +10,9 @@ import AnimatedReanimated, { useAnimatedStyle, interpolate, Extrapolation } from
 import Animated from 'react-native-reanimated';
 import { WINDOW_HEIGHT, WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../../../constants/constants';
+import { useUserDisplayNames } from '@/features/user';
 import { Party } from '../../../types/party';
 import Button from '../../../components/common/Button';
-import { useUserDisplayNames } from '../../../hooks/user';
 import { formatKoreanAmPmTime } from '../../../utils/datetime';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -33,16 +33,32 @@ interface PartyListProps {
   animatedPosition: AnimatedReanimated.SharedValue<number>;
 }
 
+const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+const getDistanceMeters = (lat1?: number, lon1?: number, lat2?: number, lon2?: number): number => {
+  if ([lat1, lon1, lat2, lon2].some((n) => typeof n !== 'number' || !Number.isFinite(n as number))) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const R = 6371000;
+  const dLat = toRad((lat2 as number) - (lat1 as number));
+  const dLon = toRad((lon2 as number) - (lon1 as number));
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1 as number)) * Math.cos(toRad(lat2 as number)) *
+    Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export const PartyList: React.FC<PartyListProps> = ({
   parties,
   selectedPartyId,
   bottomSheetIndex,
   onPressParty,
-  onRequestJoinParty,
+  onRequestJoinParty: _onRequestJoinParty,
   onToggleBottomSheet,
   animatedPosition,
 }) => {
-  const { top, bottom, left, right } = useSafeAreaInsets();
+  const { top } = useSafeAreaInsets();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedSort, setSelectedSort] = useState('최신순');
   const navigation = useNavigation<NativeStackNavigationProp<TaxiStackParamList>>();
@@ -91,22 +107,6 @@ export const PartyList: React.FC<PartyListProps> = ({
     return Number.isFinite(d.getTime()) ? d.getTime() : 0;
   };
 
-  // SKTaxi: 하버사인 거리(m)
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const getDistanceMeters = (lat1?: number, lon1?: number, lat2?: number, lon2?: number): number => {
-    if ([lat1, lon1, lat2, lon2].some((n) => typeof n !== 'number' || !Number.isFinite(n as number))) {
-      return Number.POSITIVE_INFINITY;
-    }
-    const R = 6371000;
-    const dLat = toRad((lat2 as number) - (lat1 as number));
-    const dLon = toRad((lon2 as number) - (lon1 as number));
-    const a = Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(lat1 as number)) * Math.cos(toRad(lat2 as number)) *
-      Math.sin(dLon / 2) ** 2;
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
-
   // SKTaxi: 정렬된 파티 목록 (status === 'ended' 인 파티는 상위 훅에서 이미 제외됨)
   const sortedParties = useMemo(() => {
     if (!Array.isArray(parties)) return [] as Party[];
@@ -127,19 +127,6 @@ export const PartyList: React.FC<PartyListProps> = ({
     }
     return parties;
   }, [parties, selectedSort, location, isLocationAvailable]);
-
-  // 드롭다운 외부 터치 시 닫기
-  useEffect(() => {
-    const handlePressOutside = () => {
-      if (isDropdownOpen) {
-        setIsDropdownOpen(false);
-      }
-    };
-
-    return () => {
-      // cleanup은 필요 없음
-    };
-  }, [isDropdownOpen]);
 
   const animatedMarginTop = useAnimatedStyle(() => {
     const margin = interpolate(

@@ -2,7 +2,8 @@
 // 공지 목록, 읽음 상태, 페이지네이션 관리
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNoticeRepository, useUserRepository } from '../../di';
+import { useNoticeRepository } from '../../di';
+import { useUserRepository } from '@/features/user';
 import { Notice, ReadStatusMap } from '../../repositories/interfaces/INoticeRepository';
 import { useAuth } from '../auth';
 

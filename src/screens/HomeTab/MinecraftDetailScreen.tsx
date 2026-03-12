@@ -10,18 +10,18 @@
 // 별도의 시스템으로, Spring 마이그레이션 대상이 아닙니다.
 // (마인크래프트 서버 플러그인이 RTDB에 직접 데이터를 쓰는 구조)
 
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image, Clipboard, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getDatabase, ref, onValue } from '@react-native-firebase/database';
+import { useUserRepository } from '@/features/user';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { MinecraftServerStatus, MinecraftWhitelistPlayer } from '../../types/minecraft';
 import { useScreenView } from '../../hooks/useScreenView';
-import { useUserRepository } from '../../di/useRepository';
 
 type PlayerWithMeta = MinecraftWhitelistPlayer & {
   addedByDisplayName?: string;
@@ -31,7 +31,7 @@ export const MinecraftDetailScreen = () => {
   useScreenView();
   const navigation = useNavigation();
   const userRepository = useUserRepository();
-  const [whitelistEnabled, setWhitelistEnabled] = useState<boolean | null>(null);
+  const [, setWhitelistEnabled] = useState<boolean | null>(null);
   const [players, setPlayers] = useState<PlayerWithMeta[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
   const [serverStatus, setServerStatus] = useState<MinecraftServerStatus | null>(null);
@@ -1011,4 +1011,3 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
 });
-
