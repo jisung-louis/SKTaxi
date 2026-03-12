@@ -6,8 +6,8 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `af5ac5f`
-- 현재 상태: `Phase 8 verifier 3차 후속 수정 완료`
+- 현재 기준 runtime commit: `3332986`
+- 현재 상태: `Phase 8 verifier 4차 후속 수정 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
@@ -129,6 +129,9 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - Phase 8 verifier 후속 수정으로 `MonthCalendar`, `WeekCalendar`, `CafeteriaDetailScreen`, `TimetableShareModal`, `useCourseSearch` 의 scoped eslint error를 제거했다.
 - Phase 8 verifier 2차 후속 수정으로 campus/timetable verifier 범위 unused-var error를 제거했고, auth legal-doc active import는 settings public API로 정리했다. verifier 범위 기준 scoped eslint는 다시 `0 errors` 상태다.
 - Phase 8 verifier 3차 후속 수정으로 `src/features/auth/services/authSessionService.ts` 는 더 이상 `@/app/bootstrap` 에서 앱 버전을 읽지 않고 `features/settings` public API를 사용한다. active feature의 `auth -> app/*` 역참조는 이 범위에서 제거되었다.
+- Phase 8 verifier 4차 후속 수정으로 `src/navigations/MainNavigator.tsx` 는 더 이상 `@react-native-firebase/messaging` 와 `AppState` 를 직접 소유하지 않는다. push permission check/request/recheck 는 `src/app/bootstrap/useNotificationPermissionBubble.ts` 와 `src/shared/lib/firebase/notificationPermission.ts` 로 이동했고, navigator 는 bubble 렌더링만 유지한다.
+- Phase 8 verifier 4차 후속 수정으로 `src/features/settings/screens/SettingScreen.tsx` 의 Crashlytics direct import가 제거되었다. 수동 crash test는 `src/features/settings/services/settingsDiagnosticsService.ts` 와 `src/shared/lib/firebase/crashlytics.ts` 를 통해서만 호출한다.
+- Phase 8 verifier 4차 후속 수정으로 `src/features/home/screens/HomeScreen.tsx`, `src/features/home/components/NoticeSection.tsx`, `src/features/minecraft/components/MinecraftSection.tsx`, `src/features/taxi/components/TaxiHomeSection.tsx` 는 더 이상 `src/navigations/types.ts` shim을 app navigation 타입 source로 사용하지 않는다. 홈 composition layer가 section navigation callback을 내려주고, active feature section은 callback prop만 소비한다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
