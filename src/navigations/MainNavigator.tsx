@@ -3,6 +3,10 @@ import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@reac
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
+  AcademicCalendarDetailScreen,
+  CafeteriaDetailScreen,
+} from '@/features/campus';
+import {
   BoardDetailScreen,
   BoardEditScreen,
   BoardScreen,
@@ -44,8 +48,6 @@ import { AppNoticeDetailScreen } from '../screens/HomeTab/SettingScreen/AppNotic
 import { InquiriesScreen } from '../screens/HomeTab/SettingScreen/InquiriesScreen';
 import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScreen';
 import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
-import { CafeteriaDetailScreen } from '../screens/HomeTab/CafeteriaDetailScreen';
-import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalendarDetailScreen';
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
 import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
 import { COLORS } from '../constants/colors';

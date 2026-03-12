@@ -4,6 +4,10 @@
 import React, { useMemo, type ReactNode } from 'react';
 
 import {
+  FirebaseAcademicRepository,
+  FirebaseCafeteriaRepository,
+} from '@/features/campus';
+import {
   FirebaseBoardRepository,
 } from '@/features/board';
 import { FirebaseChatRepository } from '@/features/chat/data/repositories/FirebaseChatRepository';
@@ -18,8 +22,6 @@ import {
 import { FirebaseUserRepository } from '@/features/user';
 import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
 import { FirestoreAppNoticeRepository } from '../repositories/firestore/FirestoreAppNoticeRepository';
-import { FirestoreCafeteriaRepository } from '../repositories/firestore/FirestoreCafeteriaRepository';
-import { FirestoreAcademicRepository } from '../repositories/firestore/FirestoreAcademicRepository';
 import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
 import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
@@ -51,8 +53,8 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       courseRepository: new FirebaseCourseRepository(),
       notificationRepository: new FirestoreNotificationRepository(),
       appNoticeRepository: new FirestoreAppNoticeRepository(),
-      cafeteriaRepository: new FirestoreCafeteriaRepository(),
-      academicRepository: new FirestoreAcademicRepository(),
+      cafeteriaRepository: new FirebaseCafeteriaRepository(),
+      academicRepository: new FirebaseAcademicRepository(),
       inquiryRepository: new FirestoreInquiryRepository(),
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirebaseTimetableRepository(),

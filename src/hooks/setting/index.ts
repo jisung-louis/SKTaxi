@@ -9,8 +9,8 @@ export type { UseAppNoticeResult } from './useAppNotice';
 export { useSubmitInquiry } from './useSubmitInquiry';
 export type { InquiryData, UseSubmitInquiryResult } from './useSubmitInquiry';
 
-export { useCafeteriaMenu } from './useCafeteriaMenu';
-export type { UseCafeteriaMenuResult } from './useCafeteriaMenu';
+export { useCafeteriaMenu } from '@/features/campus';
+export type { UseCafeteriaMenuResult } from '@/features/campus';
 
-export { useAcademicSchedules } from './useAcademicSchedules';
-export type { UseAcademicSchedulesResult } from './useAcademicSchedules';
+export { useAcademicSchedules } from '@/features/campus';
+export type { UseAcademicSchedulesResult } from '@/features/campus';
