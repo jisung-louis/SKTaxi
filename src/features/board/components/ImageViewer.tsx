@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -30,9 +30,21 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
   initialIndex = 0,
   onClose,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const getSafeIndex = useCallback(
+    (index: number) => {
+      if (images.length === 0) {
+        return 0;
+      }
+
+      return Math.min(Math.max(index, 0), images.length - 1);
+    },
+    [images.length],
+  );
+  const [currentIndex, setCurrentIndex] = useState(() => getSafeIndex(initialIndex));
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-  const [loadingMap, setLoadingMap] = useState<Record<number, boolean>>({ [initialIndex]: true });
+  const [loadingMap, setLoadingMap] = useState<Record<number, boolean>>({
+    [getSafeIndex(initialIndex)]: true,
+  });
   const flatListRef = useRef<FlatList>(null);
 
   const hasImages = images && images.length > 0;
@@ -41,23 +53,39 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
   const itemGap = 16;
   const itemWidth = screenWidth - containerPadding * 2;
 
-  const getImageDimensions = (image: BoardImage) => {
-    const aspectRatio = image.width / image.height;
-    const maxWidth = itemWidth;
-    const maxHeight = screenHeight * 0.8;
+  const getImageDimensions = useCallback(
+    (image: BoardImage) => {
+      const aspectRatio = image.width / image.height;
+      const maxWidth = itemWidth;
+      const maxHeight = screenHeight * 0.8;
 
-    let displayWidth = maxWidth;
-    let displayHeight = maxWidth / aspectRatio;
+      let displayWidth = maxWidth;
+      let displayHeight = maxWidth / aspectRatio;
 
-    if (displayHeight > maxHeight) {
-      displayHeight = maxHeight;
-      displayWidth = maxHeight * aspectRatio;
-    }
+      if (displayHeight > maxHeight) {
+        displayHeight = maxHeight;
+        displayWidth = maxHeight * aspectRatio;
+      }
 
-    return { width: displayWidth, height: displayHeight };
-  };
+      return { width: displayWidth, height: displayHeight };
+    },
+    [itemWidth, screenHeight],
+  );
 
   const imageDimensions = currentImage ? getImageDimensions(currentImage) : { width: itemWidth, height: screenHeight * 0.6 };
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    const nextIndex = getSafeIndex(initialIndex);
+    setCurrentIndex(nextIndex);
+    setLoadingMap((prev) => ({
+      ...prev,
+      [nextIndex]: prev[nextIndex] ?? true,
+    }));
+  }, [getSafeIndex, initialIndex, visible]);
 
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems && viewableItems.length > 0) {
@@ -74,11 +102,22 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
     { length: itemWidth + itemGap, offset: (itemWidth + itemGap) * index, index }
   ), [itemWidth, itemGap]);
 
+  const handleModalShow = useCallback(() => {
+    if (!visible || !hasImages) {
+      return;
+    }
+
+    const nextIndex = getSafeIndex(initialIndex);
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: false });
+    });
+  }, [getSafeIndex, hasImages, initialIndex, visible]);
+
   const renderItem = useCallback(({ item, index }: { item: BoardImage; index: number }) => {
     const dims = getImageDimensions(item);
     const isLoading = loadingMap[index];
     return (
-      <View style={{ width: itemWidth, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={[styles.imageItem, { width: itemWidth }]}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           maximumZoomScale={3}
@@ -102,7 +141,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
         </ScrollView>
       </View>
     );
-  }, [screenWidth, loadingMap]);
+  }, [getImageDimensions, itemWidth, loadingMap]);
 
   return (
     <Modal
@@ -110,6 +149,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      onShow={handleModalShow}
     >
       <View style={styles.container}>
         <View style={styles.header}>
@@ -135,14 +175,14 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({
               snapToInterval={itemWidth + itemGap}
               snapToAlignment="start"
               decelerationRate="fast"
-              initialScrollIndex={initialIndex}
+              initialScrollIndex={getSafeIndex(initialIndex)}
               getItemLayout={getItemLayout}
               showsHorizontalScrollIndicator={false}
               onViewableItemsChanged={onViewableItemsChanged}
               viewabilityConfig={viewabilityConfig}
             />
           ) : (
-            <View style={{ width: screenWidth, height: imageDimensions.height, justifyContent: 'center', alignItems: 'center' }} />
+            <View style={[styles.emptyState, { width: screenWidth, height: imageDimensions.height }]} />
           )}
 
           {hasImages && images.length > 1 && (
@@ -238,6 +278,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  imageItem: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollContent: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -252,6 +296,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyState: {
     justifyContent: 'center',
     alignItems: 'center',
   },
