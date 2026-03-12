@@ -1,13 +1,13 @@
 // SKTaxi: Board Repository Mock 구현체
 // 테스트 및 개발용 Mock 데이터 제공
 
+import type { PaginatedResult } from '@/shared/types/pagination';
 import { BoardPost, BoardComment, BoardImage } from '../../types/board';
 import {
   IBoardRepository,
   BoardFilterOptions,
   CommentTreeNode,
 } from '../interfaces/IBoardRepository';
-import { PaginatedResult } from '../interfaces/IChatRepository';
 import { Unsubscribe, SubscriptionCallbacks } from '../interfaces/IPartyRepository';
 
 /**
@@ -237,7 +237,7 @@ export class MockBoardRepository implements IBoardRepository {
     }
   }
 
-  async uploadImage(uri: string, postId?: string): Promise<BoardImage> {
+  async uploadImage(uri: string, _postId?: string): Promise<BoardImage> {
     return {
       id: `img-${Date.now()}`,
       url: uri,

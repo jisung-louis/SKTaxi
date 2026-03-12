@@ -34,6 +34,7 @@ import {
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getStorage, ref } from '@react-native-firebase/storage';
+import type { PaginatedResult } from '@/shared/types/pagination';
 
 import { BoardPost, BoardComment, BoardImage } from '../../types/board';
 import {
@@ -41,7 +42,6 @@ import {
   BoardFilterOptions,
   CommentTreeNode,
 } from '../interfaces/IBoardRepository';
-import { PaginatedResult } from '../interfaces/IChatRepository';
 import { Unsubscribe, SubscriptionCallbacks } from '../interfaces/IPartyRepository';
 
 /**
@@ -393,7 +393,7 @@ export class FirestoreBoardRepository implements IBoardRepository {
       where('isDeleted', '==', false)
     );
     const allSnapshot = await getCountFromServer(allQuery);
-    counts['all'] = allSnapshot.data().count;
+    counts.all = allSnapshot.data().count;
 
     // 각 카테고리별 게시물 수
     for (const categoryId of categories) {

@@ -1,6 +1,7 @@
 // SKTaxi: Notice Repository Mock 구현체
 // 테스트 및 개발용 Mock 데이터 제공
 
+import type { PaginatedResult } from '@/shared/types/pagination';
 import { Comment, CommentFormData } from '../../types/comment';
 import {
   INoticeRepository,
@@ -8,7 +9,6 @@ import {
   ReadStatusMap,
   NoticeCommentTreeNode,
 } from '../interfaces/INoticeRepository';
-import { PaginatedResult } from '../interfaces/IChatRepository';
 import { Unsubscribe, SubscriptionCallbacks } from '../interfaces/IPartyRepository';
 
 /**

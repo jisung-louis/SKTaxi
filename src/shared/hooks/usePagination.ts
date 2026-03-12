@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
-import type { PaginatedResult } from '@/repositories/interfaces/IChatRepository';
+import type { PaginatedResult } from '@/shared/types/pagination';
 
 export interface PaginationState<T> {
   items: T[];

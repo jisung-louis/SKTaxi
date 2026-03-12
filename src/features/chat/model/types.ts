@@ -11,11 +11,7 @@ export interface ChatRoomFilter {
   department?: string;
 }
 
-export interface PaginatedResult<T> {
-  data: T[];
-  hasMore: boolean;
-  cursor: unknown;
-}
+export type { PaginatedResult } from '@/shared/types/pagination';
 
 export interface MessageSubscriptionCallbacks {
   onNewMessages: (messages: ChatMessage[]) => void;

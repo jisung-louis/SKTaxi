@@ -1,8 +1,8 @@
 // SKTaxi: Notice Repository 인터페이스 - DIP 원칙 적용
 // 공지사항 관련 데이터 접근 추상화
 
+import type { PaginatedResult } from '@/shared/types/pagination';
 import { Unsubscribe, SubscriptionCallbacks } from './IPartyRepository';
-import { PaginatedResult } from './IChatRepository';
 import { Comment, CommentFormData } from '../../types/comment';
 
 /**

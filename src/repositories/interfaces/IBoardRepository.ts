@@ -2,8 +2,8 @@
 // 게시판 게시물 및 댓글 관련 데이터 접근 추상화
 
 import { BoardPost, BoardComment, BoardImage } from '../../types/board';
+import type { PaginatedResult } from '@/shared/types/pagination';
 import { Unsubscribe, SubscriptionCallbacks } from './IPartyRepository';
-import { PaginatedResult } from './IChatRepository';
 
 /**
  * 게시물 정렬 옵션

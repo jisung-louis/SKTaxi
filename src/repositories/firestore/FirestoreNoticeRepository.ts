@@ -34,6 +34,7 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
+import type { PaginatedResult } from '@/shared/types/pagination';
 
 import { Comment, CommentFormData } from '../../types/comment';
 import {
@@ -42,7 +43,6 @@ import {
   ReadStatusMap,
   NoticeCommentTreeNode,
 } from '../interfaces/INoticeRepository';
-import { PaginatedResult } from '../interfaces/IChatRepository';
 import { Unsubscribe, SubscriptionCallbacks } from '../interfaces/IPartyRepository';
 
 /**
