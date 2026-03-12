@@ -14,6 +14,7 @@ import {
 } from '@/features/board';
 import {
   AccountModificationScreen,
+  NotificationScreen,
   NotificationSettingsScreen,
   ProfileEditScreen,
   ProfileScreen,
@@ -53,7 +54,6 @@ import {
 import { TimetableDetailScreen } from '@/features/timetable';
 import { HomeScreen } from '@/features/home';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
-import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';

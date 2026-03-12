@@ -23,8 +23,10 @@ import {
   FirebaseCourseRepository,
   FirebaseTimetableRepository,
 } from '@/features/timetable';
-import { FirebaseUserRepository } from '@/features/user';
-import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
+import {
+  FirebaseNotificationRepository,
+  FirebaseUserRepository,
+} from '@/features/user';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
 import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 
@@ -53,7 +55,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       boardRepository: new FirebaseBoardRepository(),
       noticeRepository: new FirebaseNoticeRepository(),
       courseRepository: new FirebaseCourseRepository(),
-      notificationRepository: new FirestoreNotificationRepository(),
+      notificationRepository: new FirebaseNotificationRepository(),
       appNoticeRepository: new FirebaseAppNoticeRepository(),
       cafeteriaRepository: new FirebaseCafeteriaRepository(),
       academicRepository: new FirebaseAcademicRepository(),

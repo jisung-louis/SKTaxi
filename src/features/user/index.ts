@@ -1,11 +1,21 @@
 export { NotificationSettingItem } from './components/NotificationSettingItem';
 
 export { FirebaseUserRepository } from './data/repositories/FirebaseUserRepository';
+export {
+  FirebaseNotificationRepository,
+  FirestoreNotificationRepository,
+} from './data/repositories/FirebaseNotificationRepository';
+export { MockNotificationRepository } from './data/repositories/MockNotificationRepository';
+export type {
+  INotificationRepository,
+  Notification,
+} from './data/repositories/INotificationRepository';
 export type {
   IUserRepository,
   SubscriptionCallbacks,
   Unsubscribe,
 } from './data/repositories/IUserRepository';
+export type { UseInAppNotificationsResult } from './hooks/useInAppNotifications';
 
 export { useUserRepository } from './hooks/useUserRepository';
 export {
@@ -23,6 +33,7 @@ export type {
   NotificationSettings,
   UseNotificationSettingsResult,
 } from './hooks/useNotificationSettings';
+export { useInAppNotifications } from './hooks/useInAppNotifications';
 export { useUserDisplayNames } from './hooks/useUserDisplayNames';
 export type { UseUserDisplayNamesResult } from './hooks/useUserDisplayNames';
 export { useUserBookmarks } from './hooks/useUserBookmarks';
@@ -41,6 +52,7 @@ export type {
 export { ProfileScreen } from './screens/ProfileScreen';
 export { ProfileEditScreen } from './screens/ProfileEditScreen';
 export { AccountModificationScreen } from './screens/AccountModificationScreen';
+export { NotificationScreen } from './screens/NotificationScreen';
 export {
   NotificationSettingsScreen,
   NotificationSettingsScreen as NofiticationSettingScreen,

@@ -22,11 +22,11 @@ export type {
   RealtimePaginationState,
 } from './usePagination';
 
-export { useNotifications } from './useNotifications';
-export type { UseNotificationsResult } from './useNotifications';
-
-// Notification 타입 re-export
-export type { Notification } from '../../repositories/interfaces/INotificationRepository';
+export { useInAppNotifications as useNotifications } from '@/features/user';
+export type {
+  Notification,
+  UseInAppNotificationsResult as UseNotificationsResult,
+} from '@/features/user';
 
 export { usePermissionStatus } from './usePermissionStatus';
 export type { PermissionStatus } from './usePermissionStatus';

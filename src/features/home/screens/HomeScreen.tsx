@@ -17,7 +17,7 @@ import {
 } from '@/features/campus';
 import { MinecraftSection } from '@/features/minecraft';
 import { TimetableSection } from '@/features/timetable';
-import { useNotifications } from '@/hooks/common';
+import { useInAppNotifications } from '@/features/user';
 import { useScreenView } from '@/hooks/useScreenView';
 import type { MainTabParamList } from '@/navigations/types';
 
@@ -26,7 +26,7 @@ import { TaxiSection } from '../components/TaxiSection';
 
 export const HomeScreen = () => {
   useScreenView();
-  const { unreadCount } = useNotifications();
+  const { unreadCount } = useInAppNotifications();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const isFocused = useIsFocused();
@@ -81,7 +81,7 @@ export const HomeScreen = () => {
           contentContainerStyle={{
             paddingTop: 20,
             paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20,
-            paddingHorizontal: 4
+            paddingHorizontal: 4,
           }}
           showsVerticalScrollIndicator={false}
         >
