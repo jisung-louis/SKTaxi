@@ -10,7 +10,7 @@ import {
 import {
   FirebaseBoardRepository,
 } from '@/features/board';
-import { FirebaseChatRepository } from '@/features/chat/data/repositories/FirebaseChatRepository';
+import { FirebaseChatRepository } from '@/features/chat';
 import { FirebaseNoticeRepository } from '@/features/notice';
 import {
   FirebaseAppNoticeRepository,

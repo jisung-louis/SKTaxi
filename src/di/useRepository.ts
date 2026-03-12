@@ -2,25 +2,25 @@
 // 컴포넌트에서 Repository에 쉽게 접근할 수 있는 훅 제공
 
 import { useContext } from 'react';
-import type { IBoardRepository } from '@/features/board';
-import type { IChatRepository } from '@/features/chat/data/repositories/IChatRepository';
-import type { INoticeRepository } from '@/features/notice';
-import type { IPartyRepository } from '@/features/taxi';
 
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import type {
+  IAcademicRepository,
   IAppNoticeRepository,
   IAuthRepository,
-  IAcademicRepository,
+  IBoardRepository,
   ICafeteriaRepository,
+  IChatRepository,
   ICourseRepository,
   IInquiryRepository,
   INotificationActionRepository,
   INotificationRepository,
+  INoticeRepository,
+  IPartyRepository,
   IStorageRepository,
   ITimetableRepository,
   IUserRepository,
-} from '../repositories/interfaces';
+} from './repositoryContracts';
 
 /**
  * 전체 Repository 컨테이너 접근 훅
