@@ -344,6 +344,14 @@ feature 내부 상태는 해당 feature provider/hook이 소유한다.
 - 같은 feature의 old/new 구조를 동시에 수정해서 로직을 분산시키면 안 된다.
 - phase 경계가 바뀌거나 source of truth가 전환되면 `docs/refactor/migration-status.md` 를 함께 갱신한다.
 
+### 과도기 legacy 연결 규칙
+
+- 아직 migration을 시작하지 않은 다른 feature/책임의 legacy 구현을 새 구조에서 임시로 재사용하는 것은 허용한다.
+- 단, 이미 migration을 시작한 같은 feature의 legacy 구현을 새 구조에서 계속 직접 재사용하면 안 된다.
+- legacy 재사용이 필요하면 가능한 한 새 구조 안의 단일 adapter/runtime/facade 파일 한 곳에서만 연결한다.
+- legacy import를 `app/shared/features` 여러 파일에 퍼뜨리면 안 된다.
+- 해당 책임의 phase가 시작되면, 임시 legacy 연결은 새 구조의 hook/service/provider로 교체해야 한다.
+
 ## 14. 최종 완료 판정 체크리스트
 
 아래 항목이 모두 충족되어야 최종 완료로 본다.
