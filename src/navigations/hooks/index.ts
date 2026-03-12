@@ -7,11 +7,8 @@ export type {
   UseForegroundNotificationResult,
 } from './useForegroundNotification';
 
-export { useJoinRequestModal } from './useJoinRequestModal';
-export type {
-  JoinRequestData,
-  UseJoinRequestModalResult,
-} from './useJoinRequestModal';
+export { useJoinRequestModal } from '@/features/taxi';
+export type { JoinRequestData, UseJoinRequestModalResult } from '@/features/taxi';
 
 export { useFcmSetup } from './useFcmSetup';
 export type { UseFcmSetupParams } from './useFcmSetup';

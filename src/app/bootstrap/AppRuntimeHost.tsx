@@ -2,12 +2,10 @@ import React from 'react';
 import { Alert } from 'react-native';
 
 import { useAuthEntryGuard } from '@/app/guards';
+import { useJoinRequestModal } from '@/features/taxi';
 import { ForegroundNotification } from '@/components/common/ForegroundNotification';
 import { JoinRequestModal } from '@/components/common/JoinRequestModal';
-import {
-  useForegroundNotification,
-  useJoinRequestModal,
-} from '@/navigations/hooks';
+import { useForegroundNotification } from '@/navigations/hooks';
 
 import { useRegisterPushHandlers } from './registerPushHandlers';
 

@@ -1,3 +1,5 @@
-export { TaxiPermissionPrompt } from './TaxiPermissionPrompt';
-export { TaxiTimeRemaining } from './TaxiTimeRemaining';
-export { PartyList } from './PartyList';
+export {
+  PartyList,
+  TaxiPermissionPrompt,
+  TaxiTimeRemaining,
+} from '@/features/taxi';

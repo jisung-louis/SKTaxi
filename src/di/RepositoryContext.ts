@@ -2,8 +2,8 @@
 // React Context를 사용하여 Repository 인스턴스를 앱 전체에 제공
 
 import { createContext } from 'react';
+import { IPartyRepository } from '@/features/taxi';
 import {
-  IPartyRepository,
   IChatRepository,
   IUserRepository,
   IBoardRepository,
@@ -17,6 +17,7 @@ import {
   IStorageRepository,
   ITimetableRepository,
   IAuthRepository,
+  INotificationActionRepository,
 } from '../repositories/interfaces';
 
 /**
@@ -37,6 +38,7 @@ export interface RepositoryContainer {
   storageRepository: IStorageRepository;
   timetableRepository: ITimetableRepository;
   authRepository: IAuthRepository;
+  notificationActionRepository: INotificationActionRepository;
 }
 
 /**

@@ -8,9 +8,18 @@ import {
   ProfileEditScreen,
   ProfileScreen,
 } from '@/features/user';
+import {
+  AcceptancePendingScreen,
+  ChatScreen,
+  JoinRequestProvider,
+  MapSearchScreen,
+  RecruitScreen,
+  TaxiScreen,
+  useJoinRequestCount,
+  useMyParty,
+} from '@/features/taxi';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
-import { TaxiScreen } from '../screens/TaxiScreen';
 import { BoardScreen } from '../screens/BoardScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { SettingScreen } from '../screens/HomeTab/SettingScreen';
@@ -25,10 +34,6 @@ import { TimetableDetailScreen } from '../screens/HomeTab/TimetableDetailScreen'
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
 import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
 import { NoticeScreen } from '../screens/NoticeScreen';
-import { AcceptancePendingScreen } from '../screens/TaxiTab/AcceptancePendingScreen';
-import { RecruitScreen } from '../screens/TaxiTab/RecruitScreen';
-import { ChatScreen } from '../screens/TaxiTab/ChatScreen';
-import { MapSearchScreen } from '../screens/TaxiTab/MapSearchScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';
@@ -38,7 +43,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
 import { Dot } from '../components/common/Dot';
-import { useJoinRequestCount, JoinRequestProvider } from '../contexts/JoinRequestContext';
 import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
 import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
 import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
@@ -46,7 +50,6 @@ import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
 import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
 import { ChatListScreen } from '../screens/ChatListScreen';
 import { ChatDetailScreen } from '../screens/ChatTab/ChatDetailScreen';
-import { useMyParty } from '../hooks/party';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 import { useChatRooms } from '../hooks/chat';
 import { useAuth } from '../hooks/auth';

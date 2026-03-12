@@ -4,9 +4,9 @@
 import React, { useMemo, ReactNode } from 'react';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
+import { FirebasePartyRepository } from '@/features/taxi';
 import { FirebaseUserRepository } from '@/features/user';
 
-import { FirestorePartyRepository } from '../repositories/firestore/FirestorePartyRepository';
 import { FirestoreChatRepository } from '../repositories/firestore/FirestoreChatRepository';
 import { FirestoreBoardRepository } from '../repositories/firestore/FirestoreBoardRepository';
 import { FirestoreNoticeRepository } from '../repositories/firestore/FirestoreNoticeRepository';
@@ -18,6 +18,7 @@ import { FirestoreAcademicRepository } from '../repositories/firestore/Firestore
 import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
 import { FirestoreTimetableRepository } from '../repositories/firestore/FirestoreTimetableRepository';
+import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
@@ -38,7 +39,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
   const repositories = useMemo<RepositoryContainer>(() => {
     // 기본 Firestore 구현체
     const defaultRepositories: RepositoryContainer = {
-      partyRepository: new FirestorePartyRepository(),
+      partyRepository: new FirebasePartyRepository(),
       chatRepository: new FirestoreChatRepository(),
       userRepository: new FirebaseUserRepository(),
       boardRepository: new FirestoreBoardRepository(),
@@ -52,6 +53,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirestoreTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),
+      notificationActionRepository: new FirestoreNotificationActionRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

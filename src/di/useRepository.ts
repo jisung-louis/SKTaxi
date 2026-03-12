@@ -3,7 +3,23 @@
 
 import { useContext } from 'react';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
-import { IPartyRepository, IChatRepository, IUserRepository, IBoardRepository, INoticeRepository, ICourseRepository, INotificationRepository, IAppNoticeRepository, ICafeteriaRepository, IAcademicRepository, IInquiryRepository, IStorageRepository, ITimetableRepository, IAuthRepository } from '../repositories/interfaces';
+import { IPartyRepository } from '@/features/taxi';
+import {
+  IAppNoticeRepository,
+  IAuthRepository,
+  IBoardRepository,
+  IAcademicRepository,
+  ICafeteriaRepository,
+  IChatRepository,
+  ICourseRepository,
+  IInquiryRepository,
+  INotificationActionRepository,
+  INotificationRepository,
+  INoticeRepository,
+  IStorageRepository,
+  ITimetableRepository,
+  IUserRepository,
+} from '../repositories/interfaces';
 
 /**
  * 전체 Repository 컨테이너 접근 훅
@@ -127,6 +143,14 @@ export function useTimetableRepository(): ITimetableRepository {
 export function useAuthRepository(): IAuthRepository {
   const { authRepository } = useRepositories();
   return authRepository;
+}
+
+/**
+ * Notification action Repository 접근 훅
+ */
+export function useNotificationActionRepository(): INotificationActionRepository {
+  const { notificationActionRepository } = useRepositories();
+  return notificationActionRepository;
 }
 
 /**

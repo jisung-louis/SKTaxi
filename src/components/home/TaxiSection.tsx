@@ -2,12 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useAuth } from '@/features/auth';
+import {
+  useJoinRequest,
+  useMyParty,
+  useParties,
+  usePendingJoinRequest,
+} from '@/features/taxi';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { MainTabParamList } from '../../navigations/types';
-import { useParties, useMyParty, usePendingJoinRequest, useJoinRequest } from '../../hooks/party';
-import { useAuth } from '../../hooks/auth';
 import { formatKoreanAmPmTime } from '../../utils/datetime';
 import Button from '../common/Button';
 import { logEvent } from '../../lib/analytics';

@@ -20,18 +20,15 @@ export { useChatRooms } from './useChatRooms';
 export type { ChatRoomCategory } from './useChatRooms';
 
 // === 파티 채팅 훅 (chats 컬렉션 - 택시 동승) ===
-export { useMessages } from './useMessages';
-export type { UseMessagesResult } from './useMessages';
-
-// === 유틸리티 함수 re-export (utils/ 폴더에서) ===
-// 파티 채팅 유틸리티
 export {
   sendMessage,
   sendSystemMessage,
   sendAccountMessage,
   sendArrivedMessage,
   sendEndMessage,
-} from '../../utils/partyMessageUtils';
+  usePartyMessages as useMessages,
+} from '@/features/taxi';
+export type { UseMessagesResult } from '@/features/taxi';
 
 // 채팅방 유틸리티
 export {
@@ -43,4 +40,8 @@ export {
 } from '../../utils/chatUtils';
 
 // 타입 re-export
-export type { PartyMessage, AccountMessageData, ArrivalMessageData } from '../../repositories/interfaces/IPartyRepository';
+export type {
+  AccountMessageData,
+  ArrivalMessageData,
+  PartyMessage,
+} from '@/features/taxi';
