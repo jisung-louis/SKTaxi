@@ -5,9 +5,9 @@ import { useAuthEntryGuard } from '@/app/guards';
 import { useJoinRequestModal } from '@/features/taxi';
 import { ForegroundNotification } from '@/components/common/ForegroundNotification';
 import { JoinRequestModal } from '@/components/common/JoinRequestModal';
-import { useForegroundNotification } from '@/navigations/hooks';
 
 import { useRegisterPushHandlers } from './registerPushHandlers';
+import { useForegroundNotificationRuntime } from './useForegroundNotificationRuntime';
 
 export const AppRuntimeHost = () => {
   const {
@@ -31,7 +31,7 @@ export const AppRuntimeHost = () => {
     handleChatRoomMessageReceived,
     getCurrentScreen,
     getCurrentChatRoomId,
-  } = useForegroundNotification();
+  } = useForegroundNotificationRuntime();
 
   const {
     joinData,

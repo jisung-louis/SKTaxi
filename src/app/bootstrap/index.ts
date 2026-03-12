@@ -3,4 +3,12 @@ export { checkVersionUpdate, getCurrentAppVersion, getMinimumRequiredVersion } f
 export type { VersionModalConfig } from './versionCheck';
 export { useRegisterPushHandlers } from './registerPushHandlers';
 export type { RegisterPushHandlersParams } from './registerPushHandlers';
+export {
+  useForegroundNotificationRuntime,
+} from './useForegroundNotificationRuntime';
+export type {
+  ForegroundNotificationState,
+  ForegroundNotificationType,
+  UseForegroundNotificationRuntimeResult,
+} from './useForegroundNotificationRuntime';
 export { useAppBootstrap } from './useAppBootstrap';
