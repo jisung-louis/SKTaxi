@@ -6,8 +6,8 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `abbeb15`
-- 현재 상태: `Phase 8 verifier 6차 후속 수정 완료`
+- 현재 기준 runtime commit: `2cc59f3`
+- 현재 상태: `Phase 8 verifier 7차 후속 수정 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
@@ -78,7 +78,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `features/taxi` 는 계속 파티 채팅만 소유한다. 공개 채팅 책임은 다시 taxi로 가져오지 않는다.
 - `RepositoryProvider` 의 chat repository 바인딩은 이제 `src/features/chat/data/repositories/FirebaseChatRepository.ts` 를 사용한다.
 - `MainNavigator` 의 공개 채팅 unread 계산/room state 구독 책임은 `src/features/chat/hooks/useChatTabUnreadIndicator.ts` 뒤로 이동했다.
-- `src/navigations/hooks/useForegroundNotification.ts` 의 공개 채팅 room lookup/foreground banner payload/ChatDetail 이동 로직은 `features/chat` public API를 통해 처리한다.
+- 공개 채팅 room lookup/foreground banner payload/ChatDetail 이동 로직의 active source of truth는 `src/app/bootstrap/useForegroundNotificationRuntime.ts` 이고, chat 관련 payload 해석과 navigation helper는 계속 `features/chat` public API를 사용한다.
 - `ChatDetailScreen` 의 공개 채팅 메시지 전송은 `src/features/chat/*` 가 소유하고, Minecraft game chat bridge/RTDB server status 접근은 `src/features/minecraft/index.ts` public API를 chat 내부 adapter가 감싼 형태로 분리되었다. active chat 경로는 더 이상 root legacy `src/lib/minecraftChat.ts` 에 직접 의존하지 않는다.
 - `src/features/chat/data/composition/chatRuntime.ts` 는 user feature internal path deep import를 제거하고 `src/features/user/index.ts` public API만 사용한다.
 - `ChatStackParamList` 는 `src/features/chat/model/navigation.ts` 로 이동했고, `src/app/navigation/types.ts` 는 chat feature public API를 소비한다. active chat feature는 더 이상 app/navigation 타입에 직접 결합되지 않는다.
@@ -90,7 +90,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - notice 전용 html renderer와 이미지/table 렌더링은 `src/features/notice/components/*` 로 이동했고, detail screen은 더 이상 root `components/htmlRender` / `lib/noticeViews` / `utils/linkConverter` 구현을 source of truth로 사용하지 않는다.
 - notice read status, unread banner 판단, joinedAt 기반 auto-read 처리, detail view count 증가는 `src/features/notice/model/*`, `src/features/notice/hooks/useNoticeReadState.ts`, `src/features/notice/services/noticeReadStateService.ts` 로 정리되었다.
 - `RepositoryProvider` 의 notice repository 바인딩은 이제 `src/features/notice/data/repositories/FirebaseNoticeRepository.ts` 를 사용한다.
-- `src/app/navigation/types.ts`, `src/navigations/MainNavigator.tsx`, 홈 `NoticeSection`, `src/navigations/hooks/useForegroundNotification.ts` 의 학교 공지 이동/foreground payload 처리는 notice feature public API를 사용하도록 정리되었다.
+- `src/app/navigation/types.ts`, `src/navigations/MainNavigator.tsx`, 홈 `NoticeSection`, `src/app/bootstrap/useForegroundNotificationRuntime.ts` 의 학교 공지 이동/foreground payload 처리는 notice feature public API를 사용하도록 정리되었다.
 - app notice는 이번 phase에서 settings legacy 소유로 유지한다. school notice와 app notice source of truth는 분리된 상태다.
 
 ## Phase 7 완료 메모
@@ -137,6 +137,8 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/lib/notifications.ts`, `src/lib/fcm.ts` 는 이제 legacy shim만 유지한다. root lib에는 Firebase Messaging/Auth SDK direct import나 `new FirestoreFcmRepository()` runtime path를 남기지 않는다.
 - Phase 8 verifier 5차 후속 수정으로 taxi navigation contract의 source of truth는 `src/features/taxi/model/navigation.ts` 로 이동했다. `src/app/navigation/types.ts` 와 `src/navigations/MainNavigator.tsx` 는 taxi feature public API를 소비하고, active taxi screen/hook/component는 더 이상 `@/app/navigation/types` 또는 `@/navigations/types` 를 타입 source로 사용하지 않는다.
 - Phase 8 verifier 6차 후속 수정으로 Minecraft realtime active facade는 `src/features/minecraft/services/minecraftRealtimeService.ts` 에 유지하되, `@react-native-firebase/database` direct import는 `src/features/minecraft/data/minecraftRealtimeDataSource.ts` 로 이동했다. active service는 이제 data adapter만 호출한다.
+- Phase 8 verifier 7차 후속 수정으로 foreground notification runtime의 active source of truth는 `src/app/bootstrap/useForegroundNotificationRuntime.ts` 로 이동했다. `AppRuntimeHost` 가 현재 화면 조회, foreground banner state, 클릭 분기 orchestration을 소유하고, legacy `src/navigations/hooks/useForegroundNotification.ts` 는 shim만 유지한다.
+- Phase 8 verifier 7차 후속 수정으로 auth permission onboarding의 active notification permission 경로는 `src/features/auth/hooks/usePermissionOnboardingStatus.ts` 와 `src/shared/lib/firebase/notificationPermission.ts` 조합으로 정리되었다. legacy `src/hooks/common/usePermissionStatus.ts` 는 shim만 유지하고 Firebase Messaging SDK direct import를 다시 소유하지 않는다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
