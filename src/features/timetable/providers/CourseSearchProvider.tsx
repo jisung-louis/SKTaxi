@@ -1,7 +1,17 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useRef, ReactNode } from 'react';
-import { useCourseRepository } from '@/di/useRepository';
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+
+import { RepositoryContext } from '@/di/RepositoryContext';
 
 import { Course } from '../model/types';
+import { FirebaseCourseRepository } from '../data/repositories/FirebaseCourseRepository';
 
 interface CourseSearchContextType {
   allCourses: Course[];
@@ -18,13 +28,17 @@ interface CourseSearchProviderProps {
   children: ReactNode;
 }
 
+const fallbackCourseRepository = new FirebaseCourseRepository();
+
 export const CourseSearchProvider: React.FC<CourseSearchProviderProps> = ({ children }) => {
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const loadedSemesterRef = useRef<string | null>(null);
-  const courseRepository = useCourseRepository();
+  const repositories = useContext(RepositoryContext);
+  const courseRepository =
+    repositories?.courseRepository ?? fallbackCourseRepository;
 
   // 전체 수업 데이터 로드
   const loadAllCourses = useCallback(async (semester: string) => {

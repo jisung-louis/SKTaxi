@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/constants/colors';
+import { DAY_CELL_HEIGHT } from '@/constants/constants';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
 import PageHeader from '@/components/common/PageHeader';
 import { SemesterDropdown } from '@/components/common/SemesterDropdown';
@@ -15,7 +16,10 @@ import { TimetableGrid } from '../components/TimetableGrid';
 import { TimetableShareModal } from '../components/TimetableShareModal';
 import { useTimetable } from '../hooks/useTimetable';
 import { Course } from '../model/types';
-import { generateSemesterOptions, getCurrentSemester } from '../services/timetableUtils';
+import {
+  generateSemesterOptions,
+  getCurrentSemester,
+} from '../services/timetableUtils';
 
 export const TimetableDetailScreen = () => {
   useScreenView();
@@ -24,7 +28,6 @@ export const TimetableDetailScreen = () => {
   const { courses, loading, error, addCourse, removeCourse } = useTimetable(selectedSemester);
   const [showEditBottomSheet, setShowEditBottomSheet] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const periods = generatePeriods();
   const semesterOptions = generateSemesterOptions();
 
   // addCourse와 courses를 ref로 래핑 → 안정적인 콜백 참조 유지
