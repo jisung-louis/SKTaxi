@@ -10,9 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSharedValue, withTiming, interpolate, Extrapolation, useAnimatedStyle } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
 
-import { TaxiStackParamList } from '@/app/navigation/types';
-
 import { getPartyTimeRemainingText } from '../model/selectors';
+import type { TaxiStackParamList } from '../model/navigation';
 import { useTaxiBottomSheet } from './useTaxiBottomSheet';
 import { usePartySelection } from './usePartySelection';
 import { useJoinRequestCount } from '../providers/JoinRequestProvider';

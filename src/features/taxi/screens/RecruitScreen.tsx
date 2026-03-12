@@ -6,7 +6,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '@/features/auth';
-import { TaxiStackParamList } from '@/app/navigation/types';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
@@ -21,6 +20,7 @@ import {
   DESTINATION_LOCATION,
   DESTINATION_OPTIONS,
 } from '../model/constants';
+import type { TaxiStackParamList } from '../model/navigation';
 import { usePartyRepository } from '../hooks/usePartyRepository';
 import { createTaxiParty } from '../services/partyCreationService';
 

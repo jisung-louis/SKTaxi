@@ -10,7 +10,6 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useUserDisplayNames } from '@/features/user';
 import { useAuth } from '@/features/auth';
-import { TaxiStackParamList } from '@/app/navigation/types';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { logEvent } from '@/shared/lib/analytics';
@@ -24,6 +23,7 @@ import { formatKoreanAmPmTime } from '@/utils/datetime';
 
 import { Party } from '../model/types';
 import { getDistanceMeters, getPartyCreatedAtMs } from '../model/selectors';
+import type { TaxiStackParamList } from '../model/navigation';
 import { useJoinRequest } from '../hooks/useJoinRequest';
 import { useMyParty } from '../hooks/useMyParty';
 import { usePendingJoinRequest } from '../hooks/usePendingJoinRequest';

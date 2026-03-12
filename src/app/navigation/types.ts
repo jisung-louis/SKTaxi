@@ -3,7 +3,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 import type { BoardStackParamList } from '@/features/board';
 import type { ChatStackParamList } from '@/features/chat';
 import type { NoticeStackParamList } from '@/features/notice';
-import { Party } from '@/types/party';
+import type { TaxiStackParamList } from '@/features/taxi';
 
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
@@ -20,17 +20,7 @@ export type MainTabParamList = {
   게시판: NavigatorScreenParams<BoardStackParamList>;
   채팅: NavigatorScreenParams<ChatStackParamList>;
 };
-
-export type TaxiStackParamList = {
-  TaxiMain: undefined;
-  AcceptancePending: { party: Party; requestId: string };
-  Recruit: undefined;
-  MapSearch: {
-    type: 'departure' | 'destination';
-    onLocationSelect: (location: { latitude: number; longitude: number; address: string }) => void;
-  };
-  Chat: { partyId: string };
-};
+export type { TaxiStackParamList } from '@/features/taxi';
 
 export type HomeStackParamList = {
   HomeMain: undefined;

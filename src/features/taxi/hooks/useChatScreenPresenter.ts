@@ -11,12 +11,12 @@ import {
   useAccountInfo,
   useUserDisplayNames,
 } from '@/features/user';
-import { TaxiStackParamList } from '@/app/navigation/types';
 import { useNotificationRepository } from '@/di/useRepository';
 import { logEvent } from '@/shared/lib/analytics';
 
 import { JoinRequest, SettlementData } from '../data/repositories/IPartyRepository';
 import { getPartyTitle } from '../model/selectors';
+import type { TaxiStackParamList } from '../model/navigation';
 import { acceptJoinRequest, declineJoinRequest } from '../services/joinRequestService';
 import {
   sendAccountMessage,

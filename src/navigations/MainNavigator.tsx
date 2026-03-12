@@ -48,13 +48,20 @@ import {
   MapSearchScreen,
   RecruitScreen,
   TaxiScreen,
+  type TaxiStackParamList,
   useJoinRequestCount,
   useMyParty,
 } from '@/features/taxi';
 import { TimetableDetailScreen } from '@/features/timetable';
 import { HomeScreen } from '@/features/home';
 import { useNotificationPermissionBubble } from '@/app/bootstrap/useNotificationPermissionBubble';
-import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
+import {
+  MainTabParamList,
+  HomeStackParamList,
+  NoticeStackParamList,
+  BoardStackParamList,
+  ChatStackParamList,
+} from './types';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import { Animated, View, Text } from 'react-native';

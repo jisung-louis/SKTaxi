@@ -5,7 +5,6 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useUserDisplayNames } from '@/features/user';
-import { TaxiStackParamList } from '@/app/navigation/types';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
@@ -13,6 +12,7 @@ import Button from '@/components/common/Button';
 import { BOTTOM_TAB_BAR_HEIGHT } from '@/constants/constants';
 import { formatKoreanAmPmTime } from '@/utils/datetime';
 
+import type { TaxiStackParamList } from '../model/navigation';
 import { useJoinRequestStatus } from '../hooks/useJoinRequestStatus';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;

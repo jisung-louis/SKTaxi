@@ -70,6 +70,7 @@ export {
   DESTINATION_LOCATION,
   DESTINATION_OPTIONS,
 } from './model/constants';
+export type { TaxiStackParamList } from './model/navigation';
 export type { Party } from './model/types';
 
 export { createTaxiParty } from './services/partyCreationService';
