@@ -1,5 +1,52 @@
-// Phase 1 shell entry point.
-// Phase 2: auth/profile/permission gating은 features/auth public API와 app guards로 위임.
-// TODO(Phase 4): join request modal 흐름을 features/taxi 쪽으로 이동.
-// TODO(Phase 5): foreground notification routing을 navigation 외부 service/public API로 이동.
-export { RootNavigator } from '@/navigations/RootNavigator';
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import { useAuthEntryGuard } from '@/app/guards';
+import {
+  CompleteProfileScreen,
+  PermissionOnboardingScreen,
+  TermsOfUseForAuthScreen,
+} from '@/features/auth';
+
+import { RootStackParamList } from './types';
+import { MainNavigator } from './MainNavigator';
+import { AuthNavigator } from './AuthNavigator';
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+export const RootNavigator = () => {
+  const {
+    authState: { loading },
+    guardResult: { route },
+  } = useAuthEntryGuard();
+
+  if (loading || route === 'loading') {
+    return null; // TODO: 로딩 화면 추가
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {route === 'auth' ? (
+        <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : route === 'completeProfile' ? (
+        <>
+          <Stack.Screen
+            name="CompleteProfile"
+            component={CompleteProfileScreen}
+          />
+          <Stack.Screen
+            name="TermsOfUseForAuth"
+            component={TermsOfUseForAuthScreen}
+          />
+        </>
+      ) : route === 'permissionOnboarding' ? (
+        <Stack.Screen
+          name="PermissionOnboarding"
+          component={PermissionOnboardingScreen}
+        />
+      ) : (
+        <Stack.Screen name="Main" component={MainNavigator} />
+      )}
+    </Stack.Navigator>
+  );
+};
