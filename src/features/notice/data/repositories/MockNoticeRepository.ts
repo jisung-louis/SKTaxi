@@ -3,6 +3,7 @@ import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
 import type {
   Comment,
   CommentFormData,
+  INoticeRepository,
   Notice,
   NoticeCommentTreeNode,
   NoticeListPage,
