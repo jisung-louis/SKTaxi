@@ -4,9 +4,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { useAuth } from '@/features/auth';
 import { useUserProfile } from '@/features/user';
-import type { ChatStackParamList } from '@/navigations/types';
 
 import type { ChatRoom, ChatRoomListItem } from '../model/types';
+import type { ChatStackParamList } from '../model/navigation';
 
 import { getChatRoomDisplayName } from '../services/chatRoomService';
 

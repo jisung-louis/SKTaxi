@@ -1,6 +1,6 @@
 import { getAuth } from '@react-native-firebase/auth';
 
-import { FirebaseUserRepository } from '@/features/user/data/repositories/FirebaseUserRepository';
+import { FirebaseUserRepository } from '@/features/user';
 
 import { sendChatSystemMessage, sendChatTextMessage } from '../../services/chatRoomService';
 import { FirebaseChatRepository } from '../repositories/FirebaseChatRepository';

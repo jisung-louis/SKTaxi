@@ -50,6 +50,7 @@ export type {
   MessageSubscriptionCallbacks,
   PaginatedResult,
 } from './model/types';
+export type { ChatStackParamList } from './model/navigation';
 
 export { ChatDetailScreen } from './screens/ChatDetailScreen';
 export { ChatListScreen } from './screens/ChatListScreen';

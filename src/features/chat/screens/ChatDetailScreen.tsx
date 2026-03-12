@@ -26,7 +26,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 
 import { useAuth } from '@/features/auth';
-import type { ChatStackParamList } from '@/navigations/types';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
@@ -34,6 +33,7 @@ import { createReport } from '@/lib/moderation';
 import { loadChatSound, playChatSound } from '@/lib/sound/chatSound';
 
 import type { ChatMessage } from '../model/types';
+import type { ChatStackParamList } from '../model/navigation';
 import {
   getChatRoomDisplayName,
 } from '../services/chatRoomService';

@@ -1,5 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+import type { ChatStackParamList } from '@/features/chat';
 import { Party } from '@/types/party';
 
 export type RootStackParamList = {
@@ -65,9 +66,4 @@ export type BoardStackParamList = {
   BoardDetail: { postId: string };
   BoardWrite: undefined;
   BoardEdit: { postId: string };
-};
-
-export type ChatStackParamList = {
-  ChatList: undefined;
-  ChatDetail: { chatRoomId: string };
 };

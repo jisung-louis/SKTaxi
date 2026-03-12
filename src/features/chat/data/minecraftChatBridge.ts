@@ -1,6 +1,7 @@
-import { getDatabase, onValue, ref } from '@react-native-firebase/database';
-
-import { sendMinecraftMessage as sendLegacyMinecraftMessage } from '@/lib/minecraftChat';
+import {
+  sendMinecraftChatMessage as sendMinecraftFeatureChatMessage,
+  subscribeToMinecraftServerInfo as subscribeToMinecraftFeatureServerInfo,
+} from '@/features/minecraft';
 
 import type { ChatRoomServerInfo } from '../model/types';
 
@@ -18,58 +19,17 @@ const EMPTY_SERVER_INFO: ChatRoomServerInfo = {
 };
 
 export const subscribeToMinecraftServerInfo = ({ onData, onError }: ServerInfoCallbacks) => {
-  const db = getDatabase();
-  const statusRef = ref(db, 'serverStatus');
-  const serverUrlRef = ref(db, 'serverStatus/serverUrl');
-  const currentState: ChatRoomServerInfo = { ...EMPTY_SERVER_INFO };
-
-  const emit = () => {
-    onData({ ...currentState });
-  };
-
-  const unsubscribeStatus = onValue(
-    statusRef,
-    snapshot => {
-      const data = snapshot.val();
-
-      if (!data) {
-        Object.assign(currentState, EMPTY_SERVER_INFO);
-        emit();
-        return;
-      }
-
-      currentState.currentPlayers = data.currentPlayers ?? data.playerCount ?? 0;
-      currentState.maxPlayers = data.maxPlayers ?? data.currentPlayers ?? 0;
-      currentState.online = data.online ?? true;
-      currentState.version = data.version ?? null;
-      emit();
+  return subscribeToMinecraftFeatureServerInfo({
+    onData: serverInfo => {
+      onData({
+        ...EMPTY_SERVER_INFO,
+        ...serverInfo,
+      });
     },
-    error => {
-      Object.assign(currentState, EMPTY_SERVER_INFO);
-      emit();
-      onError(error as Error);
-    },
-  );
-
-  const unsubscribeServerUrl = onValue(
-    serverUrlRef,
-    snapshot => {
-      currentState.serverUrl = snapshot.exists() ? (snapshot.val() as string) : null;
-      emit();
-    },
-    error => {
-      currentState.serverUrl = null;
-      emit();
-      onError(error as Error);
-    },
-  );
-
-  return () => {
-    unsubscribeStatus();
-    unsubscribeServerUrl();
-  };
+    onError,
+  });
 };
 
 export const sendMinecraftChatMessage = async (chatRoomId: string, text: string) => {
-  await sendLegacyMinecraftMessage(chatRoomId, text);
+  await sendMinecraftFeatureChatMessage(chatRoomId, text);
 };
