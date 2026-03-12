@@ -138,7 +138,6 @@ export const useChatScreenPresenter = () => {
         const party = await partyRepository.getParty(pid);
         if (!party) {
           setPartyTitle('채팅');
-          setLeaderName('');
           return;
         }
         const dep = party.departure?.name;
