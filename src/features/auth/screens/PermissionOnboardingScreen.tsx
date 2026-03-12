@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import { Text } from '@/components/common/Text';
-import { usePermissionStatus } from '@/hooks/common';
 import { requestATTPermission } from '@/lib/att';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
@@ -25,6 +24,7 @@ import { useScreenView } from '@/shared/hooks';
 
 import { PermissionOnboardingStep } from '../model/types';
 import { usePermissionOnboarding } from '../hooks/usePermissionOnboarding';
+import { usePermissionOnboardingStatus } from '../hooks/usePermissionOnboardingStatus';
 
 export const PermissionOnboardingScreen = () => {
   useScreenView();
@@ -36,7 +36,7 @@ export const PermissionOnboardingScreen = () => {
     requestLocationPermission,
     requestNotificationPermission,
     completeOnboarding,
-  } = usePermissionStatus();
+  } = usePermissionOnboardingStatus();
 
   usePermissionOnboarding(currentStep, completeOnboarding);
 

@@ -4,6 +4,8 @@ export { useAuthLoginProvider } from './hooks/useAuthLoginProvider';
 export { useProfileCompletion } from './hooks/useProfileCompletion';
 export { useCompleteProfile } from './hooks/useCompleteProfile';
 export { usePermissionOnboarding } from './hooks/usePermissionOnboarding';
+export { usePermissionOnboardingStatus } from './hooks/usePermissionOnboardingStatus';
+export type { PermissionStatus } from './hooks/usePermissionOnboardingStatus';
 export { LoginScreen } from './screens/LoginScreen';
 export { AccountGuideScreen } from './screens/AccountGuideScreen';
 export { CompleteProfileScreen } from './screens/CompleteProfileScreen';
