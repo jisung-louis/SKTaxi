@@ -1,16 +1,18 @@
-import { FirestoreModerationRepository } from '@/repositories/firestore/FirestoreModerationRepository';
+import { FirestoreModerationRepository } from './FirestoreModerationRepository';
 import type {
   BlockedUser,
+  IModerationRepository,
   ReportCategory,
   ReportDoc,
   ReportPayload,
   ReportStatus,
   ReportTargetType,
-} from '@/repositories/interfaces/IModerationRepository';
+} from './contracts';
 import { authInstance } from '@/shared/lib/firebase';
 
 export type {
   BlockedUser,
+  IModerationRepository,
   ReportCategory,
   ReportDoc,
   ReportPayload,

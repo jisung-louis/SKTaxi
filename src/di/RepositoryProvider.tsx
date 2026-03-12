@@ -30,7 +30,7 @@ import {
   FirebaseNotificationRepository,
   FirebaseUserRepository,
 } from '@/features/user';
-import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
+import { FirestoreStorageRepository } from '@/shared/lib/firebase/storageRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;

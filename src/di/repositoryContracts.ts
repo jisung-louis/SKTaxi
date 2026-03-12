@@ -22,4 +22,4 @@ export type {
   INotificationRepository,
   IUserRepository,
 } from '@/features/user';
-export type { IStorageRepository } from '@/repositories/interfaces/IStorageRepository';
+export type { IStorageRepository } from '@/shared/lib/firebase/storageRepository';

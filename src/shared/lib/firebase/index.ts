@@ -16,3 +16,10 @@ export {
   subscribeMessagingTokenRefresh,
   subscribeNotificationOpenedApp,
 } from './messaging';
+export { FirestoreStorageRepository } from './storageRepository';
+export type {
+  IStorageRepository,
+  UploadOptions,
+  UploadProgressCallback,
+  UploadResult,
+} from './storageRepository';
