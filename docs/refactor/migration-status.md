@@ -6,7 +6,7 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `a142572`
+- 현재 기준 runtime commit: `9532666`
 - 현재 상태: `Phase 4 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi` source of truth 전환 완료
 - 다음 작업 시작점: `Phase 5`
@@ -58,6 +58,8 @@ legacy taxi 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `MainNavigator`, `AppRuntimeHost`, 홈 `TaxiSection`, `src/hooks/chat/index.ts`, `src/hooks/party/index.ts` 는 taxi legacy 내부 경로 대신 `features/taxi` public API를 소비하도록 정리되었다.
 - `AppRuntimeHost` 의 join request modal orchestration은 이제 `src/features/taxi/hooks/useJoinRequestModal.ts` 와 taxi service를 사용한다.
 - in-chat join request 승인/거절, 파티 생성 초기 시스템 메시지, 파티 채팅 메시지/계좌/도착/종료 메시지 전송, 정산 초기 상태 계산 로직은 taxi feature service로 이동했다.
+- legacy `src/lib/notifications.ts` 의 taxi join request 액션 export는 제거되었고, taxi join request business logic의 callable source of truth는 `src/features/taxi/services/joinRequestService.ts` 로만 유지된다.
+- map/location permission 접근은 `src/shared/hooks/useCurrentLocation.ts` + `src/features/taxi/hooks/useTaxiLocation.ts` 조합으로 정리되었고, taxi 화면/컴포넌트는 legacy common location hook을 직접 import하지 않는다.
 
 ## Phase 5 진입 전 남은 blocker
 
