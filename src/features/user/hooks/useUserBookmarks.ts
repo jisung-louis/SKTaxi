@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/features/auth';
 
 import { useUserRepository } from './useUserRepository';
 

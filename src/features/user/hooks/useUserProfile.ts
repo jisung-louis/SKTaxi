@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useAuth } from '@/hooks/auth';
+import { useAuth } from '@/features/auth';
 
 import { UserProfile } from '../model/types';
 import { saveUserProfileChanges } from '../services/userProfileService';
