@@ -6,8 +6,8 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `3332986`
-- 현재 상태: `Phase 8 verifier 5차 후속 수정 완료`
+- 현재 기준 runtime commit: `abbeb15`
+- 현재 상태: `Phase 8 verifier 6차 후속 수정 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
@@ -120,7 +120,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/hooks/common/useNotifications.ts`, `src/screens/HomeTab/NotificationScreen.tsx`, `src/repositories/interfaces/INotificationRepository.ts`, `src/repositories/firestore/FirestoreNotificationRepository.ts`, `src/repositories/mock/MockNotificationRepository.ts` 는 notification center legacy shim 역할만 유지한다. 홈 `HomeScreen` 과 `MainNavigator` 는 더 이상 이 경로들을 active source of truth로 직접 사용하지 않는다.
 - `src/features/minecraft/*` 가 이제 Minecraft RTDB bridge, whitelist registration, screen/component, repository/service/hook의 실제 source of truth다.
 - `src/lib/minecraft/*`, `src/lib/minecraftChat.ts`, `src/screens/HomeTab/MinecraftDetailScreen.tsx`, `src/screens/HomeTab/MinecraftMapDetailScreen.tsx`, `src/repositories/firestore/FirestoreMinecraftRepository.ts`, `src/repositories/interfaces/IMinecraftRepository.ts`, `src/types/minecraft.ts`, `src/components/home/MinecraftSection.tsx` 는 runtime/active 경로 기준 minecraft legacy shim 역할만 유지한다. `src/repositories/mock/MockMinecraftRepository.ts` 는 제외한다.
-- Minecraft RTDB 연결은 `src/features/minecraft/data/*` 와 `src/features/minecraft/services/*` 안으로 닫혔고, chat feature는 계속 `src/features/minecraft/index.ts` public API 경계를 통해서만 Minecraft game chat/server info를 사용한다.
+- Minecraft RTDB 연결은 `src/features/minecraft/*` 안으로 닫혀 있고, chat feature는 계속 `src/features/minecraft/index.ts` public API 경계를 통해서만 Minecraft game chat/server info를 사용한다.
 - `src/features/home/*` 가 이제 홈 screen/section 조합의 실제 source of truth다.
 - home은 composition-only를 유지한다. `src/features/home/components/TaxiSection.tsx` 는 taxi-owned section public API만 조합하고, `src/features/taxi/components/TaxiHomeSection.tsx` 가 홈 택시 section의 taxi-specific orchestration을 소유한다. `NoticeSection` 은 notice feature public API만 조합하고, timetable/campus/minecraft 데이터 책임을 다시 home으로 끌어오지 않는다.
 - `src/screens/HomeScreen.tsx`, `src/components/home/TaxiSection.tsx`, `src/components/home/NoticeSection.tsx`, `src/components/home/index.ts` 는 home legacy shim 역할만 유지한다.
@@ -136,6 +136,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - Phase 8 verifier 5차 후속 수정으로 FCM token save/refresh/clear orchestration은 `src/features/user/services/fcmTokenService.ts` 와 `src/features/user/data/repositories/FirebaseUserRepository.ts` 가 소유한다. `src/app/bootstrap/registerPushHandlers.ts`, `src/features/auth/services/permissionOnboardingService.ts`, `src/features/auth/services/authSessionService.ts` 는 더 이상 root `src/lib/fcm.ts` 를 active source로 사용하지 않는다.
 - `src/lib/notifications.ts`, `src/lib/fcm.ts` 는 이제 legacy shim만 유지한다. root lib에는 Firebase Messaging/Auth SDK direct import나 `new FirestoreFcmRepository()` runtime path를 남기지 않는다.
 - Phase 8 verifier 5차 후속 수정으로 taxi navigation contract의 source of truth는 `src/features/taxi/model/navigation.ts` 로 이동했다. `src/app/navigation/types.ts` 와 `src/navigations/MainNavigator.tsx` 는 taxi feature public API를 소비하고, active taxi screen/hook/component는 더 이상 `@/app/navigation/types` 또는 `@/navigations/types` 를 타입 source로 사용하지 않는다.
+- Phase 8 verifier 6차 후속 수정으로 Minecraft realtime active facade는 `src/features/minecraft/services/minecraftRealtimeService.ts` 에 유지하되, `@react-native-firebase/database` direct import는 `src/features/minecraft/data/minecraftRealtimeDataSource.ts` 로 이동했다. active service는 이제 data adapter만 호출한다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
