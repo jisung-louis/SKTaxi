@@ -23,7 +23,7 @@ import { useScreenView } from '@/shared/hooks/useScreenView';
 import { ImageSelector } from '../components/ImageSelector';
 import { BOARD_CATEGORIES } from '../model/constants';
 import type { BoardStackParamList } from '../model/navigation';
-import type { BoardFormData } from '../model/types';
+import type { BoardFormData, BoardPostCategoryId } from '../model/types';
 import { useBoardWrite } from '../hooks/useBoardWrite';
 
 export const BoardWriteScreen: React.FC = () => {
@@ -57,7 +57,7 @@ export const BoardWriteScreen: React.FC = () => {
     setFormData(prev => ({ ...prev, content: text }));
   }, []);
 
-  const handleCategoryChange = useCallback((category: string) => {
+  const handleCategoryChange = useCallback((category: BoardPostCategoryId) => {
     setFormData(prev => ({ ...prev, category }));
   }, []);
 

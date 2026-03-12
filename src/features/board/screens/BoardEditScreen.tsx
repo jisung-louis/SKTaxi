@@ -13,7 +13,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  type NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
@@ -25,15 +28,12 @@ import { ImageSelector } from '../components/ImageSelector';
 import { useBoardEdit } from '../hooks/useBoardEdit';
 import { BOARD_CATEGORIES } from '../model/constants';
 import type { BoardStackParamList } from '../model/navigation';
-import type { BoardFormData } from '../model/types';
+import type { BoardFormData, BoardPostCategoryId } from '../model/types';
 
-interface BoardEditScreenProps {
-  route: {
-    params: {
-      postId: string;
-    };
-  };
-}
+type BoardEditScreenProps = NativeStackScreenProps<
+  BoardStackParamList,
+  'BoardEdit'
+>;
 
 export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
   useScreenView();
@@ -80,7 +80,7 @@ export const BoardEditScreen: React.FC<BoardEditScreenProps> = () => {
     setFormData(prev => ({ ...prev, content: text }));
   }, []);
 
-  const handleCategoryChange = useCallback((category: string) => {
+  const handleCategoryChange = useCallback((category: BoardPostCategoryId) => {
     setFormData(prev => ({ ...prev, category }));
   }, []);
 

@@ -20,6 +20,11 @@ export type MainTabParamList = {
   게시판: NavigatorScreenParams<BoardStackParamList>;
   채팅: NavigatorScreenParams<ChatStackParamList>;
 };
+export type {
+  BoardStackParamList,
+} from '@/features/board';
+export type { ChatStackParamList } from '@/features/chat';
+export type { NoticeStackParamList } from '@/features/notice';
 export type { TaxiStackParamList } from '@/features/taxi';
 
 export type HomeStackParamList = {

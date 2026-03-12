@@ -11,7 +11,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  NativeStackNavigationProp,
+  type NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -32,6 +35,7 @@ import {
   useBoardComments,
   useBoardPost,
 } from '../hooks';
+import { isBoardPostEdited } from '../model/selectors';
 import type { BoardStackParamList } from '../model/navigation';
 import {
   BOARD_REPORT_CATEGORIES,
@@ -40,13 +44,10 @@ import {
 } from '../services/boardModerationService';
 import { navigateToBoardSearch } from '../services/boardNavigationService';
 
-interface BoardDetailScreenProps {
-  route: {
-    params: {
-      postId: string;
-    };
-  };
-}
+type BoardDetailScreenProps = NativeStackScreenProps<
+  BoardStackParamList,
+  'BoardDetail'
+>;
 
 export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
   useScreenView();
@@ -329,7 +330,7 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
                 <Text style={styles.authorName}>{post.isAnonymous ? '익명' : post.authorName}</Text>
                 <View style={styles.postDateRow}>
                   <Text style={styles.postDate}>{format(post.createdAt, 'yyyy.MM.dd HH:mm', { locale: ko })}</Text>
-                  {isPostEdited(post.createdAt, post.updatedAt) && (
+                  {isBoardPostEdited(post.createdAt, post.updatedAt) && (
                     <>
                       <Text style={styles.postDate}>•</Text>
                       <Text style={styles.postDate}>수정됨</Text>
