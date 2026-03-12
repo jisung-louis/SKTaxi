@@ -21,6 +21,10 @@ jest.mock('../src/app/navigation/AppNavigation', () => ({
   AppNavigation: () => null,
 }));
 
+jest.mock('../src/app/bootstrap/AppRuntimeHost', () => ({
+  AppRuntimeHost: () => null,
+}));
+
 jest.mock('../src/app/bootstrap/useAppBootstrap', () => ({
   useAppBootstrap: () => ({
     forceUpdateRequired: false,
