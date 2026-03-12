@@ -32,9 +32,7 @@ import {
   useBoardComments,
   useBoardPost,
 } from '../hooks';
-import { POST_CATEGORY_LABELS } from '../model/constants';
 import type { BoardStackParamList } from '../model/navigation';
-import { getBoardCategoryColor, isBoardPostEdited } from '../model/selectors';
 import {
   BOARD_REPORT_CATEGORIES,
   blockBoardAuthor,
@@ -314,14 +312,6 @@ export const BoardDetailScreen: React.FC<BoardDetailScreenProps> = () => {
             elevation: post.isPinned ? 3 : undefined,
             backgroundColor: post.isPinned ? COLORS.background.primary : undefined,
           }]}>
-          {/* 카테고리 및 고정 배지 */}
-          {/* <View style={styles.categoryRow}>
-            <View style={[styles.categoryBadge, { backgroundColor: getBoardCategoryColor(post.category) }]}>
-              <Text style={styles.categoryText}>
-                {POST_CATEGORY_LABELS[post.category]}
-              </Text>
-            </View>
-          </View> */}
           {post.isPinned && (
             <View style={styles.pinnedBadge}>
               <Text style={styles.pinnedText}>📌 고정</Text>

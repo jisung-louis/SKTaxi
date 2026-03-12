@@ -47,7 +47,6 @@ export const BoardWriteScreen: React.FC = () => {
     pickImages,
     removeImage,
     reorderImages,
-    clearImages,
   } = useBoardWrite();
 
   const handleTitleChange = useCallback((text: string) => {
