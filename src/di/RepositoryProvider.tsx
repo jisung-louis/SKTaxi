@@ -18,7 +18,10 @@ import {
 } from '@/features/settings';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
-import { FirebasePartyRepository } from '@/features/taxi';
+import {
+  FirebaseNotificationActionRepository,
+  FirebasePartyRepository,
+} from '@/features/taxi';
 import {
   FirebaseCourseRepository,
   FirebaseTimetableRepository,
@@ -28,7 +31,6 @@ import {
   FirebaseUserRepository,
 } from '@/features/user';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
-import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
@@ -63,7 +65,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirebaseTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),
-      notificationActionRepository: new FirestoreNotificationActionRepository(),
+      notificationActionRepository: new FirebaseNotificationActionRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

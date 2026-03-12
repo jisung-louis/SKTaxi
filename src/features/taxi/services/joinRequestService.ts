@@ -1,6 +1,5 @@
-import { INotificationActionRepository } from '@/repositories/interfaces/INotificationActionRepository';
-
 import { IPartyRepository } from '../data/repositories/IPartyRepository';
+import { INotificationActionRepository } from '../data/repositories/INotificationActionRepository';
 import { sendSystemMessage } from './partyMessageService';
 
 interface JoinRequestDependencies {

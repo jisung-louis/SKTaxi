@@ -10,7 +10,10 @@ export type {
   IAppNoticeRepository,
   IInquiryRepository,
 } from '@/features/settings';
-export type { IPartyRepository } from '@/features/taxi';
+export type {
+  INotificationActionRepository,
+  IPartyRepository,
+} from '@/features/taxi';
 export type {
   ICourseRepository,
   ITimetableRepository,
@@ -19,5 +22,4 @@ export type {
   INotificationRepository,
   IUserRepository,
 } from '@/features/user';
-export type { INotificationActionRepository } from '@/repositories/interfaces/INotificationActionRepository';
 export type { IStorageRepository } from '@/repositories/interfaces/IStorageRepository';
