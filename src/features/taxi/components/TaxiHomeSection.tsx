@@ -73,6 +73,12 @@ export const TaxiHomeSection: React.FC = () => {
         return;
       }
 
+      const partyId = party.id;
+      if (!partyId) {
+        Alert.alert('오류', '파티 정보를 확인할 수 없습니다.');
+        return;
+      }
+
       Alert.alert(
         '동승 요청',
         `${party.departure.name} → ${party.destination.name}로 가는 ${formatKoreanAmPmTime(party.departureTime)} 출발 파티에 동승 요청을 할까요?`,
@@ -82,10 +88,10 @@ export const TaxiHomeSection: React.FC = () => {
             text: '요청 보내기',
             onPress: async () => {
               try {
-                const requestId = await createJoinRequest(party.id, party.leaderId);
+                const requestId = await createJoinRequest(partyId, party.leaderId);
 
                 await logEvent('party_join_requested', {
-                  party_id: party.id,
+                  party_id: partyId,
                   request_id: requestId,
                 });
 
