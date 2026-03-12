@@ -29,7 +29,7 @@ import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import { createReport } from '@/lib/moderation';
+import { createReport } from '@/shared/lib/moderation';
 import { loadChatSound, playChatSound } from '@/lib/sound/chatSound';
 
 import type { ChatMessage } from '../model/types';
