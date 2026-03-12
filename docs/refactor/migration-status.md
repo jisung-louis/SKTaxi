@@ -6,9 +6,9 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `2cc59f3`
-- 현재 상태: `Phase 8 verifier 7차 후속 수정 완료`
-- 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
+- 현재 기준 runtime commit: `871dd64`
+- 현재 상태: `Phase 8 shared-boundary cleanup 후속 수정 완료`
+- 현재 구조 상태: `active feature/app import가 shared/* 와 feature public API 기준으로 정리되었고, root legacy common/constants/hooks/utils/lib 경로는 shim·잔여 cleanup 대상으로만 남아 있음`
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
 ## source of truth 상태
@@ -139,11 +139,17 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - Phase 8 verifier 6차 후속 수정으로 Minecraft realtime active facade는 `src/features/minecraft/services/minecraftRealtimeService.ts` 에 유지하되, `@react-native-firebase/database` direct import는 `src/features/minecraft/data/minecraftRealtimeDataSource.ts` 로 이동했다. active service는 이제 data adapter만 호출한다.
 - Phase 8 verifier 7차 후속 수정으로 foreground notification runtime의 active source of truth는 `src/app/bootstrap/useForegroundNotificationRuntime.ts` 로 이동했다. `AppRuntimeHost` 가 현재 화면 조회, foreground banner state, 클릭 분기 orchestration을 소유하고, legacy `src/navigations/hooks/useForegroundNotification.ts` 는 shim만 유지한다.
 - Phase 8 verifier 7차 후속 수정으로 auth permission onboarding의 active notification permission 경로는 `src/features/auth/hooks/usePermissionOnboardingStatus.ts` 와 `src/shared/lib/firebase/notificationPermission.ts` 조합으로 정리되었다. legacy `src/hooks/common/usePermissionStatus.ts` 는 shim만 유지하고 Firebase Messaging SDK direct import를 다시 소유하지 않는다.
+- Phase 8 shared-boundary cleanup 후속 수정으로 active feature/app 코드는 더 이상 root legacy `@/components/common/*`, `@/constants/colors`, `@/constants/typhograpy`, shared 용도의 `@/constants/constants`, `@/hooks/useScreenView`, `@/hooks/auth`, `@/utils/dateUtils`, `@/utils/datetime`, `@/lib/analytics`, `@/lib/att`, `@/lib/sound/chatSound` 를 직접 active source of truth로 사용하지 않는다.
+- 공용 UI의 actual source of truth는 이제 `src/shared/ui/*` 이다. `Button`, `PageHeader`, `Surface`, `TabBadge`, `Text`, `Dropdown`, `TimePicker`, `ErrorMessage`, `LoadingSpinner`, `CommentInput`, `HashTagText`, `ForegroundNotification`, `CustomTooltip`, `Dot` 구현은 shared로 이동했고 root `src/components/common/*` 대응 파일은 shim만 유지한다.
+- feature 소유 UI 중 `JoinRequestModal` 의 source of truth는 `src/features/taxi/components/JoinRequestModal.tsx`, `SemesterDropdown` 의 source of truth는 `src/features/timetable/components/SemesterDropdown.tsx` 로 정리되었다. app/runtime 또는 feature active 코드는 shared 경계 또는 같은 feature 내부 경계만 본다.
+- 공용 경계의 actual source of truth는 `src/shared/constants/{colors,typography,layout,departments}.ts`, `src/shared/hooks/useScreenView.ts`, `src/shared/lib/date/*`, `src/shared/lib/analytics/index.ts`, `src/shared/lib/permissions/att.ts`, `src/shared/lib/sound/chatSound.ts`, `src/shared/lib/text/hashtagParser.ts` 다. root `src/constants/*`, `src/utils/*`, `src/lib/att.ts`, `src/lib/sound/chatSound.ts`, `src/hooks/useScreenView.ts` 는 shim 또는 legacy 잔여 export만 유지한다.
+- `src/features/user/hooks/useNotificationSettings.ts`, `src/features/user/hooks/useUserProfile.ts`, `src/features/user/hooks/useUserBookmarks.ts`, `src/features/user/hooks/useAccountInfo.ts` 는 더 이상 `@/hooks/auth` shim을 보지 않고 `@/features/auth` public API를 직접 사용한다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
 
 - `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 최종 재검증` 을 다시 받아야 한다.
+- root legacy common/constants/hooks/utils/lib 파일 자체는 여전히 저장소에 남아 있다. 이번 턴 기준 이들 중 active import가 제거된 경로는 shim 또는 잔여 cleanup 대상으로만 간주한다.
 - `MainNavigator` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
 - timetable/campus/settings/minecraft/home 포함 전체 feature의 legacy shim 파일 대량 삭제는 아직 하지 않았다. Phase 9에서 실제 import graph를 다시 확인한 뒤 제거해야 한다.
 - route key와 UI label 완전 분리, 오타 파일명 정리, dead code 대량 삭제, 전역 lint warning 정리는 아직 남아 있다.
