@@ -1,3 +1,2 @@
-export { TaxiSection } from './TaxiSection';
-export { NoticeSection } from './NoticeSection';
-export { MinecraftSection } from './MinecraftSection';
+export { NoticeSection, TaxiSection } from '@/features/home';
+export { MinecraftSection } from '@/features/minecraft';

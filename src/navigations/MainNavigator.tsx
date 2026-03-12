@@ -51,8 +51,8 @@ import {
   useMyParty,
 } from '@/features/taxi';
 import { TimetableDetailScreen } from '@/features/timetable';
+import { HomeScreen } from '@/features/home';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
-import { HomeScreen } from '../screens/HomeScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
