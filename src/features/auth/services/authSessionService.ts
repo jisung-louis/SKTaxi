@@ -1,13 +1,15 @@
 import { Platform } from 'react-native';
 
 import { getCurrentAppVersion } from '@/app/bootstrap';
-import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
-import { UserProfile } from '@/features/user/model/types';
 import {
   createInitialUserProfile,
   DEFAULT_USER_DISPLAY_NAME,
   syncUserLoginMetadata,
-} from '@/features/user/services/userProfileService';
+} from '@/features/user';
+import type {
+  IUserRepository,
+  UserProfile,
+} from '@/features/user';
 import { deleteFcmToken } from '@/lib/fcm';
 import { setUserId } from '@/shared/lib/analytics';
 import { User } from '@/types/auth';

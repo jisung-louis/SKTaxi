@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useRepository } from '@/di';
-import { useUserRepository } from '@/features/user/hooks/useUserRepository';
+import { useUserRepository } from '@/features/user';
 import { AuthState } from '@/types/auth';
 
 import { AuthContextValue } from '../model/types';

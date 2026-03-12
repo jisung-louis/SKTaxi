@@ -1,5 +1,5 @@
 import { useAuthRepository } from '@/di';
-import { getUserLoginProvider } from '@/features/user/services/userProfileService';
+import { getUserLoginProvider } from '@/features/user';
 
 export const useAuthLoginProvider = () => {
   const authRepository = useAuthRepository();
@@ -7,4 +7,3 @@ export const useAuthLoginProvider = () => {
 
   return getUserLoginProvider(currentUser?.providerId);
 };
-

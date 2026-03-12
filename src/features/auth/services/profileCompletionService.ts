@@ -1,5 +1,5 @@
-import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
-import { saveCompletedUserProfile } from '@/features/user/services/userProfileService';
+import { saveCompletedUserProfile } from '@/features/user';
+import type { IUserRepository } from '@/features/user';
 import { User } from '@/types/auth';
 
 import { CompleteProfileFormValues } from '../model/types';

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-import { useUserRepository } from '@/features/user/hooks/useUserRepository';
+import { useUserRepository } from '@/features/user';
 
 import { CompleteProfileFormValues } from '../model/types';
 import {

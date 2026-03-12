@@ -7,8 +7,8 @@ import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import {
+  useAccountInfo,
   useUserDisplayNames,
-  useUserRepository,
 } from '@/features/user';
 import { TaxiStackParamList } from '../../../navigations/types';
 import { useMessages, sendMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage } from '../../../hooks/chat';
@@ -32,11 +32,14 @@ export const useChatScreenPresenter = () => {
 
   // Repository 훅
   const partyRepository = usePartyRepository();
-  const userRepository = useUserRepository();
   const notificationRepository = useNotificationRepository();
 
   // Auth 훅
   const { user: authUser } = useAuth();
+  const {
+    accountInfo: currentAccountInfo,
+    saveAccountInfo,
+  } = useAccountInfo();
 
   // Refs
   const kickHandledRef = useRef<boolean>(false);
@@ -65,7 +68,11 @@ export const useChatScreenPresenter = () => {
   const requesterIds = joinRequests.map(request => request.requesterId).filter(Boolean);
 
   // 사용자 이름 매핑
-  const allUserIds = [...memberUids, ...requesterIds];
+  const allUserIds = [
+    currentParty?.leaderId,
+    ...memberUids,
+    ...requesterIds,
+  ].filter(Boolean) as string[];
   const { displayNameMap } = useUserDisplayNames(allUserIds);
 
   // 채팅방 음소거 상태
@@ -73,7 +80,6 @@ export const useChatScreenPresenter = () => {
 
   // UI 상태
   const [partyTitle, setPartyTitle] = useState<string>('');
-  const [leaderName, setLeaderName] = useState<string>('');
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const [showSideMenu, setShowSideMenu] = useState<boolean>(false);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
@@ -137,28 +143,20 @@ export const useChatScreenPresenter = () => {
         }
         const dep = party.departure?.name;
         const dst = party.destination?.name;
-        const leaderId = party.leaderId;
         if (dep && dst) {
           setPartyTitle(`${dep} → ${dst} 택시 파티`);
         } else {
           setPartyTitle('채팅');
         }
-        if (leaderId) {
-          try {
-            const leaderProfile = await userRepository.getUserProfile(leaderId);
-            setLeaderName(leaderProfile?.displayName || '익명');
-          } catch {
-            setLeaderName('익명');
-          }
-        } else {
-          setLeaderName('');
-        }
       } catch {
         setPartyTitle('채팅');
-        setLeaderName('');
       }
     })();
-  }, [route.params?.partyId, partyRepository, userRepository]);
+  }, [route.params?.partyId, partyRepository]);
+
+  const leaderName = currentParty?.leaderId
+    ? displayNameMap[currentParty.leaderId] || '익명'
+    : '';
 
   // 채팅방 알림 음소거 상태 로드 (Repository 패턴 적용)
   useEffect(() => {
@@ -354,12 +352,9 @@ export const useChatScreenPresenter = () => {
 
   // 계좌 정보 로드 (Repository 패턴 적용)
   const loadUserAccount = useCallback(async () => {
-    if (!currentUser?.uid) return;
-
     setAccountLoading(true);
     try {
-      const userProfile = await userRepository.getUserProfile(currentUser.uid);
-      const account = userProfile?.accountInfo;
+      const account = currentAccountInfo;
 
       if (account && (account.bankName || account.accountNumber || account.accountHolder)) {
         setUserAccount(account);
@@ -382,7 +377,7 @@ export const useChatScreenPresenter = () => {
     } finally {
       setAccountLoading(false);
     }
-  }, [currentUser?.uid, userRepository]);
+  }, [currentAccountInfo]);
 
   // 계좌 정보 전송 (Repository 패턴 적용)
   const sendAccountInfo = useCallback(async () => {
@@ -419,22 +414,20 @@ export const useChatScreenPresenter = () => {
 
       setShowAccountModal(false);
 
-      // 계좌 정보 저장 (Repository 패턴)
+      // 계좌 정보 저장은 user feature public API가 담당한다.
       if (rememberAccount && tempBankName && tempAccountNumber) {
-        await userRepository.updateUserProfile(currentUser.uid, {
-          accountInfo: {
-            bankName: tempBankName,
-            accountNumber: tempAccountNumber,
-            accountHolder: tempAccountHolder || '',
-            hideName: tempHideName,
-          }
+        await saveAccountInfo({
+          bankName: tempBankName,
+          accountNumber: tempAccountNumber,
+          accountHolder: tempAccountHolder || '',
+          hideName: tempHideName,
         });
       }
     } catch (error) {
       console.error('계좌 정보 전송 실패:', error);
       Alert.alert('오류', '계좌 정보 전송에 실패했습니다.');
     }
-  }, [currentUser?.uid, partyId, userAccount, editingAccountInline, tempBankName, tempAccountNumber, tempAccountHolder, tempHideName, rememberAccount, userRepository]);
+  }, [currentUser?.uid, partyId, userAccount, editingAccountInline, tempBankName, tempAccountNumber, tempAccountHolder, tempHideName, rememberAccount, saveAccountInfo]);
 
   // 도착 확인 (Repository 패턴 적용)
   const handleArrivalConfirm = useCallback(() => {
@@ -447,10 +440,7 @@ export const useChatScreenPresenter = () => {
           text: '예',
           onPress: async () => {
             try {
-              if (!currentUser?.uid) return;
-
-              const userProfile = await userRepository.getUserProfile(currentUser.uid);
-              const account = userProfile?.accountInfo;
+              const account = currentAccountInfo;
 
               if (account) {
                 setArrivalBankName(account.bankName || '');
@@ -476,7 +466,7 @@ export const useChatScreenPresenter = () => {
         }
       ]
     );
-  }, [memberUids, currentUser?.uid, userRepository]);
+  }, [memberUids, currentAccountInfo]);
 
   // 도착 확정 (Repository 패턴 적용)
   const handleArrivalSubmit = useCallback(async () => {
@@ -506,16 +496,14 @@ export const useChatScreenPresenter = () => {
 
       await sendArrivedMessage(partyId, arrivalMessageData);
 
-      // 계좌 정보 저장 (Repository 패턴)
+      // 계좌 정보 저장은 user feature public API가 담당한다.
       if (rememberArrivalAccount && arrivalBankName && arrivalAccountNumber && arrivalAccountHolder) {
         try {
-          await userRepository.updateUserProfile(currentUser.uid, {
-            accountInfo: {
-              bankName: arrivalBankName,
-              accountNumber: arrivalAccountNumber,
-              accountHolder: arrivalAccountHolder,
-              hideName: arrivalHideName,
-            }
+          await saveAccountInfo({
+            bankName: arrivalBankName,
+            accountNumber: arrivalAccountNumber,
+            accountHolder: arrivalAccountHolder,
+            hideName: arrivalHideName,
           });
         } catch (error) {
           console.error('계좌 정보 저장 중 오류:', error);
@@ -560,7 +548,7 @@ export const useChatScreenPresenter = () => {
       console.error('도착 메시지 전송 실패:', error);
       Alert.alert('오류', '도착 메시지 전송에 실패했습니다.');
     }
-  }, [currentUser?.uid, partyId, taxiFare, selectedMembers, arrivalBankName, arrivalAccountNumber, arrivalAccountHolder, arrivalHideName, rememberArrivalAccount, currentParty?.leaderId, calculateNoticeBarHeight, userRepository, partyRepository, noticeBarHeight, settlementListOpacity]);
+  }, [currentUser?.uid, partyId, taxiFare, selectedMembers, arrivalBankName, arrivalAccountNumber, arrivalAccountHolder, arrivalHideName, rememberArrivalAccount, currentParty?.leaderId, calculateNoticeBarHeight, saveAccountInfo, partyRepository, noticeBarHeight, settlementListOpacity]);
 
   // 멤버 선택 토글
   const toggleMemberSelection = useCallback((memberId: string) => {
@@ -692,8 +680,10 @@ export const useChatScreenPresenter = () => {
       selfLeaveRef.current = true;
 
       // 사용자 이름 조회 (Repository 패턴)
-      const userProfile = await userRepository.getUserProfile(currentUser.uid);
-      const displayName = userProfile?.displayName || '익명';
+      const displayName =
+        displayNameMap[currentUser.uid] ||
+        currentUser.displayName ||
+        '익명';
 
       await sendSystemMessage(partyId, `${displayName}님이 파티를 나갔어요.`);
 
@@ -713,7 +703,7 @@ export const useChatScreenPresenter = () => {
       console.error('파티 나가기 실패:', error);
       Alert.alert('오류', '파티 나가기에 실패했습니다.');
     }
-  }, [partyId, currentUser?.uid, navigation, userRepository, partyRepository, notificationRepository]);
+  }, [partyId, currentUser?.uid, currentUser?.displayName, navigation, displayNameMap, partyRepository, notificationRepository]);
 
   // 멤버 나가기 확인
   const showMemberLeaveModal = useCallback(() => {

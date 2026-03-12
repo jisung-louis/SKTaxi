@@ -1,6 +1,6 @@
 import { ensureFcmTokenSaved } from '@/lib/fcm';
-import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
-import { completeUserPermissionOnboarding } from '@/features/user/services/userProfileService';
+import { completeUserPermissionOnboarding } from '@/features/user';
+import type { IUserRepository } from '@/features/user';
 
 const COMPLETION_DELAY_MS = 1000;
 

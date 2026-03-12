@@ -1,8 +1,8 @@
 import { setUserProperties } from '@/shared/lib/analytics';
 import { User } from '@/types/auth';
-import { leaveDepartmentRoom } from '@/utils/chatRoomUtils';
-import { withdrawUser } from '@/utils/withdrawUtils';
 
+import { leaveDepartmentRoom } from '../data/departmentChatRoom';
+import { withdrawUser } from '../data/withdrawUser';
 import { IUserRepository } from '../data/repositories/IUserRepository';
 import {
   UserAccountInfo,
@@ -312,4 +312,3 @@ export const withdrawCurrentUser = async ({
 }) => {
   await withdrawUser(userId, password);
 };
-
