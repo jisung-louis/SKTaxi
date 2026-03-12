@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `1f648a4`
-- 현재 상태: `Phase 5 완료`
-- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat` source of truth 전환 완료
-- 다음 작업 시작점: `Phase 6`
+- 현재 기준 runtime commit: `10ffa8b`
+- 현재 상태: `Phase 6 완료`
+- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat`, `notice` source of truth 전환 완료
+- 다음 작업 시작점: `Phase 7`
 
 ## source of truth 상태
 
@@ -20,7 +20,7 @@ legacy auth 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `user`: `src/features/user`
 - `taxi`: `src/features/taxi`
 - `chat`: `src/features/chat`
-- `notice`: legacy
+- `notice`: `src/features/notice`
 - `board`: legacy
 - `timetable`: legacy
 - `campus`: legacy
@@ -36,6 +36,9 @@ legacy taxi 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 `chat` migration이 시작되었으므로 chat의 source of truth는 이제 `src/features/chat` 다.
 legacy chat 대응 파일에는 shim, import 정리, 삭제만 허용된다.
+
+`notice` migration이 시작되었으므로 notice의 source of truth는 이제 `src/features/notice` 다.
+legacy notice 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 ## Phase 3 완료 메모
 
@@ -77,12 +80,22 @@ legacy chat 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/features/chat/data/composition/chatRuntime.ts` 는 user feature internal path deep import를 제거하고 `src/features/user/index.ts` public API만 사용한다.
 - `ChatStackParamList` 는 `src/features/chat/model/navigation.ts` 로 이동했고, `src/app/navigation/types.ts` 는 chat feature public API를 소비한다. active chat feature는 더 이상 app/navigation 타입에 직접 결합되지 않는다.
 
-## Phase 6 진입 전 남은 blocker
+## Phase 6 완료 메모
 
-- hard blocker는 없다. `Phase 6` notice migration은 바로 시작할 수 있다.
-- 단, legacy `src/navigations/hooks/useForegroundNotification.ts` 에는 아직 taxi/notice/app notice 책임이 함께 남아 있으므로 `Phase 6` 에서 notice 소유 분기를 분리해야 한다.
-- legacy public chat shim 파일들은 이제 shim-only 상태다. 남은 import 정리가 끝나면 삭제 대상으로 취급해야 한다.
-- `MainNavigator` 는 공개 채팅 unread/firestore 책임은 제거되었지만, route shell 자체의 전면 정리는 별도 cleanup 단계로 남아 있다.
+- `src/features/notice/*` 가 이제 학교 공지 list/detail/html rendering/read-status/foreground notice 라우팅의 실제 source of truth다.
+- `src/screens/NoticeScreen.tsx`, `src/screens/NoticeTab/*`, `src/hooks/notice/*`, `src/repositories/interfaces/INoticeRepository.ts`, `src/repositories/firestore/FirestoreNoticeRepository.ts`, `src/repositories/mock/MockNoticeRepository.ts`, `src/components/htmlRender/*`, `src/lib/noticeViews.ts`, `src/utils/linkConverter.ts`, `src/types/comment.ts` 는 notice legacy shim 또는 삭제 대상으로 전환되었다.
+- notice 전용 html renderer와 이미지/table 렌더링은 `src/features/notice/components/*` 로 이동했고, detail screen은 더 이상 root `components/htmlRender` / `lib/noticeViews` / `utils/linkConverter` 구현을 source of truth로 사용하지 않는다.
+- notice read status, unread banner 판단, joinedAt 기반 auto-read 처리, detail view count 증가는 `src/features/notice/model/*`, `src/features/notice/hooks/useNoticeReadState.ts`, `src/features/notice/services/noticeReadStateService.ts` 로 정리되었다.
+- `RepositoryProvider` 의 notice repository 바인딩은 이제 `src/features/notice/data/repositories/FirebaseNoticeRepository.ts` 를 사용한다.
+- `src/app/navigation/types.ts`, `src/navigations/MainNavigator.tsx`, 홈 `NoticeSection`, `src/navigations/hooks/useForegroundNotification.ts` 의 학교 공지 이동/foreground payload 처리는 notice feature public API를 사용하도록 정리되었다.
+- app notice는 이번 phase에서 settings legacy 소유로 유지한다. school notice와 app notice source of truth는 분리된 상태다.
+
+## Phase 7 진입 전 남은 blocker
+
+- hard blocker는 없다. `Phase 7` board migration은 바로 시작할 수 있다.
+- `src/navigations/hooks/useForegroundNotification.ts` 에는 여전히 taxi/app notice 책임이 남아 있다. notice school payload 분기만 분리된 상태이므로 settings phase 전까지 app notice 분기는 건드리지 않는다.
+- legacy notice shim 파일들은 이제 shim-only 상태다. 남은 import 정리가 끝나면 삭제 대상으로 취급해야 한다.
+- `MainNavigator` 는 공개 채팅/학교 공지 feature public API 소비로 정리되었지만, route shell 자체의 전면 정리는 별도 cleanup 단계로 남아 있다.
 
 ## 운영 규칙
 
