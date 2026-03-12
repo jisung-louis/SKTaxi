@@ -3,14 +3,15 @@
 
 import React, { useMemo, type ReactNode } from 'react';
 
+import {
+  FirebaseBoardRepository,
+} from '@/features/board';
 import { FirebaseChatRepository } from '@/features/chat/data/repositories/FirebaseChatRepository';
 import { FirebaseNoticeRepository } from '@/features/notice';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
 import { FirebasePartyRepository } from '@/features/taxi';
 import { FirebaseUserRepository } from '@/features/user';
-
-import { FirestoreBoardRepository } from '../repositories/firestore/FirestoreBoardRepository';
 import { FirestoreCourseRepository } from '../repositories/firestore/FirestoreCourseRepository';
 import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
 import { FirestoreAppNoticeRepository } from '../repositories/firestore/FirestoreAppNoticeRepository';
@@ -43,7 +44,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       partyRepository: new FirebasePartyRepository(),
       chatRepository: new FirebaseChatRepository(),
       userRepository: new FirebaseUserRepository(),
-      boardRepository: new FirestoreBoardRepository(),
+      boardRepository: new FirebaseBoardRepository(),
       noticeRepository: new FirebaseNoticeRepository(),
       courseRepository: new FirestoreCourseRepository(),
       notificationRepository: new FirestoreNotificationRepository(),

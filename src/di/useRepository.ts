@@ -2,6 +2,7 @@
 // 컴포넌트에서 Repository에 쉽게 접근할 수 있는 훅 제공
 
 import { useContext } from 'react';
+import type { IBoardRepository } from '@/features/board';
 import type { IChatRepository } from '@/features/chat/data/repositories/IChatRepository';
 import type { INoticeRepository } from '@/features/notice';
 import type { IPartyRepository } from '@/features/taxi';
@@ -10,7 +11,6 @@ import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import type {
   IAppNoticeRepository,
   IAuthRepository,
-  IBoardRepository,
   IAcademicRepository,
   ICafeteriaRepository,
   ICourseRepository,

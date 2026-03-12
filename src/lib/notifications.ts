@@ -8,6 +8,7 @@ import {
   getInitialNotification,
 } from '@react-native-firebase/messaging';
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import { navigateToBoardDetail } from '@/features/board';
 
 // Messaging 인스턴스
 const messaging = getMessaging();
@@ -333,7 +334,7 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
     case 'board_comment_reply':
     case 'board_post_like':
       if (data.postId) {
-        navigation.navigate('Main', { screen: '게시판', params: { screen: 'BoardDetail', params: { postId: data.postId } } });
+        navigateToBoardDetail(navigation, data.postId);
       }
       break;
     case 'notice_post_comment':

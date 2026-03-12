@@ -1,5 +1,6 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+import type { BoardStackParamList } from '@/features/board';
 import type { ChatStackParamList } from '@/features/chat';
 import type { NoticeStackParamList } from '@/features/notice';
 import { Party } from '@/types/party';
@@ -54,11 +55,4 @@ export type HomeStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   AccountGuide: undefined;
-};
-
-export type BoardStackParamList = {
-  BoardMain: undefined;
-  BoardDetail: { postId: string };
-  BoardWrite: undefined;
-  BoardEdit: { postId: string };
 };

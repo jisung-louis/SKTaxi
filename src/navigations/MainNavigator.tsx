@@ -3,6 +3,12 @@ import { createBottomTabNavigator, BottomTabBar, BottomTabBarProps } from '@reac
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
+  BoardDetailScreen,
+  BoardEditScreen,
+  BoardScreen,
+  BoardWriteScreen,
+} from '@/features/board';
+import {
   AccountModificationScreen,
   NotificationSettingsScreen,
   ProfileEditScreen,
@@ -30,7 +36,6 @@ import {
 } from '@/features/taxi';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
-import { BoardScreen } from '../screens/BoardScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
 import { SettingScreen } from '../screens/HomeTab/SettingScreen';
 import { AppNoticeScreen } from '../screens/HomeTab/SettingScreen/AppNoticeScreen';
@@ -52,9 +57,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
 import { Dot } from '../components/common/Dot';
-import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
-import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
-import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
 import { TYPOGRAPHY } from '../constants/typhograpy';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();

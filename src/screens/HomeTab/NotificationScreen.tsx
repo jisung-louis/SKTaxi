@@ -9,6 +9,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useNotifications, Notification } from '../../hooks/common';
 import { useScreenView } from '../../hooks/useScreenView';
+import { navigateToBoardDetail } from '@/features/board';
 
 const formatTimeAgo = (timestamp: any) => {
   if (!timestamp) return '방금 전';
@@ -114,12 +115,7 @@ export const NotificationScreen = () => {
       case 'board_post_like':
         // 게시판 상세 화면으로 이동
         if (notification.data?.postId) {
-          (navigation as any).navigate('게시판', {
-            screen: 'BoardDetail',
-            params: {
-              postId: notification.data.postId,
-            },
-          });
+          navigateToBoardDetail(navigation, notification.data.postId);
         }
         break;
       case 'notice_post_comment':

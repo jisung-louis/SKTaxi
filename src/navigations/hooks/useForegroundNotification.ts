@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
 import {
+  navigateToBoardDetail,
   getCurrentChatRoomIdFromNavigationState,
   navigateToChatRoom,
   resolveChatRoomForegroundNotification,
@@ -136,10 +137,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
       case 'board_notification':
         if (postId) {
           try {
-            (navigation as any).navigate('Main', {
-              screen: '게시판',
-              params: { screen: 'BoardDetail', params: { postId } },
-            });
+            navigateToBoardDetail(navigation, postId);
           } catch {
             (navigation as any).navigate('Main', { screen: '게시판' });
           }

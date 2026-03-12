@@ -17,11 +17,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import CommentInput, { CommentInputRef } from '@/components/common/CommentInput';
 import PageHeader from '@/components/common/PageHeader';
 import { ToggleButton } from '@/components/common/ToggleButton';
-import UniversalCommentList from '@/components/common/UniversalCommentList';
 import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
+import {
+  UniversalCommentList,
+  type CommentThreadItem,
+} from '@/shared/ui/comments';
 
 import {
   NoticeHtmlContent,
@@ -76,8 +79,12 @@ export const NoticeDetailScreen = () => {
   } = useNoticeComments(noticeId || '');
 
   const handleReply = useCallback(
-    (commentId: string, authorName: string, isAnonymous: boolean) => {
-      setReplyingTo({ commentId, authorName, isAnonymous });
+    (comment: CommentThreadItem) => {
+      setReplyingTo({
+        commentId: comment.id,
+        authorName: comment.authorName,
+        isAnonymous: !!comment.isAnonymous,
+      });
       setTimeout(() => {
         commentInputRef.current?.focus();
       }, 100);
@@ -90,24 +97,34 @@ export const NoticeDetailScreen = () => {
   }, []);
 
   const comments = useMemo(() => {
-    const convertComment = (comment: any): any => {
+    const convertComment = (comment: any): CommentThreadItem => {
+      const authorName = comment.isAnonymous
+        ? comment.anonymousOrder
+          ? `익명${comment.anonymousOrder}`
+          : '익명'
+        : comment.userDisplayName || comment.authorName;
+
       return {
         id: comment.id,
         content: comment.content,
         createdAt: comment.createdAt,
         updatedAt: comment.updatedAt,
-        isDeleted: comment.isDeleted,
         parentId: comment.parentId,
         authorId: comment.userId || comment.authorId,
         isAnonymous: comment.isAnonymous,
-        authorName: comment.userDisplayName || comment.authorName,
+        authorName,
         anonymousOrder: comment.anonymousOrder,
+        isDeleted: comment.isDeleted,
+        hiddenReason: comment.isDeleted ? 'deleted' : undefined,
+        canReply: Boolean(user?.uid) && !comment.isDeleted,
+        canEdit: Boolean(user?.uid) && user?.uid === (comment.userId || comment.authorId) && !comment.isDeleted,
+        canDelete: Boolean(user?.uid) && user?.uid === (comment.userId || comment.authorId) && !comment.isDeleted,
         replies: comment.replies?.map((reply: any) => convertComment(reply)) || [],
       };
     };
 
     return rawComments.map((comment) => convertComment(comment));
-  }, [rawComments]);
+  }, [rawComments, user?.uid]);
 
   const handleInlineImageLoaded = useCallback(
     ({ url, width: imageWidth, height: imageHeight }: { url: string; width: number; height: number }) => {
@@ -334,14 +351,9 @@ export const NoticeDetailScreen = () => {
           <UniversalCommentList
             comments={comments}
             loading={commentsLoading}
-            onAddComment={async (content: string, isAnonymous?: boolean) =>
-              addComment(content, undefined, isAnonymous)
-            }
-            onAddReply={addReply}
             onUpdateComment={updateComment}
             onDeleteComment={deleteComment}
             submitting={commentsSubmitting}
-            currentUserId={user?.uid}
             onReply={handleReply}
             replyingToCommentId={replyingTo?.commentId}
             onEditStateChange={setIsEditingComment}

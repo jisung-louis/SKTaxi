@@ -2,12 +2,12 @@
 // React Context를 사용하여 Repository 인스턴스를 앱 전체에 제공
 
 import { createContext } from 'react';
+import type { IBoardRepository } from '@/features/board';
 import type { IChatRepository } from '@/features/chat/data/repositories/IChatRepository';
 import type { INoticeRepository } from '@/features/notice';
 import type { IPartyRepository } from '@/features/taxi';
 import type {
   IUserRepository,
-  IBoardRepository,
   ICourseRepository,
   INotificationRepository,
   IAppNoticeRepository,

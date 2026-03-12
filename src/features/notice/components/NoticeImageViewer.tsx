@@ -1,1 +1,1 @@
-export { ImageViewer as NoticeImageViewer } from '@/components/board/ImageViewer';
+export { ImageViewer as NoticeImageViewer } from '@/features/board';
