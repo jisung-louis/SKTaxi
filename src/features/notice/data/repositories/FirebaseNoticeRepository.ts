@@ -22,7 +22,7 @@ import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
 
-import {
+import type {
   Comment,
   CommentFormData,
   INoticeRepository,

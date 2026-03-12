@@ -1,4 +1,3 @@
-import type { PaginatedResult } from '@/shared/types/pagination';
 import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
 
 import type {
@@ -9,7 +8,6 @@ import type {
   NoticeListPage,
   ReadStatusMap,
 } from './INoticeRepository';
-import { INoticeRepository } from './INoticeRepository';
 
 export class MockNoticeRepository implements INoticeRepository {
   private notices: Map<string, Notice> = new Map();
@@ -224,7 +222,7 @@ export class MockNoticeRepository implements INoticeRepository {
     category: string,
     cursor: unknown,
     limit: number,
-  ): PaginatedResult<Notice> {
+  ): NoticeListPage {
     const notices = this.getOrderedNotices(category);
     const cursorId = typeof cursor === 'string' ? cursor : null;
     const startIndex = cursorId
