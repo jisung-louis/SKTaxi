@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `9d27113`
-- 현재 상태: `Phase 8 verifier 2차 후속 수정 완료`
+- 현재 기준 runtime commit: `af5ac5f`
+- 현재 상태: `Phase 8 verifier 3차 후속 수정 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
-- 다음 작업 시작점: `Phase 8 재검증`
+- 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
 ## source of truth 상태
 
@@ -113,7 +113,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/features/campus/*` 가 이제 academic calendar, cafeteria hook/component/screen/repository의 실제 source of truth다.
 - `src/components/academic/*`, `src/components/cafeteria/*`, `src/hooks/setting/useAcademicSchedules.ts`, `src/hooks/setting/useCafeteriaMenu.ts`, `src/screens/HomeTab/AcademicCalendarDetailScreen.tsx`, `src/screens/HomeTab/CafeteriaDetailScreen.tsx`, `src/repositories/*Academic*`, `src/repositories/*Cafeteria*`, `src/types/academic.ts`, `src/types/cafeteria.ts` 는 campus legacy shim 역할만 유지한다.
 - `src/features/settings/*` 가 이제 setting 화면, app notice, inquiries, legal docs, app version check의 실제 source of truth다.
-- `src/hooks/setting/useAppNotice.ts`, `src/hooks/setting/useAppNotices.ts`, `src/hooks/setting/useSubmitInquiry.ts`, `src/screens/HomeTab/SettingScreen.tsx`, `src/screens/HomeTab/SettingScreen/*`, `src/lib/versionCheck.ts`, `src/repositories/firestore/FirestoreAppNoticeRepository.ts`, `src/repositories/interfaces/IAppNoticeRepository.ts`, `src/repositories/firestore/FirestoreInquiryRepository.ts`, `src/repositories/interfaces/IInquiryRepository.ts`, `src/repositories/firestore/FirestoreAppConfigRepository.ts`, `src/repositories/interfaces/IAppConfigRepository.ts`, `src/screens/components/TermsOfUseContent.tsx` 는 runtime/active 경로 기준 settings legacy shim 역할만 유지한다. `src/repositories/mock/*` 아래 mock 구현은 제외한다.
+- `src/hooks/setting/useAppNotice.ts`, `src/hooks/setting/useAppNotices.ts`, `src/hooks/setting/useSubmitInquiry.ts`, `src/screens/HomeTab/SettingScreen.tsx`, `src/screens/HomeTab/SettingScreen/*`, `src/lib/versionCheck.ts`, `src/repositories/firestore/FirestoreAppNoticeRepository.ts`, `src/repositories/interfaces/IAppNoticeRepository.ts`, `src/repositories/firestore/FirestoreInquiryRepository.ts`, `src/repositories/interfaces/IInquiryRepository.ts`, `src/repositories/firestore/FirestoreAppConfigRepository.ts`, `src/repositories/interfaces/IAppConfigRepository.ts`, `src/screens/components/TermsOfUseContent.tsx` 는 runtime/active 경로 기준 settings legacy shim 역할만 유지한다. settings 관련 mock 구현 보존 범위는 `src/repositories/mock/MockAppConfigRepository.ts`, `src/repositories/mock/MockInquiryRepository.ts` 로 한정한다.
 - `src/app/bootstrap/versionCheck.ts` 는 settings version check service를 app composition에 연결하는 active `app/bootstrap` adapter다. legacy shim으로 취급하지 않는다.
 - app notice foreground/navigation 책임은 이제 `src/features/settings/services/appNoticeNavigationService.ts` 가 소유한다. school notice와 app notice source of truth는 다시 섞지 않는다.
 - `src/features/user/*` 가 이제 in-app notification center hook/screen/repository contract의 실제 source of truth다.
@@ -128,11 +128,12 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - Phase 8 후속 회귀 수정으로 `CourseSearchProvider` 는 test/runtime에서 repository context fallback을 지원하고, `TimetableDetailScreen` 의 누락된 layout/helper import를 보정했다.
 - Phase 8 verifier 후속 수정으로 `MonthCalendar`, `WeekCalendar`, `CafeteriaDetailScreen`, `TimetableShareModal`, `useCourseSearch` 의 scoped eslint error를 제거했다.
 - Phase 8 verifier 2차 후속 수정으로 campus/timetable verifier 범위 unused-var error를 제거했고, auth legal-doc active import는 settings public API로 정리했다. verifier 범위 기준 scoped eslint는 다시 `0 errors` 상태다.
+- Phase 8 verifier 3차 후속 수정으로 `src/features/auth/services/authSessionService.ts` 는 더 이상 `@/app/bootstrap` 에서 앱 버전을 읽지 않고 `features/settings` public API를 사용한다. active feature의 `auth -> app/*` 역참조는 이 범위에서 제거되었다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
 
-- `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 재검증` 을 다시 받아야 한다.
+- `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 최종 재검증` 을 다시 받아야 한다.
 - `MainNavigator` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
 - timetable/campus/settings/minecraft/home 포함 전체 feature의 legacy shim 파일 대량 삭제는 아직 하지 않았다. Phase 9에서 실제 import graph를 다시 확인한 뒤 제거해야 한다.
 - route key와 UI label 완전 분리, 오타 파일명 정리, dead code 대량 삭제, 전역 lint warning 정리는 아직 남아 있다.
