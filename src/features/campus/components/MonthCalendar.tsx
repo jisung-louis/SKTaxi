@@ -17,20 +17,12 @@ interface MonthCalendarProps {
 // WINDOW_WIDTH - (MonthCalendar container paddingHorizontal) - (AcademicCalendarSection containder padding) - (HomeScreen ScrollView ContentContainer paddingHorizontal) / 7 = DATE_CELL_WIDTH
 const DATE_CELL_WIDTH = ( WINDOW_WIDTH - (12 * 2) - (16 * 2) - (4 * 2) ) / 7
 
-export const MonthCalendar: React.FC<MonthCalendarProps> = ({ schedules, currentDate = new Date(), onDateChange, onSchedulePress, onDatePress }) => {
-  // 현재 월의 일정들 필터링 (색상은 이미 할당됨)
-  const getMonthSchedules = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    
-    return schedules.filter(schedule => {
-      const scheduleDate = new Date(schedule.startDate);
-      return scheduleDate.getFullYear() === year && scheduleDate.getMonth() === month;
-    });
-  };
-
-  const monthSchedules = getMonthSchedules();
-  //console.log('monthSchedules', monthSchedules);
+export const MonthCalendar: React.FC<MonthCalendarProps> = ({
+  schedules,
+  currentDate = new Date(),
+  onSchedulePress,
+  onDatePress,
+}) => {
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -122,11 +114,11 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({ schedules, current
   };
 
   // 일정들을 row별로 배치하는 함수 (개선된 알고리즘)
-  const assignSchedulesToRows = (schedules: AcademicScheduleWithColor[]) => {
+  const assignSchedulesToRows = (weekSchedules: AcademicScheduleWithColor[]) => {
     const rows: AcademicScheduleWithColor[][] = [];
     
     // 1. 기간이 긴 일정부터 정렬 (위에 배치)
-    const sortedSchedules = [...schedules].sort((a, b) => {
+    const sortedSchedules = [...weekSchedules].sort((a, b) => {
       const durationA = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
       const durationB = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
       return durationB - durationA; // 긴 기간부터
@@ -228,7 +220,7 @@ export const MonthCalendar: React.FC<MonthCalendarProps> = ({ schedules, current
                 <View style={styles.eventContainer}>
                   {assignSchedulesToRows(weekSchedules).map((row, rowIndex) => (
                     <View key={`row-${rowIndex}`} style={styles.eventRow}>
-                      {row.map((schedule, scheduleIndex) => {
+                      {row.map(schedule => {
                         const position = getEventPosition(schedule, week);
                         
                         // 이벤트가 두 주 이상에 걸치는지 확인

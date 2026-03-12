@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -48,12 +48,12 @@ export const CafeteriaDetailScreen = () => {
   };
 
   // 카테고리로 스크롤하는 함수 (실제 위치)
-  const scrollToCategory = (categoryId: string) => {
+  const scrollToCategory = useCallback((categoryId: string) => {
     const targetY = categoryPositions[categoryId];
     if (targetY !== undefined && scrollViewRef.current) {
       scrollViewRef.current.scrollTo({ y: targetY - 20, animated: true });
     }
-  };
+  }, [categoryPositions]);
 
   // 파라미터로 받은 카테고리로 자동 스크롤 (정확한 로딩 완료 감지)
   React.useEffect(() => {
@@ -61,7 +61,7 @@ export const CafeteriaDetailScreen = () => {
       // 모든 카테고리 위치가 측정되고 콘텐츠가 로드된 후 스크롤
       scrollToCategory(scrollToCategoryParam);
     }
-  }, [scrollToCategoryParam, isContentLoaded, categoryPositions]);
+  }, [categoryPositions, isContentLoaded, scrollToCategory, scrollToCategoryParam]);
 
   if (loading) {
     return (

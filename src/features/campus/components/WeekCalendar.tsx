@@ -18,7 +18,12 @@ interface WeekCalendarProps {
 // WINDOW_WIDTH - (WeekCalendar container paddingHorizontal) - (AcademicCalendarSection containder padding) - (HomeScreen ScrollView ContentContainer paddingHorizontal) / 7 = DATE_CELL_WIDTH
 const DATE_CELL_WIDTH = ( WINDOW_WIDTH - (12 * 2) - (16 * 2) - (4 * 2) ) / 7
 
-export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDate = new Date(), onDateChange, onSchedulePress, onDatePress }) => {
+export const WeekCalendar: React.FC<WeekCalendarProps> = ({
+  schedules,
+  currentDate = new Date(),
+  onSchedulePress,
+  onDatePress,
+}) => {
   // 현재 주의 일정들 필터링 (색상은 이미 할당됨)
   const getWeekSchedules = () => {
     const startOfWeek = new Date(currentDate);
@@ -59,9 +64,9 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
   today.setHours(0, 0, 0, 0);
 
   // 이벤트의 시작 위치와 너비를 계산하는 함수
-  const getEventPosition = (schedule: AcademicScheduleWithColor, weekDates: Date[]) => {
-    const weekStart = weekDates[0];
-    const weekEnd = weekDates[6];
+  const getEventPosition = (schedule: AcademicScheduleWithColor, datesInWeek: Date[]) => {
+    const weekStart = datesInWeek[0];
+    const weekEnd = datesInWeek[6];
     const scheduleStart = normalizeDate(schedule.startDate);
     const scheduleEnd = normalizeDate(schedule.endDate);
     
@@ -88,11 +93,11 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
   };
 
   // 일정들을 row별로 배치하는 함수 (개선된 알고리즘)
-  const assignSchedulesToRows = (schedules: AcademicScheduleWithColor[]) => {
+  const assignSchedulesToRows = (weekSchedules: AcademicScheduleWithColor[]) => {
     const rows: AcademicScheduleWithColor[][] = [];
     
     // 1. 기간이 긴 일정부터 정렬 (위에 배치)
-    const sortedSchedules = [...schedules].sort((a, b) => {
+    const sortedSchedules = [...weekSchedules].sort((a, b) => {
       const durationA = new Date(a.endDate).getTime() - new Date(a.startDate).getTime();
       const durationB = new Date(b.endDate).getTime() - new Date(b.startDate).getTime();
       return durationB - durationA; // 긴 기간부터
@@ -167,7 +172,7 @@ export const WeekCalendar: React.FC<WeekCalendarProps> = ({ schedules, currentDa
         <View style={styles.eventContainer}>
           {assignSchedulesToRows(weekSchedules).map((row, rowIndex) => (
             <View key={`row-${rowIndex}`} style={styles.eventRow}>
-              {row.map((schedule, scheduleIndex) => {
+              {row.map(schedule => {
                 const position = getEventPosition(schedule, weekDates);
                 
                 // 지난 일정인지 확인

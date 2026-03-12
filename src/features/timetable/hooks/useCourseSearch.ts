@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Course, CourseSearchFilter } from '../model/types';
 import { useCourseSearchContext } from '../providers/CourseSearchProvider';
 
@@ -80,5 +80,4 @@ export const useCourseSearch = () => {
     isInitialized,
   };
 };
-
 

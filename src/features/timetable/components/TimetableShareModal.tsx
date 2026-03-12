@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -20,15 +20,6 @@ export const TimetableShareModal: React.FC<TimetableShareModalProps> = ({
   courses,
   semester,
 }) => {
-  const [shareCode, setShareCode] = useState<string>('');
-
-  const generateShareCode = () => {
-    // 간단한 공유 코드 생성 (실제로는 서버에서 생성)
-    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    setShareCode(code);
-    return code;
-  };
-
   const handleShare = async () => {
     try {
       const courseList = courses.map(course => 
@@ -132,7 +123,7 @@ export const TimetableShareModal: React.FC<TimetableShareModalProps> = ({
             
             {courses.length > 0 && (
               <View style={styles.courseList}>
-                {courses.slice(0, 3).map((course, index) => (
+                {courses.slice(0, 3).map(course => (
                   <Text key={course.id} style={styles.courseItem}>
                     {course.name} ({course.code})
                   </Text>
@@ -241,5 +232,4 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-
 
