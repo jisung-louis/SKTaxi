@@ -1,4 +1,9 @@
-export { PartyList, TaxiPermissionPrompt, TaxiTimeRemaining } from './components';
+export {
+  PartyList,
+  TaxiHomeSection,
+  TaxiPermissionPrompt,
+  TaxiTimeRemaining,
+} from './components';
 
 export { FirebasePartyRepository } from './data/repositories/FirebasePartyRepository';
 export {
