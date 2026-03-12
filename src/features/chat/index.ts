@@ -1,2 +1,73 @@
-// Phase 0 placeholder public API.
-export {};
+export { ChatListHeader, ChatRoomCard, EmptyChatList } from './components';
+
+export {
+  FirebaseChatRepository,
+  FirestoreChatRepository,
+} from './data/repositories/FirebaseChatRepository';
+export {
+  getChatRoomNotificationSetting,
+  joinChatRoom,
+  sendChatMessage,
+  sendChatSystemRuntimeMessage as sendChatSystemMessage,
+  updateChatRoomNotificationSetting,
+} from './data/composition/chatRuntime';
+export type {
+  IChatRepository,
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from './data/repositories/IChatRepository';
+
+export { useChatActions } from './hooks/useChatActions';
+export type { UseChatActionsResult } from './hooks/useChatActions';
+export { useChatListPresenter } from './hooks/useChatListPresenter';
+export { useChatMessages } from './hooks/useChatMessages';
+export type { UseChatMessagesResult } from './hooks/useChatMessages';
+export { useChatRepository } from './hooks/useChatRepository';
+export { useChatRoom, useChatRoomLastRead } from './hooks/useChatRoom';
+export type {
+  UseChatRoomLastReadResult,
+  UseChatRoomResult,
+} from './hooks/useChatRoom';
+export { useChatRoomNotifications } from './hooks/useChatRoomNotifications';
+export type {
+  UseChatRoomNotificationsResult,
+} from './hooks/useChatRoomNotifications';
+export { useChatRoomStates } from './hooks/useChatRoomStates';
+export type { UseChatRoomStatesResult } from './hooks/useChatRoomStates';
+export { useChatRooms } from './hooks/useChatRooms';
+export { useChatTabUnreadIndicator } from './hooks/useChatTabUnreadIndicator';
+
+export type {
+  ChatMessage,
+  ChatRoom,
+  ChatRoomCategory,
+  ChatRoomFilter,
+  ChatRoomListItem,
+  ChatRoomNotificationPayload,
+  ChatRoomServerInfo,
+  ChatRoomState,
+  ChatRoomStatesMap,
+  MessageSubscriptionCallbacks,
+  PaginatedResult,
+} from './model/types';
+
+export { ChatDetailScreen } from './screens/ChatDetailScreen';
+export { ChatListScreen } from './screens/ChatListScreen';
+
+export {
+  buildChatRoomForegroundNotification,
+  formatTimeAgo,
+  getChatRoomColor,
+  getChatRoomDisplayName,
+  getChatRoomIcon,
+  getCurrentChatRoomIdFromNavigationState,
+  navigateToChatRoom,
+  resolveChatRoomForegroundNotification,
+  sendChatTextMessage,
+} from './services/chatRoomService';
+export {
+  getParticipatingChatRooms,
+  hasUnreadChatRoom,
+  hasUnreadChatRooms,
+  safeToMillis,
+} from './services/unreadStateService';

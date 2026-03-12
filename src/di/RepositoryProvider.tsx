@@ -1,13 +1,14 @@
 // SKTaxi: Repository Provider 컴포넌트 - DIP 의존성 주입 구현
 // Repository 인스턴스를 앱 전체에 제공하는 Provider
 
-import React, { useMemo, ReactNode } from 'react';
+import React, { useMemo, type ReactNode } from 'react';
+
+import { FirebaseChatRepository } from '@/features/chat/data/repositories/FirebaseChatRepository';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
 import { FirebasePartyRepository } from '@/features/taxi';
 import { FirebaseUserRepository } from '@/features/user';
 
-import { FirestoreChatRepository } from '../repositories/firestore/FirestoreChatRepository';
 import { FirestoreBoardRepository } from '../repositories/firestore/FirestoreBoardRepository';
 import { FirestoreNoticeRepository } from '../repositories/firestore/FirestoreNoticeRepository';
 import { FirestoreCourseRepository } from '../repositories/firestore/FirestoreCourseRepository';
@@ -40,7 +41,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
     // 기본 Firestore 구현체
     const defaultRepositories: RepositoryContainer = {
       partyRepository: new FirebasePartyRepository(),
-      chatRepository: new FirestoreChatRepository(),
+      chatRepository: new FirebaseChatRepository(),
       userRepository: new FirebaseUserRepository(),
       boardRepository: new FirestoreBoardRepository(),
       noticeRepository: new FirestoreNoticeRepository(),

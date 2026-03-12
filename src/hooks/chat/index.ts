@@ -1,25 +1,28 @@
-// SKTaxi: Chat 관련 훅 통합 내보내기
+export {
+  getChatRoomNotificationSetting,
+  joinChatRoom,
+  sendChatMessage,
+  sendChatSystemMessage,
+  updateChatRoomNotificationSetting,
+  useChatActions,
+  useChatListPresenter,
+  useChatMessages,
+  useChatRoom,
+  useChatRoomLastRead,
+  useChatRoomNotifications,
+  useChatRoomStates,
+  useChatRooms,
+} from '@/features/chat';
+export type {
+  ChatRoomCategory,
+  UseChatActionsResult,
+  UseChatMessagesResult,
+  UseChatRoomLastReadResult,
+  UseChatRoomNotificationsResult,
+  UseChatRoomResult,
+  UseChatRoomStatesResult,
+} from '@/features/chat';
 
-// === 채팅방 훅 (chatRooms 컬렉션) ===
-export { useChatMessages } from './useChatMessages';
-export type { UseChatMessagesResult } from './useChatMessages';
-
-export { useChatActions } from './useChatActions';
-export type { UseChatActionsResult } from './useChatActions';
-
-export { useChatRoomStates } from './useChatRoomStates';
-export type { UseChatRoomStatesResult } from './useChatRoomStates';
-
-export { useChatRoomNotifications } from './useChatRoomNotifications';
-export type { UseChatRoomNotificationsResult } from './useChatRoomNotifications';
-
-export { useChatRoom, useChatRoomLastRead } from './useChatRoom';
-export type { UseChatRoomResult, UseChatRoomLastReadResult } from './useChatRoom';
-
-export { useChatRooms } from './useChatRooms';
-export type { ChatRoomCategory } from './useChatRooms';
-
-// === 파티 채팅 훅 (chats 컬렉션 - 택시 동승) ===
 export {
   sendMessage,
   sendSystemMessage,
@@ -30,16 +33,6 @@ export {
 } from '@/features/taxi';
 export type { UseMessagesResult } from '@/features/taxi';
 
-// 채팅방 유틸리티
-export {
-  sendChatMessage,
-  sendChatSystemMessage,
-  joinChatRoom,
-  getChatRoomNotificationSetting,
-  updateChatRoomNotificationSetting,
-} from '../../utils/chatUtils';
-
-// 타입 re-export
 export type {
   AccountMessageData,
   ArrivalMessageData,

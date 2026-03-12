@@ -63,6 +63,10 @@ export class MockChatRepository implements IChatRepository {
     return () => {};
   }
 
+  async getChatRoom(chatRoomId: string): Promise<ChatRoom | null> {
+    return this.chatRooms.get(chatRoomId) || null;
+  }
+
   async createChatRoom(chatRoom: Omit<ChatRoom, 'id'>): Promise<string> {
     const id = `chat-${Date.now()}`;
     this.chatRooms.set(id, { ...chatRoom, id } as ChatRoom);
