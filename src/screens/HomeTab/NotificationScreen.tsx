@@ -10,6 +10,7 @@ import { TYPOGRAPHY } from '../../constants/typhograpy';
 import { useNotifications, Notification } from '../../hooks/common';
 import { useScreenView } from '../../hooks/useScreenView';
 import { navigateToBoardDetail } from '@/features/board';
+import { navigateToAppNoticeDetail } from '@/features/settings';
 
 const formatTimeAgo = (timestamp: any) => {
   if (!timestamp) return '방금 전';
@@ -104,10 +105,7 @@ export const NotificationScreen = () => {
       case 'app_notice':
         // 앱 공지 상세 화면으로 이동
         if (notification.data?.appNoticeId) {
-          (navigation as any).navigate('홈', {
-            screen: 'AppNoticeDetail',
-            params: { noticeId: notification.data.appNoticeId },
-          });
+          navigateToAppNoticeDetail(navigation, notification.data.appNoticeId);
         }
         break;
       case 'board_post_comment':

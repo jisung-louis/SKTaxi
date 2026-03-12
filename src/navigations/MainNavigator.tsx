@@ -29,6 +29,14 @@ import {
   NoticeScreen,
 } from '@/features/notice';
 import {
+  AppNoticeDetailScreen,
+  AppNoticeScreen,
+  InquiriesScreen,
+  PrivacyPolicyScreen,
+  SettingScreen,
+  TermsOfUseScreen,
+} from '@/features/settings';
+import {
   AcceptancePendingScreen,
   ChatScreen,
   JoinRequestProvider,
@@ -42,12 +50,6 @@ import { TimetableDetailScreen } from '@/features/timetable';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
-import { SettingScreen } from '../screens/HomeTab/SettingScreen';
-import { AppNoticeScreen } from '../screens/HomeTab/SettingScreen/AppNoticeScreen';
-import { AppNoticeDetailScreen } from '../screens/HomeTab/SettingScreen/AppNoticeDetailScreen';
-import { InquiriesScreen } from '../screens/HomeTab/SettingScreen/InquiriesScreen';
-import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScreen';
-import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
 import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
 import { COLORS } from '../constants/colors';

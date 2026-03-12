@@ -1,13 +1,13 @@
 // SKTaxi: Setting 관련 훅 export
 
-export { useAppNotices } from './useAppNotices';
-export type { UseAppNoticesResult } from './useAppNotices';
+export { useAppNotices } from '@/features/settings';
+export type { UseAppNoticesResult } from '@/features/settings';
 
-export { useAppNotice } from './useAppNotice';
-export type { UseAppNoticeResult } from './useAppNotice';
+export { useAppNotice } from '@/features/settings';
+export type { UseAppNoticeResult } from '@/features/settings';
 
-export { useSubmitInquiry } from './useSubmitInquiry';
-export type { InquiryData, UseSubmitInquiryResult } from './useSubmitInquiry';
+export { useSubmitInquiry } from '@/features/settings';
+export type { InquiryData, UseSubmitInquiryResult } from '@/features/settings';
 
 export { useCafeteriaMenu } from '@/features/campus';
 export type { UseCafeteriaMenuResult } from '@/features/campus';

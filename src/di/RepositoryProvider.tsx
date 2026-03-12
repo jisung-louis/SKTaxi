@@ -12,6 +12,10 @@ import {
 } from '@/features/board';
 import { FirebaseChatRepository } from '@/features/chat/data/repositories/FirebaseChatRepository';
 import { FirebaseNoticeRepository } from '@/features/notice';
+import {
+  FirebaseAppNoticeRepository,
+  FirebaseInquiryRepository,
+} from '@/features/settings';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
 import { FirebasePartyRepository } from '@/features/taxi';
@@ -21,8 +25,6 @@ import {
 } from '@/features/timetable';
 import { FirebaseUserRepository } from '@/features/user';
 import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
-import { FirestoreAppNoticeRepository } from '../repositories/firestore/FirestoreAppNoticeRepository';
-import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
 import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 
@@ -52,10 +54,10 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       noticeRepository: new FirebaseNoticeRepository(),
       courseRepository: new FirebaseCourseRepository(),
       notificationRepository: new FirestoreNotificationRepository(),
-      appNoticeRepository: new FirestoreAppNoticeRepository(),
+      appNoticeRepository: new FirebaseAppNoticeRepository(),
       cafeteriaRepository: new FirebaseCafeteriaRepository(),
       academicRepository: new FirebaseAcademicRepository(),
-      inquiryRepository: new FirestoreInquiryRepository(),
+      inquiryRepository: new FirebaseInquiryRepository(),
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirebaseTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),

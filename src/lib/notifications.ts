@@ -9,6 +9,7 @@ import {
 } from '@react-native-firebase/messaging';
 import type { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import { navigateToBoardDetail } from '@/features/board';
+import { navigateToAppNoticeDetail } from '@/features/settings';
 
 // Messaging 인스턴스
 const messaging = getMessaging();
@@ -298,7 +299,7 @@ function handleNotificationNavigation(navigation: any, data: any, onJoinRequestR
       break;
     case 'app_notice':
       if (data.appNoticeId) {
-        navigation.navigate('홈', { screen: 'AppNoticeDetail', params: { noticeId: data.appNoticeId } });
+        navigateToAppNoticeDetail(navigation, data.appNoticeId);
       }
       break;
     case 'join_request':

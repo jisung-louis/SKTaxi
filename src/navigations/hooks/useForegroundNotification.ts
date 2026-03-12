@@ -17,6 +17,10 @@ import {
   buildNoticePushForegroundNotification,
   navigateToNoticeDetail,
 } from '@/features/notice';
+import {
+  buildAppNoticeForegroundNotification,
+  navigateToAppNoticeDetail,
+} from '@/features/settings';
 
 export type ForegroundNotificationType =
   | 'notice'
@@ -150,10 +154,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
         break;
       case 'app_notice':
         if (noticeId) {
-          (navigation as any).navigate('Main', {
-            screen: '홈',
-            params: { screen: 'AppNoticeDetail', params: { noticeId } },
-          });
+          navigateToAppNoticeDetail(navigation, noticeId);
         }
         break;
       case 'chat_room_message':
@@ -198,12 +199,14 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   // 앱 공지 알림 핸들러
   const handleAppNoticeNotificationReceived = useCallback(
     (data: { appNoticeId: string; title: string }) => {
+      const payload = buildAppNoticeForegroundNotification(data);
+
       setForegroundNotification({
         visible: true,
-        title: '새 앱 공지',
-        body: data.title,
-        noticeId: data.appNoticeId,
-        type: 'app_notice',
+        title: payload.title,
+        body: payload.body,
+        noticeId: payload.noticeId,
+        type: payload.type,
       });
     },
     []

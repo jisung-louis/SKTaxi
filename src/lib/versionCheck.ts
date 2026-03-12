@@ -2,6 +2,6 @@ export {
   checkVersionUpdate,
   getCurrentAppVersion,
   getMinimumRequiredVersion,
-} from '@/app/bootstrap/versionCheck';
-export type { VersionModalConfig } from '@/app/bootstrap/versionCheck';
+} from '@/features/settings';
+export type { VersionModalConfig } from '@/features/settings';
 export { openAppStore } from '@/shared/lib/device/openAppStore';
