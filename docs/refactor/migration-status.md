@@ -7,8 +7,8 @@
 
 - 브랜치: `skuri-refactoring`
 - 현재 기준 runtime commit: `871dd64`
-- 현재 상태: `Phase 8 shared-boundary cleanup 2차 후속 수정 완료`
-- 현재 구조 상태: `active src/app/*`, `src/features/*` 기준 verifier 대상 root legacy import는 0건이며, taxi join-request notification-action contract의 source of truth는 `src/features/taxi/data/repositories/*` 다. root legacy common/constants/hooks/utils/lib 및 notification-action repository 경로는 shim·잔여 cleanup 대상으로만 남아 있음`
+- 현재 상태: `Phase 8 navigation ownership + root residual cleanup 후속 수정 완료`
+- 현재 구조 상태: `navigation shell의 source of truth는 이제 src/app/navigation/* 이고, active src/app/* 및 src/features/* 기준 verifier 대상 root legacy import는 0건이다. root src/navigations/*, src/constants/constants.ts, src/hooks/storage/useImageUpload.ts, src/repositories/interfaces/IModerationRepository.ts, src/repositories/firestore/FirestoreStorageRepository.ts 는 shim-only 또는 shared/feature re-export 상태로 줄었고, src/repositories/firestore/FirestoreFcmRepository.ts 는 삭제됐다. src/di/* 는 app composition DI 경계라 keep-active 로 유지한다.`
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
 ## source of truth 상태
@@ -146,12 +146,19 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/features/user/hooks/useNotificationSettings.ts`, `src/features/user/hooks/useUserProfile.ts`, `src/features/user/hooks/useUserBookmarks.ts`, `src/features/user/hooks/useAccountInfo.ts` 는 더 이상 `@/hooks/auth` shim을 보지 않고 `@/features/auth` public API를 직접 사용한다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 - Phase 8 shared-boundary cleanup 2차 후속 수정으로 taxi join-request notification-action contract와 구현의 source of truth는 `src/features/taxi/data/repositories/{INotificationActionRepository,FirebaseNotificationActionRepository,MockNotificationActionRepository}.ts` 로 이동했다. `src/features/taxi/services/joinRequestService.ts`, `src/features/taxi/hooks/useNotificationActionRepository.ts`, `src/di/repositoryContracts.ts`, `src/di/RepositoryProvider.tsx` 는 이제 taxi feature 경계/public API를 사용하고, root `src/repositories/interfaces/INotificationActionRepository.ts`, `src/repositories/firestore/FirestoreNotificationActionRepository.ts`, `src/repositories/mock/MockNotificationActionRepository.ts` 는 shim만 유지한다.
+- Phase 8 navigation ownership + root residual cleanup 후속 수정으로 navigation shell의 actual source of truth는 `src/app/navigation/{AppNavigation,RootNavigator,MainNavigator,AuthNavigator,types}.ts(x)` 로 정리되었다. `App.tsx` 와 active app runtime은 이제 이 경계를 직접 사용하고, root `src/navigations/{RootNavigator,MainNavigator,AuthNavigator,types}.ts(x)` 는 shim-only re-export만 유지한다.
+- 이 후속 수정에서 `src/shared/ui/PermissionBubble.tsx` 가 새 source of truth가 되었고 `src/app/navigation/MainNavigator.tsx` 는 더 이상 root `src/components/common/PermissionBubble.tsx`, `src/constants/constants.ts`, `src/constants/colors.ts`, `src/constants/typhograpy.ts` 를 active source로 사용하지 않는다. root permission bubble/common/constants 대응 파일은 shim 또는 잔여 export만 유지한다.
+- FCM token active ownership은 계속 `src/features/user/services/fcmTokenService.ts`, `src/features/user/data/repositories/FirebaseUserRepository.ts`, `src/shared/lib/firebase/messaging.ts` 조합에 남긴다. 중복된 root 구현이던 `src/repositories/firestore/FirestoreFcmRepository.ts` 는 active consumer가 없어 이번 턴에 삭제했다.
+- moderation contract와 구현의 actual source of truth는 이제 `src/shared/lib/moderation/{contracts,FirestoreModerationRepository,MockModerationRepository,index}.ts` 다. root `src/repositories/interfaces/IModerationRepository.ts`, `src/repositories/firestore/FirestoreModerationRepository.ts`, `src/repositories/mock/MockModerationRepository.ts` 는 shim-only re-export만 유지한다.
+- storage contract와 Firebase Storage 구현의 actual source of truth는 이제 `src/shared/lib/firebase/storageRepository.ts` 다. `src/di/repositoryContracts.ts` 와 `src/di/RepositoryProvider.tsx` 는 shared 경계를 직접 사용하고, root `src/repositories/interfaces/IStorageRepository.ts`, `src/repositories/firestore/FirestoreStorageRepository.ts` 는 shim-only re-export만 유지한다. `src/di/*` 폴더 자체는 app composition DI 경계라 keep-active 상태로 남긴다.
+- root `src/constants/constants.ts` 는 공용 layout/departments shared re-export + taxi 출발/도착 상수 feature re-export만 남기는 shim으로 줄였다. taxi-specific `DEPARTURE_OPTIONS`, `DESTINATION_OPTIONS`, `DEPARTURE_LOCATION`, `DESTINATION_LOCATION` 의 actual source of truth는 계속 `src/features/taxi/model/constants.ts` 다.
+- root `src/hooks/storage/useImageUpload.ts` 는 더 이상 자체 업로드 로직을 소유하지 않고 `src/features/board/hooks/useBoardImageUpload.ts` 와 `src/features/board/model/types.ts` 를 re-export하는 shim-only 파일로 줄였다. 현재 active board write/edit 경로는 계속 board feature hook을 직접 source of truth로 사용한다.
 
 ## Phase 9 진입 전 남은 blocker
 
 - `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 최종 재검증` 을 다시 받아야 한다.
 - root legacy common/constants/hooks/utils/lib 파일 자체는 여전히 저장소에 남아 있다. 이번 턴 기준 이들 중 active import가 제거된 경로는 shim 또는 잔여 cleanup 대상으로만 간주한다.
-- `MainNavigator` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
+- `src/app/navigation/MainNavigator.tsx` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
 - timetable/campus/settings/minecraft/home 포함 전체 feature의 legacy shim 파일 대량 삭제는 아직 하지 않았다. Phase 9에서 실제 import graph를 다시 확인한 뒤 제거해야 한다.
 - route key와 UI label 완전 분리, 오타 파일명 정리, dead code 대량 삭제, 전역 lint warning 정리는 아직 남아 있다.
 
