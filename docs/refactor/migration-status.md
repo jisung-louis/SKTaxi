@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `10ffa8b`
-- 현재 상태: `Phase 6 완료`
-- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat`, `notice` source of truth 전환 완료
-- 다음 작업 시작점: `Phase 7`
+- 현재 기준 runtime commit: `60f4c5e`
+- 현재 상태: `Phase 7 완료`
+- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat`, `notice`, `board` source of truth 전환 완료
+- 다음 작업 시작점: `Phase 8`
 
 ## source of truth 상태
 
@@ -21,7 +21,7 @@ legacy auth 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `taxi`: `src/features/taxi`
 - `chat`: `src/features/chat`
 - `notice`: `src/features/notice`
-- `board`: legacy
+- `board`: `src/features/board`
 - `timetable`: legacy
 - `campus`: legacy
 - `settings`: legacy
@@ -39,6 +39,9 @@ legacy chat 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 `notice` migration이 시작되었으므로 notice의 source of truth는 이제 `src/features/notice` 다.
 legacy notice 대응 파일에는 shim, import 정리, 삭제만 허용된다.
+
+`board` migration이 시작되었으므로 board의 source of truth는 이제 `src/features/board` 다.
+legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 ## Phase 3 완료 메모
 
@@ -90,12 +93,22 @@ legacy notice 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/app/navigation/types.ts`, `src/navigations/MainNavigator.tsx`, 홈 `NoticeSection`, `src/navigations/hooks/useForegroundNotification.ts` 의 학교 공지 이동/foreground payload 처리는 notice feature public API를 사용하도록 정리되었다.
 - app notice는 이번 phase에서 settings legacy 소유로 유지한다. school notice와 app notice source of truth는 분리된 상태다.
 
-## Phase 7 진입 전 남은 blocker
+## Phase 7 완료 메모
 
-- hard blocker는 없다. `Phase 7` board migration은 바로 시작할 수 있다.
-- `src/navigations/hooks/useForegroundNotification.ts` 에는 여전히 taxi/app notice 책임이 남아 있다. notice school payload 분기만 분리된 상태이므로 settings phase 전까지 app notice 분기는 건드리지 않는다.
-- legacy notice shim 파일들은 이제 shim-only 상태다. 남은 import 정리가 끝나면 삭제 대상으로 취급해야 한다.
-- `MainNavigator` 는 공개 채팅/학교 공지 feature public API 소비로 정리되었지만, route shell 자체의 전면 정리는 별도 cleanup 단계로 남아 있다.
+- `src/features/board/*` 가 이제 게시판 list/detail/write/edit/comment/like/bookmark/moderation 연결의 실제 source of truth다.
+- `src/screens/BoardScreen.tsx`, `src/screens/BoardTab/*`, `src/components/board/*`, `src/hooks/board/*`, `src/repositories/interfaces/IBoardRepository.ts`, `src/repositories/firestore/FirestoreBoardRepository.ts`, `src/repositories/mock/MockBoardRepository.ts`, `src/types/board.ts`, `src/constants/board.ts`, `src/utils/boardUtils.ts` 는 board legacy shim 역할만 유지한다.
+- `RepositoryProvider` 의 board repository 바인딩은 이제 `src/features/board/data/repositories/FirebaseBoardRepository.ts` 를 사용한다.
+- board 화면, hook, repository 구현, model/navigation 타입, post/comment/moderation service는 `src/features/board/*` 로 이동했고 app/navigation 과 notification 진입점은 board feature public API를 통해 detail 이동을 수행한다.
+- `src/components/common/UniversalCommentList.tsx` 의 실제 구현은 `src/shared/ui/comments/*` 로 이동했다. shared comment UI는 business-free contract만 가지며, board comment 신고/차단/권한 판단은 `src/features/board/components/BoardCommentList.tsx`, `src/features/board/hooks/useBoardComments.ts`, `src/features/board/services/boardModerationService.ts` 가 소유한다.
+- board comment query는 soft-deleted comment placeholder를 유지하도록 feature repository에서 처리한다. 삭제된 부모 댓글과 살아있는 답글 thread를 feature 쪽에서 그대로 복원할 수 있다.
+- notice detail도 새 shared comment UI 계약으로 맞췄고, notice image viewer는 board feature public API를 통해 재사용하도록 정리되었다.
+
+## Phase 8 진입 전 남은 blocker
+
+- hard blocker는 없다. `Phase 8` feature migration을 시작할 수 있다.
+- `timetable`, `campus`, `home`, `settings`, `minecraft` 는 여전히 legacy source of truth다. 다음 phase에서 source of truth를 개별 feature로 옮길 때 board와 동일하게 legacy 경로를 즉시 shim-only로 전환해야 한다.
+- `src/navigations/hooks/useForegroundNotification.ts` 에는 taxi/app notice 책임이 계속 남아 있다. board/notice school 이동만 feature public API로 빠졌으므로 settings phase 전까지 app notice 분기는 현 상태를 유지한다.
+- `MainNavigator` 와 홈/설정 stack shell은 여전히 legacy composition 책임이 많다. Phase 8 이후 남은 legacy screen 정리와 route shell cleanup이 이어져야 한다.
 
 ## 운영 규칙
 
