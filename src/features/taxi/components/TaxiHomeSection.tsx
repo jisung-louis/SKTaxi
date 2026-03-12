@@ -1,14 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '@/components/common/Button';
 import { useAuth } from '@/features/auth';
 import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
 import { logEvent } from '@/lib/analytics';
-import type { MainTabParamList } from '@/navigations/types';
 import { formatKoreanAmPmTime } from '@/utils/datetime';
 
 import { useJoinRequest } from '../hooks/useJoinRequest';
@@ -17,8 +14,18 @@ import { useParties } from '../hooks/useParties';
 import { usePendingJoinRequest } from '../hooks/usePendingJoinRequest';
 import type { Party } from '../model/types';
 
-export const TaxiHomeSection: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+export interface TaxiHomeSectionProps {
+  onOpenTaxiHome: () => void;
+  onOpenPendingJoinRequest: (params: {
+    party: Party;
+    requestId: string;
+  }) => void;
+}
+
+export const TaxiHomeSection: React.FC<TaxiHomeSectionProps> = ({
+  onOpenTaxiHome,
+  onOpenPendingJoinRequest,
+}) => {
   const { parties } = useParties();
   const { user } = useAuth();
   const { pendingRequest } = usePendingJoinRequest();
@@ -37,9 +44,9 @@ export const TaxiHomeSection: React.FC = () => {
     }
 
     if (pendingRequest?.partyId === party.id && pendingRequest?.requestId) {
-      navigation.navigate('택시', {
-        screen: 'AcceptancePending',
-        params: { party, requestId: pendingRequest.requestId },
+      onOpenPendingJoinRequest({
+        party,
+        requestId: pendingRequest.requestId,
       });
       return;
     }
@@ -97,9 +104,9 @@ export const TaxiHomeSection: React.FC = () => {
 
                 Alert.alert('요청 전송', '방장에게 요청을 보냈어요.');
 
-                navigation.navigate('택시', {
-                  screen: 'AcceptancePending',
-                  params: { party, requestId },
+                onOpenPendingJoinRequest({
+                  party,
+                  requestId,
                 });
               } catch (error) {
                 console.error('동승 요청 전송 실패:', error);
@@ -131,7 +138,7 @@ export const TaxiHomeSection: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.sectionActionButton}
-          onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })}
+          onPress={onOpenTaxiHome}
         >
           <Text style={styles.sectionAction}>모두 보기</Text>
           <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
@@ -192,7 +199,7 @@ export const TaxiHomeSection: React.FC = () => {
               <Text style={styles.emptyText}>첫 번째 파티를 만들어보세요!</Text>
               <Button
                 title="파티 만들기"
-                onPress={() => navigation.navigate('택시', { screen: 'TaxiMain' })}
+                onPress={onOpenTaxiHome}
                 size="small"
                 style={styles.emptyButton}
               />

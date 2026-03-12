@@ -9,19 +9,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '@/components/common/Button';
 import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
-import type { MainTabParamList } from '@/navigations/types';
 
 import type { MinecraftAccountEntry, MinecraftEdition } from '../model/types';
 import { useMinecraftAccounts } from '../hooks/useMinecraftAccounts';
 
-export const MinecraftSection: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+export interface MinecraftSectionProps {
+  onOpenMinecraftDetail: () => void;
+}
+
+export const MinecraftSection: React.FC<MinecraftSectionProps> = ({
+  onOpenMinecraftDetail,
+}) => {
   const [mcNickname, setMcNickname] = useState('');
   const [mcEdition, setMcEdition] = useState<MinecraftEdition>('JE');
   const {
@@ -35,7 +37,10 @@ export const MinecraftSection: React.FC = () => {
   const isWhitelistRegistered = minecraftAccounts.length > 0;
 
   const formatDate = (value?: number) => {
-    if (!value) return '-';
+    if (!value) {
+      return '-';
+    }
+
     try {
       const date = new Date(value);
       return date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
@@ -100,7 +105,7 @@ export const MinecraftSection: React.FC = () => {
         </View>
         <TouchableOpacity
           style={styles.sectionActionButton}
-          onPress={() => navigation.navigate('홈', { screen: 'MinecraftDetail' })}
+          onPress={onOpenMinecraftDetail}
         >
           <Text style={styles.sectionAction}>자세히</Text>
           <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />

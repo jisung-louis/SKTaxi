@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import {
+  type NavigationProp,
+  type ParamListBase,
+  useIsFocused,
+  useNavigation,
+} from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
 import Surface from '@/components/common/Surface';
 import { TabBadge } from '@/components/common/TabBadge';
 import { COLORS } from '@/constants/colors';
@@ -16,10 +19,10 @@ import {
   CafeteriaSection,
 } from '@/features/campus';
 import { MinecraftSection } from '@/features/minecraft';
+import type { Party } from '@/features/taxi';
 import { TimetableSection } from '@/features/timetable';
 import { useInAppNotifications } from '@/features/user';
 import { useScreenView } from '@/hooks/useScreenView';
-import type { MainTabParamList } from '@/navigations/types';
 
 import { NoticeSection } from '../components/NoticeSection';
 import { TaxiSection } from '../components/TaxiSection';
@@ -28,7 +31,7 @@ export const HomeScreen = () => {
   useScreenView();
   const { unreadCount } = useInAppNotifications();
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+  const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -48,6 +51,38 @@ export const HomeScreen = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
+  const openHomeScreen = (screen: string, params?: object) => {
+    navigation.navigate('홈', { screen, params });
+  };
+
+  const openTaxiMain = () => {
+    navigation.navigate('택시', { screen: 'TaxiMain' });
+  };
+
+  const openPendingJoinRequest = ({
+    party,
+    requestId,
+  }: {
+    party: Party;
+    requestId: string;
+  }) => {
+    navigation.navigate('택시', {
+      screen: 'AcceptancePending',
+      params: { party, requestId },
+    });
+  };
+
+  const openNoticeList = () => {
+    navigation.navigate('공지', { screen: 'NoticeMain' });
+  };
+
+  const openNoticeDetail = (noticeId: string) => {
+    navigation.navigate('공지', {
+      screen: 'NoticeDetail',
+      params: { noticeId },
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
@@ -63,14 +98,14 @@ export const HomeScreen = () => {
             <Text style={styles.appName}>SKURI Taxi</Text>
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Notification' })}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Notification')}>
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
               <TabBadge count={unreadCount} size="small" style={{ top: 1, right: 1 }} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('홈', { screen: 'Setting' })}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Setting')}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => navigation.navigate('홈', { screen: 'Profile' })}>
+            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => openHomeScreen('Profile')}>
               <Icon name="person-circle-outline" size={26} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
@@ -86,12 +121,18 @@ export const HomeScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Taxi Section */}
-          <TaxiSection />
+          <TaxiSection
+            onOpenTaxiHome={openTaxiMain}
+            onOpenPendingJoinRequest={openPendingJoinRequest}
+          />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
           {/* Notice Section */}
-          <NoticeSection />
+          <NoticeSection
+            onOpenNoticeList={openNoticeList}
+            onOpenNoticeDetail={openNoticeDetail}
+          />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
@@ -106,7 +147,9 @@ export const HomeScreen = () => {
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
           {/* Minecraft Section */}
-          <MinecraftSection />
+          <MinecraftSection
+            onOpenMinecraftDetail={() => openHomeScreen('MinecraftDetail')}
+          />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 

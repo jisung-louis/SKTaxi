@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {
   useNoticeReadState,
@@ -9,10 +7,16 @@ import {
 } from '@/features/notice';
 import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
-import type { MainTabParamList } from '@/navigations/types';
 
-export const NoticeSection: React.FC = () => {
-  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+export interface NoticeSectionProps {
+  onOpenNoticeList: () => void;
+  onOpenNoticeDetail: (noticeId: string) => void;
+}
+
+export const NoticeSection: React.FC<NoticeSectionProps> = ({
+  onOpenNoticeList,
+  onOpenNoticeDetail,
+}) => {
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
   const [isNoticeDropdownOpen, setIsNoticeDropdownOpen] = useState(false);
   const { notices: recentNotices, loading: loadingNotices } = useRecentNotices(10);
@@ -56,7 +60,7 @@ export const NoticeSection: React.FC = () => {
         )}
         <TouchableOpacity
           style={styles.sectionActionButton}
-          onPress={() => navigation.navigate('공지', { screen: 'NoticeMain' })}
+          onPress={onOpenNoticeList}
         >
           <Text style={styles.sectionAction}>모두 보기</Text>
           <Icon name="chevron-forward" size={16} color={COLORS.accent.green} />
@@ -71,7 +75,7 @@ export const NoticeSection: React.FC = () => {
             activeOpacity={0.8}
             onPress={() => {
               markAsRead(item.id);
-              navigation.navigate('공지', { screen: 'NoticeDetail', params: { noticeId: item.id } });
+              onOpenNoticeDetail(item.id);
             }}
           >
             <View style={styles.noticeCardHeader}>
