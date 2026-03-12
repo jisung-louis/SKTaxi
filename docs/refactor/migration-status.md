@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `e716be3`
-- 현재 상태: `Phase 3 완료`
-- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user` source of truth 전환 완료
-- 다음 작업 시작점: `Phase 4`
+- 현재 기준 runtime commit: `a142572`
+- 현재 상태: `Phase 4 완료`
+- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi` source of truth 전환 완료
+- 다음 작업 시작점: `Phase 5`
 
 ## source of truth 상태
 
@@ -18,7 +18,7 @@ legacy auth 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 - `auth`: `src/features/auth`
 - `user`: `src/features/user`
-- `taxi`: legacy
+- `taxi`: `src/features/taxi`
 - `chat`: legacy
 - `notice`: legacy
 - `board`: legacy
@@ -30,6 +30,9 @@ legacy auth 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 `user` migration이 시작되었으므로 user의 source of truth는 이제 `src/features/user` 다.
 legacy user 대응 파일에는 shim, import 정리, 삭제만 허용된다.
+
+`taxi` migration이 시작되었으므로 taxi의 source of truth는 이제 `src/features/taxi` 다.
+legacy taxi 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 ## Phase 3 완료 메모
 
@@ -46,12 +49,21 @@ legacy user 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - user service가 사용하던 학과 채팅방 탈퇴, 회원탈퇴용 Firebase side effect 구현은 root util이 아니라 `src/features/user/data/*` 아래에서 관리한다.
 - home/settings/taxi/chat/notice 쪽 user display name/profile/account 연결 지점은 user legacy hook 또는 raw repository write 대신 `features/user` public API를 사용하도록 정리되었다.
 
-## Phase 4 진입 전 남은 연결 지점
+## Phase 4 완료 메모
 
-- `src/app/bootstrap/AppRuntimeHost.tsx` 는 과도기 legacy 연결 규칙에 따라 `useForegroundNotification`, `useJoinRequestModal`, `components/common/*` 를 단일 runtime host에서 임시 재사용한다. 해당 책임의 phase가 시작되면 app bootstrap/service 또는 feature hook/service로 교체해야 한다.
-- foreground notification routing은 아직 legacy `src/navigations/hooks/useForegroundNotification.ts` 구현을 재사용한다. taxi/chat/notice notification action은 각각 `Phase 4~6` 에서 feature public API/service 기준으로 치환해야 한다.
-- taxi와 chat은 여전히 legacy source of truth다. 이번 Phase에서 user 관련 조회/쓰기 경로만 `features/user` 로 연결했으며, 파티/채팅/정산/join request 런타임 정리는 `Phase 4~5` 에서 각 feature migration과 함께 처리해야 한다.
-- user 화면의 실제 구현은 `features/user` 로 옮겼지만, navigation route 이름과 legacy screen entry 파일은 과도기 shim으로 남아 있다. route shell 제거는 관련 feature 정리 단계에서만 수행한다.
+- `src/features/taxi/*` 가 이제 taxi/party/join request/settlement/party chat의 실제 source of truth다.
+- `src/screens/TaxiScreen.tsx`, `src/screens/TaxiTab/*`, `src/hooks/party/*`, `src/contexts/JoinRequestContext.tsx`, `src/repositories/interfaces/IPartyRepository.ts`, `src/repositories/firestore/FirestorePartyRepository.ts`, `src/utils/partyMessageUtils.ts`, `src/navigations/hooks/useJoinRequestModal.ts` 는 taxi legacy shim 또는 삭제 대상으로 전환되었다.
+- taxi 관련 화면, presenter, feature-local component, repository 구현, join request provider, message/creation/settlement service는 `src/features/taxi/*` 로 이동했다.
+- `RepositoryProvider` 의 party repository 바인딩은 이제 `src/features/taxi/data/repositories/FirebasePartyRepository.ts` 를 사용한다.
+- `MainNavigator`, `AppRuntimeHost`, 홈 `TaxiSection`, `src/hooks/chat/index.ts`, `src/hooks/party/index.ts` 는 taxi legacy 내부 경로 대신 `features/taxi` public API를 소비하도록 정리되었다.
+- `AppRuntimeHost` 의 join request modal orchestration은 이제 `src/features/taxi/hooks/useJoinRequestModal.ts` 와 taxi service를 사용한다.
+- in-chat join request 승인/거절, 파티 생성 초기 시스템 메시지, 파티 채팅 메시지/계좌/도착/종료 메시지 전송, 정산 초기 상태 계산 로직은 taxi feature service로 이동했다.
+
+## Phase 5 진입 전 남은 blocker
+
+- foreground banner routing은 아직 legacy `src/navigations/hooks/useForegroundNotification.ts` 에 taxi/public chat/notice 책임이 함께 남아 있다. `Phase 5` 에서 공개 채팅 분리를 시작할 때 taxi/chat notification 표시 책임을 함께 분리해야 한다.
+- 공개 채팅 source of truth는 아직 legacy다. 현재 `features/taxi` 는 파티 채팅 범위만 소유하며, 공개 채팅 room/unread/navigation 정리는 `Phase 5` 범위다.
+- navigation route shell과 일부 legacy taxi entry 파일은 과도기 shim으로 남아 있다. route shell 제거는 chat/navigation 정리와 함께 단계적으로 진행해야 한다.
 
 ## 운영 규칙
 
