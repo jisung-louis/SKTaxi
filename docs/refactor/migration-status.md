@@ -6,7 +6,7 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `60f4c5e`
+- 현재 기준 runtime commit: `05aae10`
 - 현재 상태: `Phase 7 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat`, `notice`, `board` source of truth 전환 완료
 - 다음 작업 시작점: `Phase 8`
@@ -102,6 +102,9 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/components/common/UniversalCommentList.tsx` 의 실제 구현은 `src/shared/ui/comments/*` 로 이동했다. shared comment UI는 business-free contract만 가지며, board comment 신고/차단/권한 판단은 `src/features/board/components/BoardCommentList.tsx`, `src/features/board/hooks/useBoardComments.ts`, `src/features/board/services/boardModerationService.ts` 가 소유한다.
 - board comment query는 soft-deleted comment placeholder를 유지하도록 feature repository에서 처리한다. 삭제된 부모 댓글과 살아있는 답글 thread를 feature 쪽에서 그대로 복원할 수 있다.
 - notice detail도 새 shared comment UI 계약으로 맞췄고, notice image viewer는 board feature public API를 통해 재사용하도록 정리되었다.
+- Phase 7 후속 검증 수정으로 board image viewer는 reopen 시 최신 `initialIndex` 를 다시 동기화한다. notice detail이 board image viewer public API를 재사용하므로 동일한 재오픈 인덱스 버그가 함께 정리되었다.
+- board write/edit/image selection은 더 이상 root `src/hooks/storage/*` 를 직접 source of truth로 사용하지 않는다. 이미지 선택/업로드 상태는 `src/features/board/hooks/useBoardImageUpload.ts` 와 `src/features/board/model/types.ts` 로 모였고, board repository subscription contract는 `src/shared/types/subscription.ts` 를 사용한다.
+- Phase 7 대상 eslint는 현재 0 error 상태다. warning baseline은 남아 있지만 roadmap hard gate 기준인 "수정 파일 대상 eslint" 와 `npm test -- --runInBand` 는 통과했다.
 
 ## Phase 8 진입 전 남은 blocker
 
