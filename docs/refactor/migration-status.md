@@ -7,7 +7,7 @@
 
 - 브랜치: `skuri-refactoring`
 - 현재 기준 runtime commit: `3332986`
-- 현재 상태: `Phase 8 verifier 4차 후속 수정 완료`
+- 현재 상태: `Phase 8 verifier 5차 후속 수정 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
@@ -132,6 +132,10 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - Phase 8 verifier 4차 후속 수정으로 `src/navigations/MainNavigator.tsx` 는 더 이상 `@react-native-firebase/messaging` 와 `AppState` 를 직접 소유하지 않는다. push permission check/request/recheck 는 `src/app/bootstrap/useNotificationPermissionBubble.ts` 와 `src/shared/lib/firebase/notificationPermission.ts` 로 이동했고, navigator 는 bubble 렌더링만 유지한다.
 - Phase 8 verifier 4차 후속 수정으로 `src/features/settings/screens/SettingScreen.tsx` 의 Crashlytics direct import가 제거되었다. 수동 crash test는 `src/features/settings/services/settingsDiagnosticsService.ts` 와 `src/shared/lib/firebase/crashlytics.ts` 를 통해서만 호출한다.
 - Phase 8 verifier 4차 후속 수정으로 `src/features/home/screens/HomeScreen.tsx`, `src/features/home/components/NoticeSection.tsx`, `src/features/minecraft/components/MinecraftSection.tsx`, `src/features/taxi/components/TaxiHomeSection.tsx` 는 더 이상 `src/navigations/types.ts` shim을 app navigation 타입 source로 사용하지 않는다. 홈 composition layer가 section navigation callback을 내려주고, active feature section은 callback prop만 소비한다.
+- Phase 8 verifier 5차 후속 수정으로 push runtime active 경로는 root legacy `src/lib/notifications.ts`, `src/lib/fcm.ts` 에서 분리되었다. foreground/background/opened-app/initial-notification routing의 source of truth는 `src/app/bootstrap/pushNotificationRuntime.ts` 이고, Firebase Messaging SDK direct import는 `src/shared/lib/firebase/messaging.ts` 로 이동했다.
+- Phase 8 verifier 5차 후속 수정으로 FCM token save/refresh/clear orchestration은 `src/features/user/services/fcmTokenService.ts` 와 `src/features/user/data/repositories/FirebaseUserRepository.ts` 가 소유한다. `src/app/bootstrap/registerPushHandlers.ts`, `src/features/auth/services/permissionOnboardingService.ts`, `src/features/auth/services/authSessionService.ts` 는 더 이상 root `src/lib/fcm.ts` 를 active source로 사용하지 않는다.
+- `src/lib/notifications.ts`, `src/lib/fcm.ts` 는 이제 legacy shim만 유지한다. root lib에는 Firebase Messaging/Auth SDK direct import나 `new FirestoreFcmRepository()` runtime path를 남기지 않는다.
+- Phase 8 verifier 5차 후속 수정으로 taxi navigation contract의 source of truth는 `src/features/taxi/model/navigation.ts` 로 이동했다. `src/app/navigation/types.ts` 와 `src/navigations/MainNavigator.tsx` 는 taxi feature public API를 소비하고, active taxi screen/hook/component는 더 이상 `@/app/navigation/types` 또는 `@/navigations/types` 를 타입 source로 사용하지 않는다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
 
 ## Phase 9 진입 전 남은 blocker
