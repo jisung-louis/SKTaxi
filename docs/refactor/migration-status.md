@@ -6,7 +6,7 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `3ac0ad2`
+- 현재 기준 runtime commit: `d0c32c7`
 - 현재 상태: `Phase 8 완료`
 - 현재 구조 상태: `app/shared` 기반 위에 모든 feature source of truth 전환 완료
 - 다음 작업 시작점: `Phase 9`
@@ -115,6 +115,8 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `src/features/settings/*` 가 이제 setting 화면, app notice, inquiries, legal docs, app version check의 실제 source of truth다.
 - `src/hooks/setting/useAppNotice.ts`, `src/hooks/setting/useAppNotices.ts`, `src/hooks/setting/useSubmitInquiry.ts`, `src/screens/HomeTab/SettingScreen.tsx`, `src/screens/HomeTab/SettingScreen/*`, `src/lib/versionCheck.ts`, `src/app/bootstrap/versionCheck.ts`, `src/repositories/*AppNotice*`, `src/repositories/*Inquiry*`, `src/repositories/*AppConfig*`, `src/screens/components/TermsOfUseContent.tsx` 는 settings legacy shim 역할만 유지한다.
 - app notice foreground/navigation 책임은 이제 `src/features/settings/services/appNoticeNavigationService.ts` 가 소유한다. school notice와 app notice source of truth는 다시 섞지 않는다.
+- `src/features/user/*` 가 이제 in-app notification center hook/screen/repository contract의 실제 source of truth다.
+- `src/hooks/common/useNotifications.ts`, `src/screens/HomeTab/NotificationScreen.tsx`, `src/repositories/interfaces/INotificationRepository.ts`, `src/repositories/firestore/FirestoreNotificationRepository.ts`, `src/repositories/mock/MockNotificationRepository.ts` 는 notification center legacy shim 역할만 유지한다. 홈 `HomeScreen` 과 `MainNavigator` 는 더 이상 이 경로들을 active source of truth로 직접 사용하지 않는다.
 - `src/features/minecraft/*` 가 이제 Minecraft RTDB bridge, whitelist registration, screen/component, repository/service/hook의 실제 source of truth다.
 - `src/lib/minecraft/*`, `src/lib/minecraftChat.ts`, `src/screens/HomeTab/MinecraftDetailScreen.tsx`, `src/screens/HomeTab/MinecraftMapDetailScreen.tsx`, `src/repositories/*Minecraft*`, `src/types/minecraft.ts`, `src/components/home/MinecraftSection.tsx` 는 minecraft legacy shim 역할만 유지한다.
 - Minecraft RTDB 연결은 `src/features/minecraft/data/*` 와 `src/features/minecraft/services/*` 안으로 닫혔고, chat feature는 계속 `src/features/minecraft/index.ts` public API 경계를 통해서만 Minecraft game chat/server info를 사용한다.
