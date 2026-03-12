@@ -1,5 +1,7 @@
-import { ensureFcmTokenSaved } from '@/lib/fcm';
-import { completeUserPermissionOnboarding } from '@/features/user';
+import {
+  completeUserPermissionOnboarding,
+  saveUserFcmToken,
+} from '@/features/user';
 import type { IUserRepository } from '@/features/user';
 
 const COMPLETION_DELAY_MS = 1000;
@@ -19,7 +21,12 @@ export const completePermissionOnboarding = async ({
   userRepository: IUserRepository;
 }) => {
   try {
-    await ensureFcmTokenSaved();
+    if (userId) {
+      await saveUserFcmToken({
+        userId,
+        userRepository,
+      });
+    }
     await delay(COMPLETION_DELAY_MS);
 
     if (userId) {

@@ -1,6 +1,5 @@
 import {
   arrayRemove,
-  arrayUnion,
   collection,
   deleteDoc,
   deleteField,
@@ -117,10 +116,10 @@ export class FirebaseUserRepository implements IUserRepository {
   async saveFcmToken(userId: string, token: string): Promise<void> {
     const docRef = doc(this.db, this.usersCollection, userId);
 
-    await updateDoc(docRef, {
-      fcmTokens: arrayUnion(token),
+    await setDoc(docRef, {
+      fcmTokens: [token],
       lastActiveAt: serverTimestamp(),
-    });
+    }, { merge: true });
   }
 
   async removeFcmToken(userId: string, token: string): Promise<void> {
@@ -128,6 +127,15 @@ export class FirebaseUserRepository implements IUserRepository {
 
     await updateDoc(docRef, {
       fcmTokens: arrayRemove(token),
+    });
+  }
+
+  async clearFcmTokens(userId: string): Promise<void> {
+    const docRef = doc(this.db, this.usersCollection, userId);
+
+    await updateDoc(docRef, {
+      fcmTokens: [],
+      lastActiveAt: serverTimestamp(),
     });
   }
 
@@ -285,4 +293,3 @@ export class FirebaseUserRepository implements IUserRepository {
     return nextPayload;
   }
 }
-

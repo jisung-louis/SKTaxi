@@ -6,8 +6,12 @@ import {
   initBackgroundMessageHandler,
   initForegroundMessageHandler,
   initNotificationOpenedAppHandler,
-} from '@/lib/notifications';
-import { ensureFcmTokenSaved, subscribeFcmTokenRefresh } from '@/lib/fcm';
+} from './pushNotificationRuntime';
+import {
+  saveUserFcmToken,
+  subscribeUserFcmTokenRefresh,
+  useUserRepository,
+} from '@/features/user';
 
 export interface RegisterPushHandlersParams {
   userId: string | undefined;
@@ -80,12 +84,15 @@ export function useRegisterPushHandlers({
   getCurrentChatRoomId,
 }: RegisterPushHandlersParams): void {
   const navigation = useNavigation();
+  const userRepository = useUserRepository();
 
   useEffect(() => {
+    let unsubscribeForeground: (() => void) | undefined;
+    let unsubscribeOpenedApp: (() => void) | undefined;
     let unsubscribeTokenRefresh: (() => void) | undefined;
 
     if (userId && !needsProfile && permissionsComplete) {
-      initForegroundMessageHandler(
+      unsubscribeForeground = initForegroundMessageHandler(
         setJoinData,
         handlePartyDeleted,
         handleNoticeReceived,
@@ -104,14 +111,25 @@ export function useRegisterPushHandlers({
       );
 
       initBackgroundMessageHandler(setJoinData);
-      initNotificationOpenedAppHandler(navigation, setJoinData);
+      unsubscribeOpenedApp = initNotificationOpenedAppHandler(
+        navigation,
+        setJoinData,
+      );
       checkInitialNotification(navigation, setJoinData);
 
-      ensureFcmTokenSaved().catch(() => {});
-      unsubscribeTokenRefresh = subscribeFcmTokenRefresh();
+      saveUserFcmToken({
+        userId,
+        userRepository,
+      }).catch(() => {});
+      unsubscribeTokenRefresh = subscribeUserFcmTokenRefresh({
+        userId,
+        userRepository,
+      });
     }
 
     return () => {
+      unsubscribeForeground?.();
+      unsubscribeOpenedApp?.();
       if (unsubscribeTokenRefresh) {
         unsubscribeTokenRefresh();
       }
@@ -136,5 +154,6 @@ export function useRegisterPushHandlers({
     handleNoticeNotificationReceived,
     handleChatRoomMessageReceived,
     getCurrentChatRoomId,
+    userRepository,
   ]);
 }

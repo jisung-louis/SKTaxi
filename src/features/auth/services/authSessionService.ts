@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 
 import { getCurrentAppVersion } from '@/features/settings';
 import {
+  clearUserFcmTokens,
   createInitialUserProfile,
   DEFAULT_USER_DISPLAY_NAME,
   syncUserLoginMetadata,
@@ -10,7 +11,6 @@ import type {
   IUserRepository,
   UserProfile,
 } from '@/features/user';
-import { deleteFcmToken } from '@/lib/fcm';
 import { setUserId } from '@/shared/lib/analytics';
 import { User } from '@/types/auth';
 
@@ -98,13 +98,17 @@ export const finalizeGoogleSignIn = async ({
 
 export const removeAuthSessionFcmToken = async (
   authRepository: IAuthRepository,
+  userRepository: IUserRepository,
 ) => {
   const currentUser = authRepository.getCurrentUser();
   if (!currentUser) {
     return;
   }
 
-  await deleteFcmToken(currentUser.uid);
+  await clearUserFcmTokens({
+    userId: currentUser.uid,
+    userRepository,
+  });
 };
 
 export const mapAuthActionError = (error: any) => {

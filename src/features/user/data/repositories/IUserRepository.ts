@@ -31,6 +31,8 @@ export interface IUserRepository {
 
   removeFcmToken(userId: string, token: string): Promise<void>;
 
+  clearFcmTokens(userId: string): Promise<void>;
+
   getUserBookmarks(userId: string): Promise<string[]>;
 
   addBookmark(userId: string, postId: string): Promise<void>;
@@ -49,4 +51,3 @@ export interface IUserRepository {
     excludeUserId?: string,
   ): Promise<void>;
 }
-

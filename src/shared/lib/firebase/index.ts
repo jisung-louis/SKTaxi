@@ -8,3 +8,11 @@ export {
 export { authInstance, subscribeAuthStateChange } from './auth';
 export { logCrashlyticsMessage } from './crashlytics';
 export { db } from './firestore';
+export {
+  getCurrentFcmToken,
+  getInitialNotificationMessage,
+  registerBackgroundMessageHandler,
+  subscribeForegroundMessages,
+  subscribeMessagingTokenRefresh,
+  subscribeNotificationOpenedApp,
+} from './messaging';

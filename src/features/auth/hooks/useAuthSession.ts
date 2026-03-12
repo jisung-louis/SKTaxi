@@ -86,13 +86,13 @@ export const useAuthSession = (): AuthContextValue => {
   const signOut = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
-      await removeAuthSessionFcmToken(authRepository);
+      await removeAuthSessionFcmToken(authRepository, userRepository);
       await authRepository.signOut();
     } catch (error) {
       setState(prev => ({ ...prev, loading: false }));
       throw error;
     }
-  }, [authRepository]);
+  }, [authRepository, userRepository]);
 
   const signInWithGoogle = useCallback(async () => {
     try {

@@ -78,6 +78,10 @@ export class MockUserRepository implements IUserRepository {
     console.log(`[Mock] FCM 토큰 제거: ${userId} -> ${token.substring(0, 10)}...`);
   }
 
+  async clearFcmTokens(userId: string): Promise<void> {
+    console.log(`[Mock] FCM 토큰 전체 제거: ${userId}`);
+  }
+
   async getUserBookmarks(userId: string): Promise<string[]> {
     return this.bookmarks.get(userId) || [];
   }
@@ -106,8 +110,10 @@ export class MockUserRepository implements IUserRepository {
   async deleteAccountInfo(userId: string): Promise<void> {
     const user = this.users.get(userId);
     if (user) {
-      const { accountInfo, ...rest } = user;
-      this.users.set(userId, rest as UserProfile);
+      const nextUser = { ...user } as Partial<UserProfile>;
+      delete nextUser.accountInfo;
+      delete nextUser.account;
+      this.users.set(userId, nextUser as UserProfile);
     }
   }
 
