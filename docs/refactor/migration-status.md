@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `9532666`
-- 현재 상태: `Phase 4 완료`
-- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi` source of truth 전환 완료
-- 다음 작업 시작점: `Phase 5`
+- 현재 기준 runtime commit: `1f648a4`
+- 현재 상태: `Phase 5 완료`
+- 현재 구조 상태: `app/shared` 기반 위에 `auth`, `user`, `taxi`, `chat` source of truth 전환 완료
+- 다음 작업 시작점: `Phase 6`
 
 ## source of truth 상태
 
@@ -19,7 +19,7 @@ legacy auth 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `auth`: `src/features/auth`
 - `user`: `src/features/user`
 - `taxi`: `src/features/taxi`
-- `chat`: legacy
+- `chat`: `src/features/chat`
 - `notice`: legacy
 - `board`: legacy
 - `timetable`: legacy
@@ -33,6 +33,9 @@ legacy user 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 `taxi` migration이 시작되었으므로 taxi의 source of truth는 이제 `src/features/taxi` 다.
 legacy taxi 대응 파일에는 shim, import 정리, 삭제만 허용된다.
+
+`chat` migration이 시작되었으므로 chat의 source of truth는 이제 `src/features/chat` 다.
+legacy chat 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 
 ## Phase 3 완료 메모
 
@@ -61,11 +64,23 @@ legacy taxi 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - legacy `src/lib/notifications.ts` 의 taxi join request 액션 export는 제거되었고, taxi join request business logic의 callable source of truth는 `src/features/taxi/services/joinRequestService.ts` 로만 유지된다.
 - map/location permission 접근은 `src/shared/hooks/useCurrentLocation.ts` + `src/features/taxi/hooks/useTaxiLocation.ts` 조합으로 정리되었고, taxi 화면/컴포넌트는 legacy common location hook을 직접 import하지 않는다.
 
-## Phase 5 진입 전 남은 blocker
+## Phase 5 완료 메모
 
-- foreground banner routing은 아직 legacy `src/navigations/hooks/useForegroundNotification.ts` 에 taxi/public chat/notice 책임이 함께 남아 있다. `Phase 5` 에서 공개 채팅 분리를 시작할 때 taxi/chat notification 표시 책임을 함께 분리해야 한다.
-- 공개 채팅 source of truth는 아직 legacy다. 현재 `features/taxi` 는 파티 채팅 범위만 소유하며, 공개 채팅 room/unread/navigation 정리는 `Phase 5` 범위다.
-- navigation route shell과 일부 legacy taxi entry 파일은 과도기 shim으로 남아 있다. route shell 제거는 chat/navigation 정리와 함께 단계적으로 진행해야 한다.
+- `src/features/chat/*` 가 이제 공개 채팅 room/list/detail/unread/notification 설정의 실제 source of truth다.
+- `src/screens/ChatListScreen.tsx`, `src/screens/ChatTab/*`, `src/hooks/chat/*` 의 공개 채팅 구현, `src/repositories/interfaces/IChatRepository.ts`, `src/repositories/firestore/FirestoreChatRepository.ts`, `src/utils/chatUtils.ts` 는 chat legacy shim 또는 삭제 대상으로 전환되었다.
+- 공개 채팅 관련 화면, component, presenter, repository 구현, unread service, foreground notification payload 해석 로직은 `src/features/chat/*` 로 이동했다.
+- `features/taxi` 는 계속 파티 채팅만 소유한다. 공개 채팅 책임은 다시 taxi로 가져오지 않는다.
+- `RepositoryProvider` 의 chat repository 바인딩은 이제 `src/features/chat/data/repositories/FirebaseChatRepository.ts` 를 사용한다.
+- `MainNavigator` 의 공개 채팅 unread 계산/room state 구독 책임은 `src/features/chat/hooks/useChatTabUnreadIndicator.ts` 뒤로 이동했다.
+- `src/navigations/hooks/useForegroundNotification.ts` 의 공개 채팅 room lookup/foreground banner payload/ChatDetail 이동 로직은 `features/chat` public API를 통해 처리한다.
+- `ChatDetailScreen` 의 공개 채팅 메시지 전송과 Minecraft game chat bridge/RTDB server status 접근은 chat feature 내부 hook/data adapter를 통해 처리된다.
+
+## Phase 6 진입 전 남은 blocker
+
+- hard blocker는 없다. `Phase 6` notice migration은 바로 시작할 수 있다.
+- 단, legacy `src/navigations/hooks/useForegroundNotification.ts` 에는 아직 taxi/notice/app notice 책임이 함께 남아 있으므로 `Phase 6` 에서 notice 소유 분기를 분리해야 한다.
+- legacy public chat shim 파일들은 이제 shim-only 상태다. 남은 import 정리가 끝나면 삭제 대상으로 취급해야 한다.
+- `MainNavigator` 는 공개 채팅 unread/firestore 책임은 제거되었지만, route shell 자체의 전면 정리는 별도 cleanup 단계로 남아 있다.
 
 ## 운영 규칙
 
