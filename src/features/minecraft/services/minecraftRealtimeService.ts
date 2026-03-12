@@ -1,5 +1,3 @@
-import { getDatabase, onValue, ref } from '@react-native-firebase/database';
-
 import type {
   MinecraftServerInfo,
   MinecraftServerOverview,
@@ -7,6 +5,7 @@ import type {
   MinecraftServerStatus,
   MinecraftWhitelistPlayer,
 } from '../model/types';
+import { subscribeToMinecraftRealtimeValue } from '../data/minecraftRealtimeDataSource';
 
 interface SubscriptionCallbacks<T> {
   onData: (data: T) => void;
@@ -98,76 +97,60 @@ export const subscribeToMinecraftServerOverview = ({
   onData,
   onError,
 }: SubscriptionCallbacks<MinecraftServerOverview>) => {
-  const db = getDatabase();
-  const statusRef = ref(db, 'serverStatus');
-  const serverUrlRef = ref(db, 'serverStatus/serverUrl');
-  const mapUriRef = ref(db, 'serverStatus/mapUri');
   const currentState: MinecraftServerOverview = { ...EMPTY_SERVER_OVERVIEW };
 
   const emit = () => {
     onData({ ...currentState });
   };
 
-  const unsubscribeStatus = onValue(
-    statusRef,
-    snapshot => {
-      const data = snapshot.val();
+  const unsubscribeStatus = subscribeToMinecraftRealtimeValue<any>(
+    'serverStatus',
+    {
+      onData: data => {
+        if (!data) {
+          currentState.serverStatus = null;
+          currentState.serverVersion = null;
+          emit();
+          return;
+        }
 
-      if (!data) {
-        currentState.serverStatus = null;
-        currentState.serverVersion = null;
+        const players = parseServerPlayers(data.players) ?? [];
+        currentState.serverStatus = {
+          online: data.online ?? true,
+          maxPlayers: data.maxPlayers ?? players.length,
+          currentPlayers:
+            data.currentPlayers ?? data.playerCount ?? players.length,
+          players,
+          updatedAt: data.updatedAt ?? Date.now(),
+        };
+        currentState.serverVersion =
+          typeof data.version === 'string' ? data.version : null;
         emit();
-        return;
-      }
-
-      const players = parseServerPlayers(data.players) ?? [];
-      currentState.serverStatus = {
-        online: data.online ?? true,
-        maxPlayers: data.maxPlayers ?? players.length,
-        currentPlayers:
-          data.currentPlayers ?? data.playerCount ?? players.length,
-        players,
-        updatedAt: data.updatedAt ?? Date.now(),
-      };
-      currentState.serverVersion =
-        typeof data.version === 'string' ? data.version : null;
-      emit();
-    },
-    error => {
-      currentState.serverStatus = null;
-      currentState.serverVersion = null;
-      emit();
-      onError(error as Error);
+      },
+      onError,
     },
   );
 
-  const unsubscribeServerUrl = onValue(
-    serverUrlRef,
-    snapshot => {
-      currentState.serverUrl = snapshot.exists()
-        ? (snapshot.val() as string)
-        : null;
-      emit();
-    },
-    error => {
-      currentState.serverUrl = null;
-      emit();
-      onError(error as Error);
+  const unsubscribeServerUrl = subscribeToMinecraftRealtimeValue<string>(
+    'serverStatus/serverUrl',
+    {
+      onData: serverUrl => {
+        currentState.serverUrl =
+          typeof serverUrl === 'string' ? serverUrl : null;
+        emit();
+      },
+      onError,
     },
   );
 
-  const unsubscribeMapUri = onValue(
-    mapUriRef,
-    snapshot => {
-      currentState.mapUri = snapshot.exists()
-        ? (snapshot.val() as string)
-        : null;
-      emit();
-    },
-    error => {
-      currentState.mapUri = null;
-      emit();
-      onError(error as Error);
+  const unsubscribeMapUri = subscribeToMinecraftRealtimeValue<string>(
+    'serverStatus/mapUri',
+    {
+      onData: mapUri => {
+        currentState.mapUri = typeof mapUri === 'string' ? mapUri : null;
+        emit();
+      },
+      onError,
     },
   );
 
@@ -182,9 +165,6 @@ export const subscribeToMinecraftWhitelistPlayers = ({
   onData,
   onError,
 }: SubscriptionCallbacks<MinecraftWhitelistPlayer[]>) => {
-  const db = getDatabase();
-  const playersRef = ref(db, 'whitelist/players');
-  const bedrockPlayersRef = ref(db, 'whitelist/BEPlayers');
   let javaPlayers: MinecraftWhitelistPlayer[] = [];
   let bedrockPlayers: MinecraftWhitelistPlayer[] = [];
 
@@ -192,29 +172,25 @@ export const subscribeToMinecraftWhitelistPlayers = ({
     onData(sortWhitelistPlayers([...javaPlayers, ...bedrockPlayers]));
   };
 
-  const unsubscribeJavaPlayers = onValue(
-    playersRef,
-    snapshot => {
-      javaPlayers = parseJavaWhitelistPlayers(snapshot.val());
-      emit();
-    },
-    error => {
-      javaPlayers = [];
-      emit();
-      onError(error as Error);
+  const unsubscribeJavaPlayers = subscribeToMinecraftRealtimeValue<any>(
+    'whitelist/players',
+    {
+      onData: value => {
+        javaPlayers = parseJavaWhitelistPlayers(value);
+        emit();
+      },
+      onError,
     },
   );
 
-  const unsubscribeBedrockPlayers = onValue(
-    bedrockPlayersRef,
-    snapshot => {
-      bedrockPlayers = parseBedrockWhitelistPlayers(snapshot.val());
-      emit();
-    },
-    error => {
-      bedrockPlayers = [];
-      emit();
-      onError(error as Error);
+  const unsubscribeBedrockPlayers = subscribeToMinecraftRealtimeValue<any>(
+    'whitelist/BEPlayers',
+    {
+      onData: value => {
+        bedrockPlayers = parseBedrockWhitelistPlayers(value);
+        emit();
+      },
+      onError,
     },
   );
 
