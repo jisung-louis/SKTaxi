@@ -1,4 +1,8 @@
-import crashlytics, { getCrashlytics, log } from '@react-native-firebase/crashlytics';
+import crashlytics, {
+  crash,
+  getCrashlytics,
+  log,
+} from '@react-native-firebase/crashlytics';
 
 const crashlyticsInstance = typeof getCrashlytics === 'function'
   ? getCrashlytics()
@@ -14,5 +18,18 @@ export const logCrashlyticsMessage = (message: string): void => {
 
   if (typeof (crashlyticsInstance as any)?.log === 'function') {
     (crashlyticsInstance as any).log(message);
+  }
+};
+
+export const triggerCrashlyticsCrash = (message: string): void => {
+  logCrashlyticsMessage(message);
+
+  if (typeof crash === 'function') {
+    crash(crashlyticsInstance);
+    return;
+  }
+
+  if (typeof (crashlyticsInstance as any)?.crash === 'function') {
+    (crashlyticsInstance as any).crash();
   }
 };

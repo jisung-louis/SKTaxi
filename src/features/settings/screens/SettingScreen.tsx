@@ -1,11 +1,6 @@
 // SKTaxi: 설정 화면
 //
-// ⚠️ 특수 케이스 - Firebase Crashlytics 사용:
-// 이 화면은 개발/디버깅 목적으로 Crashlytics를 직접 사용합니다.
-// - 강제 크래시 테스트 (개발자 기능)
-//
-// Crashlytics는 클라이언트 전용 모니터링 도구로,
-// Spring 마이그레이션과 무관합니다.
+// 개발/디버깅용 Crashlytics 테스트는 settings service를 통해 위임한다.
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
@@ -13,13 +8,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getCrashlytics, log, crash } from '@react-native-firebase/crashlytics';
 import { COLORS } from '@/constants/colors';
 import { TYPOGRAPHY } from '@/constants/typhograpy';
 import PageHeader from '@/components/common/PageHeader';
 import { useScreenView } from '@/hooks/useScreenView';
 
 import { getCurrentAppVersion } from '../services/appVersionService';
+import { triggerSettingsCrashTest } from '../services/settingsDiagnosticsService';
 
 export const SettingScreen = () => {
   useScreenView();
@@ -71,10 +66,8 @@ export const SettingScreen = () => {
         {
           text: '강제 크래시',
           style: 'destructive',
-          onPress: async () => {
-            const crashlyticsInstance = getCrashlytics();
-            log(crashlyticsInstance, 'Manual crash test triggered on SettingScreen');
-            crash(crashlyticsInstance);
+          onPress: () => {
+            triggerSettingsCrashTest();
           },
         },
       ],
@@ -84,7 +77,7 @@ export const SettingScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <PageHeader onBack={() => navigation.goBack()} title="설정" borderBottom />
-      
+
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
         {/* 공지 및 알림 섹션 */}
         <View style={styles.section}>
@@ -102,9 +95,9 @@ export const SettingScreen = () => {
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
             </TouchableOpacity>
-            
+
             <View style={styles.divider} />
-            
+
             <TouchableOpacity style={styles.menuItem} onPress={handleNotification}>
               <View style={styles.menuLeft}>
                 <View style={styles.iconContainer}>
@@ -138,7 +131,7 @@ export const SettingScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.divider} />
-            
+
             <TouchableOpacity style={styles.menuItem} onPress={() => handleInquiry('bug')}>
               <View style={styles.menuLeft}>
                 <View style={styles.iconContainer}>
@@ -185,9 +178,9 @@ export const SettingScreen = () => {
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
             </TouchableOpacity>
-            
+
             <View style={styles.divider} />
-            
+
             <TouchableOpacity style={styles.menuItem} onPress={handlePrivacy}>
               <View style={styles.menuLeft}>
                 <View style={styles.iconContainer}>
@@ -219,9 +212,9 @@ export const SettingScreen = () => {
               </View>
               <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
             </TouchableOpacity>
-            
+
             <View style={styles.divider} />
-            
+
             <TouchableOpacity
               style={styles.menuItem}
               onPress={handleAbout}
