@@ -34,6 +34,7 @@ import {
   useJoinRequestCount,
   useMyParty,
 } from '@/features/taxi';
+import { TimetableDetailScreen } from '@/features/timetable';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { HomeScreen } from '../screens/HomeScreen';
 import { NotificationScreen } from '../screens/HomeTab/NotificationScreen';
@@ -45,7 +46,6 @@ import { TermsOfUseScreen } from '../screens/HomeTab/SettingScreen/TermsOfUseScr
 import { PrivacyPolicyScreen } from '../screens/HomeTab/SettingScreen/PrivacyPolicyScreen';
 import { CafeteriaDetailScreen } from '../screens/HomeTab/CafeteriaDetailScreen';
 import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalendarDetailScreen';
-import { TimetableDetailScreen } from '../screens/HomeTab/TimetableDetailScreen';
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
 import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
 import { COLORS } from '../constants/colors';

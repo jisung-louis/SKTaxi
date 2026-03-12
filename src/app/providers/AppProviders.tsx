@@ -1,8 +1,8 @@
 import React, { PropsWithChildren } from 'react';
 
-import { CourseSearchProvider } from '@/contexts/CourseSearchContext';
 import { RepositoryProvider } from '@/di/RepositoryProvider';
 import { AuthProvider } from '@/features/auth';
+import { CourseSearchProvider } from '@/features/timetable';
 
 export const AppProviders = ({ children }: PropsWithChildren) => {
   return (

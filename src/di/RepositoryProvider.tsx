@@ -11,15 +11,17 @@ import { FirebaseNoticeRepository } from '@/features/notice';
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
 import { FirebaseAuthRepository } from '@/features/auth';
 import { FirebasePartyRepository } from '@/features/taxi';
+import {
+  FirebaseCourseRepository,
+  FirebaseTimetableRepository,
+} from '@/features/timetable';
 import { FirebaseUserRepository } from '@/features/user';
-import { FirestoreCourseRepository } from '../repositories/firestore/FirestoreCourseRepository';
 import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
 import { FirestoreAppNoticeRepository } from '../repositories/firestore/FirestoreAppNoticeRepository';
 import { FirestoreCafeteriaRepository } from '../repositories/firestore/FirestoreCafeteriaRepository';
 import { FirestoreAcademicRepository } from '../repositories/firestore/FirestoreAcademicRepository';
 import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
 import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
-import { FirestoreTimetableRepository } from '../repositories/firestore/FirestoreTimetableRepository';
 import { FirestoreNotificationActionRepository } from '../repositories/firestore/FirestoreNotificationActionRepository';
 
 interface RepositoryProviderProps {
@@ -46,14 +48,14 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       userRepository: new FirebaseUserRepository(),
       boardRepository: new FirebaseBoardRepository(),
       noticeRepository: new FirebaseNoticeRepository(),
-      courseRepository: new FirestoreCourseRepository(),
+      courseRepository: new FirebaseCourseRepository(),
       notificationRepository: new FirestoreNotificationRepository(),
       appNoticeRepository: new FirestoreAppNoticeRepository(),
       cafeteriaRepository: new FirestoreCafeteriaRepository(),
       academicRepository: new FirestoreAcademicRepository(),
       inquiryRepository: new FirestoreInquiryRepository(),
       storageRepository: new FirestoreStorageRepository(),
-      timetableRepository: new FirestoreTimetableRepository(),
+      timetableRepository: new FirebaseTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),
       notificationActionRepository: new FirestoreNotificationActionRepository(),
     };
