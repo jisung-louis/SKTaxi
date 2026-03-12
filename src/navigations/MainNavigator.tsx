@@ -14,6 +14,11 @@ import {
   useChatTabUnreadIndicator,
 } from '@/features/chat';
 import {
+  NoticeDetailScreen,
+  NoticeDetailWebViewScreen,
+  NoticeScreen,
+} from '@/features/notice';
+import {
   AcceptancePendingScreen,
   ChatScreen,
   JoinRequestProvider,
@@ -38,7 +43,6 @@ import { AcademicCalendarDetailScreen } from '../screens/HomeTab/AcademicCalenda
 import { TimetableDetailScreen } from '../screens/HomeTab/TimetableDetailScreen';
 import { MinecraftDetailScreen } from '../screens/HomeTab/MinecraftDetailScreen';
 import { MinecraftMapDetailScreen } from '../screens/HomeTab/MinecraftMapDetailScreen';
-import { NoticeScreen } from '../screens/NoticeScreen';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
 import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';
@@ -48,8 +52,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 import { TabBadge } from '../components/common/TabBadge';
 import { Dot } from '../components/common/Dot';
-import { NoticeDetailScreen } from '../screens/NoticeTab/NoticeDetailScreen';
-import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewScreen';
 import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
 import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
 import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';

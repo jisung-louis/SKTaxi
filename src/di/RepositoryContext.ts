@@ -3,11 +3,11 @@
 
 import { createContext } from 'react';
 import type { IChatRepository } from '@/features/chat/data/repositories/IChatRepository';
+import type { INoticeRepository } from '@/features/notice';
 import type { IPartyRepository } from '@/features/taxi';
 import type {
   IUserRepository,
   IBoardRepository,
-  INoticeRepository,
   ICourseRepository,
   INotificationRepository,
   IAppNoticeRepository,

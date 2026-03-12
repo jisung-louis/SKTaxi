@@ -11,6 +11,11 @@ import {
   useChatRepository,
 } from '@/features/chat';
 import { useAuth } from '@/features/auth';
+import {
+  buildNoticeForegroundNotification,
+  buildNoticePushForegroundNotification,
+  navigateToNoticeDetail,
+} from '@/features/notice';
 
 export type ForegroundNotificationType =
   | 'notice'
@@ -110,10 +115,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
     switch (type) {
       case 'notice':
         if (noticeId) {
-          (navigation as any).navigate('Main', {
-            screen: '공지',
-            params: { screen: 'NoticeDetail', params: { noticeId } },
-          });
+          navigateToNoticeDetail(navigation, noticeId);
         }
         break;
       case 'chat':
@@ -145,10 +147,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
         break;
       case 'notice_notification':
         if (noticeId) {
-          (navigation as any).navigate('Main', {
-            screen: '공지',
-            params: { screen: 'NoticeDetail', params: { noticeId } },
-          });
+          navigateToNoticeDetail(navigation, noticeId);
         }
         break;
       case 'app_notice':
@@ -181,15 +180,18 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   // 공지사항 알림 핸들러
   const handleNoticeReceived = useCallback(
     (noticeId: string, noticeTitle?: string, noticeCategory?: string) => {
-      const title = noticeTitle || '새로운 공지사항';
-      const category = noticeCategory || '일반';
+      const payload = buildNoticeForegroundNotification({
+        noticeCategory,
+        noticeId,
+        noticeTitle,
+      });
 
       setForegroundNotification({
         visible: true,
-        title: `📢 새 성결대 ${category} 공지`,
-        body: title,
-        noticeId,
-        type: 'notice',
+        title: payload.title,
+        body: payload.body,
+        noticeId: payload.noticeId,
+        type: payload.type,
       });
     },
     []
@@ -275,12 +277,14 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   // 공지사항 알림 핸들러
   const handleNoticeNotificationReceived = useCallback(
     (data: { noticeId: string; type: string; title: string; body: string }) => {
+      const payload = buildNoticePushForegroundNotification(data);
+
       setForegroundNotification({
         visible: true,
-        title: data.title,
-        body: data.body,
-        noticeId: data.noticeId,
-        type: 'notice_notification',
+        title: payload.title,
+        body: payload.body,
+        noticeId: payload.noticeId,
+        type: payload.type,
       });
     },
     []

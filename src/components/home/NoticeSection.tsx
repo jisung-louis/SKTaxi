@@ -5,17 +5,18 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typhograpy';
+import {
+  useNoticeReadState,
+  useRecentNotices,
+} from '@/features/notice';
 import { MainTabParamList } from '../../navigations/types';
-import { useNotices, useRecentNotices } from '../../hooks/notice';
 
 export const NoticeSection: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
-  const { markAsRead } = useNotices('전체');
   const [noticeType, setNoticeType] = useState<'학교 공지사항' | '내 과 공지사항'>('학교 공지사항');
   const [isNoticeDropdownOpen, setIsNoticeDropdownOpen] = useState(false);
-
-  // SKTaxi: Repository 패턴을 통한 최근 공지사항 조회
   const { notices: recentNotices, loading: loadingNotices } = useRecentNotices(10);
+  const { markAsRead } = useNoticeReadState({ notices: recentNotices });
 
   return (
     <View style={styles.section}>

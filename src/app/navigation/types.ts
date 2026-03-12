@@ -1,6 +1,7 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
 import type { ChatStackParamList } from '@/features/chat';
+import type { NoticeStackParamList } from '@/features/notice';
 import { Party } from '@/types/party';
 
 export type RootStackParamList = {
@@ -53,12 +54,6 @@ export type HomeStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   AccountGuide: undefined;
-};
-
-export type NoticeStackParamList = {
-  NoticeMain: undefined;
-  NoticeDetail: { noticeId: string };
-  NoticeDetailWebView: { noticeId: string };
 };
 
 export type BoardStackParamList = {

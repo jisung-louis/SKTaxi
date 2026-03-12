@@ -3,6 +3,7 @@
 
 import { useContext } from 'react';
 import type { IChatRepository } from '@/features/chat/data/repositories/IChatRepository';
+import type { INoticeRepository } from '@/features/notice';
 import type { IPartyRepository } from '@/features/taxi';
 
 import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
@@ -16,7 +17,6 @@ import type {
   IInquiryRepository,
   INotificationActionRepository,
   INotificationRepository,
-  INoticeRepository,
   IStorageRepository,
   ITimetableRepository,
   IUserRepository,
