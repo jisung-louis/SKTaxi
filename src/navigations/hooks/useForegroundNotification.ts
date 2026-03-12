@@ -3,18 +3,24 @@
 
 import { useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { getFirestore, doc, getDoc } from '@react-native-firebase/firestore';
-import { useAuth } from '../../hooks/auth';
 
-export type ForegroundNotificationType = 
-  | 'notice' 
-  | 'chat' 
-  | 'settlement' 
-  | 'kicked' 
-  | 'party_created' 
-  | 'board_notification' 
-  | 'notice_notification' 
-  | 'app_notice' 
+import {
+  getCurrentChatRoomIdFromNavigationState,
+  navigateToChatRoom,
+  resolveChatRoomForegroundNotification,
+  useChatRepository,
+} from '@/features/chat';
+import { useAuth } from '@/features/auth';
+
+export type ForegroundNotificationType =
+  | 'notice'
+  | 'chat'
+  | 'settlement'
+  | 'kicked'
+  | 'party_created'
+  | 'board_notification'
+  | 'notice_notification'
+  | 'app_notice'
   | 'chat_room_message';
 
 export interface ForegroundNotificationState {
@@ -52,6 +58,7 @@ export interface UseForegroundNotificationResult {
 export function useForegroundNotification(): UseForegroundNotificationResult {
   const navigation = useNavigation();
   const { user: authUser } = useAuth();
+  const chatRepository = useChatRepository();
 
   const [foregroundNotification, setForegroundNotification] = useState<ForegroundNotificationState>({
     visible: false,
@@ -62,19 +69,29 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   // 현재 화면 이름 가져오기
   const getCurrentScreen = useCallback(() => {
     const state = (navigation as any).getState?.();
-    if (!state) return undefined;
+    if (!state) {
+      return undefined;
+    }
 
     const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
+    if (!mainTabRoute) {
+      return undefined;
+    }
 
     const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
+    if (!mainTabState) {
+      return undefined;
+    }
 
     const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute) return undefined;
+    if (!tabRoute) {
+      return undefined;
+    }
 
     const stackState = tabRoute.state;
-    if (!stackState) return undefined;
+    if (!stackState) {
+      return undefined;
+    }
 
     const stackRoute = stackState.routes?.[stackState.index];
     return stackRoute?.name;
@@ -83,25 +100,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   // 현재 ChatDetail 화면의 chatRoomId 가져오기
   const getCurrentChatRoomId = useCallback(() => {
     const state = (navigation as any).getState?.();
-    if (!state) return undefined;
-
-    const mainTabRoute = state.routes?.find((r: any) => r.name === 'Main');
-    if (!mainTabRoute) return undefined;
-
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) return undefined;
-
-    const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute || tabRoute.name !== '채팅') return undefined;
-
-    const stackState = tabRoute.state;
-    if (!stackState) return undefined;
-
-    const stackRoute = stackState.routes?.[stackState.index];
-    if (stackRoute?.name === 'ChatDetail') {
-      return stackRoute.params?.chatRoomId;
-    }
-    return undefined;
+    return getCurrentChatRoomIdFromNavigationState(state);
   }, [navigation]);
 
   // 포그라운드 알림 클릭 핸들러
@@ -162,10 +161,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
         break;
       case 'chat_room_message':
         if (chatRoomId) {
-          (navigation as any).navigate('Main', {
-            screen: '채팅',
-            params: { screen: 'ChatDetail', params: { chatRoomId } },
-          });
+          navigateToChatRoom(navigation, chatRoomId);
         }
         break;
     }
@@ -294,25 +290,19 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
   const handleChatRoomMessageReceived = useCallback(
     async (data: { chatRoomId: string; senderName: string; messageText: string }) => {
       try {
-        const chatRoomDoc = await getDoc(doc(getFirestore(), 'chatRooms', data.chatRoomId));
-        const chatRoomData = chatRoomDoc.data();
-
-        let chatRoomName = '채팅방';
-        if (chatRoomData) {
-          if (chatRoomData.type === 'university') {
-            chatRoomName = '성결대 전체 채팅방';
-          } else if (chatRoomData.type === 'department' && authUser?.department) {
-            chatRoomName = `${authUser.department} 채팅방`;
-          } else {
-            chatRoomName = chatRoomData.name || '채팅방';
-          }
-        }
+        const notificationPayload = await resolveChatRoomForegroundNotification({
+          chatRepository,
+          chatRoomId: data.chatRoomId,
+          department: authUser?.department,
+          messageText: data.messageText,
+          senderName: data.senderName,
+        });
 
         setForegroundNotification({
           visible: true,
-          title: chatRoomName,
-          body: `${data.senderName || '익명'} : ${data.messageText}`,
-          chatRoomId: data.chatRoomId,
+          title: notificationPayload.title,
+          body: notificationPayload.body,
+          chatRoomId: notificationPayload.chatRoomId,
           type: 'chat_room_message',
         });
       } catch {
@@ -325,7 +315,7 @@ export function useForegroundNotification(): UseForegroundNotificationResult {
         });
       }
     },
-    [authUser?.department]
+    [authUser?.department, chatRepository]
   );
 
   return {

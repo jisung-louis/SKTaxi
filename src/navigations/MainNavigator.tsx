@@ -9,6 +9,11 @@ import {
   ProfileScreen,
 } from '@/features/user';
 import {
+  ChatDetailScreen,
+  ChatListScreen,
+  useChatTabUnreadIndicator,
+} from '@/features/chat';
+import {
   AcceptancePendingScreen,
   ChatScreen,
   JoinRequestProvider,
@@ -48,13 +53,7 @@ import NoticeDetailWebViewScreen from '../screens/NoticeTab/NoticeDetailWebViewS
 import { BoardDetailScreen } from '../screens/BoardTab/BoardDetailScreen';
 import { BoardWriteScreen } from '../screens/BoardTab/BoardWriteScreen';
 import { BoardEditScreen } from '../screens/BoardTab/BoardEditScreen';
-import { ChatListScreen } from '../screens/ChatListScreen';
-import { ChatDetailScreen } from '../screens/ChatTab/ChatDetailScreen';
 import { TYPOGRAPHY } from '../constants/typhograpy';
-import { useChatRooms } from '../hooks/chat';
-import { useAuth } from '../hooks/auth';
-import { getFirestore, collection, onSnapshot } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
@@ -144,74 +143,7 @@ const MainNavigatorContent = () => {
   const [bubbleVisible, setBubbleVisible] = React.useState(false);
   const [checking, setChecking] = React.useState(true);
   const { hasParty } = useMyParty();
-  const { user } = useAuth();
-  const [chatRoomStates, setChatRoomStates] = React.useState<{ [chatRoomId: string]: { lastReadAt?: any } }>({});
-  // 모든 채팅방 조회 (안읽은 메시지 수 계산용)
-  const { chatRooms: allChatRooms } = useChatRooms('all');
-  const { chatRooms: customChatRooms } = useChatRooms('custom');
-
-  // 내 방 읽음 상태(lastReadAt) 구독
-  React.useEffect(() => {
-    if (!user?.uid) {
-      setChatRoomStates({});
-      return;
-    }
-
-    const db = getFirestore();
-    const statesRef = collection(db, 'users', user.uid, 'chatRoomStates');
-    const unsubscribe = onSnapshot(
-      statesRef,
-      (snap) => {
-        const next: { [chatRoomId: string]: { lastReadAt?: any } } = {};
-        snap.forEach((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
-          next[docSnap.id] = docSnap.data() as any;
-        });
-        setChatRoomStates(next);
-      },
-      (error) => {
-        console.error('채팅방 읽음 상태 구독 실패 (tab badge):', error);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [user?.uid]);
-  
-  // 전체 안읽은 메시지 존재 여부 (있으면 1, 없으면 0)
-  const totalUnreadCount = React.useMemo(() => {
-    if (!user?.uid) return 0;
-
-    const toMillis = (ts: any) => {
-      try {
-        if (!ts) return null;
-        if ((ts as any).toMillis) return (ts as any).toMillis();
-        if ((ts as any).toDate) return (ts as any).toDate().getTime();
-        return new Date(ts as any).getTime();
-      } catch {
-        return null;
-      }
-    };
-
-    // 모든 채팅방에서 내가 참가중인 채팅방만 필터링 (중복 제거)
-    const roomMap = new Map<string, any>();
-    [...allChatRooms, ...customChatRooms].forEach(room => {
-      if (room.id && room.members?.includes(user.uid)) {
-        roomMap.set(room.id, room);
-      }
-    });
-    const myRooms = Array.from(roomMap.values());
-
-    const hasUnread = myRooms.some((room) => {
-      const lastMessageAt = room.lastMessage?.timestamp;
-      const lastMessageMillis = toMillis(lastMessageAt);
-      if (!lastMessageMillis) return false; // 메시지가 없으면 unread 아님
-
-      const state = room.id ? chatRoomStates[room.id] : undefined;
-      const lastReadMillis = toMillis(state?.lastReadAt);
-      return lastReadMillis ? lastMessageMillis > lastReadMillis : true;
-    });
-
-    return hasUnread ? 1 : 0;
-  }, [allChatRooms, customChatRooms, user?.uid, chatRoomStates]);
+  const { totalUnreadCount } = useChatTabUnreadIndicator();
   React.useEffect(() => {
     let mounted = true;
 
