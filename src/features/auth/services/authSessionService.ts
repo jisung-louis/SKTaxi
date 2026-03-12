@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-import { getCurrentAppVersion } from '@/app/bootstrap';
+import { getCurrentAppVersion } from '@/features/settings';
 import {
   createInitialUserProfile,
   DEFAULT_USER_DISPLAY_NAME,
