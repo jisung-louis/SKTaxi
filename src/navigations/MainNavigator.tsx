@@ -53,11 +53,11 @@ import {
 } from '@/features/taxi';
 import { TimetableDetailScreen } from '@/features/timetable';
 import { HomeScreen } from '@/features/home';
+import { useNotificationPermissionBubble } from '@/app/bootstrap/useNotificationPermissionBubble';
 import { MainTabParamList, TaxiStackParamList, HomeStackParamList, NoticeStackParamList, BoardStackParamList, ChatStackParamList } from './types';
 import { COLORS } from '../constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '../constants/constants';
-import { Animated, View, Linking, AppState, Text, Platform } from 'react-native';
-import { getMessaging, hasPermission, requestPermission, AuthorizationStatus } from '@react-native-firebase/messaging';
+import { Animated, View, Text } from 'react-native';
 import PermissionBubble from '../components/common/PermissionBubble';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -150,94 +150,14 @@ const ChatStackNavigator = () => {
 
 const MainNavigatorContent = () => {
   const { joinRequestCount } = useJoinRequestCount();
-  const [bubbleVisible, setBubbleVisible] = React.useState(false);
-  const [checking, setChecking] = React.useState(true);
+  const {
+    bubbleVisible,
+    checking,
+    dismissBubble,
+    allowNotification,
+  } = useNotificationPermissionBubble();
   const { hasParty } = useMyParty();
   const { totalUnreadCount } = useChatTabUnreadIndicator();
-  React.useEffect(() => {
-    let mounted = true;
-
-    const checkPermission = async () => {
-      try {
-        if (Platform.OS === 'ios') {
-          const messagingInstance = getMessaging();
-          const status = await hasPermission(messagingInstance);
-          const granted = status === AuthorizationStatus.AUTHORIZED;
-          if (mounted) setBubbleVisible(!granted);
-        } else {
-          // Android: POST_NOTIFICATIONS 권한 확인 (API 33+)
-          const androidVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
-          if (androidVersion >= 33) {
-            const { PermissionsAndroid } = require('react-native');
-            const granted = await PermissionsAndroid.check(
-              PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
-            );
-            if (mounted) setBubbleVisible(!granted);
-          } else {
-            // Android 12 이하는 자동 허용
-            if (mounted) setBubbleVisible(false);
-          }
-        }
-      } catch (error) {
-        console.warn('알림 권한 확인 실패:', error);
-        if (mounted) setBubbleVisible(true);
-      } finally {
-        if (mounted) setChecking(false);
-      }
-    };
-
-    // 최초 1회 체크
-    checkPermission();
-
-    // 포그라운드 복귀 시 재체크
-    const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        checkPermission();
-      }
-    });
-
-    return () => {
-      mounted = false;
-      sub.remove();
-    };
-  }, []);
-
-  const handleAllowNotification = React.useCallback(async () => {
-    try {
-      if (Platform.OS === 'ios') {
-        const messagingInstance = getMessaging();
-        const req = await requestPermission(messagingInstance);
-        const ok = req === AuthorizationStatus.AUTHORIZED;
-        if (ok) {
-          setBubbleVisible(false);
-          return;
-        }
-      } else {
-        // Android: POST_NOTIFICATIONS 권한 요청 (API 33+)
-        const androidVersion = typeof Platform.Version === 'number' ? Platform.Version : parseInt(Platform.Version, 10);
-        if (androidVersion >= 33) {
-          const { PermissionsAndroid } = require('react-native');
-          const result = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
-          );
-          if (result === PermissionsAndroid.RESULTS.GRANTED) {
-            setBubbleVisible(false);
-            return;
-          }
-        } else {
-          // Android 12 이하는 자동 허용
-          setBubbleVisible(false);
-          return;
-        }
-      }
-      // 권한이 여전히 허용되지 않은 경우(이전에 거절로 더 이상 팝업이 안 뜨는 케이스 포함): 설정으로 이동
-      try { await Linking.openSettings(); } catch {}
-    } catch (error) {
-      console.warn('알림 권한 요청 실패:', error);
-      // 요청 자체가 실패한 경우에도 설정으로 이동 시도
-      try { await Linking.openSettings(); } catch {}
-    }
-  }, []);
 
   return (
     <>
@@ -263,8 +183,8 @@ const MainNavigatorContent = () => {
       }}
       initialRouteName="홈"
     >
-      <Tab.Screen 
-        name="홈" 
+      <Tab.Screen
+        name="홈"
         component={HomeStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -273,8 +193,8 @@ const MainNavigatorContent = () => {
           lazy: false,
         }}
       />
-      <Tab.Screen 
-        name="택시" 
+      <Tab.Screen
+        name="택시"
         component={TaxiStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -292,8 +212,8 @@ const MainNavigatorContent = () => {
           // tabBarStyle: { display: 'none' } // 택시 화면에서 탭바 숨기기
         }}
       />
-      <Tab.Screen 
-        name="공지" 
+      <Tab.Screen
+        name="공지"
         component={NoticeStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -302,8 +222,8 @@ const MainNavigatorContent = () => {
           lazy: false,
         }}
       />
-      <Tab.Screen 
-        name="게시판" 
+      <Tab.Screen
+        name="게시판"
         component={BoardStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -313,8 +233,8 @@ const MainNavigatorContent = () => {
           lazy: false,
         }}
       />
-      <Tab.Screen 
-        name="채팅" 
+      <Tab.Screen
+        name="채팅"
         component={ChatStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
@@ -334,13 +254,13 @@ const MainNavigatorContent = () => {
       {!checking && (
         <PermissionBubble
           visible={bubbleVisible}
-          onAllowNotification={handleAllowNotification}
-          onClose={() => setBubbleVisible(false)}
+          onAllowNotification={allowNotification}
+          onClose={dismissBubble}
         />
       )}
     </>
   );
-}; 
+};
 
 // 자연스러운 페이드/슬라이드 애니메이션으로 탭바를 숨기는 커스텀 탭바
 const AnimatedTabBar = (props: BottomTabBarProps) => {
