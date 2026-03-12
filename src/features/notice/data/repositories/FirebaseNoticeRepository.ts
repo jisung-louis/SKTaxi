@@ -20,7 +20,6 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
-import type { PaginatedResult } from '@/shared/types/pagination';
 import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
 
 import {
@@ -29,6 +28,7 @@ import {
   INoticeRepository,
   Notice,
   NoticeCommentTreeNode,
+  NoticeListPage,
   ReadStatusMap,
 } from './INoticeRepository';
 
@@ -54,7 +54,7 @@ export class FirebaseNoticeRepository implements INoticeRepository {
   subscribeToNotices(
     category: string,
     noticeLimit: number,
-    callbacks: SubscriptionCallbacks<Notice[]>
+    callbacks: SubscriptionCallbacks<NoticeListPage>
   ): Unsubscribe {
     const noticesRef = collection(this.db, this.noticesCollection);
 
@@ -75,7 +75,11 @@ export class FirebaseNoticeRepository implements INoticeRepository {
           (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
             this.mapDocToNotice(docSnap),
         );
-        callbacks.onData(notices);
+        callbacks.onData({
+          data: notices,
+          hasMore: snapshot.docs.length === noticeLimit,
+          cursor: snapshot.docs[snapshot.docs.length - 1] || null,
+        });
       },
       (error) => callbacks.onError(error as Error),
     );
@@ -85,7 +89,7 @@ export class FirebaseNoticeRepository implements INoticeRepository {
     category: string,
     cursor: unknown,
     noticeLimit: number
-  ): Promise<PaginatedResult<Notice>> {
+  ): Promise<NoticeListPage> {
     const cursorDoc = cursor as FirebaseFirestoreTypes.QueryDocumentSnapshot;
     if (!cursorDoc) {
       return { data: [], hasMore: false, cursor: null };

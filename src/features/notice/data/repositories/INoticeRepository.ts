@@ -9,18 +9,20 @@ import type {
   ReadStatusMap,
 } from '../../model/types';
 
+export interface NoticeListPage extends PaginatedResult<Notice> {}
+
 export interface INoticeRepository {
   getRecentNotices(limit: number): Promise<Notice[]>;
   subscribeToNotices(
     category: string,
     limit: number,
-    callbacks: SubscriptionCallbacks<Notice[]>,
+    callbacks: SubscriptionCallbacks<NoticeListPage>,
   ): Unsubscribe;
   getMoreNotices(
     category: string,
     cursor: unknown,
     limit: number,
-  ): Promise<PaginatedResult<Notice>>;
+  ): Promise<NoticeListPage>;
   getNotice(noticeId: string): Promise<Notice | null>;
   subscribeToNotice(
     noticeId: string,

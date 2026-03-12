@@ -84,23 +84,22 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
       catKey,
       NOTICES_PER_PAGE,
       {
-        onData: (noticesData: Notice[]) => {
+        onData: (page) => {
           if (!isMountedRef.current) {return;}
 
           setCategoryCache((prev) => ({
             ...prev,
             [catKey]: {
-              items: noticesData,
-              cursor: noticesData.length > 0 ? noticesData[noticesData.length - 1] : null,
-              hasMore: noticesData.length === NOTICES_PER_PAGE,
+              items: page.data,
+              cursor: page.cursor,
+              hasMore: page.hasMore,
               initialized: true,
             },
           }));
 
-          setNotices(noticesData);
-          cursorRef.current =
-            noticesData.length > 0 ? noticesData[noticesData.length - 1] : null;
-          setHasMore(noticesData.length === NOTICES_PER_PAGE);
+          setNotices(page.data);
+          cursorRef.current = page.cursor;
+          setHasMore(page.hasMore);
           setLoading(false);
           setError(null);
         },

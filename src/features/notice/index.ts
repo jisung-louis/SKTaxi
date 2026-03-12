@@ -7,6 +7,7 @@ export {
 export { MockNoticeRepository } from './data/repositories/MockNoticeRepository';
 export type {
   INoticeRepository,
+  NoticeListPage,
 } from './data/repositories/INoticeRepository';
 
 export { useNotice } from './hooks/useNotice';

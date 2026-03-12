@@ -6,6 +6,7 @@ import type {
   CommentFormData,
   Notice,
   NoticeCommentTreeNode,
+  NoticeListPage,
   ReadStatusMap,
 } from './INoticeRepository';
 import { INoticeRepository } from './INoticeRepository';
@@ -28,7 +29,7 @@ export class MockNoticeRepository implements INoticeRepository {
       createdAt: now.toISOString(),
       author: '관리자',
       department: '운영팀',
-      source: 'app',
+      source: 'notice',
       contentDetail: '자세한 내용입니다.',
       contentAttachments: [],
       likeCount: 5,
@@ -38,38 +39,25 @@ export class MockNoticeRepository implements INoticeRepository {
   }
 
   async getRecentNotices(limit: number): Promise<Notice[]> {
-    return Array.from(this.notices.values())
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, limit);
+    return this.getOrderedNotices('전체').slice(0, limit);
   }
 
   subscribeToNotices(
     category: string,
     limit: number,
-    callbacks: SubscriptionCallbacks<Notice[]>,
+    callbacks: SubscriptionCallbacks<NoticeListPage>,
   ): Unsubscribe {
-    let notices = Array.from(this.notices.values());
-    if (category !== '전체') {
-      notices = notices.filter((notice) => notice.category === category);
-    }
-    setTimeout(() => callbacks.onData(notices.slice(0, limit)), 10);
+    const page = this.getNoticePage(category, null, limit);
+    setTimeout(() => callbacks.onData(page), 10);
     return () => {};
   }
 
   async getMoreNotices(
     category: string,
-    _cursor: unknown,
+    cursor: unknown,
     limit: number,
-  ): Promise<PaginatedResult<Notice>> {
-    let notices = Array.from(this.notices.values());
-    if (category !== '전체') {
-      notices = notices.filter((notice) => notice.category === category);
-    }
-    return {
-      data: notices.slice(0, limit),
-      hasMore: notices.length > limit,
-      cursor: null,
-    };
+  ): Promise<NoticeListPage> {
+    return this.getNoticePage(category, cursor, limit);
   }
 
   async getNotice(noticeId: string): Promise<Notice | null> {
@@ -218,5 +206,41 @@ export class MockNoticeRepository implements INoticeRepository {
     this.readStatus.clear();
     this.likes.clear();
     this.comments.clear();
+  }
+
+  private getOrderedNotices(category: string): Notice[] {
+    const notices = Array.from(this.notices.values());
+
+    return notices
+      .filter((notice) => category === '전체' || notice.category === category)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  private getCursor(notices: Notice[]): string | null {
+    return notices.length > 0 ? notices[notices.length - 1].id : null;
+  }
+
+  private getNoticePage(
+    category: string,
+    cursor: unknown,
+    limit: number,
+  ): PaginatedResult<Notice> {
+    const notices = this.getOrderedNotices(category);
+    const cursorId = typeof cursor === 'string' ? cursor : null;
+    const startIndex = cursorId
+      ? notices.findIndex((notice) => notice.id === cursorId) + 1
+      : 0;
+
+    if (cursorId && startIndex === 0) {
+      return { data: [], hasMore: false, cursor: null };
+    }
+
+    const page = notices.slice(startIndex, startIndex + limit);
+
+    return {
+      data: page,
+      hasMore: notices.length > startIndex + page.length,
+      cursor: this.getCursor(page),
+    };
   }
 }
