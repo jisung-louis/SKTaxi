@@ -7,8 +7,8 @@
 
 - 브랜치: `skuri-refactoring`
 - 현재 기준 runtime commit: `871dd64`
-- 현재 상태: `Phase 8 shared-boundary cleanup 후속 수정 완료`
-- 현재 구조 상태: `active feature/app import가 shared/* 와 feature public API 기준으로 정리되었고, root legacy common/constants/hooks/utils/lib 경로는 shim·잔여 cleanup 대상으로만 남아 있음`
+- 현재 상태: `Phase 8 shared-boundary cleanup 2차 후속 수정 완료`
+- 현재 구조 상태: `active src/app/*`, `src/features/*` 기준 verifier 대상 root legacy import는 0건이며, taxi join-request notification-action contract의 source of truth는 `src/features/taxi/data/repositories/*` 다. root legacy common/constants/hooks/utils/lib 및 notification-action repository 경로는 shim·잔여 cleanup 대상으로만 남아 있음`
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
 ## source of truth 상태
@@ -145,6 +145,7 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - 공용 경계의 actual source of truth는 `src/shared/constants/{colors,typography,layout,departments}.ts`, `src/shared/hooks/useScreenView.ts`, `src/shared/lib/date/*`, `src/shared/lib/analytics/index.ts`, `src/shared/lib/permissions/att.ts`, `src/shared/lib/sound/chatSound.ts`, `src/shared/lib/text/hashtagParser.ts` 다. root `src/constants/*`, `src/utils/*`, `src/lib/att.ts`, `src/lib/sound/chatSound.ts`, `src/hooks/useScreenView.ts` 는 shim 또는 legacy 잔여 export만 유지한다.
 - `src/features/user/hooks/useNotificationSettings.ts`, `src/features/user/hooks/useUserProfile.ts`, `src/features/user/hooks/useUserBookmarks.ts`, `src/features/user/hooks/useAccountInfo.ts` 는 더 이상 `@/hooks/auth` shim을 보지 않고 `@/features/auth` public API를 직접 사용한다.
 - active DI 그래프는 이제 `src/di/repositoryContracts.ts` 를 통해 feature public API 기반 repository contract를 사용한다. `RepositoryContext`, `useRepository`, `RepositoryProvider` 는 source of truth가 전환된 contract에 대해 legacy `src/repositories/interfaces/*` 를 직접 타입 source로 보지 않는다.
+- Phase 8 shared-boundary cleanup 2차 후속 수정으로 taxi join-request notification-action contract와 구현의 source of truth는 `src/features/taxi/data/repositories/{INotificationActionRepository,FirebaseNotificationActionRepository,MockNotificationActionRepository}.ts` 로 이동했다. `src/features/taxi/services/joinRequestService.ts`, `src/features/taxi/hooks/useNotificationActionRepository.ts`, `src/di/repositoryContracts.ts`, `src/di/RepositoryProvider.tsx` 는 이제 taxi feature 경계/public API를 사용하고, root `src/repositories/interfaces/INotificationActionRepository.ts`, `src/repositories/firestore/FirestoreNotificationActionRepository.ts`, `src/repositories/mock/MockNotificationActionRepository.ts` 는 shim만 유지한다.
 
 ## Phase 9 진입 전 남은 blocker
 
