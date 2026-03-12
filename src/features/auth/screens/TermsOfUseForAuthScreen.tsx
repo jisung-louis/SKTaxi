@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import PageHeader from '@/components/common/PageHeader';
-import TermsOfUseContent from '@/screens/components/TermsOfUseContent';
+import { TermsOfUseContent } from '@/features/settings';
 import { COLORS } from '@/shared/constants/colors';
 import { useScreenView } from '@/shared/hooks';
 
