@@ -1,5 +1,6 @@
 export { AuthProvider, useAuthContext } from './providers/AuthProvider';
 export { useAuth } from './hooks/useAuth';
+export { useAuthLoginProvider } from './hooks/useAuthLoginProvider';
 export { useProfileCompletion } from './hooks/useProfileCompletion';
 export { useCompleteProfile } from './hooks/useCompleteProfile';
 export { usePermissionOnboarding } from './hooks/usePermissionOnboarding';

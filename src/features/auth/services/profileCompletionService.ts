@@ -1,10 +1,8 @@
-import { IUserRepository } from '@/repositories/interfaces/IUserRepository';
-import { setUserProperties } from '@/shared/lib/analytics';
+import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
+import { saveCompletedUserProfile } from '@/features/user/services/userProfileService';
 import { User } from '@/types/auth';
 
 import { CompleteProfileFormValues } from '../model/types';
-
-const TERMS_VERSION = '2025-10-29';
 
 export const validateCompleteProfileForm = (
   values: CompleteProfileFormValues,
@@ -37,54 +35,9 @@ export const saveCompleteProfile = async ({
   userRepository: IUserRepository;
   values: CompleteProfileFormValues;
 }) => {
-  if (!user) {
-    throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
-  }
-
-  const authUid = user.uid || (user as any)?.uid;
-  if (!authUid) {
-    throw new Error(
-      '사용자 정보를 불러오지 못했습니다. 다시 로그인해 주세요.',
-    );
-  }
-
-  const displayName = values.displayName.trim();
-  const studentId = values.studentId.trim();
-  const department = values.department.trim();
-  const agreements = {
-    termsAccepted: true,
-    ageConfirmed: true,
-    termsVersion: TERMS_VERSION,
-    acceptedAt: new Date().toISOString(),
-  };
-
-  await userRepository.checkDisplayNameAvailable(displayName, authUid);
-
-  const existing = await userRepository.getUserProfile(authUid);
-  if (!existing) {
-    await userRepository.createUserProfile(authUid, {
-      uid: authUid,
-      email: user.email ?? null,
-      displayName,
-      studentId,
-      department,
-      photoURL: user.photoURL ?? null,
-      onboarding: { permissionsComplete: false },
-      agreements,
-    } as any);
-  }
-
-  await userRepository.updateUserProfile(authUid, {
-    displayName,
-    studentId,
-    department,
-  } as any);
-  await userRepository.updateUserProfile(authUid, {
-    agreements,
-  } as any);
-
-  await setUserProperties({
-    display_name: displayName,
-    department,
+  await saveCompletedUserProfile({
+    user,
+    userRepository,
+    values,
   });
 };

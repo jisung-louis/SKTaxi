@@ -1,5 +1,6 @@
 import { ensureFcmTokenSaved } from '@/lib/fcm';
-import { IUserRepository } from '@/repositories/interfaces/IUserRepository';
+import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
+import { completeUserPermissionOnboarding } from '@/features/user/services/userProfileService';
 
 const COMPLETION_DELAY_MS = 1000;
 
@@ -22,9 +23,10 @@ export const completePermissionOnboarding = async ({
     await delay(COMPLETION_DELAY_MS);
 
     if (userId) {
-      await userRepository.updateUserProfile(userId, {
-        onboarding: { permissionsComplete: true },
-      } as any);
+      await completeUserPermissionOnboarding({
+        userId,
+        userRepository,
+      });
     }
   } catch (error) {
     console.warn('권한 온보딩 완료 처리 실패:', error);

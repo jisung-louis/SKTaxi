@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { useUserRepository } from '@/di';
+import { useUserRepository } from '@/features/user/hooks/useUserRepository';
 
 import { PermissionOnboardingStep } from '../model/types';
 import { completePermissionOnboarding } from '../services/permissionOnboardingService';

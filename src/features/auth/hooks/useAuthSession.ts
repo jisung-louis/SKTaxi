@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useRepository } from '@/di';
+import { useUserRepository } from '@/features/user/hooks/useUserRepository';
 import { AuthState } from '@/types/auth';
 
 import { AuthContextValue } from '../model/types';
@@ -16,7 +17,8 @@ import {
 } from '../services/authSessionService';
 
 export const useAuthSession = (): AuthContextValue => {
-  const { authRepository, userRepository } = useRepository();
+  const { authRepository } = useRepository();
+  const userRepository = useUserRepository();
 
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -55,7 +57,7 @@ export const useAuthSession = (): AuthContextValue => {
             onData: profile => {
               setState({
                 user: profile
-                  ? mergeProfileUser(authUser, profile as any)
+                  ? mergeProfileUser(authUser, profile)
                   : buildFallbackUser(authUser),
                 loading: false,
               });

@@ -1,8 +1,14 @@
 import { Platform } from 'react-native';
 
 import { getCurrentAppVersion } from '@/app/bootstrap';
+import { IUserRepository } from '@/features/user/data/repositories/IUserRepository';
+import { UserProfile } from '@/features/user/model/types';
+import {
+  createInitialUserProfile,
+  DEFAULT_USER_DISPLAY_NAME,
+  syncUserLoginMetadata,
+} from '@/features/user/services/userProfileService';
 import { deleteFcmToken } from '@/lib/fcm';
-import { IUserRepository } from '@/repositories/interfaces/IUserRepository';
 import { setUserId } from '@/shared/lib/analytics';
 import { User } from '@/types/auth';
 
@@ -12,8 +18,6 @@ import {
   IAuthRepository,
 } from '../data/repositories/IAuthRepository';
 
-const DEFAULT_DISPLAY_NAME = '스쿠리 유저';
-
 export const setAnalyticsAuthUser = async (authUser: AuthUser | null) => {
   await setUserId(authUser?.uid ?? null);
 };
@@ -21,7 +25,7 @@ export const setAnalyticsAuthUser = async (authUser: AuthUser | null) => {
 export const buildFallbackUser = (authUser: AuthUser): User => ({
   uid: authUser.uid,
   email: authUser.email,
-  displayName: DEFAULT_DISPLAY_NAME,
+  displayName: DEFAULT_USER_DISPLAY_NAME,
   studentId: null,
   department: null,
   photoURL: authUser.photoURL,
@@ -31,13 +35,13 @@ export const buildFallbackUser = (authUser: AuthUser): User => ({
 
 export const mergeProfileUser = (
   authUser: AuthUser,
-  profile: Record<string, unknown>,
+  profile: UserProfile,
 ): User => ({
   ...profile,
   uid: authUser.uid,
   photoURL:
-    (profile.photoURL as string | null | undefined) ??
-    (profile.photoUrl as string | null | undefined) ??
+    profile.photoURL ??
+    profile.photoUrl ??
     authUser.photoURL ??
     null,
 }) as User;
@@ -48,13 +52,12 @@ export const syncLoginMetadata = async (
 ) => {
   const currentVersion = getCurrentAppVersion();
 
-  await userRepository
-    .updateUserProfile(uid, {
-      lastLogin: new Date(),
-      currentVersion,
-      lastLoginOS: Platform.OS,
-    } as any)
-    .catch(() => {});
+  await syncUserLoginMetadata({
+    currentVersion,
+    platformOS: Platform.OS,
+    userId: uid,
+    userRepository,
+  }).catch(() => {});
 };
 
 const assertAllowedDomain = async (
@@ -69,30 +72,6 @@ const assertAllowedDomain = async (
         '성결대학교 이메일(@sungkyul.ac.kr)만 사용 가능합니다.',
     };
   }
-};
-
-const createInitialUserProfile = async (
-  userRepository: IUserRepository,
-  authUser: AuthUser,
-) => {
-  await userRepository.createUserProfile(authUser.uid, {
-    uid: authUser.uid,
-    email: authUser.email || '',
-    displayName: DEFAULT_DISPLAY_NAME,
-    photoURL: authUser.photoURL,
-    linkedAccounts: [
-      {
-        provider: 'google',
-        providerId: authUser.uid,
-        email: authUser.email || '',
-        displayName: authUser.displayName,
-        photoURL: authUser.photoURL,
-      },
-    ],
-    studentId: null,
-    realname: null,
-    department: null,
-  } as any);
 };
 
 export const finalizeGoogleSignIn = async ({
