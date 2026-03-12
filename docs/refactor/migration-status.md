@@ -73,7 +73,9 @@ legacy chat 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - `RepositoryProvider` 의 chat repository 바인딩은 이제 `src/features/chat/data/repositories/FirebaseChatRepository.ts` 를 사용한다.
 - `MainNavigator` 의 공개 채팅 unread 계산/room state 구독 책임은 `src/features/chat/hooks/useChatTabUnreadIndicator.ts` 뒤로 이동했다.
 - `src/navigations/hooks/useForegroundNotification.ts` 의 공개 채팅 room lookup/foreground banner payload/ChatDetail 이동 로직은 `features/chat` public API를 통해 처리한다.
-- `ChatDetailScreen` 의 공개 채팅 메시지 전송과 Minecraft game chat bridge/RTDB server status 접근은 chat feature 내부 hook/data adapter를 통해 처리된다.
+- `ChatDetailScreen` 의 공개 채팅 메시지 전송은 `src/features/chat/*` 가 소유하고, Minecraft game chat bridge/RTDB server status 접근은 `src/features/minecraft/index.ts` public API를 chat 내부 adapter가 감싼 형태로 분리되었다. active chat 경로는 더 이상 root legacy `src/lib/minecraftChat.ts` 에 직접 의존하지 않는다.
+- `src/features/chat/data/composition/chatRuntime.ts` 는 user feature internal path deep import를 제거하고 `src/features/user/index.ts` public API만 사용한다.
+- `ChatStackParamList` 는 `src/features/chat/model/navigation.ts` 로 이동했고, `src/app/navigation/types.ts` 는 chat feature public API를 소비한다. active chat feature는 더 이상 app/navigation 타입에 직접 결합되지 않는다.
 
 ## Phase 6 진입 전 남은 blocker
 
