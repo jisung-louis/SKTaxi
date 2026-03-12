@@ -1,4 +1,5 @@
 export {
+  JoinRequestModal,
   PartyList,
   TaxiHomeSection,
   TaxiPermissionPrompt,
