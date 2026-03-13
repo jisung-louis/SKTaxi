@@ -6,10 +6,10 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `0f84b95`
-- 현재 상태: `Phase 8 handoff baseline: runtime 기준선은 0f84b95 를 유지하고, HEAD 7f39775 기준 lint hard gate fix까지 반영된 상태다. active source tree eslint는 0 errors 상태이며, 다음 단계는 별도 검증 스레드의 Phase 8 최종 재검증이다.`
-- 현재 구조 상태: `navigation shell의 source of truth는 계속 src/app/navigation/* 이다. shared moderation 경계에서는 src/shared/lib/moderation/{contracts,index}.ts 가 pure boundary를 담당하고, src/shared/lib/moderation/MockModerationRepository.ts 는 별도 잔여 cleanup 대상으로 남아 있다. Firebase 구현은 src/shared/lib/firebase/moderationRepository.ts 와 feature data/composition 생성 지점에 유지된다. generic subscription/api contract의 active source of truth는 이제 src/shared/types/{subscription,api}.ts 로 수렴됐다. user/chat/taxi repository contract와 notice repository 구현은 generic subscription contract를 shared에서 직접 사용하고, notice는 더 이상 taxi feature public API를 통해 이 계약을 가져오지 않는다. auth/user 공용 사용자 타입의 actual source of truth는 src/shared/types/user.ts, auth state는 src/features/auth/model/types.ts, user firestore 문서는 src/features/user/model/types.ts, 공개 채팅 타입은 src/features/chat/model/types.ts, taxi party/join-request/message 타입은 src/features/taxi/model/types.ts 로 정리됐다. active src/app/*, src/features/*, src/shared/* 기준 root src/api/types.ts 와 root src/types/{auth,firestore,party}.ts import는 0건이다. root src/api/types.ts, src/types/auth.ts, src/types/firestore.ts, src/types/party.ts 는 shim-only re-export 상태로 남았고, src/api/{index,endpoints,ApiClient}.ts 는 active consumer 없는 backend-migration placeholder라 keep-as-is 로 유지한다. src/di/* 는 app composition DI 경계라 keep-active 로 유지한다.`
-- 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
+- 현재 기준 runtime commit: `c9be8e3`
+- 현재 상태: `Phase 9 cleanup complete: root residual/dead file cleanup, mock/testing boundary relocation, route key와 UI label 분리, typo naming cleanup, active warning baseline cleanup이 반영된 상태다. 수정 파일 대상 eslint는 0 경고/오류 상태이며, npm test -- --runInBand 도 통과했다.`
+- 현재 구조 상태: `navigation shell의 actual source of truth는 src/app/navigation/* 이고, main tab internal route key는 HomeTab/TaxiTab/NoticeTab/BoardTab/ChatTab 으로 정리되었다. 한국어 탭 표시는 MainNavigator tabBarLabel 이 소유한다. home stack의 legacy NotificationSetting route key는 NotificationSettings 로 정리됐다. generic subscription/api contract의 actual source of truth는 src/shared/types/{subscription,api}.ts 이고, auth/user 공용 사용자 타입은 src/shared/types/user.ts, auth state는 src/features/auth/model/types.ts, user firestore 문서는 src/features/user/model/types.ts, 공개 채팅 타입은 src/features/chat/model/types.ts, taxi party/join-request/message 타입은 src/features/taxi/model/types.ts 가 소유한다. root src/api/*, src/navigations/*, src/hooks/*, src/repositories/{interfaces,firestore,mock}/*, src/components/*, src/constants/*, src/lib/*, src/utils/*, src/screens/*, src/contexts/*, src/config/*, src/errors/*, root src/types/* shim은 Phase 9에서 제거되었다. root keep-active 예외는 app composition DI 경계인 src/di/* 와 ambient declaration인 src/types/react-native-render-html.d.ts 뿐이다.`
+- 다음 작업 시작점: `Phase 9 post-cleanup review 또는 빈 디렉터리 정리 수준의 비차단 후속 작업`
 
 ## source of truth 상태
 
@@ -160,15 +160,22 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - chat/taxi active 코드의 actual source of truth는 이제 `src/features/chat/model/types.ts` 와 `src/features/taxi/model/types.ts` 다. `ChatRoom`, `ChatMessage` 는 chat feature model, `Party`, `PartyMember`, `JoinRequest`, `PendingJoinRequest`, `JoinRequestStatus`, `PartyMessage`, `SettlementData` 는 taxi feature model이 소유한다. root `src/types/firestore.ts`, `src/types/party.ts` 는 shim-only re-export만 유지한다.
 - `src/shared/testing/mockData/dummyParties.ts` 는 root `src/types/party.ts` import를 제거하고 local mock literal만 유지한다. shared testing이 taxi feature model을 직접 source of truth로 삼지 않도록 keep-as-data 상태로 남겼다.
 
-## Phase 9 진입 전 남은 blocker
+## Phase 9 완료 메모
 
-- `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 최종 재검증` 을 다시 받아야 한다.
-- root legacy common/constants/hooks/utils/lib 파일 자체는 여전히 저장소에 남아 있다. 이번 턴 기준 이들 중 active import가 제거된 경로는 shim 또는 잔여 cleanup 대상으로만 간주한다.
-- root `src/api/types.ts`, `src/types/auth.ts`, `src/types/firestore.ts`, `src/types/party.ts` 는 이번 턴에 shim-only 로 줄였지만 아직 삭제하지 않았다. legacy test/mock/root re-export 경로와 최종 Phase 9 import graph 재확인이 남아 있으므로, 재검증 전에는 keep한다.
-- root `src/api/{index,endpoints,ApiClient}.ts` 는 active runtime consumer가 없지만 backend migration placeholder 성격이라 이번 턴에서 삭제하지 않았다.
-- `src/app/navigation/MainNavigator.tsx` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
-- timetable/campus/settings/minecraft/home 포함 전체 feature의 legacy shim 파일 대량 삭제는 아직 하지 않았다. Phase 9에서 실제 import graph를 다시 확인한 뒤 제거해야 한다.
-- route key와 UI label 완전 분리, 오타 파일명 정리, dead code 대량 삭제, 전역 lint warning 정리는 아직 남아 있다.
+- root residual import graph 정리 결과, active `src/app/*`, `src/features/*`, `src/shared/*` 에서 legacy root `@/api`, `@/navigations`, `@/hooks`, `@/repositories`, `@/components`, `@/constants`, `@/lib`, `@/utils`, `@/types` 직접 import는 0건이다.
+- root legacy dead file cleanup으로 `src/api`, `src/navigations`, `src/hooks`, `src/repositories/{interfaces,firestore,mock}`, `src/components`, `src/constants`, `src/lib`, `src/utils`, `src/screens`, `src/contexts`, `src/config`, `src/errors`, root legacy type shim 파일이 제거되었다. `src/di/*` 와 `src/types/react-native-render-html.d.ts` 만 keep-active 로 유지한다.
+- mock/testing asset 경계는 runtime public API에서 분리되었다. `src/features/notice/testing/MockNoticeRepository.ts` 와 `src/features/taxi/testing/MockPartyRepository.ts` 가 테스트 전용 source of truth가 되었고, feature `index.ts` 는 더 이상 mock 구현을 export하지 않는다. 사용처가 없는 runtime-like mock 구현(`MockBoardRepository`, `MockNotificationRepository`, `MockNotificationActionRepository`, `MockModerationRepository`, root mock repository들)은 삭제했다.
+- route key와 UI label 책임을 분리했다. main tab route key는 English stable key(`HomeTab`, `TaxiTab`, `NoticeTab`, `BoardTab`, `ChatTab`)로 통일했고, 한국어 라벨은 `src/app/navigation/MainNavigator.tsx` 의 `tabBarLabel` 이 소유한다. home stack 내부 route key는 `NotificationSettings` 로 정리했고, 관련 notification/navigation helper와 home/settings/user/minecraft/taxi 경로를 모두 갱신했다.
+- typo/naming cleanup으로 root legacy `src/screens/HomeTab/SettingScreen/NofiticationSettingScreen.tsx`, `src/constants/typhograpy.ts` 를 제거했고, feature public API의 `NofiticationSettingScreen` alias export도 제거했다.
+- warning baseline cleanup으로 `src/app/navigation/MainNavigator.tsx`, `src/features/home/screens/HomeScreen.tsx`, `src/features/minecraft/screens/MinecraftDetailScreen.tsx`, test helper와 route helper 수정 파일의 대상 eslint 경고를 제거했다. Phase 9 대상 eslint 명령은 0 output 상태다.
+- 검증 결과:
+  - `./node_modules/.bin/eslint <Phase 9 수정 파일들> --ext .ts,.tsx` 통과
+  - `npm test -- --runInBand` 통과
+
+## 남은 메모
+
+- root 파일 기준으로는 empty directory 정도만 남을 수 있지만, 실제 runtime/import graph 관점의 source tree는 `src/app`, `src/features`, `src/shared`, `src/di`, ambient declaration 으로 수렴된 상태다.
+- `src/features/campus/hooks/useAcademicSchedules.ts` 같은 일부 주석/문서성 코멘트에는 과거 root 경로 문자열이 남아 있을 수 있으나, active import graph에는 영향이 없다.
 
 ## 운영 규칙
 
