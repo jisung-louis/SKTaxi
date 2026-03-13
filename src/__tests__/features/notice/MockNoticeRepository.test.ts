@@ -1,6 +1,5 @@
-import { MockNoticeRepository } from '../../../features/notice/data/repositories/MockNoticeRepository';
-import type { NoticeListPage } from '../../../features/notice/data/repositories/INoticeRepository';
-import type { Notice } from '../../../features/notice/model/types';
+import type { Notice, NoticeListPage } from '../../../features/notice';
+import { MockNoticeRepository } from '../../../features/notice/testing/MockNoticeRepository';
 import {
   createMockSubscriptionCallbacks,
   waitFor as waitForMs,

@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
-import { MockNoticeRepository } from '../../../features/notice/data/repositories/MockNoticeRepository';
+import type { Notice } from '../../../features/notice';
+import { MockNoticeRepository } from '../../../features/notice/testing/MockNoticeRepository';
 import { useNotices } from '../../../features/notice/hooks/useNotices';
-import type { Notice } from '../../../features/notice/model/types';
 
 const mockUseNoticeReadState = jest.fn();
 const mockUseNoticeRepository = jest.fn();

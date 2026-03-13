@@ -4,7 +4,6 @@ export {
   FirebaseNoticeRepository,
   FirestoreNoticeRepository,
 } from './data/repositories/FirebaseNoticeRepository';
-export { MockNoticeRepository } from './data/repositories/MockNoticeRepository';
 export type {
   INoticeRepository,
   NoticeListPage,

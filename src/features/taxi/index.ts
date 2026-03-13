@@ -14,7 +14,6 @@ export {
 export {
   FirestorePartyRepository,
 } from './data/repositories/FirebasePartyRepository';
-export { MockNotificationActionRepository } from './data/repositories/MockNotificationActionRepository';
 export type { IPartyRepository } from './data/repositories/IPartyRepository';
 export type {
   INotificationActionRepository,

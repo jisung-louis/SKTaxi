@@ -9,7 +9,7 @@ jest.mock('../src/features/auth', () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-jest.mock('../src/contexts/CourseSearchContext', () => ({
+jest.mock('../src/features/timetable', () => ({
   CourseSearchProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 

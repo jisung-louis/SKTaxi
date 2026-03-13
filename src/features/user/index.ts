@@ -5,7 +5,6 @@ export {
   FirebaseNotificationRepository,
   FirestoreNotificationRepository,
 } from './data/repositories/FirebaseNotificationRepository';
-export { MockNotificationRepository } from './data/repositories/MockNotificationRepository';
 export type {
   INotificationRepository,
   Notification,
@@ -50,10 +49,7 @@ export { ProfileScreen } from './screens/ProfileScreen';
 export { ProfileEditScreen } from './screens/ProfileEditScreen';
 export { AccountModificationScreen } from './screens/AccountModificationScreen';
 export { NotificationScreen } from './screens/NotificationScreen';
-export {
-  NotificationSettingsScreen,
-  NotificationSettingsScreen as NofiticationSettingScreen,
-} from './screens/NotificationSettingsScreen';
+export { NotificationSettingsScreen } from './screens/NotificationSettingsScreen';
 
 export {
   completeUserPermissionOnboarding,

@@ -1,9 +1,10 @@
 // SKTaxi: Firebase 모킹 유틸리티
 // 테스트에서 사용할 수 있는 Firebase 관련 mock 헬퍼
 
-import { Party } from '../../types/party';
-import { ChatRoom, ChatMessage, UserDoc } from '../../types/firestore';
-import { BoardPost, BoardComment } from '../../types/board';
+import type { BoardComment, BoardPost } from '../../features/board';
+import type { ChatMessage, ChatRoom } from '../../features/chat';
+import type { Party } from '../../features/taxi';
+import type { UserDoc } from '../../features/user';
 
 /**
  * Mock Firestore 문서 스냅샷 생성
@@ -147,8 +148,8 @@ export function createMockBoardComment(
  */
 export function createMockSubscriptionCallbacks<T>() {
   return {
-    onData: jest.fn(),
-    onError: jest.fn(),
+    onData: jest.fn<void, [T]>(),
+    onError: jest.fn<void, [Error]>(),
   };
 }
 

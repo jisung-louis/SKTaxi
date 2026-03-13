@@ -11,7 +11,6 @@ export {
   FirebaseBoardRepository,
   FirestoreBoardRepository,
 } from './data/repositories/FirebaseBoardRepository';
-export { MockBoardRepository } from './data/repositories/MockBoardRepository';
 export type {
   BoardCommentTreeNode,
   BoardFilterOptions,
