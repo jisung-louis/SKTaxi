@@ -13,6 +13,7 @@ import { findOverlappingCourses, getTodayCourses } from '../services/timetableUt
 export const useTimetable = (semester: string) => {
   const { user } = useAuth();
   const { timetableRepository, courseRepository } = useRepository();
+  const userId = user?.uid;
   
   const [timetable, setTimetable] = useState<UserTimetable | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -78,7 +79,7 @@ export const useTimetable = (semester: string) => {
 
   // 시간표 실시간 구독
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setTimetable(null);
       setCourses([]);
       setLoading(false);
@@ -91,7 +92,7 @@ export const useTimetable = (semester: string) => {
     setError(null);
 
     const unsubscribe = timetableRepository.subscribeToTimetable(
-      user.uid,
+      userId,
       semester,
       {
         onData: (data) => {
@@ -108,8 +109,8 @@ export const useTimetable = (semester: string) => {
             lastCourseIdsRef.current = newCourseIds;
 
             const newTimetable: UserTimetable = {
-              id: `${user.uid}_${semester}`,
-              userId: user.uid,
+              id: `${userId}_${semester}`,
+              userId,
               semester,
               courses: data.courses, // 이미 string[] 형태
               createdAt: data.updatedAt,
@@ -128,7 +129,7 @@ export const useTimetable = (semester: string) => {
             
             setTimetable({
               id: '',
-              userId: user.uid,
+              userId,
               semester,
               courses: [],
               createdAt: new Date(),
@@ -148,7 +149,7 @@ export const useTimetable = (semester: string) => {
     );
 
     return () => unsubscribe();
-  }, [user, semester, timetableRepository, loadCourses]);
+  }, [userId, semester, timetableRepository, loadCourses]);
 
   // 수업 추가
   const addCourse = useCallback(

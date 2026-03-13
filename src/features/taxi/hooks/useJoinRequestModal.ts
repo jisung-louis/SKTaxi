@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { useUserDisplayNames } from '@/features/user';
 
@@ -45,7 +45,7 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
   }, [requestStatus?.status]);
 
   // 승인 핸들러
-  const handleAccept = async () => {
+  const handleAccept = useCallback(async () => {
     if (joinData && userId) {
       await acceptJoinRequest({
         partyRepository,
@@ -58,10 +58,16 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
       });
     }
     setJoinData(null);
-  };
+  }, [
+    joinData,
+    userId,
+    partyRepository,
+    notificationActionRepository,
+    requesterName,
+  ]);
 
   // 거절 핸들러
-  const handleDecline = async () => {
+  const handleDecline = useCallback(async () => {
     if (joinData && userId) {
       await declineJoinRequest({
         partyRepository,
@@ -72,15 +78,15 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
       });
     }
     setJoinData(null);
-  };
+  }, [joinData, userId, partyRepository, notificationActionRepository]);
 
   // 모달 닫기 핸들러
-  const handleRequestClose = () => {
+  const handleRequestClose = useCallback(() => {
     setJoinData(null);
-  };
+  }, []);
 
   // 동승 요청 승인 알림 핸들러 (FCM)
-  const handleJoinRequestAccepted = (partyId: string) => {
+  const handleJoinRequestAccepted = useCallback((partyId: string) => {
     (navigation as any).navigate('Main', {
       screen: 'TaxiTab',
       params: {
@@ -88,13 +94,13 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
         params: { partyId },
       },
     });
-  };
+  }, [navigation]);
 
   // 동승 요청 거절 알림 핸들러 (FCM)
-  const handleJoinRequestRejected = () => {
+  const handleJoinRequestRejected = useCallback(() => {
     // AcceptancePendingScreen에서 이미 Alert를 표시하므로 여기서는 네비게이션만 처리
     (navigation as any).popToTop();
-  };
+  }, [navigation]);
 
   return {
     joinData,
