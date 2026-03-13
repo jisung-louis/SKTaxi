@@ -1,6 +1,9 @@
 // SKTaxi: Timetable Repository 인터페이스 - 시간표 데이터 접근 추상화
 
-import { Unsubscribe, SubscriptionCallbacks } from '@/api/types';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 /**
  * 사용자 시간표

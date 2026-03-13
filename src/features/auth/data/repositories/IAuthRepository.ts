@@ -1,4 +1,7 @@
-import { Unsubscribe, SubscriptionCallbacks } from '@/api/types';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 export interface AuthUser {
   uid: string;

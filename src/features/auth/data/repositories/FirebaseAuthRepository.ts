@@ -8,11 +8,14 @@ import {
 import type { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-import { Unsubscribe, SubscriptionCallbacks } from '@/api/types';
 import {
   RepositoryError,
   RepositoryErrorCode,
 } from '@/shared/lib/errors';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import {
   AuthUser,
