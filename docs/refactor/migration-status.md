@@ -6,8 +6,8 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `c9be8e3`
-- 현재 상태: `Phase 9 cleanup complete: root residual/dead file cleanup, mock/testing boundary relocation, route key와 UI label 분리, typo naming cleanup, active warning baseline cleanup이 반영된 상태다. 수정 파일 대상 eslint는 0 경고/오류 상태이며, npm test -- --runInBand 도 통과했다.`
+- 현재 기준 runtime commit: `d6d91c2`
+- 현재 상태: `Phase 9 cleanup 완료 상태 위에 홈 화면 시간표 섹션 재구독 루프 hotfix가 반영된 상태다. root residual/dead file cleanup, mock/testing boundary relocation, route key와 UI label 분리, typo naming cleanup은 유지되며, active source tree eslint hard gate와 npm test -- --runInBand도 통과했다.`
 - 현재 구조 상태: `navigation shell의 actual source of truth는 src/app/navigation/* 이고, main tab internal route key는 HomeTab/TaxiTab/NoticeTab/BoardTab/ChatTab 으로 정리되었다. 한국어 탭 표시는 MainNavigator tabBarLabel 이 소유한다. home stack의 legacy NotificationSetting route key는 NotificationSettings 로 정리됐다. generic subscription/api contract의 actual source of truth는 src/shared/types/{subscription,api}.ts 이고, auth/user 공용 사용자 타입은 src/shared/types/user.ts, auth state는 src/features/auth/model/types.ts, user firestore 문서는 src/features/user/model/types.ts, 공개 채팅 타입은 src/features/chat/model/types.ts, taxi party/join-request/message 타입은 src/features/taxi/model/types.ts 가 소유한다. root src/api/*, src/navigations/*, src/hooks/*, src/repositories/{interfaces,firestore,mock}/*, src/components/*, src/constants/*, src/lib/*, src/utils/*, src/screens/*, src/contexts/*, src/config/*, src/errors/*, root src/types/* shim은 Phase 9에서 제거되었다. root keep-active 예외는 app composition DI 경계인 src/di/* 와 ambient declaration인 src/types/react-native-render-html.d.ts 뿐이다.`
 - 다음 작업 시작점: `Phase 9 post-cleanup review 또는 빈 디렉터리 정리 수준의 비차단 후속 작업`
 
@@ -171,6 +171,13 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - 검증 결과:
   - `./node_modules/.bin/eslint <Phase 9 수정 파일들> --ext .ts,.tsx` 통과
   - `npm test -- --runInBand` 통과
+
+## Phase 9 후속 hotfix 메모
+
+- 홈 화면 `TimetableSection` 이 시간표 표시와 로딩 상태를 반복하는 회귀가 실기기(iOS) 수동 테스트에서 발견되었다.
+- 원인은 `src/features/taxi/hooks/useJoinRequestModal.ts` 의 callback identity 변동 때문에 app runtime push handler effect가 반복 재실행되고, 이 과정에서 user profile 갱신이 다시 `src/features/timetable/hooks/useTimetable.ts` 구독 effect를 흔들어 loading state를 재설정한 데 있었다.
+- `useJoinRequestModal` 의 반환 callback을 `useCallback` 으로 안정화했고, `useTimetable` 은 전체 `user` 객체 대신 `user.uid` 기준으로만 구독을 재시작하도록 좁혔다.
+- 수정 후 touched-file eslint 는 error 0, `npm test -- --runInBand` 는 `5 suites / 25 tests` 통과했고, 실기기에서 홈 시간표 로딩 깜빡임 증상이 재현되지 않았다.
 
 ## 남은 메모
 
