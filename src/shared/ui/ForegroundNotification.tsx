@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
@@ -21,6 +21,23 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
 }) => {
   const [slideAnim] = useState(new Animated.Value(-100));
   const [opacityAnim] = useState(new Animated.Value(0));
+
+  const handleDismiss = useCallback(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      onDismiss();
+    });
+  }, [onDismiss, opacityAnim, slideAnim]);
 
   useEffect(() => {
     // console.log('🔔 ForegroundNotification useEffect:', { visible, title, body });
@@ -49,24 +66,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
 
       return () => clearTimeout(timer);
     }
-  }, [visible]);
-
-  const handleDismiss = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, {
-        toValue: -100,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onDismiss();
-    });
-  };
+  }, [handleDismiss, opacityAnim, slideAnim, visible]);
 
   console.log('🔔 ForegroundNotification render:', { visible, title, body });
   

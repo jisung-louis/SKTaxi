@@ -1,7 +1,6 @@
 import React from 'react';
-import { Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { parseHashtags } from '@/shared/lib/text/hashtagParser';
 
 interface HashTagTextProps {

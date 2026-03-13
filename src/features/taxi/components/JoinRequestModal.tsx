@@ -19,7 +19,7 @@ export const JoinRequestModal: React.FC<Props> = ({ visible, requesterName, onAc
 
   useEffect(() => {
     opacity.value = withTiming(visible ? 1 : 0, { duration: DURATION });
-  }, [visible]);
+  }, [visible, opacity]);
 
   // SKTaxi: 버튼 클릭 시 페이드아웃 후 콜백 실행
   const handleClose = (cb: () => void) => {
@@ -63,5 +63,4 @@ export const JoinRequestModal: React.FC<Props> = ({ visible, requesterName, onAc
     </Modal>
   );
 };
-
 

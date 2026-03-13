@@ -37,12 +37,11 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
   placeholder = '댓글을 입력하세요...',
   parentId,
   onKeyboardHeightChange,
-  onCancelReply
+  onCancelReply,
 }, ref) => {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true); // 기본값 true
   const translateY = useSharedValue(0);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const textInputRef = useRef<TextInput>(null);
 
   // ref를 통한 focus 메서드 노출
@@ -58,10 +57,9 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       (event) => {
         console.log('keyboard Showed');
-        const keyboardHeight = event.endCoordinates.height;
-        setKeyboardHeight(keyboardHeight);
-        onKeyboardHeightChange?.(keyboardHeight);
-        translateY.value = withTiming(-keyboardHeight + 20, {
+        const nextKeyboardHeight = event.endCoordinates.height;
+        onKeyboardHeightChange?.(nextKeyboardHeight);
+        translateY.value = withTiming(-nextKeyboardHeight + 20, {
           duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
         });
       }
@@ -71,7 +69,6 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       (event) => {
         console.log('keyboard Hidden');
-        setKeyboardHeight(0);
         onKeyboardHeightChange?.(0);
         translateY.value = withTiming(0, {
           duration: Platform.OS === 'ios' ? event.duration || 250 : 250,
@@ -88,7 +85,7 @@ const CommentInput = forwardRef<CommentInputRef, CommentInputProps>(({
       keyboardWillShowListener.remove();
       keyboardWillHideListener.remove();
     };
-  }, [translateY]);
+  }, [onCancelReply, onKeyboardHeightChange, parentId, translateY]);
 
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return;

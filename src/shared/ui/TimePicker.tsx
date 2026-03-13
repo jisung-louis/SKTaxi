@@ -1,6 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ViewStyle, TextStyle } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
 
 const ITEM_HEIGHT = 50;
 const VISIBLE_ITEMS = 3;
