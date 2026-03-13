@@ -10,11 +10,7 @@ export type {
   INotificationRepository,
   Notification,
 } from './data/repositories/INotificationRepository';
-export type {
-  IUserRepository,
-  SubscriptionCallbacks,
-  Unsubscribe,
-} from './data/repositories/IUserRepository';
+export type { IUserRepository } from './data/repositories/IUserRepository';
 export type { UseInAppNotificationsResult } from './hooks/useInAppNotifications';
 
 export { useUserRepository } from './hooks/useUserRepository';

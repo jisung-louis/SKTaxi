@@ -1,14 +1,12 @@
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
+
 import {
   UserDisplayNameMap,
   UserProfile,
 } from '../../model/types';
-
-export type Unsubscribe = () => void;
-
-export interface SubscriptionCallbacks<T> {
-  onData: (data: T) => void;
-  onError: (error: Error) => void;
-}
 
 export interface IUserRepository {
   subscribeToUserProfile(

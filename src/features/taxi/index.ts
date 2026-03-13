@@ -15,11 +15,7 @@ export {
   FirestorePartyRepository,
 } from './data/repositories/FirebasePartyRepository';
 export { MockNotificationActionRepository } from './data/repositories/MockNotificationActionRepository';
-export type {
-  IPartyRepository,
-  SubscriptionCallbacks,
-  Unsubscribe,
-} from './data/repositories/IPartyRepository';
+export type { IPartyRepository } from './data/repositories/IPartyRepository';
 export type {
   INotificationActionRepository,
   JoinRequestStatusValue,

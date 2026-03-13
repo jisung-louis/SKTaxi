@@ -20,7 +20,10 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
-import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import type {
   Comment,

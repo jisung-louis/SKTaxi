@@ -19,6 +19,10 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import type {
   AccountMessageData,
@@ -30,11 +34,7 @@ import type {
   PendingJoinRequest,
   SettlementData,
 } from '../../model/types';
-import {
-  IPartyRepository,
-  Unsubscribe,
-  SubscriptionCallbacks,
-} from './IPartyRepository';
+import { IPartyRepository } from './IPartyRepository';
 
 /**
  * Firebase 기반 Party Repository 구현체

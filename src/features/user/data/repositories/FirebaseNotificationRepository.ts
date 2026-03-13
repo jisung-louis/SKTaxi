@@ -32,7 +32,7 @@ import {
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from './IUserRepository';
+} from '@/shared/types/subscription';
 
 /**
  * Firestore 기반 Notification Repository 구현체

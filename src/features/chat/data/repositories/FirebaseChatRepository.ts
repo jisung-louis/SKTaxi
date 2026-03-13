@@ -18,6 +18,10 @@ import firestore, {
 } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import type { ChatMessage, ChatRoom } from '../../model/types';
 import type {
@@ -26,7 +30,7 @@ import type {
   MessageSubscriptionCallbacks,
   PaginatedResult,
 } from '../../model/types';
-import type { IChatRepository, SubscriptionCallbacks, Unsubscribe } from './IChatRepository';
+import type { IChatRepository } from './IChatRepository';
 
 export class FirebaseChatRepository implements IChatRepository {
   private readonly db: FirebaseFirestoreTypes.Module;

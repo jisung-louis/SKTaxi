@@ -1,8 +1,10 @@
 export type {
   IChatRepository,
+} from '@/features/chat/data/repositories/IChatRepository';
+export type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from '@/features/chat/data/repositories/IChatRepository';
+} from '@/shared/types/subscription';
 export type {
   ChatMessage,
   ChatRoom,

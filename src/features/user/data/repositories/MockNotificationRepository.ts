@@ -8,7 +8,7 @@ import {
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from './IUserRepository';
+} from '@/shared/types/subscription';
 
 /**
  * Mock Notification Repository 구현체

@@ -11,11 +11,7 @@ export {
   sendChatSystemRuntimeMessage as sendChatSystemMessage,
   updateChatRoomNotificationSetting,
 } from './data/composition/chatRuntime';
-export type {
-  IChatRepository,
-  SubscriptionCallbacks,
-  Unsubscribe,
-} from './data/repositories/IChatRepository';
+export type { IChatRepository } from './data/repositories/IChatRepository';
 
 export { useChatActions } from './hooks/useChatActions';
 export type { UseChatActionsResult } from './hooks/useChatActions';

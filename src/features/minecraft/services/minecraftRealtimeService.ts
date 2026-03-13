@@ -1,3 +1,5 @@
+import type { SubscriptionCallbacks } from '@/shared/types/subscription';
+
 import type {
   MinecraftServerInfo,
   MinecraftServerOverview,
@@ -6,11 +8,6 @@ import type {
   MinecraftWhitelistPlayer,
 } from '../model/types';
 import { subscribeToMinecraftRealtimeValue } from '../data/minecraftRealtimeDataSource';
-
-interface SubscriptionCallbacks<T> {
-  onData: (data: T) => void;
-  onError: (error: Error) => void;
-}
 
 const EMPTY_SERVER_OVERVIEW: MinecraftServerOverview = {
   serverStatus: null,

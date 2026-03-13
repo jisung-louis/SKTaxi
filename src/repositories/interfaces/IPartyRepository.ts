@@ -7,6 +7,8 @@ export type {
   PartyMessage,
   PendingJoinRequest,
   SettlementData,
+} from '@/features/taxi';
+export type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from '@/features/taxi';
+} from '@/shared/types/subscription';

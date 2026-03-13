@@ -1,5 +1,8 @@
 import type { PaginatedResult } from '@/shared/types/pagination';
-import type { SubscriptionCallbacks, Unsubscribe } from '@/features/taxi';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import type {
   Comment,

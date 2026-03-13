@@ -4,7 +4,7 @@
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
-} from './IUserRepository';
+} from '@/shared/types/subscription';
 
 /**
  * 알림 데이터

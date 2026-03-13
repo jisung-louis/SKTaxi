@@ -15,17 +15,17 @@ import {
   where,
 } from '@react-native-firebase/firestore';
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
 
 import {
   UserAccountInfo,
   UserDisplayNameMap,
   UserProfile,
 } from '../../model/types';
-import {
-  IUserRepository,
-  SubscriptionCallbacks,
-  Unsubscribe,
-} from './IUserRepository';
+import { IUserRepository } from './IUserRepository';
 
 export class FirebaseUserRepository implements IUserRepository {
   private readonly db: FirebaseFirestoreTypes.Module;

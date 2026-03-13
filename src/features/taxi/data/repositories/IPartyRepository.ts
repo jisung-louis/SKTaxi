@@ -1,3 +1,8 @@
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
+
 // SKTaxi: Party Repository 인터페이스 - DIP 원칙 적용
 // 비즈니스 로직과 데이터 접근 계층을 분리하여 테스트 용이성 확보
 
@@ -20,19 +25,6 @@ export type {
   PendingJoinRequest,
   SettlementData,
 } from '../../model/types';
-
-/**
- * 실시간 구독 해제 함수 타입
- */
-export type Unsubscribe = () => void;
-
-/**
- * 구독 콜백 함수 타입
- */
-export interface SubscriptionCallbacks<T> {
-  onData: (data: T) => void;
-  onError: (error: Error) => void;
-}
 
 /**
  * Party Repository 인터페이스
