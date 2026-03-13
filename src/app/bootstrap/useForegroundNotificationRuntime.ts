@@ -152,7 +152,7 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
       case 'settlement':
         if (partyId) {
           (navigation as any).navigate('Main', {
-            screen: '택시',
+            screen: 'TaxiTab',
             params: { screen: 'Chat', params: { partyId } },
           });
         }
@@ -161,14 +161,14 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
         (navigation as any).popToTop();
         break;
       case 'party_created':
-        (navigation as any).navigate('Main', { screen: '택시' });
+        (navigation as any).navigate('Main', { screen: 'TaxiTab' });
         break;
       case 'board_notification':
         if (postId) {
           try {
             navigateToBoardDetail(navigation, postId);
           } catch {
-            (navigation as any).navigate('Main', { screen: '게시판' });
+            (navigation as any).navigate('Main', { screen: 'BoardTab' });
           }
         }
         break;

@@ -46,11 +46,11 @@ export const MinecraftDetailScreen = () => {
 
   // 온라인 플레이어 Set 생성 (UUID와 username으로 빠른 조회)
   const onlinePlayerSet = useMemo(() => {
-    if (!serverStatus?.players) return new Set<string>();
+    if (!serverStatus?.players) {return new Set<string>();}
     const onlineSet = new Set<string>();
     serverStatus.players.forEach((p) => {
-      if (p.uuid) onlineSet.add(p.uuid);
-      if (p.username) onlineSet.add(p.username);
+      if (p.uuid) {onlineSet.add(p.uuid);}
+      if (p.username) {onlineSet.add(p.username);}
     });
     return onlineSet;
   }, [serverStatus?.players]);
@@ -90,7 +90,7 @@ export const MinecraftDetailScreen = () => {
   }, [players]);
 
   const formatDateTime = (ts?: number) => {
-    if (!ts) return '-';
+    if (!ts) {return '-';}
     try {
       const date = new Date(ts);
       return `${date.toLocaleDateString('ko-KR')} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
@@ -110,7 +110,7 @@ export const MinecraftDetailScreen = () => {
       </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
-          <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+          <View style={styles.cardHeaderRowSpaced}>
             <View style={styles.cardHeaderLeftContainer}>
                 <Icon name="globe" size={20} color={COLORS.accent.blue} />
                 <Text style={styles.cardTitle}>서버 정보</Text>
@@ -128,7 +128,7 @@ export const MinecraftDetailScreen = () => {
               </View>
             )}
           </View>
-          
+
           <View style={styles.serverInfoContent}>
 
             {/* 서버 주소 섹션 */}
@@ -179,7 +179,7 @@ export const MinecraftDetailScreen = () => {
 
             {/* 도움말 및 채팅방 바로가기 */}
             <View style={styles.serverInfoDivider} />
-            
+
             <View style={styles.serverInfoHelp}>
               <Icon name="information-circle-outline" size={16} color={COLORS.accent.blue} />
               <Text style={styles.serverInfoHelpText}>
@@ -192,11 +192,11 @@ export const MinecraftDetailScreen = () => {
               style={styles.chatRoomButton}
               onPress={() => {
                 (navigation as any).navigate('Main', {
-                  screen: '채팅',
+                  screen: 'ChatTab',
                   params: {
                     screen: 'ChatDetail',
-                    params: { chatRoomId: 'game-minecraft' }
-                  }
+                    params: { chatRoomId: 'game-minecraft' },
+                  },
                 });
               }}
             >
@@ -210,7 +210,7 @@ export const MinecraftDetailScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+          <View style={styles.cardHeaderRowSpaced}>
             <View style={styles.cardHeaderLeftContainer}>
                 <Icon name="people" size={20} color={COLORS.accent.orange} />
                 <Text style={styles.cardTitle}>현재 서버 접속자</Text>
@@ -238,8 +238,8 @@ export const MinecraftDetailScreen = () => {
                     const avatarUrl = p.uuid && !p.uuid.startsWith('be:') ? p.uuid : '8667ba71b85a4004af54457a9734eed7';
                     return (
                     <View key={`${p.uuid || p.username}`} style={styles.playerRow}>
-                      <Image 
-                        source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }} 
+                      <Image
+                        source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
                         style={styles.playerAvatar}
                       />
                       <View style={styles.playerInfo}>
@@ -262,7 +262,7 @@ export const MinecraftDetailScreen = () => {
                         <Icon name="ellipsis-horizontal" size={18} color={COLORS.text.secondary} />
                       </TouchableOpacity>
                     </View>
-                  )})}
+                  );})}
                 </View>
               ) : (
                 <View style={styles.emptyPlayersState}>
@@ -280,7 +280,7 @@ export const MinecraftDetailScreen = () => {
         </View>
 
         <View style={styles.card}>
-          <View style={[styles.cardHeaderRow, { justifyContent: 'space-between' }]}>
+          <View style={styles.cardHeaderRowSpaced}>
             <View style={styles.cardHeaderLeftContainer}>
               <Icon name="map-outline" size={20} color={COLORS.accent.blue} />
               <Text style={styles.cardTitle}>서버 지도</Text>
@@ -290,7 +290,7 @@ export const MinecraftDetailScreen = () => {
               onPress={() => {
                 // 전체 화면 서버 지도 화면으로 이동
                 // HomeStack 안에서 사용되므로 단순 name 네비게이션 사용
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
                 (navigation as any).navigate('MinecraftMapDetail');
               }}
             >
@@ -321,7 +321,13 @@ export const MinecraftDetailScreen = () => {
           <View style={styles.cardHeaderRow}>
             <Icon name="list-circle" size={20} color={COLORS.accent.blue} />
             <Text style={styles.cardTitle}>서버 멤버 목록</Text>
-            {fetchingUsers && <ActivityIndicator color={COLORS.text.secondary} size="small" style={{ marginLeft: 8 }} />}
+            {fetchingUsers && (
+              <ActivityIndicator
+                color={COLORS.text.secondary}
+                size="small"
+                style={styles.fetchingUsersIndicator}
+              />
+            )}
           </View>
           {loadingPlayers ? (
             <View style={styles.loadingContainer}>
@@ -341,8 +347,8 @@ export const MinecraftDetailScreen = () => {
               const isOnline = onlinePlayerSet.has(player.uuid) || onlinePlayerSet.has(player.username);
               return (
               <View key={player.uuid} style={styles.playerRow}>
-                <Image 
-                    source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }} 
+                <Image
+                    source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
                     style={styles.playerAvatar}
                 />
                 <View style={styles.playerInfo}>
@@ -387,7 +393,7 @@ export const MinecraftDetailScreen = () => {
                   <Icon name="ellipsis-horizontal" size={18} color={COLORS.text.secondary} />
                 </TouchableOpacity>
               </View>
-            )})
+            );})
           )}
         </View>
       </ScrollView>
@@ -426,6 +432,9 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
     gap: 16,
   },
+  fetchingUsersIndicator: {
+    marginLeft: 8,
+  },
   card: {
     backgroundColor: COLORS.background.secondary,
     borderRadius: 16,
@@ -436,6 +445,13 @@ const styles = StyleSheet.create({
   cardHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  cardHeaderRowSpaced: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
     gap: 8,
   },

@@ -6,7 +6,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Animated, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -85,9 +85,17 @@ const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
 const BoardStack = createNativeStackNavigator<BoardStackParamList>();
 const ChatStack = createNativeStackNavigator<ChatStackParamList>();
 
-const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
-  '택시': ['Recruit', 'MapSearch', 'Chat'],
-  '홈': [
+const MAIN_TAB_LABELS: Record<keyof MainTabParamList, string> = {
+  HomeTab: '홈',
+  TaxiTab: '택시',
+  NoticeTab: '공지',
+  BoardTab: '게시판',
+  ChatTab: '채팅',
+};
+
+const HIDDEN_BOTTOM_NAV_SCREENS: Record<keyof MainTabParamList, string[]> = {
+  TaxiTab: ['Recruit', 'MapSearch', 'Chat'],
+  HomeTab: [
     'Notification',
     'Setting',
     'Profile',
@@ -95,7 +103,7 @@ const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     'AppNotice',
     'AppNoticeDetail',
     'AccountModification',
-    'NotificationSetting',
+    'NotificationSettings',
     'Inquiries',
     'TermsOfUse',
     'PrivacyPolicy',
@@ -105,9 +113,117 @@ const HIDDEN_BOTTOM_NAV_SCREENS: Record<string, string[]> = {
     'MinecraftDetail',
     'MinecraftMapDetail',
   ],
-  '게시판': ['BoardDetail', 'BoardWrite', 'BoardEdit'],
-  '공지': ['NoticeDetail', 'NoticeDetailWebView'],
-  '채팅': ['ChatDetail'],
+  BoardTab: ['BoardDetail', 'BoardWrite', 'BoardEdit'],
+  NoticeTab: ['NoticeDetail', 'NoticeDetailWebView'],
+  ChatTab: ['ChatDetail'],
+};
+
+const renderAnimatedTabBar = (props: BottomTabBarProps) => (
+  <AnimatedTabBar {...props} />
+);
+
+const renderHomeTabIcon = ({
+  color,
+  size,
+}: {
+  color: string;
+  size: number;
+}) => (
+  <Icon
+    name="home-outline"
+    size={size}
+    color={color}
+    style={styles.tabIcon}
+  />
+);
+
+const renderNoticeTabIcon = ({
+  color,
+  size,
+}: {
+  color: string;
+  size: number;
+}) => (
+  <Icon
+    name="notifications-outline"
+    size={size}
+    color={color}
+    style={styles.tabIcon}
+  />
+);
+
+const renderBoardTabIcon = ({
+  color,
+  size,
+}: {
+  color: string;
+  size: number;
+}) => (
+  <IconMaterial
+    name="note-text"
+    size={size}
+    color={color}
+    style={styles.tabIcon}
+  />
+);
+
+const TaxiTabIcon = ({
+  color,
+  hasParty,
+  joinRequestCount,
+  size,
+}: {
+  color: string;
+  hasParty: boolean;
+  joinRequestCount: number;
+  size: number;
+}) => {
+  return (
+    <View style={styles.iconContainer}>
+      <IconMaterial
+        name="taxi"
+        size={size}
+        color={color}
+        style={styles.tabIcon}
+      />
+      <TabBadge
+        count={joinRequestCount}
+        location="bottom"
+        size="small"
+      />
+      {hasParty && (
+        <View style={styles.partyBadge}>
+          <Text style={styles.partyBadgeText}>파티</Text>
+        </View>
+      )}
+    </View>
+  );
+};
+
+const ChatTabIcon = ({
+  color,
+  hasUnread,
+  size,
+}: {
+  color: string;
+  hasUnread: boolean;
+  size: number;
+}) => {
+  return (
+    <View style={styles.iconContainer}>
+      <Icon
+        name="chatbubbles-outline"
+        size={size}
+        color={color}
+        style={styles.tabIcon}
+      />
+      <Dot
+        visible={hasUnread}
+        size="small"
+        style={styles.chatUnreadDot}
+      />
+    </View>
+  );
 };
 
 const TaxiStackNavigator = () => {
@@ -143,7 +259,7 @@ const HomeStackNavigator = () => {
         component={AccountModificationScreen}
       />
       <HomeStack.Screen
-        name="NotificationSetting"
+        name="NotificationSettings"
         component={NotificationSettingsScreen}
       />
       <HomeStack.Screen name="Inquiries" component={InquiriesScreen} />
@@ -216,136 +332,83 @@ const MainNavigatorContent = () => {
   } = useNotificationPermissionBubble();
   const { hasParty } = useMyParty();
   const { totalUnreadCount } = useChatTabUnreadIndicator();
+  const renderTaxiTabBarIcon = React.useCallback(
+    ({ color, size }: { color: string; size: number }) => (
+      <TaxiTabIcon
+        color={color}
+        hasParty={hasParty}
+        joinRequestCount={joinRequestCount}
+        size={size}
+      />
+    ),
+    [hasParty, joinRequestCount],
+  );
+  const renderChatTabBarIcon = React.useCallback(
+    ({ color, size }: { color: string; size: number }) => (
+      <ChatTabIcon
+        color={color}
+        hasUnread={totalUnreadCount > 0}
+        size={size}
+      />
+    ),
+    [totalUnreadCount],
+  );
 
   return (
     <>
       <Tab.Navigator
-        tabBar={(props) => <AnimatedTabBar {...props} />}
+        tabBar={renderAnimatedTabBar}
         screenOptions={{
-          tabBarStyle: {
-            backgroundColor: COLORS.background.primary,
-            borderTopColor: COLORS.border.dark,
-            backfaceVisibility: 'hidden',
-            borderCurve: 'circular',
-            height: BOTTOM_TAB_BAR_HEIGHT,
-            paddingTop: 8,
-            paddingBottom: 8,
-          },
+          tabBarStyle: styles.tabBar,
           tabBarActiveTintColor: COLORS.accent.green,
           tabBarInactiveTintColor: COLORS.text.secondary,
-          tabBarItemStyle: {
-            gap: 12,
-          },
+          tabBarItemStyle: styles.tabBarItem,
           headerShown: false,
           lazy: false,
         }}
-        initialRouteName="홈"
+        initialRouteName="HomeTab"
       >
         <Tab.Screen
-          name="홈"
+          name="HomeTab"
           component={HomeStackNavigator}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="home-outline"
-                size={size}
-                color={color}
-                style={{ marginBottom: 4 }}
-              />
-            ),
+            tabBarLabel: MAIN_TAB_LABELS.HomeTab,
+            tabBarIcon: renderHomeTabIcon,
             lazy: false,
           }}
         />
         <Tab.Screen
-          name="택시"
+          name="TaxiTab"
           component={TaxiStackNavigator}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <View style={{ position: 'relative' }}>
-                <IconMaterial
-                  name="taxi"
-                  size={size}
-                  color={color}
-                  style={{ marginBottom: 4 }}
-                />
-                <TabBadge count={joinRequestCount} location="bottom" size="small" />
-                {hasParty && (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: -8,
-                      backgroundColor: COLORS.accent.green,
-                      borderRadius: 10,
-                      padding: 2,
-                      borderWidth: 1,
-                      borderColor: COLORS.border.default,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: COLORS.text.buttonText,
-                        ...TYPOGRAPHY.caption3,
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      파티
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ),
+            tabBarLabel: MAIN_TAB_LABELS.TaxiTab,
+            tabBarIcon: renderTaxiTabBarIcon,
           }}
         />
         <Tab.Screen
-          name="공지"
+          name="NoticeTab"
           component={NoticeStackNavigator}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <Icon
-                name="notifications-outline"
-                size={size}
-                color={color}
-                style={{ marginBottom: 4 }}
-              />
-            ),
+            tabBarLabel: MAIN_TAB_LABELS.NoticeTab,
+            tabBarIcon: renderNoticeTabIcon,
             lazy: false,
           }}
         />
         <Tab.Screen
-          name="게시판"
+          name="BoardTab"
           component={BoardStackNavigator}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <IconMaterial
-                name="note-text"
-                size={size}
-                color={color}
-                style={{ marginBottom: 4 }}
-              />
-            ),
+            tabBarLabel: MAIN_TAB_LABELS.BoardTab,
+            tabBarIcon: renderBoardTabIcon,
             lazy: false,
           }}
         />
         <Tab.Screen
-          name="채팅"
+          name="ChatTab"
           component={ChatStackNavigator}
           options={{
-            tabBarIcon: ({ color, size }) => (
-              <View style={{ position: 'relative' }}>
-                <Icon
-                  name="chatbubbles-outline"
-                  size={size}
-                  color={color}
-                  style={{ marginBottom: 4 }}
-                />
-                <Dot
-                  visible={totalUnreadCount > 0}
-                  size="small"
-                  style={{ position: 'absolute', right: -6, bottom: -2 }}
-                />
-              </View>
-            ),
+            tabBarLabel: MAIN_TAB_LABELS.ChatTab,
+            tabBarIcon: renderChatTabBarIcon,
             lazy: false,
           }}
         />
@@ -367,7 +430,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
 
   const shouldHide = React.useMemo(() => {
     const currentRoute = props.state.routes[props.state.index];
-    const tabName = currentRoute.name;
+    const tabName = currentRoute.name as keyof MainTabParamList;
     const focusedChildName =
       getFocusedRouteNameFromRoute(currentRoute) ?? 'UNKNOWN';
     const hiddenList = HIDDEN_BOTTOM_NAV_SCREENS[tabName] || [];
@@ -407,16 +470,13 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
   return (
     <Animated.View
       pointerEvents={shouldHide ? 'none' : 'auto'}
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-        elevation: 1000,
-        opacity: fadeAnim,
-        transform: [{ translateY }],
-      }}
+      style={[
+        styles.animatedTabBarContainer,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY }],
+        },
+      ]}
     >
       <BottomTabBar {...props} />
     </Animated.View>
@@ -430,3 +490,52 @@ export const MainNavigator = () => {
     </JoinRequestProvider>
   );
 };
+
+const styles = StyleSheet.create({
+  animatedTabBarContainer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+    elevation: 1000,
+  },
+  chatUnreadDot: {
+    position: 'absolute',
+    right: -6,
+    bottom: -2,
+  },
+  iconContainer: {
+    position: 'relative',
+  },
+  partyBadge: {
+    position: 'absolute',
+    top: 0,
+    right: -8,
+    backgroundColor: COLORS.accent.green,
+    borderRadius: 10,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+  },
+  partyBadgeText: {
+    color: COLORS.text.buttonText,
+    ...TYPOGRAPHY.caption3,
+    fontWeight: '700',
+  },
+  tabBar: {
+    backgroundColor: COLORS.background.primary,
+    borderTopColor: COLORS.border.dark,
+    backfaceVisibility: 'hidden',
+    borderCurve: 'circular',
+    height: BOTTOM_TAB_BAR_HEIGHT,
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  tabBarItem: {
+    gap: 12,
+  },
+  tabIcon: {
+    marginBottom: 4,
+  },
+});

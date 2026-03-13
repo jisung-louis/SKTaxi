@@ -14,11 +14,11 @@ export type RootStackParamList = {
 };
 
 export type MainTabParamList = {
-  홈: NavigatorScreenParams<HomeStackParamList>;
-  택시: NavigatorScreenParams<TaxiStackParamList>;
-  공지: NavigatorScreenParams<NoticeStackParamList>;
-  게시판: NavigatorScreenParams<BoardStackParamList>;
-  채팅: NavigatorScreenParams<ChatStackParamList>;
+  HomeTab: NavigatorScreenParams<HomeStackParamList>;
+  TaxiTab: NavigatorScreenParams<TaxiStackParamList>;
+  NoticeTab: NavigatorScreenParams<NoticeStackParamList>;
+  BoardTab: NavigatorScreenParams<BoardStackParamList>;
+  ChatTab: NavigatorScreenParams<ChatStackParamList>;
 };
 export type {
   BoardStackParamList,
@@ -36,7 +36,7 @@ export type HomeStackParamList = {
   AppNotice: undefined;
   AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;
-  NotificationSetting: undefined;
+  NotificationSettings: undefined;
   Inquiries: { type?: string };
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;

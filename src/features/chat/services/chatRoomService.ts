@@ -138,7 +138,7 @@ export const getCurrentChatRoomIdFromNavigationState = (state: any): string | un
   const mainTabState = mainTabRoute.state;
   const tabRoute = mainTabState?.routes?.[mainTabState.index];
 
-  if (!tabRoute || tabRoute.name !== '채팅') {
+  if (!tabRoute || tabRoute.name !== 'ChatTab') {
     return undefined;
   }
 
@@ -154,7 +154,7 @@ export const getCurrentChatRoomIdFromNavigationState = (state: any): string | un
 
 export const navigateToChatRoom = (navigation: any, chatRoomId: string) => {
   navigation.navigate('Main', {
-    screen: '채팅',
+    screen: 'ChatTab',
     params: {
       screen: 'ChatDetail',
       params: { chatRoomId },

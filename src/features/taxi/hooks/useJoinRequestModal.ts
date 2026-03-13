@@ -82,7 +82,7 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
   // 동승 요청 승인 알림 핸들러 (FCM)
   const handleJoinRequestAccepted = (partyId: string) => {
     (navigation as any).navigate('Main', {
-      screen: '택시',
+      screen: 'TaxiTab',
       params: {
         screen: 'Chat',
         params: { partyId },

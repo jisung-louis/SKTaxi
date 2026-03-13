@@ -46,17 +46,24 @@ export const HomeScreen = () => {
     opacity: opacity.value,
     transform: [{ translateY: translateY.value }],
   }));
+  const scrollContentStyle = React.useMemo(
+    () => [
+      styles.scrollContent,
+      { paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20 },
+    ],
+    [insets.bottom],
+  );
 
   const scrollToTop = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   const openHomeScreen = (screen: string, params?: object) => {
-    navigation.navigate('홈', { screen, params });
+    navigation.navigate('HomeTab', { screen, params });
   };
 
   const openTaxiMain = () => {
-    navigation.navigate('택시', { screen: 'TaxiMain' });
+    navigation.navigate('TaxiTab', { screen: 'TaxiMain' });
   };
 
   const openPendingJoinRequest = ({
@@ -66,18 +73,18 @@ export const HomeScreen = () => {
     party: Party;
     requestId: string;
   }) => {
-    navigation.navigate('택시', {
+    navigation.navigate('TaxiTab', {
       screen: 'AcceptancePending',
       params: { party, requestId },
     });
   };
 
   const openNoticeList = () => {
-    navigation.navigate('공지', { screen: 'NoticeMain' });
+    navigation.navigate('NoticeTab', { screen: 'NoticeMain' });
   };
 
   const openNoticeDetail = (noticeId: string) => {
-    navigation.navigate('공지', {
+    navigation.navigate('NoticeTab', {
       screen: 'NoticeDetail',
       params: { noticeId },
     });
@@ -85,14 +92,14 @@ export const HomeScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.headerLeft} onPress={scrollToTop} activeOpacity={1}>
             <View style={styles.logoPlaceholder}>
               <Image
                 source={require('../../../../assets/icons/skuri_icon.png')}
-                style={{ width: '100%', height: '100%' }}
+                style={styles.logoImage}
               />
             </View>
             <Text style={styles.appName}>SKURI Taxi</Text>
@@ -100,7 +107,7 @@ export const HomeScreen = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Notification')}>
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
-              <TabBadge count={unreadCount} size="small" style={{ top: 1, right: 1 }} />
+              <TabBadge count={unreadCount} size="small" style={styles.headerBadge} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Setting')}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
@@ -113,11 +120,7 @@ export const HomeScreen = () => {
 
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={{
-            paddingTop: 20,
-            paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + 20,
-            paddingHorizontal: 4,
-          }}
+          contentContainerStyle={scrollContentStyle}
           showsVerticalScrollIndicator={false}
         >
           {/* Taxi Section */}
@@ -167,6 +170,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background.primary,
   },
+  headerBadge: {
+    top: 1,
+    right: 1,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -207,8 +214,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border.default,
   },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+  },
   profileBtn: {
     paddingHorizontal: 6,
     paddingVertical: 4,
+  },
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingHorizontal: 4,
   },
 });

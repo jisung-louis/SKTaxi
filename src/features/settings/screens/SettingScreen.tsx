@@ -31,7 +31,7 @@ export const SettingScreen = () => {
   };
 
   const handleNotification = () => {
-    navigation.navigate('NotificationSetting');
+    navigation.navigate('NotificationSettings');
   };
 
   const handleInquiry = (type?: string) => {

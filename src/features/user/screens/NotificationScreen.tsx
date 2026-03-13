@@ -100,12 +100,12 @@ export const NotificationScreen = () => {
       case 'settlement_completed':
         // 택시 탭으로 이동하고 채팅 화면으로 이동
         if (notification.data?.partyId) {
-          (navigation as any).navigate('택시', {
+          (navigation as any).navigate('TaxiTab', {
             screen: 'Chat',
             params: { partyId: notification.data.partyId },
           });
         } else {
-          (navigation as any).navigate('택시');
+          (navigation as any).navigate('TaxiTab');
         }
         break;
       case 'member_kicked':
@@ -113,7 +113,7 @@ export const NotificationScreen = () => {
         break;
       case 'notice':
         // 공지사항 상세 화면으로 이동
-        (navigation as any).navigate('공지', {
+        (navigation as any).navigate('NoticeTab', {
           screen: 'NoticeDetail',
           params: {
             noticeId: notification.data?.noticeId,
@@ -138,7 +138,7 @@ export const NotificationScreen = () => {
       case 'notice_comment_reply':
         // 공지사항 상세 화면으로 이동
         if (notification.data?.noticeId) {
-          (navigation as any).navigate('공지', {
+          (navigation as any).navigate('NoticeTab', {
             screen: 'NoticeDetail',
             params: {
               noticeId: notification.data.noticeId,

@@ -2,7 +2,7 @@ import type { NoticeForegroundNotificationPayload } from '../model/types';
 
 export const navigateToNoticeDetail = (navigation: any, noticeId: string) => {
   navigation.navigate('Main', {
-    screen: '공지',
+    screen: 'NoticeTab',
     params: {
       screen: 'NoticeDetail',
       params: { noticeId },

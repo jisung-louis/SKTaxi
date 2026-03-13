@@ -1,6 +1,6 @@
 export function navigateToBoardDetail(navigation: any, postId: string) {
   navigation.navigate('Main', {
-    screen: '게시판',
+    screen: 'BoardTab',
     params: { screen: 'BoardDetail', params: { postId } },
   });
 }

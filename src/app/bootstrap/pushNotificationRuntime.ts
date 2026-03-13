@@ -430,9 +430,12 @@ function handleNotificationNavigation(
   switch (data.type) {
     case 'notice':
       if (data.noticeId) {
-        navigation.navigate('공지', {
-          screen: 'NoticeDetail',
-          params: { noticeId: data.noticeId },
+        navigation.navigate('Main', {
+          screen: 'NoticeTab',
+          params: {
+            screen: 'NoticeDetail',
+            params: { noticeId: data.noticeId },
+          },
         });
       }
       break;
@@ -449,9 +452,12 @@ function handleNotificationNavigation(
       break;
     case 'party_join_accepted':
       if (data.partyId) {
-        navigation.navigate('택시', {
-          screen: 'Chat',
-          params: { partyId: data.partyId },
+        navigation.navigate('Main', {
+          screen: 'TaxiTab',
+          params: {
+            screen: 'Chat',
+            params: { partyId: data.partyId },
+          },
         });
       }
       break;
@@ -459,14 +465,14 @@ function handleNotificationNavigation(
       navigation.goBack();
       break;
     case 'party_deleted':
-      navigation.navigate('택시');
+      navigation.navigate('Main', { screen: 'TaxiTab' });
       break;
     case 'chat_message':
     case 'party_closed':
     case 'party_arrived':
       if (data.partyId) {
         navigation.navigate('Main', {
-          screen: '택시',
+          screen: 'TaxiTab',
           params: {
             screen: 'Chat',
             params: { partyId: data.partyId },
@@ -477,7 +483,7 @@ function handleNotificationNavigation(
     case 'chat_room_message':
       if (data.chatRoomId) {
         navigation.navigate('Main', {
-          screen: '채팅',
+          screen: 'ChatTab',
           params: {
             screen: 'ChatDetail',
             params: { chatRoomId: data.chatRoomId },
@@ -496,7 +502,7 @@ function handleNotificationNavigation(
     case 'notice_comment_reply':
       if (data.noticeId) {
         navigation.navigate('Main', {
-          screen: '공지',
+          screen: 'NoticeTab',
           params: {
             screen: 'NoticeDetail',
             params: { noticeId: data.noticeId },
