@@ -8,6 +8,7 @@ export {
 export { authInstance, subscribeAuthStateChange } from './auth';
 export { logCrashlyticsMessage } from './crashlytics';
 export { db } from './firestore';
+export { FirestoreModerationRepository } from './moderationRepository';
 export {
   getCurrentFcmToken,
   getInitialNotificationMessage,

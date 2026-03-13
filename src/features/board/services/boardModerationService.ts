@@ -1,11 +1,10 @@
 import {
-  blockUser,
-  createReport,
-  shouldHideContent,
   type ReportCategory,
 } from '@/shared/lib/moderation';
+import { authInstance } from '@/shared/lib/firebase';
 
 import type { BoardPost } from '../model/types';
+import { boardModerationRuntime } from '../data/composition/boardModerationRuntime';
 
 export const BOARD_REPORT_CATEGORIES: ReportCategory[] = [
   '스팸',
@@ -14,6 +13,8 @@ export const BOARD_REPORT_CATEGORIES: ReportCategory[] = [
   '음란물',
   '기타',
 ];
+
+const getCurrentUserId = () => authInstance.currentUser?.uid;
 
 export async function getBoardHiddenAuthorMap(
   authorIds: string[],
@@ -25,7 +26,10 @@ export async function getBoardHiddenAuthorMap(
   const decisions = await Promise.all(
     authorIds.map(async (authorId) => ({
       authorId,
-      hide: await shouldHideContent(authorId),
+      hide: await boardModerationRuntime.shouldHideContent(
+        authorId,
+        getCurrentUserId(),
+      ),
     })),
   );
 
@@ -43,7 +47,10 @@ export async function filterVisibleBoardPosts(posts: BoardPost[]): Promise<Board
   const decisions = await Promise.all(
     posts.map(async (post) => ({
       post,
-      hide: await shouldHideContent(post.authorId),
+      hide: await boardModerationRuntime.shouldHideContent(
+        post.authorId,
+        getCurrentUserId(),
+      ),
     })),
   );
 
@@ -55,12 +62,15 @@ export function submitBoardPostReport(
   authorId: string,
   category: ReportCategory,
 ): Promise<string> {
-  return createReport({
-    targetType: 'post',
-    targetId: postId,
-    targetAuthorId: authorId,
-    category,
-  });
+  return boardModerationRuntime.createReport(
+    {
+      targetType: 'post',
+      targetId: postId,
+      targetAuthorId: authorId,
+      category,
+    },
+    getCurrentUserId(),
+  );
 }
 
 export function submitBoardCommentReport(
@@ -68,14 +78,17 @@ export function submitBoardCommentReport(
   authorId: string,
   category: ReportCategory,
 ): Promise<string> {
-  return createReport({
-    targetType: 'comment',
-    targetId: commentId,
-    targetAuthorId: authorId,
-    category,
-  });
+  return boardModerationRuntime.createReport(
+    {
+      targetType: 'comment',
+      targetId: commentId,
+      targetAuthorId: authorId,
+      category,
+    },
+    getCurrentUserId(),
+  );
 }
 
 export function blockBoardAuthor(authorId: string): Promise<void> {
-  return blockUser(authorId);
+  return boardModerationRuntime.blockUser(authorId, getCurrentUserId());
 }

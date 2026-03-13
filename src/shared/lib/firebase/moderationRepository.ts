@@ -5,7 +5,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  getFirestore,
   query,
   serverTimestamp,
   setDoc,
@@ -16,16 +15,18 @@ import type {
   IModerationRepository,
   ReportDoc,
   ReportPayload,
-} from './contracts';
+} from '@/shared/lib/moderation/contracts';
+
+import { db } from './firestore';
 
 export class FirestoreModerationRepository implements IModerationRepository {
-  private readonly db = getFirestore();
+  private readonly firestore = db;
 
   async createReport(
     reporterId: string,
     payload: ReportPayload,
   ): Promise<string> {
-    const reportsCollection = collection(this.db, 'reports');
+    const reportsCollection = collection(this.firestore, 'reports');
     const reportRef = await addDoc(reportsCollection, {
       ...payload,
       reporterId,
@@ -38,7 +39,7 @@ export class FirestoreModerationRepository implements IModerationRepository {
 
   async blockUser(blockerId: string, blockedUserId: string): Promise<void> {
     const blockedUserRef = doc(
-      this.db,
+      this.firestore,
       'blocks',
       blockerId,
       'blockedUsers',
@@ -58,7 +59,7 @@ export class FirestoreModerationRepository implements IModerationRepository {
 
   async unblockUser(blockerId: string, blockedUserId: string): Promise<void> {
     const blockedUserRef = doc(
-      this.db,
+      this.firestore,
       'blocks',
       blockerId,
       'blockedUsers',
@@ -68,21 +69,27 @@ export class FirestoreModerationRepository implements IModerationRepository {
   }
 
   async isBlocked(viewerId: string, authorId: string): Promise<boolean> {
-    const blockedUserRef = doc(this.db, 'blocks', viewerId, 'blockedUsers', authorId);
+    const blockedUserRef = doc(
+      this.firestore,
+      'blocks',
+      viewerId,
+      'blockedUsers',
+      authorId,
+    );
     const snapshot = await getDoc(blockedUserRef);
     return snapshot.exists();
   }
 
   async isMutuallyBlocked(viewerId: string, authorId: string): Promise<boolean> {
     const viewerBlockRef = doc(
-      this.db,
+      this.firestore,
       'blocks',
       viewerId,
       'blockedUsers',
       authorId,
     );
     const authorBlockRef = doc(
-      this.db,
+      this.firestore,
       'blocks',
       authorId,
       'blockedUsers',
@@ -97,8 +104,11 @@ export class FirestoreModerationRepository implements IModerationRepository {
   }
 
   async countOpenReports(): Promise<number> {
-    const reportsCollection = collection(this.db, 'reports');
-    const openReportsQuery = query(reportsCollection, where('status', '==', 'open'));
+    const reportsCollection = collection(this.firestore, 'reports');
+    const openReportsQuery = query(
+      reportsCollection,
+      where('status', '==', 'open'),
+    );
     const snapshots = await getDocs(openReportsQuery);
     return snapshots.size;
   }

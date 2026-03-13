@@ -29,7 +29,6 @@ import { useAuth } from '@/features/auth';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
-import { createReport } from '@/shared/lib/moderation';
 import { loadChatSound, playChatSound } from '@/shared/lib/sound/chatSound';
 
 import type { ChatMessage } from '../model/types';
@@ -37,6 +36,10 @@ import type { ChatStackParamList } from '../model/navigation';
 import {
   getChatRoomDisplayName,
 } from '../services/chatRoomService';
+import {
+  CHAT_REPORT_CATEGORIES,
+  submitChatMessageReport,
+} from '../services/chatModerationService';
 import { useChatActions } from '../hooks/useChatActions';
 import { useChatMessages } from '../hooks/useChatMessages';
 import { useChatRoom, useChatRoomLastRead } from '../hooks/useChatRoom';
@@ -197,25 +200,12 @@ export const ChatDetailScreen = () => {
       return;
     }
 
-    const categories: Array<'스팸' | '욕설/혐오' | '불법/위험' | '음란물' | '기타'> = [
-      '스팸',
-      '욕설/혐오',
-      '불법/위험',
-      '음란물',
-      '기타',
-    ];
-
     Alert.alert('메시지 신고', '신고 사유를 선택해주세요.', [
-      ...categories.map(category => ({
+      ...CHAT_REPORT_CATEGORIES.map(category => ({
         text: category,
         onPress: async () => {
           try {
-            await createReport({
-              targetType: 'chat_message',
-              targetId: targetMessage.id || '',
-              targetAuthorId: targetMessage.senderId,
-              category,
-            });
+            await submitChatMessageReport(targetMessage, category);
             Alert.alert('신고 완료', '운영자가 24시간 이내 검토합니다. 감사합니다.');
           } catch {
             Alert.alert('오류', '신고에 실패했습니다. 잠시 후 다시 시도해주세요.');

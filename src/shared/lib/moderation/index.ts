@@ -1,4 +1,3 @@
-import { FirestoreModerationRepository } from './FirestoreModerationRepository';
 import type {
   BlockedUser,
   IModerationRepository,
@@ -8,7 +7,6 @@ import type {
   ReportStatus,
   ReportTargetType,
 } from './contracts';
-import { authInstance } from '@/shared/lib/firebase';
 
 export type {
   BlockedUser,
@@ -20,59 +18,52 @@ export type {
   ReportTargetType,
 };
 
-const moderationRepository = new FirestoreModerationRepository();
-
-export async function createReport(payload: ReportPayload): Promise<string> {
-  const current = authInstance.currentUser;
-  if (!current) {
+const requireSignedInUserId = (userId?: string | null): string => {
+  if (!userId) {
     throw new Error('Not signed in');
   }
 
-  return moderationRepository.createReport(current.uid, payload);
-}
+  return userId;
+};
 
-export async function blockUser(blockedUserId: string): Promise<void> {
-  const current = authInstance.currentUser;
-  if (!current) {
-    throw new Error('Not signed in');
-  }
+export const createModerationService = (repository: IModerationRepository) => ({
+  createReport(payload: ReportPayload, reporterId?: string | null) {
+    return repository.createReport(requireSignedInUserId(reporterId), payload);
+  },
+  blockUser(blockedUserId: string, blockerId?: string | null) {
+    return repository.blockUser(
+      requireSignedInUserId(blockerId),
+      blockedUserId,
+    );
+  },
+  unblockUser(blockedUserId: string, blockerId?: string | null) {
+    return repository.unblockUser(
+      requireSignedInUserId(blockerId),
+      blockedUserId,
+    );
+  },
+  async isBlocked(authorId: string, viewerId?: string | null) {
+    if (!viewerId) {
+      return false;
+    }
 
-  await moderationRepository.blockUser(current.uid, blockedUserId);
-}
+    return repository.isBlocked(viewerId, authorId);
+  },
+  async isMutuallyBlocked(authorId: string, viewerId?: string | null) {
+    if (!viewerId) {
+      return false;
+    }
 
-export async function unblockUser(blockedUserId: string): Promise<void> {
-  const current = authInstance.currentUser;
-  if (!current) {
-    throw new Error('Not signed in');
-  }
+    return repository.isMutuallyBlocked(viewerId, authorId);
+  },
+  async shouldHideContent(authorId: string, viewerId?: string | null) {
+    if (!viewerId) {
+      return false;
+    }
 
-  await moderationRepository.unblockUser(current.uid, blockedUserId);
-}
-
-export async function isBlocked(authorId: string, byUserId?: string): Promise<boolean> {
-  const current = authInstance.currentUser;
-  const viewerId = byUserId ?? current?.uid;
-  if (!viewerId) {
-    return false;
-  }
-
-  return moderationRepository.isBlocked(viewerId, authorId);
-}
-
-export async function isMutuallyBlocked(authorId: string): Promise<boolean> {
-  const current = authInstance.currentUser;
-  const viewerId = current?.uid;
-  if (!viewerId) {
-    return false;
-  }
-
-  return moderationRepository.isMutuallyBlocked(viewerId, authorId);
-}
-
-export async function shouldHideContent(authorId: string): Promise<boolean> {
-  return isMutuallyBlocked(authorId);
-}
-
-export async function countOpenReports(): Promise<number> {
-  return moderationRepository.countOpenReports();
-}
+    return repository.isMutuallyBlocked(viewerId, authorId);
+  },
+  countOpenReports() {
+    return repository.countOpenReports();
+  },
+});

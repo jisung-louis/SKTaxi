@@ -1,1 +1,1 @@
-export { FirestoreModerationRepository } from '@/shared/lib/moderation/FirestoreModerationRepository';
+export { FirestoreModerationRepository } from '@/shared/lib/firebase/moderationRepository';
