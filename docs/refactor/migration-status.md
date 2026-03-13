@@ -6,7 +6,7 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `c9b7785`
+- 현재 기준 runtime commit: `0f84b95`
 - 현재 상태: `Phase 8 blocker cleanup: shared subscription contract 수렴 완료`
 - 현재 구조 상태: `navigation shell의 source of truth는 계속 src/app/navigation/* 이고, shared moderation 경계는 pure contract/helper인 src/shared/lib/moderation/* 와 Firebase 구현 src/shared/lib/firebase/moderationRepository.ts + feature data/composition 생성 지점으로 유지된다. generic subscription/api contract의 active source of truth는 이제 src/shared/types/{subscription,api}.ts 로 수렴됐다. user/chat/taxi repository contract와 notice repository 구현은 generic subscription contract를 shared에서 직접 사용하고, notice는 더 이상 taxi feature public API를 통해 이 계약을 가져오지 않는다. auth/user 공용 사용자 타입의 actual source of truth는 src/shared/types/user.ts, auth state는 src/features/auth/model/types.ts, user firestore 문서는 src/features/user/model/types.ts, 공개 채팅 타입은 src/features/chat/model/types.ts, taxi party/join-request/message 타입은 src/features/taxi/model/types.ts 로 정리됐다. active src/app/*, src/features/*, src/shared/* 기준 root src/api/types.ts 와 root src/types/{auth,firestore,party}.ts import는 0건이다. root src/api/types.ts, src/types/auth.ts, src/types/firestore.ts, src/types/party.ts 는 shim-only re-export 상태로 남았고, src/api/{index,endpoints,ApiClient}.ts 는 active consumer 없는 backend-migration placeholder라 keep-as-is 로 유지한다. src/di/* 는 app composition DI 경계라 keep-active 로 유지한다.`
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
