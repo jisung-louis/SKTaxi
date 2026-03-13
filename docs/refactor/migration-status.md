@@ -6,9 +6,9 @@
 ## 현재 기준선
 
 - 브랜치: `skuri-refactoring`
-- 현재 기준 runtime commit: `f7c9a69`
-- 현재 상태: `Phase 8 verifier blocker moderation 경계 후속 수정 완료`
-- 현재 구조 상태: `navigation shell의 source of truth는 계속 src/app/navigation/* 이고, shared moderation 경계는 pure contract/helper인 src/shared/lib/moderation/* 와 Firebase 구현 src/shared/lib/firebase/moderationRepository.ts + feature data/composition 생성 지점으로 정리됐다. active src/app/* 및 src/features/* 기준 verifier 대상 root legacy import는 0건이다. root src/navigations/*, src/constants/constants.ts, src/hooks/storage/useImageUpload.ts, src/repositories/interfaces/IModerationRepository.ts, src/repositories/firestore/{FirestoreModerationRepository,FirestoreStorageRepository}.ts 는 shim-only 또는 shared/feature re-export 상태로 줄었고, src/repositories/firestore/FirestoreFcmRepository.ts 는 삭제됐다. src/di/* 는 app composition DI 경계라 keep-active 로 유지한다.`
+- 현재 기준 runtime commit: `c9b7785`
+- 현재 상태: `Phase 8 blocker cleanup: api/types + root types 정리 완료`
+- 현재 구조 상태: `navigation shell의 source of truth는 계속 src/app/navigation/* 이고, shared moderation 경계는 pure contract/helper인 src/shared/lib/moderation/* 와 Firebase 구현 src/shared/lib/firebase/moderationRepository.ts + feature data/composition 생성 지점으로 유지된다. 이번 턴에서 generic subscription/api contract의 actual source of truth는 src/shared/types/{subscription,api}.ts 로 이동했고, auth/user 공용 사용자 타입의 actual source of truth는 src/shared/types/user.ts, auth state는 src/features/auth/model/types.ts, user firestore 문서는 src/features/user/model/types.ts, 공개 채팅 타입은 src/features/chat/model/types.ts, taxi party/join-request/message 타입은 src/features/taxi/model/types.ts 로 정리됐다. active src/app/*, src/features/*, src/shared/* 기준 root src/api/types.ts 와 root src/types/{auth,firestore,party}.ts import는 0건이다. root src/api/types.ts, src/types/auth.ts, src/types/firestore.ts, src/types/party.ts 는 shim-only re-export 상태로 남았고, src/api/{index,endpoints,ApiClient}.ts 는 active consumer 없는 backend-migration placeholder라 keep-as-is 로 유지한다. src/di/* 는 app composition DI 경계라 keep-active 로 유지한다.`
 - 다음 작업 시작점: `별도 검증 스레드의 Phase 8 최종 재검증`
 
 ## source of truth 상태
@@ -153,11 +153,17 @@ legacy board 대응 파일에는 shim, import 정리, 삭제만 허용된다.
 - storage contract와 Firebase Storage 구현의 actual source of truth는 이제 `src/shared/lib/firebase/storageRepository.ts` 다. `src/di/repositoryContracts.ts` 와 `src/di/RepositoryProvider.tsx` 는 shared 경계를 직접 사용하고, root `src/repositories/interfaces/IStorageRepository.ts`, `src/repositories/firestore/FirestoreStorageRepository.ts` 는 shim-only re-export만 유지한다. `src/di/*` 폴더 자체는 app composition DI 경계라 keep-active 상태로 남긴다.
 - root `src/constants/constants.ts` 는 공용 layout/departments shared re-export + taxi 출발/도착 상수 feature re-export만 남기는 shim으로 줄였다. taxi-specific `DEPARTURE_OPTIONS`, `DESTINATION_OPTIONS`, `DEPARTURE_LOCATION`, `DESTINATION_LOCATION` 의 actual source of truth는 계속 `src/features/taxi/model/constants.ts` 다.
 - root `src/hooks/storage/useImageUpload.ts` 는 더 이상 자체 업로드 로직을 소유하지 않고 `src/features/board/hooks/useBoardImageUpload.ts` 와 `src/features/board/model/types.ts` 를 re-export하는 shim-only 파일로 줄였다. 현재 active board write/edit 경로는 계속 board feature hook을 직접 source of truth로 사용한다.
+- Phase 8 blocker cleanup으로 auth/timetable repository contract/implementation은 더 이상 root `src/api/types.ts` 를 직접 보지 않는다. generic subscription contract의 actual source of truth는 `src/shared/types/subscription.ts` 이고, root `src/api/types.ts` 는 `src/shared/types/{subscription,api,pagination}.ts` re-export shim만 유지한다.
+- auth/user active 코드의 actual source of truth는 이제 `src/shared/types/user.ts` 와 `src/features/auth/model/types.ts`, `src/features/user/model/types.ts` 조합이다. `User`, `LinkedAccount`, `UserAccountInfo` 는 shared로, `AuthState` 는 auth feature model로, `UserDoc` 는 user feature model로 이동했고 root `src/types/auth.ts` 는 shim-only re-export만 유지한다.
+- chat/taxi active 코드의 actual source of truth는 이제 `src/features/chat/model/types.ts` 와 `src/features/taxi/model/types.ts` 다. `ChatRoom`, `ChatMessage` 는 chat feature model, `Party`, `PartyMember`, `JoinRequest`, `PendingJoinRequest`, `JoinRequestStatus`, `PartyMessage`, `SettlementData` 는 taxi feature model이 소유한다. root `src/types/firestore.ts`, `src/types/party.ts` 는 shim-only re-export만 유지한다.
+- `src/shared/testing/mockData/dummyParties.ts` 는 root `src/types/party.ts` import를 제거하고 local mock literal만 유지한다. shared testing이 taxi feature model을 직접 source of truth로 삼지 않도록 keep-as-data 상태로 남겼다.
 
 ## Phase 9 진입 전 남은 blocker
 
 - `Phase 9` 로 바로 넘어가면 안 된다. 별도 검증 스레드에서 `Phase 8 최종 재검증` 을 다시 받아야 한다.
 - root legacy common/constants/hooks/utils/lib 파일 자체는 여전히 저장소에 남아 있다. 이번 턴 기준 이들 중 active import가 제거된 경로는 shim 또는 잔여 cleanup 대상으로만 간주한다.
+- root `src/api/types.ts`, `src/types/auth.ts`, `src/types/firestore.ts`, `src/types/party.ts` 는 이번 턴에 shim-only 로 줄였지만 아직 삭제하지 않았다. legacy test/mock/root re-export 경로와 최종 Phase 9 import graph 재확인이 남아 있으므로, 재검증 전에는 keep한다.
+- root `src/api/{index,endpoints,ApiClient}.ts` 는 active runtime consumer가 없지만 backend migration placeholder 성격이라 이번 턴에서 삭제하지 않았다.
 - `src/app/navigation/MainNavigator.tsx` 와 홈/설정 stack shell에는 아직 legacy warning baseline과 composition 잔여물이 남아 있다. route shell cleanup은 재검증 후 Phase 9 범위다.
 - timetable/campus/settings/minecraft/home 포함 전체 feature의 legacy shim 파일 대량 삭제는 아직 하지 않았다. Phase 9에서 실제 import graph를 다시 확인한 뒤 제거해야 한다.
 - route key와 UI label 완전 분리, 오타 파일명 정리, dead code 대량 삭제, 전역 lint warning 정리는 아직 남아 있다.
