@@ -12,7 +12,7 @@ import type {
   UserProfile,
 } from '@/features/user';
 import { setUserId } from '@/shared/lib/analytics';
-import { User } from '@/types/auth';
+import type { User } from '@/shared/types/user';
 
 import {
   AuthUser,

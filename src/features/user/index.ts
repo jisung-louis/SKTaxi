@@ -40,14 +40,15 @@ export { useUserBookmarks } from './hooks/useUserBookmarks';
 export type { UseUserBookmarksResult } from './hooks/useUserBookmarks';
 
 export type {
-  UserAccountInfo,
   UserAgreements,
+  UserDoc,
   UserDisplayNameMap,
   UserLoginProvider,
   UserNotificationSettings,
   UserOnboardingState,
   UserProfile,
 } from './model/types';
+export type { LinkedAccount, UserAccountInfo } from '@/shared/types/user';
 
 export { ProfileScreen } from './screens/ProfileScreen';
 export { ProfileEditScreen } from './screens/ProfileEditScreen';

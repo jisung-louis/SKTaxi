@@ -1,4 +1,9 @@
-import { AuthState } from '@/types/auth';
+import type { User } from '@/shared/types/user';
+
+export interface AuthState {
+  user: User | null;
+  loading: boolean;
+}
 
 export interface AuthContextValue extends AuthState {
   signInWithGoogle: () => Promise<{ firstLogin: boolean }>;

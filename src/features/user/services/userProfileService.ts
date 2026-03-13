@@ -1,5 +1,5 @@
 import { setUserProperties } from '@/shared/lib/analytics';
-import { User } from '@/types/auth';
+import type { User } from '@/shared/types/user';
 
 import { leaveDepartmentRoom } from '../data/departmentChatRoom';
 import { withdrawUser } from '../data/withdrawUser';

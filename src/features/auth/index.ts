@@ -16,12 +16,12 @@ export {
 } from './data/repositories/FirebaseAuthRepository';
 export type {
   AuthUser,
-  AuthRepositoryState as AuthState,
   AuthRepositoryState,
   GoogleSignInResult,
   IAuthRepository,
 } from './data/repositories/IAuthRepository';
 export type {
+  AuthState,
   AuthContextValue,
   CompleteProfileFormValues,
   PermissionOnboardingStep,

@@ -1,10 +1,15 @@
-import { UserDoc } from '@/types/firestore';
+import type {
+  LinkedAccount,
+  UserAccountInfo,
+} from '@/shared/types/user';
+export type { LinkedAccount, UserAccountInfo } from '@/shared/types/user';
 
-export interface UserAccountInfo {
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  hideName: boolean;
+export interface UserDoc {
+  displayName?: string;
+  photoUrl?: string;
+  fcmTokens?: string[];
+  createdAt?: unknown;
+  lastActiveAt?: unknown;
 }
 
 export interface UserNotificationSettings {
@@ -42,13 +47,7 @@ export interface UserProfile extends UserDoc {
   isAdmin?: boolean;
   photoURL?: string | null;
   photoUrl?: string | null;
-  linkedAccounts?: Array<{
-    provider: string;
-    providerId: string;
-    email: string;
-    displayName: string | null;
-    photoURL: string | null;
-  }>;
+  linkedAccounts?: LinkedAccount[];
   realname?: string | null;
   account?: UserAccountInfo | null;
   accountInfo?: UserAccountInfo | null;
@@ -63,4 +62,3 @@ export interface UserProfile extends UserDoc {
 export type UserDisplayNameMap = Record<string, string>;
 
 export type UserLoginProvider = 'google' | 'email' | 'unknown';
-

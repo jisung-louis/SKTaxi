@@ -2,9 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useRepository } from '@/di';
 import { useUserRepository } from '@/features/user';
-import { AuthState } from '@/types/auth';
 
-import { AuthContextValue } from '../model/types';
+import { AuthContextValue, AuthState } from '../model/types';
 import {
   buildFallbackUser,
   finalizeGoogleSignIn,

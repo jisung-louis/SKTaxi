@@ -1,6 +1,6 @@
 import { saveCompletedUserProfile } from '@/features/user';
 import type { IUserRepository } from '@/features/user';
-import { User } from '@/types/auth';
+import type { User } from '@/shared/types/user';
 
 import { CompleteProfileFormValues } from '../model/types';
 
