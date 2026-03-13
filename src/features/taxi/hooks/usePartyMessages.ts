@@ -2,7 +2,7 @@
 // IPartyRepository를 사용하여 Firebase Firestore 직접 의존 제거
 
 import { useState, useEffect } from 'react';
-import { PartyMessage } from '../data/repositories/IPartyRepository';
+import type { PartyMessage } from '../model/types';
 import { usePartyRepository } from './usePartyRepository';
 
 export interface UseMessagesResult {

@@ -1,4 +1,4 @@
-import { SettlementData } from '../data/repositories/IPartyRepository';
+import type { SettlementData } from '../model/types';
 
 export const buildInitialSettlementStatus = (
   memberIds: string[],

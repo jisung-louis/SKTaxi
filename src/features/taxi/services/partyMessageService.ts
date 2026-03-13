@@ -1,10 +1,12 @@
 import { logEvent } from '@/shared/lib/analytics';
 
 import {
-  AccountMessageData,
-  ArrivalMessageData,
   IPartyRepository,
 } from '../data/repositories/IPartyRepository';
+import type {
+  AccountMessageData,
+  ArrivalMessageData,
+} from '../model/types';
 
 interface PartyMessageDependencies {
   partyRepository: IPartyRepository;

@@ -1,7 +1,25 @@
 // SKTaxi: Party Repository 인터페이스 - DIP 원칙 적용
 // 비즈니스 로직과 데이터 접근 계층을 분리하여 테스트 용이성 확보
 
-import { Party } from '../../model/types';
+import type {
+  AccountMessageData,
+  ArrivalMessageData,
+  JoinRequest,
+  JoinRequestStatus,
+  Party,
+  PartyMessage,
+  PendingJoinRequest,
+  SettlementData,
+} from '../../model/types';
+export type {
+  AccountMessageData,
+  ArrivalMessageData,
+  JoinRequest,
+  JoinRequestStatus,
+  PartyMessage,
+  PendingJoinRequest,
+  SettlementData,
+} from '../../model/types';
 
 /**
  * 실시간 구독 해제 함수 타입
@@ -247,85 +265,4 @@ export interface IPartyRepository {
    * @param partyId - 파티 ID
    */
   completeSettlement(partyId: string): Promise<void>;
-}
-
-/**
- * Pending 동승 요청 정보
- */
-export interface PendingJoinRequest {
-  requestId: string;
-  partyId: string;
-}
-
-/**
- * 동승 요청 상세 정보 (리더가 조회)
- */
-export interface JoinRequest {
-  id: string;
-  partyId: string;
-  requesterId: string;
-  leaderId: string;
-  status: 'pending' | 'accepted' | 'declined' | 'canceled';
-  createdAt: unknown;
-}
-
-/**
- * 정산 데이터
- */
-export interface SettlementData {
-  perPersonAmount: number;
-  members: {
-    [memberId: string]: {
-      settled: boolean;
-      settledAt?: unknown;
-    };
-  };
-}
-
-/**
- * 동승 요청 상태 정보
- */
-export interface JoinRequestStatus {
-  requestId: string;
-  partyId: string;
-  status: 'pending' | 'accepted' | 'declined' | 'canceled';
-}
-
-/**
- * 파티 채팅 메시지 타입
- */
-export interface PartyMessage {
-  id: string;
-  partyId: string;
-  senderId: string;
-  senderName: string;
-  text: string;
-  type: 'user' | 'system' | 'account' | 'arrived' | 'end';
-  accountData?: AccountMessageData;
-  arrivalData?: ArrivalMessageData;
-  createdAt: unknown;
-  updatedAt?: unknown;
-}
-
-/**
- * 계좌 정보 메시지 데이터
- */
-export interface AccountMessageData {
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  hideName: boolean;
-}
-
-/**
- * 도착/정산 메시지 데이터
- */
-export interface ArrivalMessageData {
-  taxiFare: number;
-  perPerson: number;
-  memberCount: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  hideName: boolean;
 }

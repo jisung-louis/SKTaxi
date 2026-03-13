@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '@/shared/constants/colors';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { Message } from '@/types/firestore';
+import type { PartyMessage } from '../../model/types';
 
 interface ChatMessageListProps {
-  messages: Message[];
+  messages: PartyMessage[];
   currentUserId?: string;
   onCopyAccountInfo: (bankName: string, accountNumber: string) => void;
   onLeaveRoom: () => void;
@@ -57,7 +57,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
     }));
 
     // 계좌 정보 메시지 렌더링
-    const renderAccountMessage = (item: Message) => {
+    const renderAccountMessage = (item: PartyMessage) => {
       if (!item.accountData) return null;
 
       const { bankName, accountNumber, accountHolder, hideName } = item.accountData;
@@ -99,7 +99,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
     };
 
     // 동승 종료 메시지 렌더링
-    const renderEndMessage = (item: Message) => {
+    const renderEndMessage = (item: PartyMessage) => {
       return (
         <View style={styles.endMessageContainer}>
           <View style={styles.endMessageContent}>
@@ -117,7 +117,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
     };
 
     // 도착 메시지 렌더링
-    const renderArrivalMessage = (item: Message) => {
+    const renderArrivalMessage = (item: PartyMessage) => {
       if (!item.arrivalData) return null;
 
       const { taxiFare, perPerson, memberCount, bankName, accountNumber, accountHolder, hideName } = item.arrivalData;
@@ -191,7 +191,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
       );
     };
 
-    const renderMessage = ({ item, index }: { item: Message; index: number }) => {
+    const renderMessage = ({ item, index }: { item: PartyMessage; index: number }) => {
       const isMyMessage = item.senderId === currentUserId;
       const isSystemMessage = item.type === 'system';
       const isAccountMessage = item.type === 'account';
@@ -219,7 +219,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
       }
 
       // 이전 일반 메시지 찾기
-      let prevNormalMessage: Message | null = null;
+      let prevNormalMessage: PartyMessage | null = null;
       for (let i = index - 1; i >= 0; i--) {
         const msg = messages[i];
         if (msg && msg.type !== 'system' && msg.type !== 'account' && msg.type !== 'arrived' && msg.type !== 'end') {
@@ -229,7 +229,7 @@ export const ChatMessageList = forwardRef<ChatMessageListRef, ChatMessageListPro
       }
 
       // 다음 일반 메시지 찾기
-      let nextNormalMessage: Message | null = null;
+      let nextNormalMessage: PartyMessage | null = null;
       for (let i = index + 1; i < messages.length; i++) {
         const msg = messages[i];
         if (msg && msg.type !== 'system' && msg.type !== 'account' && msg.type !== 'arrived' && msg.type !== 'end') {

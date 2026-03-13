@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth';
 
-import { PendingJoinRequest } from '../data/repositories/IPartyRepository';
+import type { PendingJoinRequest } from '../model/types';
 import { usePartyRepository } from './usePartyRepository';
 
 export interface UsePendingJoinRequestResult {

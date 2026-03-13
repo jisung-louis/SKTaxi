@@ -16,14 +16,7 @@ export {
 } from './data/repositories/FirebasePartyRepository';
 export { MockNotificationActionRepository } from './data/repositories/MockNotificationActionRepository';
 export type {
-  AccountMessageData,
-  ArrivalMessageData,
   IPartyRepository,
-  JoinRequest,
-  JoinRequestStatus,
-  PartyMessage,
-  PendingJoinRequest,
-  SettlementData,
   SubscriptionCallbacks,
   Unsubscribe,
 } from './data/repositories/IPartyRepository';
@@ -81,7 +74,17 @@ export {
   DESTINATION_OPTIONS,
 } from './model/constants';
 export type { TaxiStackParamList } from './model/navigation';
-export type { Party } from './model/types';
+export type {
+  AccountMessageData,
+  ArrivalMessageData,
+  JoinRequest,
+  JoinRequestStatus,
+  Party,
+  PartyMember,
+  PartyMessage,
+  PendingJoinRequest,
+  SettlementData,
+} from './model/types';
 
 export { createTaxiParty } from './services/partyCreationService';
 export {

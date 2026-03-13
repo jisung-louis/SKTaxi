@@ -14,9 +14,9 @@ import {
 import { useNotificationRepository } from '@/di/useRepository';
 import { logEvent } from '@/shared/lib/analytics';
 
-import { JoinRequest, SettlementData } from '../data/repositories/IPartyRepository';
 import { getPartyTitle } from '../model/selectors';
 import type { TaxiStackParamList } from '../model/navigation';
+import type { JoinRequest, SettlementData } from '../model/types';
 import { acceptJoinRequest, declineJoinRequest } from '../services/joinRequestService';
 import {
   sendAccountMessage,

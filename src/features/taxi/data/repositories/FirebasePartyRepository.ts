@@ -20,18 +20,20 @@ import firestore, {
 import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 
-import { Party } from '../../model/types';
+import type {
+  AccountMessageData,
+  ArrivalMessageData,
+  JoinRequest,
+  JoinRequestStatus,
+  Party,
+  PartyMessage,
+  PendingJoinRequest,
+  SettlementData,
+} from '../../model/types';
 import {
   IPartyRepository,
   Unsubscribe,
   SubscriptionCallbacks,
-  PendingJoinRequest,
-  JoinRequestStatus,
-  JoinRequest,
-  PartyMessage,
-  AccountMessageData,
-  ArrivalMessageData,
-  SettlementData,
 } from './IPartyRepository';
 
 /**

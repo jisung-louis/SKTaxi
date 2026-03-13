@@ -1,6 +1,4 @@
-import { Party } from '@/types/party';
-
-export const dummyParties: Party[] = [
+export const dummyParties = [
   {
     id: '1',
     leaderId: '홍길동',

@@ -1,7 +1,7 @@
 // SKTaxi: 동승 요청 상태 관리 훅 (Repository 패턴 적용)
 
 import { useState, useEffect, useCallback } from 'react';
-import { JoinRequestStatus } from '../data/repositories/IPartyRepository';
+import type { JoinRequestStatus } from '../model/types';
 import { usePartyRepository } from './usePartyRepository';
 
 export interface UseJoinRequestStatusResult {
