@@ -2,6 +2,8 @@ import React from 'react';
 import {Alert} from 'react-native';
 import {format, formatDistanceToNow} from 'date-fns';
 import {ko} from 'date-fns/locale';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import type {
   CommunityBoardFeaturedViewData,
@@ -12,6 +14,7 @@ import type {
   CommunityBoardSourceItem,
 } from '../model/communityHomeData';
 import {communityHomeRepository} from '../data/repositories/communityHomeRepository';
+import type {CommunityStackParamList} from '@/app/navigation/types';
 
 const PAGE_SIZE = 5;
 
@@ -70,6 +73,8 @@ const getErrorMessage = (error: unknown) => {
 };
 
 export const useCommunityBoardData = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CommunityStackParamList>>();
   const [searchFilters, setSearchFilters] =
     React.useState<CommunityBoardSearchFilters>(DEFAULT_FILTERS);
   const [items, setItems] = React.useState<CommunityBoardPostViewData[]>([]);
@@ -161,12 +166,12 @@ export const useCommunityBoardData = () => {
     fetchBoardPage('refresh').catch(() => undefined);
   }, [fetchBoardPage]);
 
-  const handleOpenPost = React.useCallback(() => {
-    Alert.alert(
-      '준비 중',
-      '게시글 상세 화면은 Spring REST API 연동 단계에서 연결할 예정입니다.',
-    );
-  }, []);
+  const handleOpenPost = React.useCallback(
+    (postId: string) => {
+      navigation.navigate('BoardDetail', {postId});
+    },
+    [navigation],
+  );
 
   const handleOpenWrite = React.useCallback(() => {
     Alert.alert(
