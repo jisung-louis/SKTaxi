@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
   RefreshControl,
@@ -8,8 +9,7 @@ import {
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useIsFocused} from '@react-navigation/native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {V2PageHeader} from '@/shared/design-system/components';
@@ -22,14 +22,10 @@ import {NoticeCategoryBarV2} from '../components/v2/NoticeCategoryBarV2';
 import {NoticeHomeList} from '../components/v2/NoticeHomeList';
 import {NoticeUnreadBanner} from '../components/v2/NoticeUnreadBanner';
 import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
-import {NoticeStackParamList} from '../model/navigation';
-
-type NoticeNavigationProp = NativeStackNavigationProp<NoticeStackParamList>;
 
 export const NoticeScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NoticeNavigationProp>();
   const isFocused = useIsFocused();
   const [panelVisible, setPanelVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -74,9 +70,12 @@ export const NoticeScreen = () => {
   const handleOpenNotice = React.useCallback(
     (noticeId: string) => {
       markAsRead(noticeId).catch(() => undefined);
-      navigation.navigate('NoticeDetail', {noticeId});
+      Alert.alert(
+        '준비 중',
+        '공지 상세 화면은 Spring REST API 연동 단계에서 연결할 예정입니다.',
+      );
     },
-    [markAsRead, navigation],
+    [markAsRead],
   );
 
   const handlePressUnreadBanner = React.useCallback(() => {

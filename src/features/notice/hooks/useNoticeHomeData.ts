@@ -1,9 +1,9 @@
 import React from 'react';
 
-import {useNoticeSettings} from './useNoticeSettings';
-import {useNotices} from './useNotices';
-import {isNoticeRead, toNoticeTimestampMillis} from '../model/selectors';
-import type {Notice} from '../model/types';
+import type {
+  NoticeHomeSettings,
+  NoticeHomeSourceItem,
+} from '../model/noticeHomeData';
 import type {
   NoticeHomeCategoryDefinition,
   NoticeHomeCategoryId,
@@ -11,6 +11,7 @@ import type {
   NoticeHomeTone,
   NoticeHomeViewData,
 } from '../model/noticeHomeViewData';
+import {noticeHomeRepository} from '../data/repositories/noticeHomeRepository';
 
 const NOTICE_HOME_CATEGORIES: NoticeHomeCategoryDefinition[] = [
   {
@@ -51,6 +52,11 @@ const NOTICE_HOME_CATEGORIES: NoticeHomeCategoryDefinition[] = [
   },
 ];
 
+const DEFAULT_NOTICE_HOME_SETTINGS: NoticeHomeSettings = {
+  noticeNotifications: true,
+  noticeNotificationsDetail: {},
+};
+
 const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
   '공모/행사': '행사',
   '장학/등록/학자금': '장학',
@@ -58,6 +64,7 @@ const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
   생활관: '시설',
   시설: '시설',
   일반: '시설',
+  입찰구매정보: '시설',
   학사: '학사',
 };
 
@@ -69,14 +76,15 @@ const CATEGORY_TONE_MAP: Record<string, NoticeHomeTone> = {
   학사: 'blue',
 };
 
-const formatNoticeDateLabel = (value: unknown) => {
-  const timestamp = toNoticeTimestampMillis(value);
+const NOTICES_PER_PAGE = 20;
 
-  if (!timestamp) {
+const formatNoticeDateLabel = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
     return '';
   }
 
-  const date = new Date(timestamp);
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, '0');
   const day = `${date.getDate()}`.padStart(2, '0');
@@ -94,80 +102,45 @@ const getCategoryTone = (label: string): NoticeHomeTone => {
   return CATEGORY_TONE_MAP[label] ?? 'gray';
 };
 
-const filterNoticesByCategory = ({
-  notices,
-  selectedCategory,
-}: {
-  notices: Notice[];
-  selectedCategory: NoticeHomeCategoryDefinition;
-}) => {
-  if (selectedCategory.id === 'all') {
-    return notices;
-  }
-
-  return notices.filter(notice =>
-    selectedCategory.sourceCategories.includes(notice.category),
-  );
-};
-
-const mapNoticeToViewData = ({
-  notice,
-  readStatus,
-  userJoinedAt,
-}: {
-  notice: Notice;
-  readStatus: Record<string, boolean>;
-  userJoinedAt: unknown;
-}): NoticeHomeNoticeItemViewData => {
+const mapNoticeToViewData = (
+  notice: NoticeHomeSourceItem,
+): NoticeHomeNoticeItemViewData => {
   const categoryLabel = getCategoryDisplayLabel(notice.category);
-  const isUnread = !isNoticeRead(notice, readStatus, userJoinedAt);
 
   return {
     categoryLabel,
     categoryTone: getCategoryTone(categoryLabel),
     dateLabel: formatNoticeDateLabel(notice.postedAt),
     id: notice.id,
-    isUnread,
+    isUnread: !notice.isRead,
     title: notice.title,
   };
 };
 
 const buildNoticeHomeViewData = ({
-  notices,
-  readStatus,
+  firstUnreadNoticeId,
+  items,
   selectedCategoryId,
-  userJoinedAt,
+  unreadCount,
 }: {
-  notices: Notice[];
-  readStatus: Record<string, boolean>;
+  firstUnreadNoticeId?: string;
+  items: NoticeHomeSourceItem[];
   selectedCategoryId: NoticeHomeCategoryId;
-  userJoinedAt: unknown;
+  unreadCount: number;
 }): NoticeHomeViewData => {
   const selectedCategory =
     NOTICE_HOME_CATEGORIES.find(
       category => category.id === selectedCategoryId,
     ) ?? NOTICE_HOME_CATEGORIES[0];
-  const filteredNotices = filterNoticesByCategory({notices, selectedCategory});
-  const filteredItems = filteredNotices.map(notice =>
-    mapNoticeToViewData({
-      notice,
-      readStatus,
-      userJoinedAt,
-    }),
-  );
-  const firstUnreadNoticeId = filteredItems.find(item => item.isUnread)?.id;
-  const filteredUnreadCount = filteredItems.filter(
-    item => item.isUnread,
-  ).length;
 
   return {
     banner: {
-      actionLabel: filteredUnreadCount > 0 ? '보기' : undefined,
+      actionLabel: unreadCount > 0 ? '보기' : undefined,
       description:
-        filteredUnreadCount > 0
-          ? `${filteredUnreadCount}개의 새로운 공지가 있어요`
+        unreadCount > 0
+          ? `${unreadCount}개의 새로운 공지가 있어요`
           : '새로운 공지를 모두 확인했어요',
-      hasUnread: filteredUnreadCount > 0,
+      hasUnread: unreadCount > 0,
       title: '읽지 않은 공지',
     },
     categoryChips: NOTICE_HOME_CATEGORIES.map(category => ({
@@ -180,55 +153,243 @@ const buildNoticeHomeViewData = ({
       title: '공지사항이 없습니다',
     },
     firstUnreadNoticeId,
-    items: filteredItems,
+    items: items.map(mapNoticeToViewData),
     subtitle: '성결대학교 최신 공지를 확인하세요',
     title: '공지사항',
   };
 };
 
+const getSelectedCategoryDefinition = (
+  selectedCategoryId: NoticeHomeCategoryId,
+) => {
+  return (
+    NOTICE_HOME_CATEGORIES.find(
+      category => category.id === selectedCategoryId,
+    ) ?? NOTICE_HOME_CATEGORIES[0]
+  );
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
+
 export const useNoticeHomeData = () => {
   const [selectedCategoryId, setSelectedCategoryId] =
     React.useState<NoticeHomeCategoryId>('all');
+  const [noticeItems, setNoticeItems] = React.useState<NoticeHomeSourceItem[]>(
+    [],
+  );
+  const [noticeSettings, setNoticeSettings] =
+    React.useState<NoticeHomeSettings>(DEFAULT_NOTICE_HOME_SETTINGS);
+  const [error, setError] = React.useState<string | null>(null);
+  const [noticeSettingsError, setNoticeSettingsError] = React.useState<
+    string | null
+  >(null);
+  const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [noticeSettingsLoading, setNoticeSettingsLoading] =
+    React.useState(true);
+  const [hasMore, setHasMore] = React.useState(false);
+  const [nextCursor, setNextCursor] = React.useState<string | undefined>(
+    undefined,
+  );
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [firstUnreadNoticeId, setFirstUnreadNoticeId] = React.useState<
+    string | undefined
+  >(undefined);
+  const requestIdRef = React.useRef(0);
 
-  const selectedCategory =
-    NOTICE_HOME_CATEGORIES.find(
-      category => category.id === selectedCategoryId,
-    ) ?? NOTICE_HOME_CATEGORIES[0];
+  const selectedCategory = React.useMemo(
+    () => getSelectedCategoryDefinition(selectedCategoryId),
+    [selectedCategoryId],
+  );
+  const selectedSourceCategories = React.useMemo(
+    () =>
+      selectedCategory.sourceCategories.length > 0
+        ? selectedCategory.sourceCategories
+        : undefined,
+    [selectedCategory.sourceCategories],
+  );
 
-  const noticeResult = useNotices(selectedCategory.repositoryCategory);
-  const settingsResult = useNoticeSettings();
+  const fetchNoticePage = React.useCallback(
+    async (mode: 'initial' | 'refresh' | 'loadMore', cursor?: string) => {
+      const currentRequestId = requestIdRef.current + 1;
+      requestIdRef.current = currentRequestId;
+
+      if (mode === 'initial') {
+        setLoading(true);
+      }
+
+      if (mode === 'loadMore') {
+        setLoadingMore(true);
+      }
+
+      try {
+        const result = await noticeHomeRepository.getNoticePage({
+          categories: selectedSourceCategories,
+          cursor,
+          limit: NOTICES_PER_PAGE,
+        });
+
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setError(null);
+        setHasMore(Boolean(result.nextCursor));
+        setNextCursor(result.nextCursor);
+        setUnreadCount(result.unreadCount);
+        setFirstUnreadNoticeId(result.firstUnreadNoticeId);
+        setNoticeItems(previousItems =>
+          mode === 'loadMore'
+            ? [...previousItems, ...result.items]
+            : result.items,
+        );
+      } catch (fetchError) {
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setError(
+          getErrorMessage(fetchError, '공지사항을 불러오지 못했습니다.'),
+        );
+
+        if (mode !== 'loadMore') {
+          setNoticeItems([]);
+          setHasMore(false);
+          setNextCursor(undefined);
+          setUnreadCount(0);
+          setFirstUnreadNoticeId(undefined);
+        }
+      } finally {
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [selectedSourceCategories],
+  );
+
+  const fetchNoticeSettings = React.useCallback(async () => {
+    setNoticeSettingsLoading(true);
+
+    try {
+      const nextSettings = await noticeHomeRepository.getNoticeSettings();
+      setNoticeSettings(nextSettings);
+      setNoticeSettingsError(null);
+    } catch (settingsError) {
+      setNoticeSettingsError(
+        getErrorMessage(settingsError, '알림 설정을 불러오지 못했습니다.'),
+      );
+    } finally {
+      setNoticeSettingsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchNoticePage('initial').catch(() => undefined);
+  }, [fetchNoticePage]);
+
+  React.useEffect(() => {
+    fetchNoticeSettings().catch(() => undefined);
+  }, [fetchNoticeSettings]);
+
+  const refreshReadStatus = React.useCallback(async () => {
+    await Promise.all([fetchNoticePage('refresh'), fetchNoticeSettings()]);
+  }, [fetchNoticePage, fetchNoticeSettings]);
+
+  const loadMore = React.useCallback(async () => {
+    if (loading || loadingMore || !nextCursor) {
+      return;
+    }
+
+    await fetchNoticePage('loadMore', nextCursor);
+  }, [fetchNoticePage, loading, loadingMore, nextCursor]);
+
+  const markAsRead = React.useCallback(
+    async (noticeId: string) => {
+      await noticeHomeRepository.markNoticeAsRead(noticeId);
+
+      setNoticeItems(previousItems =>
+        previousItems.map(item =>
+          item.id === noticeId ? {...item, isRead: true} : item,
+        ),
+      );
+
+      const summary = await noticeHomeRepository.getUnreadSummary(
+        selectedSourceCategories,
+      );
+      setUnreadCount(summary.unreadCount);
+      setFirstUnreadNoticeId(summary.firstUnreadNoticeId);
+    },
+    [selectedSourceCategories],
+  );
+
+  const updateMaster = React.useCallback(async (enabled: boolean) => {
+    try {
+      const nextSettings = await noticeHomeRepository.updateNoticeMaster(
+        enabled,
+      );
+      setNoticeSettings(nextSettings);
+      setNoticeSettingsError(null);
+    } catch (settingsError) {
+      setNoticeSettingsError(
+        getErrorMessage(settingsError, '설정 저장에 실패했습니다.'),
+      );
+    }
+  }, []);
+
+  const updateDetail = React.useCallback(
+    async (categoryKey: string, enabled: boolean) => {
+      try {
+        const nextSettings = await noticeHomeRepository.updateNoticeDetail(
+          categoryKey,
+          enabled,
+        );
+        setNoticeSettings(nextSettings);
+        setNoticeSettingsError(null);
+      } catch (settingsError) {
+        setNoticeSettingsError(
+          getErrorMessage(settingsError, '설정 저장에 실패했습니다.'),
+        );
+      }
+    },
+    [],
+  );
 
   const data = React.useMemo(
     () =>
       buildNoticeHomeViewData({
-        notices: noticeResult.notices,
-        readStatus: noticeResult.readStatus,
+        firstUnreadNoticeId,
+        items: noticeItems,
         selectedCategoryId,
-        userJoinedAt: noticeResult.userJoinedAt,
+        unreadCount,
       }),
-    [
-      noticeResult.notices,
-      noticeResult.readStatus,
-      noticeResult.userJoinedAt,
-      selectedCategoryId,
-    ],
+    [firstUnreadNoticeId, noticeItems, selectedCategoryId, unreadCount],
   );
 
   return {
     data,
-    error: noticeResult.error,
-    hasMore: noticeResult.hasMore,
-    loadMore: noticeResult.loadMore,
-    loading: noticeResult.loading,
-    loadingMore: noticeResult.loadingMore,
-    markAsRead: noticeResult.markAsRead,
-    noticeSettings: settingsResult.settings,
-    noticeSettingsError: settingsResult.error,
-    noticeSettingsLoading: settingsResult.loading,
-    refreshReadStatus: noticeResult.refreshReadStatus,
+    error,
+    hasMore,
+    loadMore,
+    loading,
+    loadingMore,
+    markAsRead,
+    noticeSettings,
+    noticeSettingsError,
+    noticeSettingsLoading,
+    refreshReadStatus,
     selectCategory: setSelectedCategoryId,
-    updateDetail: settingsResult.updateDetail,
-    updateMaster: settingsResult.updateMaster,
-    userJoinedAtLoaded: noticeResult.userJoinedAtLoaded,
+    updateDetail,
+    updateMaster,
+    userJoinedAtLoaded: true,
   };
 };
