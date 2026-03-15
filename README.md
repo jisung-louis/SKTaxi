@@ -87,14 +87,14 @@ RootNavigator (Auth 상태 라우팅)
 ├── PermissionOnboardingScreen (권한 온보딩)
 └── MainNavigator (로그인 완료)
     └── Bottom Tab Navigator
-        ├── HomeTab ── Home / Notification / Profile / Setting / TimetableDetail / ...
+        ├── CampusTab ── Home / Notification / Profile / Setting / TimetableDetail / ...
         ├── TaxiTab ── Taxi / Recruit / AcceptancePending / MapSearch / Chat
         ├── NoticeTab ── Notice / NoticeDetail / NoticeDetailWebView
-        ├── BoardTab ── Board / BoardDetail / BoardWrite / BoardEdit
-        └── ChatTab ── ChatList / ChatDetail
+        └── CommunityTab ── Board / BoardDetail / BoardWrite / BoardEdit / ChatList / ChatDetail
 ```
 
 > 탭 바는 각 탭의 최상위 화면에서만 표시되고, 하위 Stack 화면에서는 자동으로 숨겨집니다.
+> 현재 `CommunityTab`의 기본 진입 화면은 기존 게시판 화면이고, 공개 채팅 화면은 같은 stack 내부 라우트로 유지됩니다.
 
 ### 상태 관리 전략
 
@@ -110,15 +110,22 @@ RootNavigator (Auth 상태 라우팅)
 
 ```
 src/
-├── screens/          화면 컴포넌트 (HomeTab, TaxiTab, NoticeTab, BoardTab, ChatTab, auth)
-├── components/       재사용 UI (common, home, board, academic, cafeteria, htmlRender, timetable)
-├── hooks/            Firestore 구독 훅 (~60개, auth/board/chat/party/notice/setting/timetable/user/storage/common)
-├── contexts/         전역 상태 (AuthContext, JoinRequestContext, CourseSearchContext)
-├── lib/              외부 연동 (analytics, fcm, minecraft, notifications, moderation, sound, versionCheck)
-├── utils/            날짜/채팅/정산/문자열 유틸리티
-├── config/           Firebase / Google Sign-In 설정
-├── constants/        디자인 토큰 (COLORS, TYPOGRAPHY)
-├── navigations/      Main/Stack navigators 및 타입
+├── __tests__/        테스트 코드와 목 데이터
+├── app/              앱 셸 (bootstrap, guards, navigation, providers)
+├── di/               저장소/런타임 의존성 주입
+├── features/         feature-based 도메인 코드
+│   ├── auth/
+│   ├── board/
+│   ├── campus/
+│   ├── chat/
+│   ├── home/         캠퍼스 대시보드 조립 레이어
+│   ├── minecraft/
+│   ├── notice/
+│   ├── settings/
+│   ├── taxi/
+│   ├── timetable/
+│   └── user/
+├── shared/           공용 상수, 훅, lib, UI, 테스트 유틸
 └── types/            TypeScript 타입 정의
 
 functions/            Firebase Cloud Functions (Node 22, TypeScript)
@@ -211,7 +218,7 @@ android/ | ios/       플랫폼별 네이티브 프로젝트
 - Firestore 실시간 구독, 채팅방별 mute, 미읽음 배지 계산
 - **마인크래프트 양방향 채팅 연동**: Realtime Database를 통해 게임 ↔ 앱 메시지 동기화
 
-### 홈 대시보드
+### 캠퍼스 대시보드
 
 6개 섹션으로 앱 전체 핵심 정보를 한눈에 제공:
 

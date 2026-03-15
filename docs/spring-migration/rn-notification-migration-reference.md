@@ -188,7 +188,7 @@ Spring canonical type은 다음과 같다.
 
 ### 5.1 푸시 수신 메인 진입점
 
-#### `src/lib/notifications.ts`
+#### `src/app/bootstrap/pushNotificationRuntime.ts`
 
 현재 문제:
 - legacy lowercase `data.type` 기준으로 분기
@@ -204,11 +204,11 @@ Spring canonical type은 다음과 같다.
 
 권장:
 - 이 파일에 switch를 직접 계속 늘리지 말고,
-- `src/lib/push/notificationContract.ts` 같은 공통 helper를 만들어 파싱/이동결정 로직을 분리한다.
+- `src/app/bootstrap/notificationContract.ts` 같은 공통 helper를 만들어 파싱/이동결정 로직을 분리한다.
 
 ### 5.2 포그라운드 배너
 
-#### `src/navigations/hooks/useForegroundNotification.ts`
+#### `src/app/bootstrap/useForegroundNotificationRuntime.ts`
 
 현재 문제:
 - 내부 타입이 `board_notification`, `notice_notification`, `chat_room_message` 등 legacy 의미에 묶여 있음
@@ -224,7 +224,7 @@ Spring canonical type은 다음과 같다.
 
 ### 5.3 알림 인박스 화면
 
-#### `src/screens/HomeTab/NotificationScreen.tsx`
+#### `src/features/user/screens/NotificationScreen.tsx`
 
 현재 문제:
 - 알림 타입 icon map이 legacy type 기준
@@ -238,7 +238,7 @@ Spring canonical type은 다음과 같다.
 
 ### 5.4 알림 훅
 
-#### `src/hooks/common/useNotifications.ts`
+#### `src/features/user/hooks/useInAppNotifications.ts`
 
 현재 문제:
 - Firestore snapshot 기반 구독 전제
@@ -316,11 +316,10 @@ Spring canonical type은 다음과 같다.
 
 ### 7.1 현재 문제 파일
 
-- `src/lib/fcm.ts`
-- `src/repositories/interfaces/IFcmRepository.ts`
-- `src/repositories/firestore/FirestoreFcmRepository.ts`
-- `src/hooks/auth/useAuth.ts`
-- `src/navigations/hooks/useFcmSetup.ts`
+- `src/shared/lib/firebase/messaging.ts`
+- `src/features/user/services/fcmTokenService.ts`
+- `src/features/auth/hooks/useAuth.ts`
+- `src/app/bootstrap/registerPushHandlers.ts`
 
 현재 RN은 Firestore `users/{uid}.fcmTokens[]`를 직접 갱신한다.
 
@@ -334,7 +333,7 @@ Spring 서버는 이 계약이 아니다.
 
 새 파일 추가 권장:
 
-- `src/repositories/api/ApiFcmRepository.ts`
+- `src/features/user/data/repositories/ApiFcmTokenRepository.ts`
 
 요청 형태:
 
@@ -375,7 +374,7 @@ Spring 서버는 이 계약이 아니다.
 
 ### 현재 문제 파일
 
-- `src/repositories/firestore/FirestoreNotificationActionRepository.ts`
+- `src/features/taxi/data/repositories/FirebaseNotificationActionRepository.ts`
 
 현재 문제:
 - join request 승인/거절을 Firestore 직접 수정
@@ -427,13 +426,13 @@ Spring 기준으로는:
 ## 10. 추천 구현 순서
 
 1. `src/lib/push/notificationContract.ts` 신설
-2. `src/lib/notifications.ts` canonical payload 파싱으로 전환
-3. `src/navigations/hooks/useForegroundNotification.ts` 정리
-4. `src/screens/HomeTab/NotificationScreen.tsx` canonical type 반영
+2. `src/app/bootstrap/pushNotificationRuntime.ts` canonical payload 파싱 기준으로 전환
+3. `src/app/bootstrap/useForegroundNotificationRuntime.ts` 정리
+4. `src/features/user/screens/NotificationScreen.tsx` canonical type 반영
 5. `ApiNotificationRepository` 추가
-6. `useNotifications()`를 REST + SSE 기준으로 전환
-7. `ApiFcmRepository` 추가
-8. `src/lib/fcm.ts`, `useAuth.ts`, `useFcmSetup.ts`를 API 기반으로 전환
+6. `src/features/user/hooks/useInAppNotifications.ts`를 REST + SSE 기준으로 전환
+7. `ApiFcmTokenRepository` 추가
+8. `src/shared/lib/firebase/messaging.ts`, `fcmTokenService.ts`, `useAuth.ts`, `registerPushHandlers.ts`를 API 기반으로 전환
 9. FirestoreNotificationActionRepository 제거 또는 API 기반으로 교체
 
 ---
