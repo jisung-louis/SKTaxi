@@ -5,9 +5,7 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Animated, StyleSheet, Text, View } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import IconMaterial from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Animated, StyleSheet } from 'react-native';
 
 import { useNotificationPermissionBubble } from '@/app/bootstrap/useNotificationPermissionBubble';
 import {
@@ -62,10 +60,7 @@ import {
   ProfileEditScreen,
   ProfileScreen,
 } from '@/features/user';
-import { V2_COLORS } from '@/shared/design-system/tokens';
-import { Dot } from '@/shared/ui/Dot';
 import PermissionBubble from '@/shared/ui/PermissionBubble';
-import { TabBadge } from '@/shared/ui/TabBadge';
 
 import { V2BottomTabBar } from './components/V2BottomTabBar';
 import {
@@ -112,97 +107,10 @@ const HIDDEN_BOTTOM_NAV_SCREENS: Record<keyof MainTabParamList, string[]> = {
   CommunityTab: ['BoardDetail', 'BoardWrite', 'BoardEdit', 'ChatDetail'],
 };
 
-const renderAnimatedTabBar = (props: BottomTabBarProps) => (
-  <AnimatedTabBar {...props} />
-);
-
-const renderCampusTabIcon = ({
-  color,
-  size,
-}: {
-  color: string;
-  size: number;
-}) => (
-  <Icon
-    name="school-outline"
-    size={size}
-    color={color}
-    style={styles.tabIcon}
-  />
-);
-
-const renderNoticeTabIcon = ({
-  color,
-  size,
-}: {
-  color: string;
-  size: number;
-}) => (
-  <Icon
-    name="notifications-outline"
-    size={size}
-    color={color}
-    style={styles.tabIcon}
-  />
-);
-
-const TaxiTabIcon = ({
-  color,
-  hasParty,
-  joinRequestCount,
-  size,
-}: {
-  color: string;
-  hasParty: boolean;
-  joinRequestCount: number;
-  size: number;
-}) => {
-  return (
-    <View style={styles.iconContainer}>
-      <IconMaterial
-        name="taxi"
-        size={size}
-        color={color}
-        style={styles.tabIcon}
-      />
-      <TabBadge
-        count={joinRequestCount}
-        location="bottom"
-        size="small"
-      />
-      {hasParty && (
-        <View style={styles.partyBadge}>
-          <Text style={styles.partyBadgeText}>파티</Text>
-        </View>
-      )}
-    </View>
-  );
-};
-
-const CommunityTabIcon = ({
-  color,
-  hasUnread,
-  size,
-}: {
-  color: string;
-  hasUnread: boolean;
-  size: number;
-}) => {
-  return (
-    <View style={styles.iconContainer}>
-      <Icon
-        name="people-outline"
-        size={size}
-        color={color}
-        style={styles.tabIcon}
-      />
-      <Dot
-        visible={hasUnread}
-        size="small"
-        style={styles.chatUnreadDot}
-      />
-    </View>
-  );
+type AnimatedTabBarProps = BottomTabBarProps & {
+  hasCommunityUnread: boolean;
+  hasTaxiParty: boolean;
+  taxiJoinRequestCount: number;
 };
 
 const TaxiStackNavigator = () => {
@@ -310,26 +218,17 @@ const MainNavigatorContent = () => {
   } = useNotificationPermissionBubble();
   const { hasParty } = useMyParty();
   const { totalUnreadCount } = useCommunityTabUnreadIndicator();
-  const renderTaxiTabBarIcon = React.useCallback(
-    ({ color, size }: { color: string; size: number }) => (
-      <TaxiTabIcon
-        color={color}
-        hasParty={hasParty}
-        joinRequestCount={joinRequestCount}
-        size={size}
+
+  const renderAnimatedTabBar = React.useCallback(
+    (props: BottomTabBarProps) => (
+      <AnimatedTabBar
+        {...props}
+        hasCommunityUnread={totalUnreadCount > 0}
+        hasTaxiParty={hasParty}
+        taxiJoinRequestCount={joinRequestCount}
       />
     ),
-    [hasParty, joinRequestCount],
-  );
-  const renderCommunityTabBarIcon = React.useCallback(
-    ({ color, size }: { color: string; size: number }) => (
-      <CommunityTabIcon
-        color={color}
-        hasUnread={totalUnreadCount > 0}
-        size={size}
-      />
-    ),
-    [totalUnreadCount],
+    [hasParty, joinRequestCount, totalUnreadCount],
   );
 
   return (
@@ -347,7 +246,6 @@ const MainNavigatorContent = () => {
           component={CampusStackNavigator}
           options={{
             tabBarLabel: MAIN_TAB_LABELS.CampusTab,
-            tabBarIcon: renderCampusTabIcon,
             lazy: false,
           }}
         />
@@ -356,7 +254,6 @@ const MainNavigatorContent = () => {
           component={TaxiStackNavigator}
           options={{
             tabBarLabel: MAIN_TAB_LABELS.TaxiTab,
-            tabBarIcon: renderTaxiTabBarIcon,
           }}
         />
         <Tab.Screen
@@ -364,7 +261,6 @@ const MainNavigatorContent = () => {
           component={NoticeStackNavigator}
           options={{
             tabBarLabel: MAIN_TAB_LABELS.NoticeTab,
-            tabBarIcon: renderNoticeTabIcon,
             lazy: false,
           }}
         />
@@ -373,7 +269,6 @@ const MainNavigatorContent = () => {
           component={CommunityStackNavigator}
           options={{
             tabBarLabel: MAIN_TAB_LABELS.CommunityTab,
-            tabBarIcon: renderCommunityTabBarIcon,
             lazy: false,
           }}
         />
@@ -389,18 +284,24 @@ const MainNavigatorContent = () => {
   );
 };
 
-const AnimatedTabBar = (props: BottomTabBarProps) => {
+const AnimatedTabBar = (props: AnimatedTabBarProps) => {
+  const {
+    hasCommunityUnread,
+    hasTaxiParty,
+    taxiJoinRequestCount,
+    ...tabBarProps
+  } = props as AnimatedTabBarProps;
   const fadeAnim = React.useRef(new Animated.Value(1)).current;
   const translateY = React.useRef(new Animated.Value(0)).current;
 
   const shouldHide = React.useMemo(() => {
-    const currentRoute = props.state.routes[props.state.index];
+    const currentRoute = tabBarProps.state.routes[tabBarProps.state.index];
     const tabName = currentRoute.name as keyof MainTabParamList;
     const focusedChildName =
       getFocusedRouteNameFromRoute(currentRoute) ?? 'UNKNOWN';
     const hiddenList = HIDDEN_BOTTOM_NAV_SCREENS[tabName] || [];
     return hiddenList.includes(focusedChildName);
-  }, [props.state]);
+  }, [tabBarProps.state]);
 
   React.useEffect(() => {
     if (shouldHide) {
@@ -443,7 +344,12 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
         },
       ]}
     >
-      <V2BottomTabBar {...props} />
+      <V2BottomTabBar
+        {...tabBarProps}
+        hasCommunityUnread={hasCommunityUnread}
+        hasTaxiParty={hasTaxiParty}
+        taxiJoinRequestCount={taxiJoinRequestCount}
+      />
     </Animated.View>
   );
 };
@@ -464,32 +370,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 1000,
     elevation: 1000,
-  },
-  chatUnreadDot: {
-    position: 'absolute',
-    right: -6,
-    bottom: -2,
-  },
-  iconContainer: {
-    position: 'relative',
-  },
-  partyBadge: {
-    position: 'absolute',
-    top: 0,
-    right: -8,
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: 10,
-    padding: 2,
-    borderWidth: 1,
-    borderColor: V2_COLORS.background.surface,
-  },
-  partyBadgeText: {
-    color: V2_COLORS.text.inverse,
-    fontSize: 8,
-    fontWeight: '700',
-    lineHeight: 10,
-  },
-  tabIcon: {
-    marginBottom: 0,
   },
 });

@@ -7,13 +7,41 @@ import {
 } from 'react-native';
 import { type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
   V2_COLORS,
   V2_SPACING,
 } from '@/shared/design-system/tokens';
+import { Dot } from '@/shared/ui/Dot';
+import { TabBadge } from '@/shared/ui/TabBadge';
 
 const TAB_ICON_SIZE = 20;
+
+const TAB_ICON_NAMES = {
+  CampusTab: {
+    active: 'school',
+    inactive: 'school-outline',
+  },
+  TaxiTab: {
+    active: 'car',
+    inactive: 'car-outline',
+  },
+  NoticeTab: {
+    active: 'notifications',
+    inactive: 'notifications-outline',
+  },
+  CommunityTab: {
+    active: 'people',
+    inactive: 'people-outline',
+  },
+} as const;
+
+type V2BottomTabBarProps = BottomTabBarProps & {
+  hasCommunityUnread?: boolean;
+  hasTaxiParty?: boolean;
+  taxiJoinRequestCount?: number;
+};
 
 const getTabLabel = (
   routeName: string,
@@ -33,9 +61,12 @@ const getTabLabel = (
 
 export const V2BottomTabBar = ({
   descriptors,
+  hasCommunityUnread = false,
+  hasTaxiParty = false,
   navigation,
   state,
-}: BottomTabBarProps) => {
+  taxiJoinRequestCount = 0,
+}: V2BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -58,6 +89,11 @@ export const V2BottomTabBar = ({
             options.tabBarLabel,
             options.title,
           );
+          const routeName =
+            route.name as keyof typeof TAB_ICON_NAMES;
+          const iconName = focused
+            ? TAB_ICON_NAMES[routeName].active
+            : TAB_ICON_NAMES[routeName].inactive;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -67,7 +103,10 @@ export const V2BottomTabBar = ({
             });
 
             if (!focused && !event.defaultPrevented) {
-              navigation.navigate(route.name as never, route.params as never);
+              navigation.navigate({
+                name: route.name,
+                params: route.params,
+              });
             }
           };
 
@@ -91,11 +130,32 @@ export const V2BottomTabBar = ({
               testID={options.tabBarButtonTestID}
             >
               <View style={styles.iconBox}>
-                {options.tabBarIcon?.({
-                  focused,
-                  color: tintColor,
-                  size: TAB_ICON_SIZE,
-                })}
+                <Icon
+                  color={tintColor}
+                  name={iconName}
+                  size={TAB_ICON_SIZE}
+                />
+                {route.name === 'TaxiTab' && (
+                  <>
+                    <TabBadge
+                      count={taxiJoinRequestCount}
+                      location="bottom"
+                      size="small"
+                    />
+                    {hasTaxiParty && (
+                      <View style={styles.partyBadge}>
+                        <Text style={styles.partyBadgeText}>파티</Text>
+                      </View>
+                    )}
+                  </>
+                )}
+                {route.name === 'CommunityTab' && (
+                  <Dot
+                    visible={hasCommunityUnread}
+                    size="small"
+                    style={styles.chatUnreadDot}
+                  />
+                )}
               </View>
               <Text
                 style={[
@@ -135,11 +195,33 @@ const styles = StyleSheet.create({
     height: 28,
     justifyContent: 'center',
     minWidth: 28,
+    position: 'relative',
   },
   label: {
     fontSize: 10,
     fontWeight: '500',
     lineHeight: 15,
     textAlign: 'center',
+  },
+  chatUnreadDot: {
+    bottom: -2,
+    position: 'absolute',
+    right: -6,
+  },
+  partyBadge: {
+    backgroundColor: V2_COLORS.brand.primary,
+    borderColor: V2_COLORS.background.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 2,
+    position: 'absolute',
+    right: -8,
+    top: 0,
+  },
+  partyBadgeText: {
+    color: V2_COLORS.text.inverse,
+    fontSize: 8,
+    fontWeight: '700',
+    lineHeight: 10,
   },
 });
