@@ -13,6 +13,9 @@ export {
 } from './data/repositories/FirebaseCafeteriaRepository';
 export type { IAcademicRepository } from './data/repositories/IAcademicRepository';
 export type { ICafeteriaRepository } from './data/repositories/ICafeteriaRepository';
+export type {
+  ICampusHomeRepository,
+} from './data/repositories/ICampusHomeRepository';
 
 export { useAcademicSchedules } from './hooks/useAcademicSchedules';
 export type { UseAcademicSchedulesResult } from './hooks/useAcademicSchedules';
@@ -21,6 +24,20 @@ export type {
   ProcessedMenu,
   UseCafeteriaMenuResult,
 } from './hooks/useCafeteriaMenu';
+export { useCampusHomeRepository } from './hooks/useCampusHomeRepository';
+export { useCampusHomeViewData } from './hooks/useCampusHomeViewData';
+export type {
+  UseCampusHomeViewDataResult,
+} from './hooks/useCampusHomeViewData';
+
+export {
+  MockCampusHomeRepository,
+  mockCampusHomeRepository,
+} from './mocks/MockCampusHomeRepository';
+export {
+  createDefaultCampusHomeViewData,
+  createNoCourseCampusHomeViewData,
+} from './mocks/campusHomeViewData';
 
 export type {
   AcademicSchedule,
@@ -28,6 +45,19 @@ export type {
   CalendarView,
   ScheduleMessage,
 } from './model/academic';
+export type {
+  CampusAcademicEventBadgeViewData,
+  CampusAcademicEventViewData,
+  CampusCafeteriaFeaturedMenuViewData,
+  CampusHighlightTone,
+  CampusHomeViewData,
+  CampusNoticeItemViewData,
+  CampusNoticeTone,
+  CampusTaxiPartyViewData,
+  CampusTimetableEmptyStateViewData,
+  CampusTimetablePeriodViewData,
+  CampusTimetableStatusViewData,
+} from './model/campusHome';
 export {
   CAFETERIA_CATEGORIES,
   getAllMenuItems,
