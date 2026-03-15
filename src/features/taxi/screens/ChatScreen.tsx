@@ -10,7 +10,7 @@ import {
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
@@ -38,6 +38,7 @@ export const ChatScreen = () => {
   const navigation = useNavigation<TaxiChatNavigationProp>();
   const route =
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
+  const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {data, error, leaveParty, loading, reload, sendMessage, toggleNotification} =
     useTaxiChatDetailData(route.params?.partyId);
@@ -76,7 +77,7 @@ export const ChatScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {data ? (
           <V2ChatHeader
@@ -85,7 +86,7 @@ export const ChatScreen = () => {
             onPressMenu={() => setMenuVisible(previousValue => !previousValue)}
           />
         ) : (
-          <View style={styles.headerPlaceholder} />
+          <View style={[styles.headerPlaceholder, {paddingTop: insets.top}]} />
         )}
 
         {loading ? (

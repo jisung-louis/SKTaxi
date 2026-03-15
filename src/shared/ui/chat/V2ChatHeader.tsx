@@ -1,5 +1,6 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
@@ -21,8 +22,10 @@ export const V2ChatHeader = ({
   onPressBack,
   onPressMenu,
 }: V2ChatHeaderProps) => {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {paddingTop: insets.top}]}>
       <TouchableOpacity
         accessibilityLabel="뒤로 가기"
         accessibilityRole="button"
