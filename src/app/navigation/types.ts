@@ -13,12 +13,14 @@ export type RootStackParamList = {
   TermsOfUseForAuth: undefined;
 };
 
+export type CommunityStackParamList =
+  BoardStackParamList & ChatStackParamList;
+
 export type MainTabParamList = {
-  HomeTab: NavigatorScreenParams<HomeStackParamList>;
+  CampusTab: NavigatorScreenParams<CampusStackParamList>;
   TaxiTab: NavigatorScreenParams<TaxiStackParamList>;
   NoticeTab: NavigatorScreenParams<NoticeStackParamList>;
-  BoardTab: NavigatorScreenParams<BoardStackParamList>;
-  ChatTab: NavigatorScreenParams<ChatStackParamList>;
+  CommunityTab: NavigatorScreenParams<CommunityStackParamList>;
 };
 export type {
   BoardStackParamList,
@@ -27,8 +29,8 @@ export type { ChatStackParamList } from '@/features/chat';
 export type { NoticeStackParamList } from '@/features/notice';
 export type { TaxiStackParamList } from '@/features/taxi';
 
-export type HomeStackParamList = {
-  HomeMain: undefined;
+export type CampusStackParamList = {
+  CampusMain: undefined;
   Notification: undefined;
   Setting: undefined;
   Profile: undefined;

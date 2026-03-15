@@ -24,7 +24,7 @@ import {
 import {
   ChatDetailScreen,
   ChatListScreen,
-  useChatTabUnreadIndicator,
+  useCommunityTabUnreadIndicator,
 } from '@/features/chat';
 import { HomeScreen } from '@/features/home';
 import {
@@ -72,30 +72,27 @@ import { TabBadge } from '@/shared/ui/TabBadge';
 
 import {
   MainTabParamList,
-  HomeStackParamList,
+  CampusStackParamList,
+  CommunityStackParamList,
   NoticeStackParamList,
-  BoardStackParamList,
-  ChatStackParamList,
 } from './types';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const TaxiStack = createNativeStackNavigator<TaxiStackParamList>();
-const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const CampusStack = createNativeStackNavigator<CampusStackParamList>();
 const NoticeStack = createNativeStackNavigator<NoticeStackParamList>();
-const BoardStack = createNativeStackNavigator<BoardStackParamList>();
-const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+const CommunityStack = createNativeStackNavigator<CommunityStackParamList>();
 
 const MAIN_TAB_LABELS: Record<keyof MainTabParamList, string> = {
-  HomeTab: '홈',
+  CampusTab: '캠퍼스',
   TaxiTab: '택시',
   NoticeTab: '공지',
-  BoardTab: '게시판',
-  ChatTab: '채팅',
+  CommunityTab: '커뮤니티',
 };
 
 const HIDDEN_BOTTOM_NAV_SCREENS: Record<keyof MainTabParamList, string[]> = {
   TaxiTab: ['Recruit', 'MapSearch', 'Chat'],
-  HomeTab: [
+  CampusTab: [
     'Notification',
     'Setting',
     'Profile',
@@ -113,16 +110,15 @@ const HIDDEN_BOTTOM_NAV_SCREENS: Record<keyof MainTabParamList, string[]> = {
     'MinecraftDetail',
     'MinecraftMapDetail',
   ],
-  BoardTab: ['BoardDetail', 'BoardWrite', 'BoardEdit'],
   NoticeTab: ['NoticeDetail', 'NoticeDetailWebView'],
-  ChatTab: ['ChatDetail'],
+  CommunityTab: ['BoardDetail', 'BoardWrite', 'BoardEdit', 'ChatDetail'],
 };
 
 const renderAnimatedTabBar = (props: BottomTabBarProps) => (
   <AnimatedTabBar {...props} />
 );
 
-const renderHomeTabIcon = ({
+const renderCampusTabIcon = ({
   color,
   size,
 }: {
@@ -130,7 +126,7 @@ const renderHomeTabIcon = ({
   size: number;
 }) => (
   <Icon
-    name="home-outline"
+    name="school-outline"
     size={size}
     color={color}
     style={styles.tabIcon}
@@ -146,21 +142,6 @@ const renderNoticeTabIcon = ({
 }) => (
   <Icon
     name="notifications-outline"
-    size={size}
-    color={color}
-    style={styles.tabIcon}
-  />
-);
-
-const renderBoardTabIcon = ({
-  color,
-  size,
-}: {
-  color: string;
-  size: number;
-}) => (
-  <IconMaterial
-    name="note-text"
     size={size}
     color={color}
     style={styles.tabIcon}
@@ -200,7 +181,7 @@ const TaxiTabIcon = ({
   );
 };
 
-const ChatTabIcon = ({
+const CommunityTabIcon = ({
   color,
   hasUnread,
   size,
@@ -212,7 +193,7 @@ const ChatTabIcon = ({
   return (
     <View style={styles.iconContainer}>
       <Icon
-        name="chatbubbles-outline"
+        name="people-outline"
         size={size}
         color={color}
         style={styles.tabIcon}
@@ -241,51 +222,54 @@ const TaxiStackNavigator = () => {
   );
 };
 
-const HomeStackNavigator = () => {
+const CampusStackNavigator = () => {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-      <HomeStack.Screen name="Notification" component={NotificationScreen} />
-      <HomeStack.Screen name="Setting" component={SettingScreen} />
-      <HomeStack.Screen name="Profile" component={ProfileScreen} />
-      <HomeStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
-      <HomeStack.Screen name="AppNotice" component={AppNoticeScreen} />
-      <HomeStack.Screen
+    <CampusStack.Navigator screenOptions={{ headerShown: false }}>
+      <CampusStack.Screen name="CampusMain" component={HomeScreen} />
+      <CampusStack.Screen name="Notification" component={NotificationScreen} />
+      <CampusStack.Screen name="Setting" component={SettingScreen} />
+      <CampusStack.Screen name="Profile" component={ProfileScreen} />
+      <CampusStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+      <CampusStack.Screen name="AppNotice" component={AppNoticeScreen} />
+      <CampusStack.Screen
         name="AppNoticeDetail"
         component={AppNoticeDetailScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="AccountModification"
         component={AccountModificationScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="NotificationSettings"
         component={NotificationSettingsScreen}
       />
-      <HomeStack.Screen name="Inquiries" component={InquiriesScreen} />
-      <HomeStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
-      <HomeStack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
-      <HomeStack.Screen
+      <CampusStack.Screen name="Inquiries" component={InquiriesScreen} />
+      <CampusStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
+      <CampusStack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+      />
+      <CampusStack.Screen
         name="CafeteriaDetail"
         component={CafeteriaDetailScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="AcademicCalendarDetail"
         component={AcademicCalendarDetailScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="TimetableDetail"
         component={TimetableDetailScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="MinecraftDetail"
         component={MinecraftDetailScreen}
       />
-      <HomeStack.Screen
+      <CampusStack.Screen
         name="MinecraftMapDetail"
         component={MinecraftMapDetailScreen}
       />
-    </HomeStack.Navigator>
+    </CampusStack.Navigator>
   );
 };
 
@@ -302,23 +286,19 @@ const NoticeStackNavigator = () => {
   );
 };
 
-const BoardStackNavigator = () => {
+const CommunityStackNavigator = () => {
   return (
-    <BoardStack.Navigator screenOptions={{ headerShown: false }}>
-      <BoardStack.Screen name="BoardMain" component={BoardScreen} />
-      <BoardStack.Screen name="BoardDetail" component={BoardDetailScreen} />
-      <BoardStack.Screen name="BoardWrite" component={BoardWriteScreen} />
-      <BoardStack.Screen name="BoardEdit" component={BoardEditScreen} />
-    </BoardStack.Navigator>
-  );
-};
-
-const ChatStackNavigator = () => {
-  return (
-    <ChatStack.Navigator screenOptions={{ headerShown: false }}>
-      <ChatStack.Screen name="ChatList" component={ChatListScreen} />
-      <ChatStack.Screen name="ChatDetail" component={ChatDetailScreen} />
-    </ChatStack.Navigator>
+    <CommunityStack.Navigator screenOptions={{ headerShown: false }}>
+      <CommunityStack.Screen name="BoardMain" component={BoardScreen} />
+      <CommunityStack.Screen
+        name="BoardDetail"
+        component={BoardDetailScreen}
+      />
+      <CommunityStack.Screen name="BoardWrite" component={BoardWriteScreen} />
+      <CommunityStack.Screen name="BoardEdit" component={BoardEditScreen} />
+      <CommunityStack.Screen name="ChatList" component={ChatListScreen} />
+      <CommunityStack.Screen name="ChatDetail" component={ChatDetailScreen} />
+    </CommunityStack.Navigator>
   );
 };
 
@@ -331,7 +311,7 @@ const MainNavigatorContent = () => {
     allowNotification,
   } = useNotificationPermissionBubble();
   const { hasParty } = useMyParty();
-  const { totalUnreadCount } = useChatTabUnreadIndicator();
+  const { totalUnreadCount } = useCommunityTabUnreadIndicator();
   const renderTaxiTabBarIcon = React.useCallback(
     ({ color, size }: { color: string; size: number }) => (
       <TaxiTabIcon
@@ -343,9 +323,9 @@ const MainNavigatorContent = () => {
     ),
     [hasParty, joinRequestCount],
   );
-  const renderChatTabBarIcon = React.useCallback(
+  const renderCommunityTabBarIcon = React.useCallback(
     ({ color, size }: { color: string; size: number }) => (
-      <ChatTabIcon
+      <CommunityTabIcon
         color={color}
         hasUnread={totalUnreadCount > 0}
         size={size}
@@ -366,14 +346,14 @@ const MainNavigatorContent = () => {
           headerShown: false,
           lazy: false,
         }}
-        initialRouteName="HomeTab"
+        initialRouteName="CampusTab"
       >
         <Tab.Screen
-          name="HomeTab"
-          component={HomeStackNavigator}
+          name="CampusTab"
+          component={CampusStackNavigator}
           options={{
-            tabBarLabel: MAIN_TAB_LABELS.HomeTab,
-            tabBarIcon: renderHomeTabIcon,
+            tabBarLabel: MAIN_TAB_LABELS.CampusTab,
+            tabBarIcon: renderCampusTabIcon,
             lazy: false,
           }}
         />
@@ -395,20 +375,11 @@ const MainNavigatorContent = () => {
           }}
         />
         <Tab.Screen
-          name="BoardTab"
-          component={BoardStackNavigator}
+          name="CommunityTab"
+          component={CommunityStackNavigator}
           options={{
-            tabBarLabel: MAIN_TAB_LABELS.BoardTab,
-            tabBarIcon: renderBoardTabIcon,
-            lazy: false,
-          }}
-        />
-        <Tab.Screen
-          name="ChatTab"
-          component={ChatStackNavigator}
-          options={{
-            tabBarLabel: MAIN_TAB_LABELS.ChatTab,
-            tabBarIcon: renderChatTabBarIcon,
+            tabBarLabel: MAIN_TAB_LABELS.CommunityTab,
+            tabBarIcon: renderCommunityTabBarIcon,
             lazy: false,
           }}
         />

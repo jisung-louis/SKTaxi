@@ -10,7 +10,7 @@ import {
 import { useChatRoomStates } from './useChatRoomStates';
 import { useChatRooms } from './useChatRooms';
 
-export const useChatTabUnreadIndicator = () => {
+export const useCommunityTabUnreadIndicator = () => {
   const { user } = useAuth();
   const { states } = useChatRoomStates();
   const { chatRooms: allChatRooms } = useChatRooms('all');

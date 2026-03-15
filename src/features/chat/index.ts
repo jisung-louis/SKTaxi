@@ -31,7 +31,7 @@ export type {
 export { useChatRoomStates } from './hooks/useChatRoomStates';
 export type { UseChatRoomStatesResult } from './hooks/useChatRoomStates';
 export { useChatRooms } from './hooks/useChatRooms';
-export { useChatTabUnreadIndicator } from './hooks/useChatTabUnreadIndicator';
+export { useCommunityTabUnreadIndicator } from './hooks/useCommunityTabUnreadIndicator';
 
 export type {
   ChatMessage,
