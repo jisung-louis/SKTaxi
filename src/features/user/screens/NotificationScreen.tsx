@@ -62,6 +62,14 @@ const getNotificationIcon = (type: string) => {
   return iconMap[type] || { icon: 'notifications', color: COLORS.text.secondary };
 };
 
+const getStringNotificationData = (
+  notification: Notification,
+  key: string,
+): string | null => {
+  const value = notification.data?.[key];
+  return typeof value === 'string' ? value : null;
+};
+
 export const NotificationScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -85,6 +93,11 @@ export const NotificationScreen = () => {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
+    const partyId = getStringNotificationData(notification, 'partyId');
+    const noticeId = getStringNotificationData(notification, 'noticeId');
+    const appNoticeId = getStringNotificationData(notification, 'appNoticeId');
+    const postId = getStringNotificationData(notification, 'postId');
+
     // 읽음 처리
     await markAsRead(notification.id);
     // HomeTab 스택을 HomeScreen으로 우선 초기화
@@ -99,10 +112,10 @@ export const NotificationScreen = () => {
       case 'chat_message':
       case 'settlement_completed':
         // 택시 탭으로 이동하고 채팅 화면으로 이동
-        if (notification.data?.partyId) {
+        if (partyId) {
           (navigation as any).navigate('TaxiTab', {
             screen: 'Chat',
-            params: { partyId: notification.data.partyId },
+            params: { partyId },
           });
         } else {
           (navigation as any).navigate('TaxiTab');
@@ -116,32 +129,32 @@ export const NotificationScreen = () => {
         (navigation as any).navigate('NoticeTab', {
           screen: 'NoticeDetail',
           params: {
-            noticeId: notification.data?.noticeId,
+            noticeId,
           },
         });
         break;
       case 'app_notice':
         // 앱 공지 상세 화면으로 이동
-        if (notification.data?.appNoticeId) {
-          navigateToAppNoticeDetail(navigation, notification.data.appNoticeId);
+        if (appNoticeId) {
+          navigateToAppNoticeDetail(navigation, appNoticeId);
         }
         break;
       case 'board_post_comment':
       case 'board_comment_reply':
       case 'board_post_like':
         // 게시판 상세 화면으로 이동
-        if (notification.data?.postId) {
-          navigateToBoardDetail(navigation, notification.data.postId);
+        if (postId) {
+          navigateToBoardDetail(navigation, postId);
         }
         break;
       case 'notice_post_comment':
       case 'notice_comment_reply':
         // 공지사항 상세 화면으로 이동
-        if (notification.data?.noticeId) {
+        if (noticeId) {
           (navigation as any).navigate('NoticeTab', {
             screen: 'NoticeDetail',
             params: {
-              noticeId: notification.data.noticeId,
+              noticeId,
             },
           });
         }
