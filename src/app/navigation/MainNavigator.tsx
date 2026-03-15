@@ -21,12 +21,12 @@ import {
   AcademicCalendarDetailScreen,
   CafeteriaDetailScreen,
 } from '@/features/campus';
+import { CampusScreen } from '@/features/campus/screens/CampusScreen';
 import {
   ChatDetailScreen,
   ChatListScreen,
   useCommunityTabUnreadIndicator,
 } from '@/features/chat';
-import { HomeScreen } from '@/features/home';
 import {
   MinecraftDetailScreen,
   MinecraftMapDetailScreen,
@@ -225,7 +225,7 @@ const TaxiStackNavigator = () => {
 const CampusStackNavigator = () => {
   return (
     <CampusStack.Navigator screenOptions={{ headerShown: false }}>
-      <CampusStack.Screen name="CampusMain" component={HomeScreen} />
+      <CampusStack.Screen name="CampusMain" component={CampusScreen} />
       <CampusStack.Screen name="Notification" component={NotificationScreen} />
       <CampusStack.Screen name="Setting" component={SettingScreen} />
       <CampusStack.Screen name="Profile" component={ProfileScreen} />
