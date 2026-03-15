@@ -1,149 +1,142 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React from 'react';
+import {StyleSheet, View} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks/useScreenView';
+import {useScreenView} from '@/shared/hooks/useScreenView';
+import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
-import {
-  NoticeCategoryBar,
-  NoticeList,
-  NoticeSettingsPanel,
-  UnreadNoticeBanner,
-} from '../components';
-import { NoticeStackParamList } from '../model/navigation';
-import type { Notice } from '../model/types';
-import { useNoticeSettings } from '../hooks/useNoticeSettings';
-import { useNotices } from '../hooks/useNotices';
+import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
+import {NoticeCategoryBarV2} from '../components/v2/NoticeCategoryBarV2';
+import {NoticeHomeHeader} from '../components/v2/NoticeHomeHeader';
+import {NoticeHomeList} from '../components/v2/NoticeHomeList';
+import {NoticeUnreadBanner} from '../components/v2/NoticeUnreadBanner';
+import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
+import {NoticeStackParamList} from '../model/navigation';
+
+type NoticeNavigationProp = NativeStackNavigationProp<NoticeStackParamList>;
 
 export const NoticeScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
+  const navigation = useNavigation<NoticeNavigationProp>();
   const isFocused = useIsFocused();
 
-  const [selectedCategory, setSelectedCategory] = useState('전체');
-  const [refreshing, setRefreshing] = useState(false);
-  const [panelVisible, setPanelVisible] = useState(false);
+  const [panelVisible, setPanelVisible] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const {
-    notices,
-    loading,
-    loadingMore,
+    data,
     error,
     hasMore,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
     loadMore,
+    loading,
+    loadingMore,
+    markAsRead,
+    noticeSettings,
     refreshReadStatus,
-    readStatus,
+    selectCategory,
+    updateDetail,
+    updateMaster,
     userJoinedAtLoaded,
-    userJoinedAt,
-  } = useNotices(selectedCategory);
-  const { settings: noticeSettings, updateMaster, updateDetail } = useNoticeSettings();
+  } = useNoticeHomeData();
 
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
 
-  useEffect(() => {
-    opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
-    translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
+  React.useEffect(() => {
+    opacity.value = withTiming(isFocused ? 1 : 0, {duration: 200});
+    translateY.value = withTiming(isFocused ? 0 : 10, {duration: 200});
   }, [isFocused, opacity, translateY]);
 
-  useEffect(() => {
-    if (isFocused && notices.length > 0) {
-      refreshReadStatus();
+  React.useEffect(() => {
+    if (isFocused) {
+      refreshReadStatus().catch(() => undefined);
     }
-  }, [isFocused, notices.length, refreshReadStatus]);
+  }, [isFocused, refreshReadStatus]);
 
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
+    transform: [{translateY: translateY.value}],
   }));
 
-  const handleRefresh = () => {
+  const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
     refreshReadStatus().finally(() => {
       setRefreshing(false);
     });
-  };
+  }, [refreshReadStatus]);
 
-  const handleNoticePress = (notice: Notice) => {
-    markAsRead(notice.id);
-    navigation.navigate('NoticeDetail', { noticeId: notice.id });
-  };
+  const handleOpenNotice = React.useCallback(
+    (noticeId: string) => {
+      markAsRead(noticeId).catch(() => undefined);
+      navigation.navigate('NoticeDetail', {noticeId});
+    },
+    [markAsRead, navigation],
+  );
+
+  const handlePressUnreadBanner = React.useCallback(() => {
+    if (!data.firstUnreadNoticeId) {
+      return;
+    }
+
+    handleOpenNotice(data.firstUnreadNoticeId);
+  }, [data.firstUnreadNoticeId, handleOpenNotice]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>학교 공지사항</Text>
-          <View style={styles.headerRight}>
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                style={styles.markAllButton}
-                onPress={() => markAllAsRead()}
-              >
-                <Text style={styles.markAllText}>모두 읽음</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.menuButtonContainer}
-              onPress={() => setPanelVisible(true)}
-            >
-              <Icon
-                name="notifications-circle-outline"
-                size={28}
-                color={COLORS.text.primary}
-              />
-              <Text style={styles.menuButtonText}>세부 알림 설정</Text>
-            </TouchableOpacity>
-          </View>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Animated.View style={[styles.content, screenAnimatedStyle]}>
+        <View style={styles.headerSection}>
+          <NoticeHomeHeader
+            onPressAction={() => setPanelVisible(true)}
+            subtitle={data.subtitle}
+            title={data.title}
+          />
+          <NoticeUnreadBanner
+            banner={data.banner}
+            onPressAction={
+              data.banner.actionLabel ? handlePressUnreadBanner : undefined
+            }
+          />
         </View>
 
-        <UnreadNoticeBanner
-          unreadCount={unreadCount}
-          selectedCategory={selectedCategory}
-        />
+        <View style={styles.categorySection}>
+          <NoticeCategoryBarV2
+            categories={data.categoryChips}
+            onSelectCategory={selectCategory}
+          />
+        </View>
 
-        <NoticeCategoryBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
-
-        <NoticeList
-          notices={notices}
-          loading={loading}
-          error={error}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          onLoadMore={loadMore}
-          onNoticePress={handleNoticePress}
-          readStatus={readStatus}
-          userJoinedAt={userJoinedAt}
-          userJoinedAtLoaded={userJoinedAtLoaded}
-          selectedCategory={selectedCategory}
-        />
+        <View style={styles.listSection}>
+          <NoticeHomeList
+            emptyState={data.emptyState}
+            error={error}
+            hasMore={hasMore}
+            items={data.items}
+            loading={loading}
+            loadingMore={loadingMore}
+            onLoadMore={loadMore}
+            onPressNotice={handleOpenNotice}
+            onRefresh={handleRefresh}
+            refreshing={refreshing}
+            userJoinedAtLoaded={userJoinedAtLoaded}
+          />
+        </View>
       </Animated.View>
 
       <NoticeSettingsPanel
-        visible={panelVisible}
-        onClose={() => setPanelVisible(false)}
         noticeSettings={noticeSettings}
-        onUpdateMaster={updateMaster}
+        onClose={() => setPanelVisible(false)}
         onUpdateDetail={updateDetail}
+        onUpdateMaster={updateMaster}
+        visible={panelVisible}
       />
     </SafeAreaView>
   );
@@ -152,46 +145,21 @@ export const NoticeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: V2_COLORS.background.page,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
+  content: {
+    flex: 1,
   },
-  title: {
-    ...TYPOGRAPHY.title1,
-    color: COLORS.text.primary,
-    fontWeight: '700',
+  headerSection: {
+    paddingHorizontal: V2_SPACING.lg,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+  categorySection: {
+    paddingHorizontal: V2_SPACING.lg,
   },
-  markAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 16,
-  },
-  markAllText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.buttonText,
-    fontWeight: '600',
-  },
-  menuButtonContainer: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    gap: 2,
-  },
-  menuButtonText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
+  listSection: {
+    flex: 1,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xxl,
+    paddingHorizontal: V2_SPACING.lg,
+    paddingTop: V2_SPACING.xs,
   },
 });

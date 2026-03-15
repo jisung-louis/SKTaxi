@@ -7,15 +7,19 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
+import {WINDOW_WIDTH} from '@gorhom/bottom-sheet';
 import Modal from 'react-native-modal';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SHADOWS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
 
-import { NOTICE_CATEGORIES, getCategorySettingKey } from '../model/constants';
+import {NOTICE_CATEGORIES, getCategorySettingKey} from '../model/constants';
 
 interface NoticeSettingsPanelProps {
   visible: boolean;
@@ -52,18 +56,16 @@ export function NoticeSettingsPanel({
       useNativeDriverForBackdrop
       hideModalContentWhileAnimating
       statusBarTranslucent
-      style={{ margin: 0, justifyContent: 'flex-start', alignItems: 'flex-end' }}
-    >
+      style={styles.modal}>
       <View
         style={[
           styles.rightPanel,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
-        ]}
-      >
+          {paddingTop: insets.top, paddingBottom: insets.bottom},
+        ]}>
         <View style={styles.panelHeader}>
           <Text style={styles.panelTitle}>공지 알림 설정</Text>
           <TouchableOpacity onPress={onClose}>
-            <Icon name="close" size={24} color={COLORS.text.primary} />
+            <Icon name="close" size={24} color={V2_COLORS.text.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -73,13 +75,14 @@ export function NoticeSettingsPanel({
               <View style={styles.rowBetween}>
                 <Text style={styles.itemLabel}>전체 공지 알림</Text>
                 <TouchableOpacity
-                  onPress={() => onUpdateMaster(!noticeSettings.noticeNotifications)}
+                  onPress={() =>
+                    onUpdateMaster(!noticeSettings.noticeNotifications)
+                  }
                   style={[
                     styles.toggle,
                     noticeSettings.noticeNotifications && styles.toggleOn,
                   ]}
-                  activeOpacity={0.8}
-                >
+                  activeOpacity={0.8}>
                   <View
                     style={[
                       styles.knob,
@@ -92,34 +95,39 @@ export function NoticeSettingsPanel({
 
             <View style={styles.panelSection}>
               <Text style={styles.panelSectionTitle}>카테고리별</Text>
-              {NOTICE_CATEGORIES.filter((category) => category !== '전체').map((category) => {
-                const key = getCategorySettingKey(category);
-                const enabled =
-                  noticeSettings.noticeNotificationsDetail?.[key] !== false;
-                const disabled = !noticeSettings.noticeNotifications;
+              {NOTICE_CATEGORIES.filter(category => category !== '전체').map(
+                category => {
+                  const key = getCategorySettingKey(category);
+                  const enabled =
+                    noticeSettings.noticeNotificationsDetail?.[key] !== false;
+                  const disabled = !noticeSettings.noticeNotifications;
 
-                return (
-                  <View key={key} style={styles.rowBetween}>
-                    <Text
-                      style={[styles.itemLabel, disabled && styles.itemDisabled]}
-                    >
-                      {category}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => !disabled && onUpdateDetail(key, !enabled)}
-                      style={[
-                        styles.toggle,
-                        enabled && styles.toggleOn,
-                        disabled && styles.toggleDisabled,
-                      ]}
-                      activeOpacity={0.8}
-                      disabled={disabled}
-                    >
-                      <View style={[styles.knob, enabled && styles.knobOn]} />
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
+                  return (
+                    <View key={key} style={styles.rowBetween}>
+                      <Text
+                        style={[
+                          styles.itemLabel,
+                          disabled && styles.itemDisabled,
+                        ]}>
+                        {category}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          !disabled && onUpdateDetail(key, !enabled)
+                        }
+                        style={[
+                          styles.toggle,
+                          enabled && styles.toggleOn,
+                          disabled && styles.toggleDisabled,
+                        ]}
+                        activeOpacity={0.8}
+                        disabled={disabled}>
+                        <View style={[styles.knob, enabled && styles.knobOn]} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                },
+              )}
             </View>
 
             <View style={[styles.panelSection, styles.keywordSection]}>
@@ -134,8 +142,7 @@ export function NoticeSettingsPanel({
                     )
                   }
                   style={styles.toggle}
-                  activeOpacity={0.8}
-                >
+                  activeOpacity={0.8}>
                   <View style={styles.knob} />
                 </TouchableOpacity>
               </View>
@@ -148,76 +155,85 @@ export function NoticeSettingsPanel({
 }
 
 const styles = StyleSheet.create({
+  modal: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
+    margin: 0,
+  },
   rightPanel: {
     position: 'absolute',
     top: 0,
     right: 0,
     bottom: 0,
     width: WINDOW_WIDTH * 0.7,
-    backgroundColor: COLORS.background.card,
+    backgroundColor: V2_COLORS.background.surface,
     borderLeftWidth: 1,
-    borderLeftColor: COLORS.border.default,
-    paddingHorizontal: 16,
+    borderLeftColor: V2_COLORS.border.default,
+    paddingHorizontal: V2_SPACING.lg,
+    ...V2_SHADOWS.raised,
   },
   panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: V2_SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
+    borderBottomColor: V2_COLORS.border.default,
   },
   panelTitle: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
+    color: V2_COLORS.text.primary,
+    fontSize: 18,
     fontWeight: '700',
+    lineHeight: 28,
   },
   panelContent: {
-    paddingVertical: 12,
+    paddingVertical: V2_SPACING.md,
   },
   panelSection: {},
   masterSection: {
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
-    marginBottom: 12,
+    borderBottomColor: V2_COLORS.border.subtle,
+    marginBottom: V2_SPACING.md,
   },
   keywordSection: {
     borderTopWidth: 1,
-    borderTopColor: COLORS.border.dark,
-    paddingTop: 12,
+    borderTopColor: V2_COLORS.border.subtle,
+    paddingTop: V2_SPACING.md,
   },
   panelSectionTitle: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
+    color: V2_COLORS.text.secondary,
+    fontSize: 12,
     fontWeight: '600',
+    lineHeight: 16,
   },
   rowBetween: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: V2_SPACING.sm,
   },
   itemLabel: {
-    ...TYPOGRAPHY.body1,
+    color: V2_COLORS.text.primary,
+    fontSize: 15,
     fontWeight: '500',
-    color: COLORS.text.primary,
+    lineHeight: 22,
   },
   itemDisabled: {
-    color: COLORS.text.disabled,
+    color: V2_COLORS.text.muted,
   },
   toggle: {
     width: 48,
     height: 28,
-    borderRadius: 999,
+    borderRadius: V2_RADIUS.pill,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
-    backgroundColor: COLORS.background.primary,
+    borderColor: V2_COLORS.border.default,
+    backgroundColor: V2_COLORS.background.page,
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
   toggleOn: {
-    backgroundColor: `${COLORS.accent.green}33`,
-    borderColor: COLORS.accent.green,
+    backgroundColor: `${V2_COLORS.brand.primary}33`,
+    borderColor: V2_COLORS.brand.primary,
   },
   toggleDisabled: {
     opacity: 0.5,
@@ -226,11 +242,11 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.border.default,
-    transform: [{ translateX: 0 }],
+    backgroundColor: V2_COLORS.border.default,
+    transform: [{translateX: 0}],
   },
   knobOn: {
-    backgroundColor: COLORS.accent.green,
-    transform: [{ translateX: 20 }],
+    backgroundColor: V2_COLORS.brand.primary,
+    transform: [{translateX: 20}],
   },
 });
