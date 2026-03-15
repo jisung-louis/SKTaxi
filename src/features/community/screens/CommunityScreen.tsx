@@ -8,7 +8,6 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   V2PageHeader,
   V2SegmentedControl,
-  V2StateCard,
 } from '@/shared/design-system/components';
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
@@ -16,6 +15,8 @@ import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {CommunityBoardSearchModal} from '../components/CommunityBoardSearchModal';
 import {CommunityBoardSegment} from '../components/CommunityBoardSegment';
 import {useCommunityBoardData} from '../hooks/useCommunityBoardData';
+import {CommunityChatSegment} from '../components/CommunityChatSegment';
+import {useCommunityChatData} from '../hooks/useCommunityChatData';
 import type {CommunitySegmentId} from '../model/communityViewData';
 
 const SEGMENTS = [
@@ -34,7 +35,26 @@ export const CommunityScreen = () => {
   const route = useRoute<CommunityRouteProp>();
   const [selectedSegment, setSelectedSegment] =
     React.useState<CommunitySegmentId>('board');
-  const board = useCommunityBoardData({navigation});
+  const {
+    error: boardError,
+    featuredPost,
+    filters: boardFilters,
+    handleApplyRouteSearch,
+    handleApplySearch,
+    handleClearSearch,
+    handleOpenPost,
+    handleOpenWrite,
+    handleRefresh: handleBoardRefresh,
+    hasMore,
+    items: boardItems,
+    loadMore,
+    loading: boardLoading,
+    loadingMore,
+    refreshing: boardRefreshing,
+    searchVisible,
+    setSearchVisible,
+  } = useCommunityBoardData({navigation});
+  const chat = useCommunityChatData();
 
   React.useEffect(() => {
     if (!route.params?.searchText || !route.params?.fromHashtag) {
@@ -42,25 +62,30 @@ export const CommunityScreen = () => {
     }
 
     setSelectedSegment('board');
-    board.handleApplyRouteSearch(route.params.searchText);
+    handleApplyRouteSearch(route.params.searchText);
     navigation.setParams({
       fromHashtag: undefined,
       searchText: undefined,
     });
-  }, [board, navigation, route.params?.fromHashtag, route.params?.searchText]);
+  }, [
+    handleApplyRouteSearch,
+    navigation,
+    route.params?.fromHashtag,
+    route.params?.searchText,
+  ]);
 
-  const activeSearchLabel = board.filters.searchText
-    ? board.filters.searchText.startsWith('#')
-      ? `${board.filters.searchText} 해시태그 검색 결과`
-      : `"${board.filters.searchText}" 검색 결과`
-    : board.filters.category
+  const activeSearchLabel = boardFilters.searchText
+    ? boardFilters.searchText.startsWith('#')
+      ? `${boardFilters.searchText} 해시태그 검색 결과`
+      : `"${boardFilters.searchText}" 검색 결과`
+    : boardFilters.category
     ? '카테고리 필터가 적용되었습니다'
     : undefined;
 
   const handlePressHeaderAction = React.useCallback(() => {
     setSelectedSegment('board');
-    board.setSearchVisible(true);
-  }, [board]);
+    setSearchVisible(true);
+  }, [setSearchVisible]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -85,34 +110,35 @@ export const CommunityScreen = () => {
         {selectedSegment === 'board' ? (
           <CommunityBoardSegment
             activeSearchLabel={activeSearchLabel}
-            error={board.error}
-            featuredPost={board.featuredPost}
-            hasMore={board.hasMore}
-            items={board.items}
-            loading={board.loading}
-            loadingMore={board.loadingMore}
-            onClearSearch={board.handleClearSearch}
-            onLoadMore={board.loadMore}
-            onPressPost={board.handleOpenPost}
-            onPressWrite={board.handleOpenWrite}
-            onRefresh={board.handleRefresh}
-            refreshing={board.refreshing}
+            error={boardError}
+            featuredPost={featuredPost}
+            hasMore={hasMore}
+            items={boardItems}
+            loading={boardLoading}
+            loadingMore={loadingMore}
+            onClearSearch={handleClearSearch}
+            onLoadMore={loadMore}
+            onPressPost={handleOpenPost}
+            onPressWrite={handleOpenWrite}
+            onRefresh={handleBoardRefresh}
+            refreshing={boardRefreshing}
           />
         ) : (
-          <V2StateCard
-            description="채팅 메인 화면을 준비하고 있습니다."
-            icon={null}
-            style={styles.placeholderCard}
-            title="채팅 준비 중"
+          <CommunityChatSegment
+            loading={chat.loading}
+            onPressRoom={chat.handleOpenRoom}
+            onRefresh={chat.handleRefresh}
+            refreshing={chat.refreshing}
+            rooms={chat.rooms}
           />
         )}
       </View>
 
       <CommunityBoardSearchModal
-        currentFilters={board.filters}
-        onClose={() => board.setSearchVisible(false)}
-        onSearch={board.handleApplySearch}
-        visible={board.searchVisible}
+        currentFilters={boardFilters}
+        onClose={() => setSearchVisible(false)}
+        onSearch={handleApplySearch}
+        visible={searchVisible}
       />
     </SafeAreaView>
   );
@@ -132,11 +158,6 @@ const styles = StyleSheet.create({
   },
   contentSection: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.md,
-  },
-  placeholderCard: {
-    minHeight: 220,
+    paddingTop: V2_SPACING.xs,
   },
 });
