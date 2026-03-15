@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import MapView, {Marker, type Region} from 'react-native-maps';
 import LinearGradient from 'react-native-linear-gradient';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -28,11 +29,40 @@ import {TaxiHomePartyCard} from '../components/v2/TaxiHomePartyCard';
 import {TaxiHomeSearchBar} from '../components/v2/TaxiHomeSearchBar';
 import {TaxiHomeSortMenu} from '../components/v2/TaxiHomeSortMenu';
 import {useTaxiHomeData} from '../hooks/useTaxiHomeData';
+import {useTaxiLocation} from '../hooks/useTaxiLocation';
+import {DEPARTURE_LOCATION, DEPARTURE_OPTIONS} from '../model/constants';
 import {useMyParty} from '../hooks/useMyParty';
 import type {TaxiStackParamList} from '../model/navigation';
 import type {TaxiHomePartyCardViewData} from '../model/taxiHomeViewData';
+import {WINDOW_HEIGHT} from '@/shared/constants/layout';
 
 type TaxiNavigationProp = NavigationProp<TaxiStackParamList>;
+type DepartureMarker = {
+  coordinate: {latitude: number; longitude: number};
+  id: string;
+  title: string;
+};
+
+const DEFAULT_MAP_REGION: Region = {
+  latitude: 37.38965,
+  longitude: 126.9325,
+  latitudeDelta: 0.035,
+  longitudeDelta: 0.035,
+};
+
+const DEPARTURE_COORDINATES_BY_LABEL = DEPARTURE_OPTIONS.flatMap(
+  (row, rowIndex) =>
+    row.map((label, columnIndex) => ({
+      coordinate: DEPARTURE_LOCATION[rowIndex][columnIndex],
+      label,
+    })),
+).reduce<Record<string, {latitude: number; longitude: number}>>(
+  (accumulator, item) => {
+    accumulator[item.label] = item.coordinate;
+    return accumulator;
+  },
+  {},
+);
 
 const TaxiScreenState = ({
   actionLabel,
@@ -71,6 +101,7 @@ export const TaxiScreen = () => {
   const navigation = useNavigation<TaxiNavigationProp>();
   const insets = useSafeAreaInsets();
   const {hasParty, loading: myPartyLoading, partyId} = useMyParty();
+  const {location} = useTaxiLocation();
   const {
     data,
     error,
@@ -86,6 +117,33 @@ export const TaxiScreen = () => {
       paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + V2_SPACING.xxl,
     }),
     [insets.bottom],
+  );
+
+  const mapRegion = React.useMemo<Region>(() => {
+    if (!location) {
+      return DEFAULT_MAP_REGION;
+    }
+
+    return {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
+      longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
+    };
+  }, [location]);
+
+  const departureMarkers = React.useMemo(
+    (): DepartureMarker[] =>
+      (data?.parties ?? [])
+        .map(party => ({
+          coordinate: DEPARTURE_COORDINATES_BY_LABEL[party.departureLabel],
+          id: party.id,
+          title: party.departureLabel,
+        }))
+        .filter((marker): marker is DepartureMarker =>
+          Boolean(marker.coordinate),
+        ),
+    [data?.parties],
   );
 
   const handlePressCreateParty = React.useCallback(() => {
@@ -120,7 +178,44 @@ export const TaxiScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <LinearGradient
+        colors={[V2_COLORS.brand.primarySoft, V2_COLORS.border.accent]}
+        end={{x: 1, y: 1}}
+        start={{x: 0, y: 0}}
+        style={[styles.hero, {height: WINDOW_HEIGHT * 0.35}]}>
+        <MapView
+          pitchEnabled={false}
+          region={mapRegion}
+          rotateEnabled={false}
+          showsCompass={false}
+          showsMyLocationButton={false}
+          showsUserLocation={Boolean(location)}
+          style={styles.heroMap}
+          toolbarEnabled={false}>
+          {departureMarkers.map(marker => (
+            <Marker
+              coordinate={marker.coordinate}
+              key={marker.id}
+              pinColor={V2_COLORS.brand.primaryStrong}
+              title={marker.title}
+            />
+          ))}
+        </MapView>
+        <View style={[styles.heroContent, {paddingTop: insets.top}]}>
+          <TaxiHomeSearchBar
+            onChangeText={setSearchQuery}
+            placeholder={data?.searchPlaceholder ?? '출발지 검색'}
+            value={data?.searchQuery ?? ''}
+          />
+        </View>
+      </LinearGradient>
+      <View style={styles.filterSection}>
+        <TaxiHomeFilterChips
+          filters={data?.filterChips ?? []}
+          onPressFilter={selectFilter}
+        />
+      </View>
       <ScrollView
         contentContainerStyle={contentContainerStyle}
         refreshControl={
@@ -131,27 +226,6 @@ export const TaxiScreen = () => {
           />
         }
         showsVerticalScrollIndicator={false}>
-        <LinearGradient
-          colors={[V2_COLORS.brand.primarySoft, V2_COLORS.border.accent]}
-          end={{x: 1, y: 1}}
-          start={{x: 0, y: 0}}
-          style={[styles.hero, {paddingTop: V2_SPACING.lg}]}>
-          <View style={styles.heroContent}>
-            <TaxiHomeSearchBar
-              onChangeText={setSearchQuery}
-              placeholder={data?.searchPlaceholder ?? '출발지 검색'}
-              value={data?.searchQuery ?? ''}
-            />
-          </View>
-        </LinearGradient>
-
-        <View style={styles.filterSection}>
-          <TaxiHomeFilterChips
-            filters={data?.filterChips ?? []}
-            onPressFilter={selectFilter}
-          />
-        </View>
-
         <View style={styles.content}>
           <TouchableOpacity
             accessibilityRole="button"
@@ -253,6 +327,9 @@ const styles = StyleSheet.create({
   },
   hero: {
     height: 288,
+  },
+  heroMap: {
+    ...StyleSheet.absoluteFillObject,
   },
   heroContent: {
     paddingHorizontal: V2_SPACING.lg,
