@@ -50,10 +50,7 @@ export const TaxiHomeSortMenu = ({
       </TouchableOpacity>
       {open ? (
         <>
-          <Pressable
-            onPress={() => setOpen(false)}
-            style={StyleSheet.absoluteFill}
-          />
+          <Pressable onPress={() => setOpen(false)} style={styles.overlay} />
           <View style={styles.menu}>
             {options.map(option => (
               <TouchableOpacity
@@ -107,6 +104,14 @@ const styles = StyleSheet.create({
     top: 24,
     zIndex: 20,
     ...V2_SHADOWS.raised,
+  },
+  overlay: {
+    bottom: -9999,
+    left: -9999,
+    position: 'absolute',
+    right: -9999,
+    top: -9999,
+    zIndex: 10,
   },
   menuItem: {
     paddingHorizontal: V2_SPACING.md,
