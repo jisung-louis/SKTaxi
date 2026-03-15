@@ -1,6 +1,8 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,7 +26,11 @@ import {
   V2ToneBadge,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
-import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {
+  useKeyboardInset,
+  useScreenEnterAnimation,
+  useScreenView,
+} from '@/shared/hooks';
 
 import {NoticeDetailAttachments} from '../components/v2/NoticeDetailAttachments';
 import {useNoticeDetailData} from '../hooks/useNoticeDetailData';
@@ -44,14 +50,17 @@ export const NoticeDetailScreen = () => {
       NativeStackScreenProps<NoticeStackParamList, 'NoticeDetail'>['route']
     >();
   const insets = useSafeAreaInsets();
+  const {height: keyboardHeight, isVisible: isKeyboardVisible} =
+    useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {data, error, loading, notFound, reload} = useNoticeDetailData(
     route.params?.noticeId,
   );
 
   const headerOffset = insets.top + 56;
-  const composerBottomInset = Math.max(insets.bottom, V2_SPACING.md);
-  const scrollBottomPadding = composerBottomInset + 88;
+  const scrollBottomPadding = isKeyboardVisible
+    ? keyboardHeight + 88 + insets.bottom
+    : 88;
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -112,6 +121,8 @@ export const NoticeDetailScreen = () => {
                   paddingTop: headerOffset,
                 },
               ]}
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+              keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
               <View style={styles.metaRow}>
                 {primaryBadge ? (
@@ -169,10 +180,13 @@ export const NoticeDetailScreen = () => {
               )}
             </ScrollView>
 
-            <V2DetailComposer
-              bottomInset={composerBottomInset}
-              placeholder={data.commentInputPlaceholder}
-            />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+              keyboardVerticalOffset={0}
+              pointerEvents="box-none"
+              style={styles.composerAvoidingView}>
+              <V2DetailComposer placeholder={data.commentInputPlaceholder} />
+            </KeyboardAvoidingView>
           </>
         ) : null}
 
@@ -253,5 +267,11 @@ const styles = StyleSheet.create({
   },
   commentsList: {
     paddingBottom: V2_SPACING.md,
+  },
+  composerAvoidingView: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
 });
