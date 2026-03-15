@@ -1,3 +1,8 @@
+/**
+ * @deprecated Legacy pre-v2 token set.
+ * Do not use this file for new or refactored UI.
+ * Use `@/shared/design-system/tokens` for v2 screens and primitives.
+ */
 export const COLORS = {
   background: {
     primary: '#18181B',

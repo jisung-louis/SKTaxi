@@ -1,5 +1,10 @@
 import { TextStyle } from 'react-native';
 
+/**
+ * @deprecated Legacy pre-v2 typography scale.
+ * Do not use this file for new or refactored UI.
+ * Use v2 design-system tokens/primitives instead.
+ */
 export const TYPOGRAPHY: { [key: string]: TextStyle } = {
   title1: {
     fontSize: 24,
