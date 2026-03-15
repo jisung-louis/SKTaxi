@@ -1,482 +1,182 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
-import { useIsFocused } from '@react-navigation/native';
-import { COLORS } from '@/shared/constants/colors';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-import PageHeader from '@/shared/ui/PageHeader';
-
-import { ChatInput } from '../components/chat/ChatInput';
-import { ChatMenu } from '../components/chat/ChatMenu';
-import { ChatMessageList, ChatMessageListRef } from '../components/chat/ChatMessageList';
+import React from 'react';
 import {
-  AccountModal,
-  ArrivalModal,
-  SettlementModal,
-  TaxiAppModal,
-} from '../components/chat/ChatModals';
-import { JoinRequestSection } from '../components/chat/JoinRequestSection';
-import { SettlementBar } from '../components/chat/SettlementBar';
-import { SideMenu } from '../components/chat/SideMenu';
-import { useChatScreenPresenter } from '../hooks/useChatScreenPresenter';
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  View,
+} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Animated from 'react-native-reanimated';
+
+import {
+  V2DetailComposer,
+  V2StateCard,
+} from '@/shared/design-system/components';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {
+  V2ChatHeader,
+  V2ChatMessageList,
+  V2ChatPopupMenu,
+} from '@/shared/ui/chat';
+
+import {TaxiChatSummaryCard} from '../components/v2/TaxiChatSummaryCard';
+import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
+import type {TaxiStackParamList} from '../model/navigation';
+
+type TaxiChatNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>
 
 export const ChatScreen = () => {
   useScreenView();
-  const insets = useSafeAreaInsets();
-  const isFocused = useIsFocused();
-  const messageListRef = useRef<ChatMessageListRef>(null);
 
-  const {
-    // 기본 정보
-    currentParty,
-    currentUser,
-    isLeader,
-    memberUids,
-    displayNameMap,
-    navigation,
+  const navigation = useNavigation<TaxiChatNavigationProp>();
+  const route =
+    useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
+  const screenAnimatedStyle = useScreenEnterAnimation();
+  const {data, error, leaveParty, loading, reload, sendMessage, toggleNotification} =
+    useTaxiChatDetailData(route.params?.partyId);
+  const [composerValue, setComposerValue] = React.useState('');
+  const [menuVisible, setMenuVisible] = React.useState(false);
 
-    // 메시지 관련
-    messages,
-    messagesLoading,
-    messagesError,
-    message,
-    setMessage,
-    handleSend,
-
-    // 파티 정보
-    partyTitle,
-    leaderName,
-
-    // UI 상태
-    showMenu,
-    setShowMenu,
-    showSideMenu,
-    setShowSideMenu,
-    showTaxiAppModal,
-    setShowTaxiAppModal,
-    isPartyEnded,
-
-    // 동승 요청
-    joinRequests,
-    showJoinRequests,
-    setShowJoinRequests,
-    handleAcceptJoin,
-    handleDeclineJoin,
-
-    // 채팅 알림
-    isChatMuted,
-    handleToggleMute,
-
-    // 계좌 정보 모달
-    showAccountModal,
-    setShowAccountModal,
-    userAccount,
-    accountLoading,
-    editingAccountInline,
-    setEditingAccountInline,
-    tempBankName,
-    setTempBankName,
-    tempAccountNumber,
-    setTempAccountNumber,
-    tempAccountHolder,
-    setTempAccountHolder,
-    tempHideName,
-    setTempHideName,
-    rememberAccount,
-    setRememberAccount,
-    showBankDropdown,
-    setShowBankDropdown,
-    sendAccountInfo,
-
-    // 도착 모달
-    showArrivalModal,
-    setShowArrivalModal,
-    taxiFare,
-    setTaxiFare,
-    selectedMembers,
-    toggleMemberSelection,
-    arrivalBankName,
-    setArrivalBankName,
-    arrivalAccountNumber,
-    setArrivalAccountNumber,
-    arrivalAccountHolder,
-    setArrivalAccountHolder,
-    arrivalHideName,
-    setArrivalHideName,
-    showArrivalBankDropdown,
-    setShowArrivalBankDropdown,
-    rememberArrivalAccount,
-    setRememberArrivalAccount,
-    handleArrivalSubmit,
-
-    // 정산 현황
-    settlementStatus,
-    showSettlementModal,
-    setShowSettlementModal,
-    isNoticeBarMinimized,
-    setIsNoticeBarMinimized,
-    perPersonAmount,
-    handleSettlementComplete,
-    calculateNoticeBarHeight,
-
-    // 멤버 관리
-    handleKick,
-    showMemberLeaveModal,
-    showDeletePartyModal,
-    handleShareParty,
-
-    // 메뉴 핸들러
-    handleMenuPress,
-    copyAccountInfo,
-
-    // 애니메이션
-    menuTranslateY,
-    menuOpacity,
-    sideMenuTranslateX,
-    sideMenuOpacity,
-    overlayOpacity,
-    noticeBarHeight,
-    settlementListOpacity,
-
-    // Refs
-    contentHeightRef,
-  } = useChatScreenPresenter();
-
-  // 화면 포커스 애니메이션
-  const opacity = useSharedValue(1);
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
-    translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
-  }, [isFocused, opacity, translateY]);
-
-  const screenAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  // 메뉴 애니메이션
-  const menuAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: menuOpacity.value,
-    transform: [{ translateY: menuTranslateY.value }],
-  }));
-
-  // 사이드 메뉴 애니메이션
-  const sideMenuAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: sideMenuOpacity.value,
-    transform: [{ translateX: sideMenuTranslateX.value }],
-  }));
-
-  // 오버레이 애니메이션
-  const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: overlayOpacity.value,
-  }));
-
-  // 정산 현황 바 애니메이션
-  const animatedNoticeBarStyle = useAnimatedStyle(() => ({
-    height: noticeBarHeight.value,
-  }));
-
-  const animatedSettlementListStyle = useAnimatedStyle(() => ({
-    opacity: settlementListOpacity.value,
-  }));
-
-  // 스크롤 핸들러
-  const scrollToEndWithPadding = React.useCallback((animated = true) => {
-    const paddingBottom = 16;
-    if (contentHeightRef.current > 0) {
-      messageListRef.current?.scrollToOffset(contentHeightRef.current + paddingBottom, animated);
-    } else {
-      messageListRef.current?.scrollToEnd(animated);
-    }
-  }, [contentHeightRef]);
-
-  // 입력 포커스 시 스크롤
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      scrollToEndWithPadding(true);
-    }, 300);
-  };
-
-  // 플러스 버튼 핸들러
-  const handlePlusPress = () => {
-    const newShowMenu = !showMenu;
-    setShowMenu(newShowMenu);
-
-    if (newShowMenu) {
-      menuTranslateY.value = withTiming(0, { duration: 300 });
-      menuOpacity.value = withTiming(1, { duration: 300 });
-    } else {
-      menuTranslateY.value = withTiming(100, { duration: 300 });
-      menuOpacity.value = withTiming(0, { duration: 300 });
+  const handlePressBack = React.useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
     }
 
-    setTimeout(() => {
-      scrollToEndWithPadding(true);
-    }, 100);
-  };
+    navigation.navigate('TaxiMain');
+  }, [navigation]);
 
-  // 사이드 메뉴 핸들러
-  const handleDotMenuPress = () => {
-    const newShowSideMenu = !showSideMenu;
+  const handleLeaveParty = React.useCallback(() => {
+    Alert.alert('채팅방 나가기', '현재 파티 채팅방에서 나갈까요?', [
+      {text: '취소', style: 'cancel'},
+      {
+        text: '나가기',
+        style: 'destructive',
+        onPress: async () => {
+          await leaveParty();
+          navigation.navigate('TaxiMain');
+        },
+      },
+    ]);
+  }, [leaveParty, navigation]);
 
-    if (newShowSideMenu) {
-      setShowSideMenu(true);
-      sideMenuTranslateX.value = withTiming(0, { duration: 300 });
-      sideMenuOpacity.value = withTiming(1, { duration: 300 });
-      overlayOpacity.value = withTiming(1, { duration: 300 });
-    } else {
-      closeSideMenu();
-    }
-  };
-
-  const closeSideMenu = () => {
-    sideMenuTranslateX.value = withTiming(400, { duration: 300 });
-    sideMenuOpacity.value = withTiming(0, { duration: 300 });
-    overlayOpacity.value = withTiming(0, { duration: 300 });
-    setTimeout(() => {
-      setShowSideMenu(false);
-    }, 300);
-  };
-
-  // 정산 현황 바 토글
-  const handleToggleNoticeBar = () => {
-    const newMinimized = !isNoticeBarMinimized;
-    setIsNoticeBarMinimized(newMinimized);
-
-    const memberCount = Object.keys(settlementStatus).length;
-    if (newMinimized) {
-      noticeBarHeight.value = withTiming(52, { duration: 300 });
-      settlementListOpacity.value = withTiming(0, { duration: 300 });
-    } else {
-      const dynamicHeight = calculateNoticeBarHeight(memberCount);
-      noticeBarHeight.value = withTiming(dynamicHeight, { duration: 300 });
-      settlementListOpacity.value = withTiming(1, { duration: 300 });
-    }
-  };
-
-  // 메시지 추가 시 스크롤
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        scrollToEndWithPadding(true);
-      }, 1000);
-    }
-  }, [messages.length, scrollToEndWithPadding]);
+  const handleSend = React.useCallback(
+    async (messageText: string) => {
+      await sendMessage(messageText);
+      setComposerValue('');
+    },
+    [sendMessage],
+  );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <PageHeader
-        title={partyTitle || '채팅'}
-        onBack={() => navigation.popToTop()}
-        titleStyle={styles.title}
-        subTitle={leaderName ? `리더 : ${leaderName} 님` : undefined}
-        rightButton
-        borderBottom
-        onRightButtonPress={handleDotMenuPress}
-      />
-
-      {/* 사이드 메뉴 */}
-      <SideMenu
-        visible={showSideMenu}
-        insets={insets}
-        memberUids={memberUids}
-        displayNameMap={displayNameMap}
-        currentUserId={currentUser?.uid}
-        leaderId={currentParty?.leaderId}
-        partyStatus={currentParty?.status}
-        isLeader={isLeader}
-        isPartyEnded={isPartyEnded}
-        isChatMuted={isChatMuted}
-        overlayAnimatedStyle={overlayAnimatedStyle}
-        sideMenuAnimatedStyle={sideMenuAnimatedStyle}
-        onClose={closeSideMenu}
-        onToggleMute={handleToggleMute}
-        onShare={handleShareParty}
-        onKick={handleKick}
-        onLeave={showMemberLeaveModal}
-        onDeleteParty={showDeletePartyModal}
-      />
-
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Animated.View style={[styles.container, screenAnimatedStyle]}>
-          {/* 정산 현황 바 */}
-          {currentParty?.status === 'arrived' && (
-            <SettlementBar
-              settlementStatus={settlementStatus}
-              displayNameMap={displayNameMap}
-              currentUserId={currentUser?.uid}
-              leaderId={currentParty?.leaderId}
-              perPersonAmount={perPersonAmount}
-              isMinimized={isNoticeBarMinimized}
-              animatedBarStyle={animatedNoticeBarStyle}
-              animatedListStyle={animatedSettlementListStyle}
-              onToggleMinimize={handleToggleNoticeBar}
-              onPressBar={() => setShowSettlementModal(true)}
-            />
-          )}
-
-          {messagesLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>메시지를 불러오는 중...</Text>
-            </View>
-          ) : messagesError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>메시지를 불러올 수 없습니다.</Text>
-            </View>
-          ) : (
-            <>
-              {/* 동승 요청 섹션 (리더만) */}
-              {isLeader && joinRequests.length > 0 && (
-                <JoinRequestSection
-                  joinRequests={joinRequests}
-                  displayNameMap={displayNameMap}
-                  showJoinRequests={showJoinRequests}
-                  onToggleShow={() => setShowJoinRequests(!showJoinRequests)}
-                  onAccept={handleAcceptJoin}
-                  onDecline={handleDeclineJoin}
-                />
-              )}
-
-              {/* 메시지 목록 */}
-              <ChatMessageList
-                ref={messageListRef}
-                messages={messages}
-                currentUserId={currentUser?.uid}
-                onCopyAccountInfo={copyAccountInfo}
-                onLeaveRoom={() => navigation.popToTop()}
-                onContentSizeChange={(width, height) => {
-                  contentHeightRef.current = height;
-                  scrollToEndWithPadding(true);
-                }}
-              />
-            </>
-          )}
-
-          {/* 메뉴 */}
-          {showMenu && (
-            <ChatMenu
-              isLeader={isLeader}
-              partyStatus={currentParty?.status}
-              animatedStyle={menuAnimatedStyle}
-              onMenuPress={handleMenuPress}
-            />
-          )}
-
-          {/* 입력 */}
-          <ChatInput
-            message={message}
-            onMessageChange={setMessage}
-            onSend={handleSend}
-            onPlusPress={handlePlusPress}
-            onInputFocus={handleInputFocus}
-            showMenu={showMenu}
-            isPartyEnded={isPartyEnded}
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        {data ? (
+          <V2ChatHeader
+            header={data.header}
+            onPressBack={handlePressBack}
+            onPressMenu={() => setMenuVisible(previousValue => !previousValue)}
           />
-        </Animated.View>
-      </KeyboardAvoidingView>
+        ) : (
+          <View style={styles.headerPlaceholder} />
+        )}
 
-      {/* 모달들 */}
-      <AccountModal
-        visible={showAccountModal}
-        onClose={() => setShowAccountModal(false)}
-        accountLoading={accountLoading}
-        userAccount={userAccount}
-        editingAccountInline={editingAccountInline}
-        setEditingAccountInline={setEditingAccountInline}
-        tempBankName={tempBankName}
-        setTempBankName={setTempBankName}
-        tempAccountNumber={tempAccountNumber}
-        setTempAccountNumber={setTempAccountNumber}
-        tempAccountHolder={tempAccountHolder}
-        setTempAccountHolder={setTempAccountHolder}
-        tempHideName={tempHideName}
-        setTempHideName={setTempHideName}
-        rememberAccount={rememberAccount}
-        setRememberAccount={setRememberAccount}
-        showBankDropdown={showBankDropdown}
-        setShowBankDropdown={setShowBankDropdown}
-        onSendAccountInfo={sendAccountInfo}
-      />
+        {loading ? (
+          <View style={styles.centeredState}>
+            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+          </View>
+        ) : error ? (
+          <View style={styles.centeredState}>
+            <V2StateCard
+              actionLabel="다시 시도"
+              description={error}
+              icon={
+                <Icon
+                  color={V2_COLORS.accent.orange}
+                  name="alert-circle-outline"
+                  size={28}
+                />
+              }
+              onPressAction={() => {
+                reload().catch(() => undefined);
+              }}
+              title="파티 채팅을 불러오지 못했습니다"
+            />
+          </View>
+        ) : data ? (
+          <>
+            <View style={styles.threadWrap}>
+              <V2ChatMessageList
+                contentContainerStyle={styles.threadContent}
+                headerContent={<TaxiChatSummaryCard summary={data.summary} />}
+                items={data.items}
+              />
+            </View>
 
-      <ArrivalModal
-        visible={showArrivalModal}
-        onClose={() => setShowArrivalModal(false)}
-        taxiFare={taxiFare}
-        setTaxiFare={setTaxiFare}
-        memberUids={memberUids}
-        selectedMembers={selectedMembers}
-        displayNameMap={displayNameMap}
-        currentUserId={currentUser?.uid}
-        toggleMemberSelection={toggleMemberSelection}
-        arrivalBankName={arrivalBankName}
-        setArrivalBankName={setArrivalBankName}
-        arrivalAccountNumber={arrivalAccountNumber}
-        setArrivalAccountNumber={setArrivalAccountNumber}
-        arrivalAccountHolder={arrivalAccountHolder}
-        setArrivalAccountHolder={setArrivalAccountHolder}
-        arrivalHideName={arrivalHideName}
-        setArrivalHideName={setArrivalHideName}
-        showArrivalBankDropdown={showArrivalBankDropdown}
-        setShowArrivalBankDropdown={setShowArrivalBankDropdown}
-        rememberArrivalAccount={rememberArrivalAccount}
-        setRememberArrivalAccount={setRememberArrivalAccount}
-        onSubmit={handleArrivalSubmit}
-      />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              keyboardVerticalOffset={0}>
+              <V2DetailComposer
+                leadingActionAccessibilityLabel="첨부 메뉴"
+                leadingIconName="add-outline"
+                onChangeText={setComposerValue}
+                onPressLeadingAction={() => {
+                  Alert.alert('준비 중', '첨부 기능은 다음 단계에서 연결할 예정입니다.');
+                }}
+                onSend={handleSend}
+                placeholder={data.composerPlaceholder}
+                sendAccessibilityLabel="메시지 전송"
+                value={composerValue}
+              />
+            </KeyboardAvoidingView>
+          </>
+        ) : null}
 
-      <SettlementModal
-        visible={showSettlementModal}
-        onClose={() => setShowSettlementModal(false)}
-        settlementStatus={settlementStatus}
-        displayNameMap={displayNameMap}
-        currentUserId={currentUser?.uid}
-        leaderId={currentParty?.leaderId}
-        perPersonAmount={perPersonAmount}
-        onSettlementComplete={handleSettlementComplete}
-      />
-
-      <TaxiAppModal
-        visible={showTaxiAppModal}
-        onClose={() => setShowTaxiAppModal(false)}
-        currentParty={currentParty}
-      />
+        {data ? (
+          <V2ChatPopupMenu
+            leaveLabel={data.menu.leaveLabel}
+            notificationEnabled={data.menu.notificationEnabled}
+            onClose={() => setMenuVisible(false)}
+            onLeave={handleLeaveParty}
+            onToggleNotification={() => {
+              toggleNotification().catch(() => undefined);
+            }}
+            visible={menuVisible}
+          />
+        ) : null}
+      </Animated.View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  centeredState: {
+    flex: 1,
+    paddingHorizontal: V2_SPACING.lg,
+  },
   container: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: COLORS.text.primary,
+  headerPlaceholder: {
+    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomWidth: 1,
+    minHeight: 56,
   },
-  loadingContainer: {
+  screen: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  loadingText: {
-    fontSize: 14,
-    color: COLORS.text.secondary,
+  threadContent: {
+    paddingBottom: V2_SPACING.md,
   },
-  errorContainer: {
+  threadWrap: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 14,
-    color: COLORS.accent.red,
   },
 });
-
-export default ChatScreen;
