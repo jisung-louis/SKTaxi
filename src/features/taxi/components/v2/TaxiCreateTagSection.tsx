@@ -7,6 +7,13 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import {
   V2_COLORS,
@@ -25,7 +32,62 @@ interface TaxiCreateTagSectionProps {
   onTogglePresetTag: (tag: string) => void;
 }
 
-export const TaxiCreateTagSection = ({
+interface TaxiCreateTagChipProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
+
+const TaxiCreateTagChip = ({
+  label,
+  selected,
+  onPress,
+}: TaxiCreateTagChipProps) => {
+  const progress = useSharedValue(selected ? 1 : 0);
+
+  React.useEffect(() => {
+    progress.value = withTiming(selected ? 1 : 0, {duration: 180});
+  }, [progress, selected]);
+
+  const animatedChipStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [V2_COLORS.background.surface, V2_COLORS.brand.primary],
+    ),
+    borderColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [V2_COLORS.border.default, V2_COLORS.brand.primary],
+    ),
+    transform: [{scale: interpolate(progress.value, [0, 1], [1, 1.02])}],
+  }));
+
+  const animatedLabelStyle = useAnimatedStyle(() => ({
+    color: interpolateColor(
+      progress.value,
+      [0, 1],
+      [V2_COLORS.text.secondary, V2_COLORS.text.inverse],
+    ),
+  }));
+
+  return (
+    <AnimatedTouchableOpacity
+      accessibilityRole="button"
+      activeOpacity={0.84}
+      onPress={onPress}
+      style={[styles.tagChip, animatedChipStyle]}>
+      <Animated.Text style={[styles.tagChipLabel, animatedLabelStyle]}>
+        {label}
+      </Animated.Text>
+    </AnimatedTouchableOpacity>
+  );
+};
+
+export const TaxiCreateTagSection = React.memo(({
   customTagInput,
   selectedTags,
   tagOptions,
@@ -43,20 +105,12 @@ export const TaxiCreateTagSection = ({
           const isSelected = selectedTags.includes(tag);
 
           return (
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.84}
+            <TaxiCreateTagChip
               key={tag}
+              label={tag}
+              selected={isSelected}
               onPress={() => onTogglePresetTag(tag)}
-              style={[styles.tagChip, isSelected && styles.selectedTagChip]}>
-              <Text
-                style={[
-                  styles.tagChipLabel,
-                  isSelected && styles.selectedTagChipLabel,
-                ]}>
-                {tag}
-              </Text>
-            </TouchableOpacity>
+            />
           );
         })}
       </View>
@@ -116,7 +170,7 @@ export const TaxiCreateTagSection = ({
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   card: {
@@ -129,9 +183,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: V2_COLORS.text.primary,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 28,
+    lineHeight: 24,
     marginBottom: V2_SPACING.md,
   },
   tagsWrap: {
@@ -146,22 +200,14 @@ const styles = StyleSheet.create({
     borderRadius: V2_RADIUS.pill,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 40,
-    paddingHorizontal: 15,
-    paddingVertical: 9,
-  },
-  selectedTagChip: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderColor: V2_COLORS.brand.primary,
+    minHeight: 36,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
   tagChipLabel: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
-    lineHeight: 22,
-  },
-  selectedTagChipLabel: {
-    color: V2_COLORS.text.inverse,
+    lineHeight: 20,
   },
   selectedTagsSection: {
     backgroundColor: V2_COLORS.brand.primaryTint,
@@ -171,9 +217,9 @@ const styles = StyleSheet.create({
   },
   selectedTagsLabel: {
     color: V2_COLORS.brand.primaryStrong,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 18,
     marginBottom: V2_SPACING.sm,
   },
   selectedTagBadge: {
@@ -182,14 +228,14 @@ const styles = StyleSheet.create({
     borderRadius: V2_RADIUS.pill,
     flexDirection: 'row',
     gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
   },
   selectedTagBadgeLabel: {
     color: V2_COLORS.text.inverse,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   customInputRow: {
     alignItems: 'center',
@@ -204,10 +250,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: V2_COLORS.text.primary,
     flex: 1,
-    fontSize: 16,
-    minHeight: 52,
+    fontSize: 15,
+    minHeight: 48,
     paddingHorizontal: V2_SPACING.md,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   addButton: {
     alignItems: 'center',
@@ -215,17 +261,17 @@ const styles = StyleSheet.create({
     backgroundColor: V2_COLORS.brand.primary,
     borderRadius: V2_RADIUS.md,
     justifyContent: 'center',
-    minWidth: 72,
-    paddingHorizontal: 16,
+    minWidth: 68,
+    paddingHorizontal: 14,
   },
   addButtonDisabled: {
     backgroundColor: V2_COLORS.background.subtle,
   },
   addButtonLabel: {
     color: V2_COLORS.text.inverse,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   addButtonLabelDisabled: {
     color: V2_COLORS.text.muted,

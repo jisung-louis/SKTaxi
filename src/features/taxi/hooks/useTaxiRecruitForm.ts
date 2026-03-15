@@ -237,6 +237,18 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     setDestinationMode('custom');
   }, []);
 
+  const selectHour = React.useCallback((hour: number) => {
+    React.startTransition(() => {
+      setSelectedHour(hour);
+    });
+  }, []);
+
+  const selectMinute = React.useCallback((minute: number) => {
+    React.startTransition(() => {
+      setSelectedMinute(minute);
+    });
+  }, []);
+
   const togglePresetTag = React.useCallback((tag: string) => {
     setSelectedTags(current =>
       current.includes(tag)
@@ -319,9 +331,9 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     selectDeparturePreset,
     selectDestinationCustom,
     selectDestinationPreset,
-    selectHour: setSelectedHour,
+    selectHour,
     selectMaxMembers: setMaxMembers,
-    selectMinute: setSelectedMinute,
+    selectMinute,
     selectedTags,
     setCustomDepartureValue: setCustomDeparture,
     setCustomDestinationValue: setCustomDestination,

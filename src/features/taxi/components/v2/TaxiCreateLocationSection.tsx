@@ -10,6 +10,11 @@ import Animated, {
   FadeInDown,
   FadeOutUp,
   LinearTransition,
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
 import {
@@ -32,7 +37,99 @@ interface TaxiCreateLocationSectionProps {
   onPressPreset: (label: string) => void;
 }
 
+interface TaxiCreateLocationChipProps {
+  disabled?: boolean;
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}
+
 const CUSTOM_OPTION_LABEL = '직접 입력';
+const AnimatedTouchableOpacity =
+  Animated.createAnimatedComponent(TouchableOpacity);
+const DISABLED_CHIP_TEXT_COLOR = '#D1D5DB';
+
+const TaxiCreateLocationChip = ({
+  disabled = false,
+  label,
+  selected,
+  onPress,
+}: TaxiCreateLocationChipProps) => {
+  const selectedProgress = useSharedValue(selected ? 1 : 0);
+  const disabledProgress = useSharedValue(disabled ? 1 : 0);
+
+  React.useEffect(() => {
+    selectedProgress.value = withTiming(selected ? 1 : 0, {duration: 180});
+  }, [selected, selectedProgress]);
+
+  React.useEffect(() => {
+    disabledProgress.value = withTiming(disabled ? 1 : 0, {duration: 180});
+  }, [disabled, disabledProgress]);
+
+  const animatedChipStyle = useAnimatedStyle(
+    () => {
+      const baseBackgroundColor = interpolateColor(
+        selectedProgress.value,
+        [0, 1],
+        [V2_COLORS.background.surface, V2_COLORS.brand.primary],
+      );
+      const baseBorderColor = interpolateColor(
+        selectedProgress.value,
+        [0, 1],
+        [V2_COLORS.border.default, V2_COLORS.brand.primary],
+      );
+      const baseScale = interpolate(selectedProgress.value, [0, 1], [1, 1.02]);
+
+      return {
+        backgroundColor: interpolateColor(
+          disabledProgress.value,
+          [0, 1],
+          [baseBackgroundColor, V2_COLORS.background.subtle],
+        ),
+        borderColor: interpolateColor(
+          disabledProgress.value,
+          [0, 1],
+          [baseBorderColor, V2_COLORS.border.subtle],
+        ),
+        transform: [
+          {
+            scale: interpolate(disabledProgress.value, [0, 1], [baseScale, 1]),
+          },
+        ],
+      };
+    },
+    [],
+  );
+
+  const animatedLabelStyle = useAnimatedStyle(() => {
+    const baseTextColor = interpolateColor(
+      selectedProgress.value,
+      [0, 1],
+      [V2_COLORS.text.secondary, V2_COLORS.text.inverse],
+    );
+
+    return {
+      color: interpolateColor(
+        disabledProgress.value,
+        [0, 1],
+        [baseTextColor, DISABLED_CHIP_TEXT_COLOR],
+      ),
+    };
+  });
+
+  return (
+    <AnimatedTouchableOpacity
+      accessibilityRole="button"
+      activeOpacity={disabled ? 1 : 0.84}
+      disabled={disabled}
+      onPress={onPress}
+      style={[styles.chip, animatedChipStyle]}>
+      <Animated.Text style={[styles.chipLabel, animatedLabelStyle]}>
+        {label}
+      </Animated.Text>
+    </AnimatedTouchableOpacity>
+  );
+};
 
 export const TaxiCreateLocationSection = ({
   customPlaceholder,
@@ -47,7 +144,7 @@ export const TaxiCreateLocationSection = ({
   onPressPreset,
 }: TaxiCreateLocationSectionProps) => {
   return (
-    <Animated.View layout={LinearTransition.springify()} style={styles.card}>
+    <Animated.View layout={LinearTransition.damping(10)} style={styles.card}>
       <Text style={styles.title}>{title}</Text>
 
       <View style={styles.chips}>
@@ -56,42 +153,21 @@ export const TaxiCreateLocationSection = ({
           const isSelected = mode === 'preset' && selectedLabel === option;
 
           return (
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={isDisabled ? 1 : 0.84}
+            <TaxiCreateLocationChip
               disabled={isDisabled}
               key={option}
+              label={option}
+              selected={isSelected}
               onPress={() => onPressPreset(option)}
-              style={[
-                styles.chip,
-                isSelected && styles.selectedChip,
-                isDisabled && styles.disabledChip,
-              ]}>
-              <Text
-                style={[
-                  styles.chipLabel,
-                  isSelected && styles.selectedChipLabel,
-                  isDisabled && styles.disabledChipLabel,
-                ]}>
-                {option}
-              </Text>
-            </TouchableOpacity>
+            />
           );
         })}
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.84}
+        <TaxiCreateLocationChip
+          label={CUSTOM_OPTION_LABEL}
+          selected={mode === 'custom'}
           onPress={onPressCustom}
-          style={[styles.chip, mode === 'custom' && styles.selectedChip]}>
-          <Text
-            style={[
-              styles.chipLabel,
-              mode === 'custom' && styles.selectedChipLabel,
-            ]}>
-            {CUSTOM_OPTION_LABEL}
-          </Text>
-        </TouchableOpacity>
+        />
       </View>
 
       {mode === 'custom' ? (
@@ -127,9 +203,9 @@ const styles = StyleSheet.create({
   },
   title: {
     color: V2_COLORS.text.primary,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    lineHeight: 28,
+    lineHeight: 24,
     marginBottom: V2_SPACING.md,
   },
   chips: {
@@ -139,34 +215,17 @@ const styles = StyleSheet.create({
   },
   chip: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
     borderRadius: V2_RADIUS.pill,
     borderWidth: 1,
     justifyContent: 'center',
-    minHeight: 40,
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-  },
-  selectedChip: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderColor: V2_COLORS.brand.primary,
-  },
-  disabledChip: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderColor: V2_COLORS.border.subtle,
+    minHeight: 36,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
   },
   chipLabel: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    lineHeight: 24,
-  },
-  selectedChipLabel: {
-    color: V2_COLORS.text.inverse,
-  },
-  disabledChipLabel: {
-    color: V2_COLORS.text.muted,
+    lineHeight: 20,
   },
   inputShell: {
     marginTop: V2_SPACING.md,
@@ -177,11 +236,11 @@ const styles = StyleSheet.create({
     borderRadius: V2_RADIUS.md,
     borderWidth: 1,
     color: V2_COLORS.text.primary,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '500',
-    lineHeight: 24,
-    minHeight: 52,
+    lineHeight: 22,
+    minHeight: 48,
     paddingHorizontal: V2_SPACING.md,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
 });
