@@ -103,6 +103,7 @@ export const RecruitScreen = () => {
   const navigation = useNavigation<RecruitScreenNavigationProp>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
+  const scrollViewRef = React.useRef<ScrollView>(null);
   const {
     addCustomTag,
     canSubmit,
@@ -138,6 +139,12 @@ export const RecruitScreen = () => {
     Alert.alert('파티 만들기', result.message);
   }, [submitForm]);
 
+  const handleFocusDetailInput = React.useCallback(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({animated: true});
+    }, 120);
+  }, []);
+
   const footerPaddingBottom = insets.bottom;
 
   return (
@@ -170,6 +177,7 @@ export const RecruitScreen = () => {
               {paddingBottom: footerPaddingBottom},
             ]}
             keyboardShouldPersistTaps="handled"
+            ref={scrollViewRef}
             showsVerticalScrollIndicator={false}>
             <Animated.View layout={SECTION_LAYOUT_TRANSITION}>
               <TaxiCreateLocationSection
@@ -257,6 +265,7 @@ export const RecruitScreen = () => {
                 textAlignVertical="top"
                 value={detail}
                 onChangeText={setDetail}
+                onFocus={handleFocusDetailInput}
               />
               <Text style={styles.detailCounter}>
                 {`${detail.length}/${DETAIL_MAX_LENGTH}`}
