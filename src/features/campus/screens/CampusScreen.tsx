@@ -38,6 +38,7 @@ import type {
   CampusNoticeTone,
   CampusTaxiPartyViewData,
   CampusTimetablePeriodViewData,
+  CampusTimetableSessionViewData,
 } from '../model/campusHome';
 
 type QuickMenuItem = {
@@ -86,6 +87,7 @@ const TIMETABLE_COLLAPSE_LABEL = '야간수업 접기';
 const TAXI_ACTION_LABEL = '전체보기';
 const CAFETERIA_ACTION_LABEL = '주간메뉴';
 const ACADEMIC_ACTION_LABEL = '전체보기';
+const TIMETABLE_ROW_HEIGHT = 52;
 
 const getNoticeToneColors = (tone: CampusNoticeTone) => {
   switch (tone) {
@@ -143,6 +145,80 @@ const getHighlightToneColors = (tone: CampusHighlightTone) => {
   }
 };
 
+type RenderedTimetableRow =
+  | {
+      type: 'empty';
+      period: CampusTimetablePeriodViewData;
+    }
+  | {
+      type: 'session';
+      period: CampusTimetablePeriodViewData;
+      session: CampusTimetableSessionViewData;
+      renderedSpan: number;
+      endTimeLabel?: string;
+    };
+
+const buildVisibleTimetableRows = ({
+  periods,
+  sessions,
+  visibleEndPeriod,
+}: {
+  periods: CampusTimetablePeriodViewData[];
+  sessions: CampusTimetableSessionViewData[];
+  visibleEndPeriod: number;
+}): RenderedTimetableRow[] => {
+  const rows: RenderedTimetableRow[] = [];
+  const periodsByNumber = new Map(
+    periods.map(period => [period.periodNumber, period]),
+  );
+  const sortedSessions = [...sessions].sort(
+    (left, right) => left.startPeriod - right.startPeriod,
+  );
+
+  let currentPeriodNumber = 1;
+
+  while (currentPeriodNumber <= visibleEndPeriod) {
+    const period = periodsByNumber.get(currentPeriodNumber);
+
+    if (!period) {
+      currentPeriodNumber += 1;
+      continue;
+    }
+
+    const session = sortedSessions.find(
+      candidate =>
+        candidate.startPeriod <= currentPeriodNumber &&
+        candidate.endPeriod >= currentPeriodNumber,
+    );
+
+    if (!session) {
+      rows.push({
+        type: 'empty',
+        period,
+      });
+      currentPeriodNumber += 1;
+      continue;
+    }
+
+    const renderedEndPeriod = Math.min(session.endPeriod, visibleEndPeriod);
+    const renderedSpan = renderedEndPeriod - currentPeriodNumber + 1;
+    const endPeriod = periodsByNumber.get(renderedEndPeriod);
+
+    rows.push({
+      type: 'session',
+      period,
+      session,
+      renderedSpan,
+      endTimeLabel:
+        renderedSpan > 1 ? endPeriod?.endTimeLabel : undefined,
+    });
+
+    currentPeriodNumber = renderedEndPeriod + 1;
+  }
+
+  return rows;
+};
+
 export const CampusScreen = () => {
   useScreenView();
 
@@ -168,31 +244,42 @@ export const CampusScreen = () => {
     }
 
     return (
+      !data.timetable.emptyState &&
       data.timetable.periods.length > data.timetable.collapsedVisibleCount
     );
   }, [data]);
 
-  React.useEffect(() => {
-    if (!canExpandTimetable && isTimetableExpanded) {
-      setIsTimetableExpanded(false);
-    }
-  }, [canExpandTimetable, isTimetableExpanded]);
-
-  React.useEffect(() => {
-    setIsTimetableExpanded(false);
-  }, [data?.timetable.dateLabel]);
-
-  const visibleTimetablePeriods = React.useMemo(() => {
+  const shouldAutoExpandTimetable = React.useMemo(() => {
     if (!data) {
-      return [];
+      return false;
     }
 
-    if (isTimetableExpanded || !canExpandTimetable) {
-      return data.timetable.periods;
+    return data.timetable.sessions.some(
+      session =>
+        session.startPeriod <= data.timetable.collapsedVisibleCount &&
+        session.endPeriod > data.timetable.collapsedVisibleCount,
+    );
+  }, [data]);
+
+  const timetableStateKey = React.useMemo(() => {
+    if (!data) {
+      return 'empty';
     }
 
-    return data.timetable.periods.slice(0, data.timetable.collapsedVisibleCount);
-  }, [canExpandTimetable, data, isTimetableExpanded]);
+    return [
+      data.timetable.dateLabel,
+      data.timetable.sessions
+        .map(
+          session =>
+            `${session.id}:${session.startPeriod}-${session.endPeriod}`,
+        )
+        .join('|'),
+    ].join(':');
+  }, [data]);
+
+  React.useEffect(() => {
+    setIsTimetableExpanded(shouldAutoExpandTimetable);
+  }, [shouldAutoExpandTimetable, timetableStateKey]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -266,11 +353,13 @@ export const CampusScreen = () => {
               />
               <TimetableCard
                 emptyState={data.timetable.emptyState}
+                collapsedVisibleCount={data.timetable.collapsedVisibleCount}
                 isExpanded={isTimetableExpanded}
                 onToggleExpanded={() => {
                   setIsTimetableExpanded(previous => !previous);
                 }}
-                periods={visibleTimetablePeriods}
+                periods={data.timetable.periods}
+                sessions={data.timetable.sessions}
                 showToggle={canExpandTimetable}
               />
             </View>
@@ -489,6 +578,8 @@ const NoticeCard = ({ items, onPressItem }: NoticeCardProps) => {
 
 type TimetableCardProps = {
   periods: CampusTimetablePeriodViewData[];
+  sessions: CampusTimetableSessionViewData[];
+  collapsedVisibleCount: number;
   emptyState?: { title: string; description: string };
   showToggle: boolean;
   isExpanded: boolean;
@@ -497,6 +588,8 @@ type TimetableCardProps = {
 
 const TimetableCard = ({
   periods,
+  sessions,
+  collapsedVisibleCount,
   emptyState,
   showToggle,
   isExpanded,
@@ -514,96 +607,157 @@ const TimetableCard = ({
     );
   }
 
+  const visibleEndPeriod =
+    isExpanded || !showToggle
+      ? periods[periods.length - 1]?.periodNumber ?? collapsedVisibleCount
+      : collapsedVisibleCount;
+
+  const rows = buildVisibleTimetableRows({
+    periods,
+    sessions,
+    visibleEndPeriod,
+  });
+
   return (
     <View style={styles.card}>
-      {periods.map((period, index) => {
-        const toneColors = period.tone
-          ? getHighlightToneColors(period.tone)
-          : undefined;
-
-        return (
-          <View
-            key={period.id}
-            style={[
-              styles.timetableRow,
-              period.tone
-                ? { backgroundColor: toneColors?.backgroundColor }
-                : null,
-              index === periods.length - 1 && !showToggle
-                ? styles.timetableRowLast
-                : null,
-            ]}
-          >
-            <View style={styles.timetableTimelineCell}>
-              <Text
-                style={[
-                  styles.timetablePeriodLabel,
-                  period.isCurrent ? styles.timetablePeriodLabelCurrent : null,
-                ]}
-              >
-                {period.periodLabel}
-              </Text>
-              <Text
-                style={[
-                  styles.timetableTimeLabel,
-                  period.isCurrent ? styles.timetableTimeLabelCurrent : null,
-                ]}
-              >
-                {period.startTimeLabel}
-              </Text>
-            </View>
-            {period.isEmpty ? (
+      {rows.map((row, index) => {
+        if (row.type === 'empty') {
+          return (
+            <View
+              key={row.period.id}
+              style={[
+                styles.timetableRow,
+                styles.timetableEmptyRow,
+                index === rows.length - 1 && !showToggle
+                  ? styles.timetableRowLast
+                  : null,
+              ]}
+            >
+              <View style={styles.timetableTimelineCell}>
+                <Text style={styles.timetablePeriodLabel}>
+                  {row.period.periodLabel}
+                </Text>
+                <Text style={styles.timetableTimeLabel}>
+                  {row.period.startTimeLabel}
+                </Text>
+              </View>
               <View style={styles.timetableEmptyRowContent}>
                 <View style={styles.timetableEmptyDot} />
                 <Text style={styles.timetableEmptyRowLabel}>수업 없음</Text>
               </View>
-            ) : (
-              <View style={styles.timetableClassContent}>
-                <View
+            </View>
+          );
+        }
+
+        const toneColors = row.session.tone
+          ? getHighlightToneColors(row.session.tone)
+          : undefined;
+        const rowHeight = row.renderedSpan * TIMETABLE_ROW_HEIGHT;
+
+        return (
+          <View
+            key={`${row.session.id}-${row.period.periodNumber}`}
+            style={[
+              styles.timetableRow,
+              styles.timetableSessionRow,
+              {
+                backgroundColor: toneColors?.backgroundColor,
+                height: rowHeight,
+              },
+              index === rows.length - 1 && !showToggle
+                ? styles.timetableRowLast
+                : null,
+            ]}
+          >
+            <View
+              style={[
+                styles.timetableTimelineCell,
+                row.renderedSpan > 1
+                  ? styles.timetableTimelineCellSpanned
+                  : null,
+              ]}
+            >
+              <View style={styles.timetableTimelineTop}>
+                <Text
                   style={[
-                    styles.timetableAccentBar,
-                    { backgroundColor: toneColors?.accentColor },
+                    styles.timetablePeriodLabel,
+                    row.session.isCurrent
+                      ? styles.timetablePeriodLabelCurrent
+                      : null,
                   ]}
-                />
-                <View style={styles.timetableClassTextGroup}>
-                  <View style={styles.timetableClassTitleRow}>
-                    <Text numberOfLines={1} style={styles.timetableClassTitle}>
-                      {period.title}
-                    </Text>
-                    {period.status ? (
-                      <View
+                >
+                  {row.period.periodLabel}
+                </Text>
+                <Text
+                  style={[
+                    styles.timetableTimeLabel,
+                    row.session.isCurrent
+                      ? styles.timetableTimeLabelCurrent
+                      : null,
+                  ]}
+                >
+                  {row.period.startTimeLabel}
+                </Text>
+              </View>
+              {row.endTimeLabel ? (
+                <Text
+                  style={[
+                    styles.timetableTimeLabelBottom,
+                    row.session.isCurrent
+                      ? styles.timetableTimeLabelCurrent
+                      : null,
+                  ]}
+                >
+                  {row.endTimeLabel}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.timetableClassContent}>
+              <View
+                style={[
+                  styles.timetableAccentBar,
+                  { backgroundColor: toneColors?.accentColor },
+                ]}
+              />
+              <View style={styles.timetableClassTextGroup}>
+                <View style={styles.timetableClassTitleRow}>
+                  <Text numberOfLines={1} style={styles.timetableClassTitle}>
+                    {row.session.title}
+                  </Text>
+                  {row.session.status ? (
+                    <View
+                      style={[
+                        styles.statusPill,
+                        {
+                          backgroundColor: getHighlightToneColors(
+                            row.session.status.tone,
+                          ).backgroundColor,
+                        },
+                      ]}
+                    >
+                      <Text
                         style={[
-                          styles.statusPill,
+                          styles.statusPillLabel,
                           {
-                            backgroundColor: getHighlightToneColors(
-                              period.status.tone,
-                            ).backgroundColor,
+                            color: getHighlightToneColors(
+                              row.session.status.tone,
+                            ).textColor,
                           },
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.statusPillLabel,
-                            {
-                              color: getHighlightToneColors(period.status.tone)
-                                .textColor,
-                            },
-                          ]}
-                        >
-                          {period.status.label}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text numberOfLines={1} style={styles.timetableMetaText}>
-                    {period.instructorLabel}
-                    {period.roomLabel
-                      ? ` · ${period.roomLabel}`
-                      : ''}
-                  </Text>
+                        {row.session.status.label}
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
+                <Text numberOfLines={1} style={styles.timetableMetaText}>
+                  {row.session.instructorLabel}
+                  {row.session.roomLabel
+                    ? ` · ${row.session.roomLabel}`
+                    : ''}
+                </Text>
               </View>
-            )}
+            </View>
           </View>
         );
       })}
@@ -997,11 +1151,15 @@ const styles = StyleSheet.create({
     borderBottomColor: V2_COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    minHeight: 54,
+    minHeight: TIMETABLE_ROW_HEIGHT,
   },
   timetableRowLast: {
     borderBottomWidth: 0,
   },
+  timetableEmptyRow: {
+    backgroundColor: V2_COLORS.background.surface,
+  },
+  timetableSessionRow: {},
   timetableTimelineCell: {
     alignItems: 'center',
     borderColor: V2_COLORS.border.subtle,
@@ -1009,6 +1167,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: V2_SPACING.sm,
     width: 64,
+  },
+  timetableTimelineCellSpanned: {
+    justifyContent: 'space-between',
+  },
+  timetableTimelineTop: {
+    alignItems: 'center',
   },
   timetablePeriodLabel: {
     color: V2_COLORS.text.muted,
@@ -1027,6 +1191,11 @@ const styles = StyleSheet.create({
   },
   timetableTimeLabelCurrent: {
     color: V2_COLORS.accent.blue,
+  },
+  timetableTimeLabelBottom: {
+    color: V2_COLORS.accent.blue,
+    fontSize: 10,
+    lineHeight: 15,
   },
   timetableEmptyRowContent: {
     alignItems: 'center',

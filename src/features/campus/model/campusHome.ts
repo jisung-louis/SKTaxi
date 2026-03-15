@@ -17,15 +17,22 @@ export interface CampusTimetableStatusViewData {
 
 export interface CampusTimetablePeriodViewData {
   id: string;
+  periodNumber: number;
   periodLabel: string;
   startTimeLabel: string;
-  title?: string;
+  endTimeLabel: string;
+}
+
+export interface CampusTimetableSessionViewData {
+  id: string;
+  startPeriod: number;
+  endPeriod: number;
+  title: string;
   instructorLabel?: string;
   roomLabel?: string;
   tone?: Extract<CampusHighlightTone, 'blue' | 'orange'>;
   status?: CampusTimetableStatusViewData;
   isCurrent?: boolean;
-  isEmpty?: boolean;
 }
 
 export interface CampusTimetableEmptyStateViewData {
@@ -69,6 +76,7 @@ export interface CampusHomeViewData {
   timetable: {
     dateLabel: string;
     periods: CampusTimetablePeriodViewData[];
+    sessions: CampusTimetableSessionViewData[];
     collapsedVisibleCount: number;
     emptyState?: CampusTimetableEmptyStateViewData;
   };

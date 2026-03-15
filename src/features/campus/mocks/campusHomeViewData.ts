@@ -1,4 +1,21 @@
 import type { CampusHomeViewData } from '../model/campusHome';
+import {
+  generatePeriods,
+  getPeriodTimeInfo,
+} from '@/features/timetable/services/timetableUtils';
+
+const createCampusTimetablePeriods = () =>
+  generatePeriods().map(periodNumber => {
+    const timeInfo = getPeriodTimeInfo(periodNumber);
+
+    return {
+      id: `period-${periodNumber}`,
+      periodNumber,
+      periodLabel: `${periodNumber}교시`,
+      startTimeLabel: timeInfo.startTime,
+      endTimeLabel: timeInfo.endTime,
+    };
+  });
 
 export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
   notices: {
@@ -22,32 +39,21 @@ export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
   timetable: {
     dateLabel: '3월 10일 화요일 2주차',
     collapsedVisibleCount: 9,
-    periods: [
+    periods: createCampusTimetablePeriods(),
+    sessions: [
       {
-        id: 'period-1',
-        periodLabel: '1교시',
-        startTimeLabel: '09:00',
-        isEmpty: true,
-      },
-      {
-        id: 'period-2',
-        periodLabel: '2교시',
-        startTimeLabel: '09:55',
+        id: 'session-data-structures',
+        startPeriod: 2,
+        endPeriod: 2,
         title: '자료구조',
         instructorLabel: '윤성호 교수님',
         roomLabel: '공학관 205',
         tone: 'orange',
       },
       {
-        id: 'period-3',
-        periodLabel: '3교시',
-        startTimeLabel: '10:50',
-        isEmpty: true,
-      },
-      {
-        id: 'period-4',
-        periodLabel: '4교시',
-        startTimeLabel: '11:55',
+        id: 'session-operating-systems',
+        startPeriod: 4,
+        endPeriod: 6,
         title: '운영체제',
         instructorLabel: '이서현 교수님',
         roomLabel: '공학관 302',
@@ -57,72 +63,6 @@ export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
           label: '진행중',
           tone: 'blue',
         },
-      },
-      {
-        id: 'period-5',
-        periodLabel: '5교시',
-        startTimeLabel: '12:50',
-        isEmpty: true,
-      },
-      {
-        id: 'period-6',
-        periodLabel: '6교시',
-        startTimeLabel: '13:45',
-        isEmpty: true,
-      },
-      {
-        id: 'period-7',
-        periodLabel: '7교시',
-        startTimeLabel: '14:40',
-        isEmpty: true,
-      },
-      {
-        id: 'period-8',
-        periodLabel: '8교시',
-        startTimeLabel: '15:35',
-        isEmpty: true,
-      },
-      {
-        id: 'period-9',
-        periodLabel: '9교시',
-        startTimeLabel: '16:30',
-        isEmpty: true,
-      },
-      {
-        id: 'period-10',
-        periodLabel: '10교시',
-        startTimeLabel: '17:25',
-        isEmpty: true,
-      },
-      {
-        id: 'period-11',
-        periodLabel: '11교시',
-        startTimeLabel: '18:20',
-        isEmpty: true,
-      },
-      {
-        id: 'period-12',
-        periodLabel: '12교시',
-        startTimeLabel: '19:15',
-        isEmpty: true,
-      },
-      {
-        id: 'period-13',
-        periodLabel: '13교시',
-        startTimeLabel: '20:10',
-        isEmpty: true,
-      },
-      {
-        id: 'period-14',
-        periodLabel: '14교시',
-        startTimeLabel: '21:05',
-        isEmpty: true,
-      },
-      {
-        id: 'period-15',
-        periodLabel: '15교시',
-        startTimeLabel: '21:40',
-        isEmpty: true,
       },
     ],
   },
@@ -192,6 +132,58 @@ export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
   },
 });
 
+export const createCrossBoundaryCampusHomeViewData = (): CampusHomeViewData => ({
+  ...createDefaultCampusHomeViewData(),
+  timetable: {
+    dateLabel: '3월 11일 수요일 2주차',
+    collapsedVisibleCount: 9,
+    periods: createCampusTimetablePeriods(),
+    sessions: [
+      {
+        id: 'session-data-structures',
+        startPeriod: 2,
+        endPeriod: 2,
+        title: '자료구조',
+        instructorLabel: '윤성호 교수님',
+        roomLabel: '공학관 205',
+        tone: 'orange',
+      },
+      {
+        id: 'session-operating-systems',
+        startPeriod: 4,
+        endPeriod: 6,
+        title: '운영체제',
+        instructorLabel: '이서현 교수님',
+        roomLabel: '공학관 302',
+        tone: 'blue',
+        isCurrent: true,
+        status: {
+          label: '진행중',
+          tone: 'blue',
+        },
+      },
+      {
+        id: 'session-capstone-project',
+        startPeriod: 9,
+        endPeriod: 11,
+        title: '캡스톤디자인',
+        instructorLabel: '박민석 교수님',
+        roomLabel: '공학관 512',
+        tone: 'orange',
+      },
+      {
+        id: 'session-night-lab',
+        startPeriod: 12,
+        endPeriod: 13,
+        title: '실험실 세미나',
+        instructorLabel: '김유진 교수님',
+        roomLabel: '공학관 610',
+        tone: 'blue',
+      },
+    ],
+  },
+});
+
 export const createNoCourseCampusHomeViewData = (): CampusHomeViewData => ({
   notices: {
     items: [
@@ -214,7 +206,8 @@ export const createNoCourseCampusHomeViewData = (): CampusHomeViewData => ({
   timetable: {
     dateLabel: '3월 15일 일요일 2주차',
     collapsedVisibleCount: 9,
-    periods: [],
+    periods: createCampusTimetablePeriods(),
+    sessions: [],
     emptyState: {
       title: '오늘은 수업이 없어요',
       description: '주말을 즐기세요',

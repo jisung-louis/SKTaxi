@@ -1,11 +1,15 @@
 import type { ICampusHomeRepository } from '../data/repositories/ICampusHomeRepository';
 import type { CampusHomeViewData } from '../model/campusHome';
 import {
+  createCrossBoundaryCampusHomeViewData,
   createDefaultCampusHomeViewData,
   createNoCourseCampusHomeViewData,
 } from './campusHomeViewData';
 
-export type MockCampusHomeScenario = 'default' | 'no-course';
+export type MockCampusHomeScenario =
+  | 'default'
+  | 'cross-boundary'
+  | 'no-course';
 
 interface MockCampusHomeRepositoryOptions {
   delayMs?: number;
@@ -29,6 +33,10 @@ export class MockCampusHomeRepository implements ICampusHomeRepository {
 
   async getCampusHomeViewData(): Promise<CampusHomeViewData> {
     await wait(this.delayMs);
+
+    if (this.scenario === 'cross-boundary') {
+      return createCrossBoundaryCampusHomeViewData();
+    }
 
     if (this.scenario === 'no-course') {
       return createNoCourseCampusHomeViewData();

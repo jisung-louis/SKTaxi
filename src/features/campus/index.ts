@@ -35,6 +35,7 @@ export {
   mockCampusHomeRepository,
 } from './mocks/MockCampusHomeRepository';
 export {
+  createCrossBoundaryCampusHomeViewData,
   createDefaultCampusHomeViewData,
   createNoCourseCampusHomeViewData,
 } from './mocks/campusHomeViewData';
@@ -56,6 +57,7 @@ export type {
   CampusTaxiPartyViewData,
   CampusTimetableEmptyStateViewData,
   CampusTimetablePeriodViewData,
+  CampusTimetableSessionViewData,
   CampusTimetableStatusViewData,
 } from './model/campusHome';
 export {
