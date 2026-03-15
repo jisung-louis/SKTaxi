@@ -77,7 +77,7 @@ export const BoardDetailScreen = () => {
   const categoryBadge = data?.metaBadges[0];
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {loading ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>

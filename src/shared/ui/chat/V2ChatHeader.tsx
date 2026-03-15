@@ -25,7 +25,7 @@ export const V2ChatHeader = ({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top}]}>
+    <View style={[styles.container, {paddingTop: insets.top, minHeight: insets.top + 56}]}>
       <TouchableOpacity
         accessibilityLabel="뒤로 가기"
         accessibilityRole="button"
@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
     borderBottomColor: V2_COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    minHeight: 56,
     paddingHorizontal: V2_SPACING.sm,
   },
   content: {

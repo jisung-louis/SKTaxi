@@ -79,7 +79,7 @@ export const NoticeDetailScreen = () => {
   const secondaryBadges = data?.metaBadges.slice(1) ?? [];
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {loading ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>

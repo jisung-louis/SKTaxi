@@ -44,7 +44,6 @@ export const V2DetailComposer = ({
   value,
 }: V2DetailComposerProps) => {
   const insets = useSafeAreaInsets();
-  const {isVisible: isKeyboardVisible} = useKeyboardInset();
   const [internalValue, setInternalValue] = React.useState('');
   const resolvedValue = value ?? internalValue;
   const isSendEnabled =
@@ -79,7 +78,7 @@ export const V2DetailComposer = ({
     <View
       style={[
         styles.container,
-        isKeyboardVisible ? {paddingBottom: insets.bottom} : null,
+        {paddingBottom: insets.bottom}
       ]}>
       <View style={styles.row}>
         {leadingIconName && onPressLeadingAction ? (

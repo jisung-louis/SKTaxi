@@ -77,7 +77,7 @@ export const ChatScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {data ? (
           <V2ChatHeader
