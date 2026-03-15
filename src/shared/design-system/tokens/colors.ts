@@ -27,6 +27,10 @@ export const V2_COLORS = {
   accent: {
     blue: '#2563EB',
     blueSoft: '#EFF6FF',
+    yellow: '#EAB308',
+    yellowSoft: '#FEF9C3',
+    yellowBorder: '#FDE68A',
+    yellowStrong: '#A16207',
     orange: '#EA580C',
     orangeSoft: '#FFF7ED',
     purple: '#9333EA',

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   TextInput,
+  TextInputProps,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -16,16 +17,63 @@ import {
 } from '../tokens';
 
 interface V2DetailComposerProps {
+  editable?: boolean;
+  leadingActionAccessibilityLabel?: string;
+  leadingIconName?: string;
+  onChangeText?: (value: string) => void;
+  onPressLeadingAction?: () => void;
+  onSend?: (value: string) => void;
   placeholder: string;
+  sendAccessibilityLabel?: string;
+  sendEnabled?: boolean;
+  textInputProps?: TextInputProps;
+  value?: string;
 }
 
 export const V2DetailComposer = ({
+  editable = true,
+  leadingActionAccessibilityLabel = '첨부',
+  leadingIconName,
+  onChangeText,
+  onPressLeadingAction,
+  onSend,
   placeholder,
+  sendAccessibilityLabel = '전송',
+  sendEnabled,
+  textInputProps,
+  value,
 }: V2DetailComposerProps) => {
   const insets = useSafeAreaInsets();
   const {isVisible: isKeyboardVisible} = useKeyboardInset();
-  const [value, setValue] = React.useState('');
-  const isSendEnabled = value.trim().length > 0;
+  const [internalValue, setInternalValue] = React.useState('');
+  const resolvedValue = value ?? internalValue;
+  const isSendEnabled =
+    sendEnabled ?? (editable && resolvedValue.trim().length > 0);
+
+  const handleChangeText = React.useCallback(
+    (nextValue: string) => {
+      if (value === undefined) {
+        setInternalValue(nextValue);
+      }
+
+      onChangeText?.(nextValue);
+    },
+    [onChangeText, value],
+  );
+
+  const handleSend = React.useCallback(() => {
+    const trimmedValue = resolvedValue.trim();
+
+    if (!trimmedValue || !isSendEnabled) {
+      return;
+    }
+
+    onSend?.(trimmedValue);
+
+    if (value === undefined) {
+      setInternalValue('');
+    }
+  }, [isSendEnabled, onSend, resolvedValue, value]);
 
   return (
     <View
@@ -34,23 +82,40 @@ export const V2DetailComposer = ({
         isKeyboardVisible ? {paddingBottom: insets.bottom} : null,
       ]}>
       <View style={styles.row}>
+        {leadingIconName && onPressLeadingAction ? (
+          <TouchableOpacity
+            accessibilityLabel={leadingActionAccessibilityLabel}
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            onPress={onPressLeadingAction}
+            style={styles.leadingButton}>
+            <Icon
+              color={V2_COLORS.text.muted}
+              name={leadingIconName}
+              size={18}
+            />
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.inputSurface}>
           <TextInput
-            onChangeText={setValue}
+            editable={editable}
+            onChangeText={handleChangeText}
             placeholder={placeholder}
             placeholderTextColor={V2_COLORS.text.muted}
             style={styles.input}
             textAlignVertical="center"
-            value={value}
+            value={resolvedValue}
+            {...textInputProps}
           />
         </View>
 
         <TouchableOpacity
-          accessibilityLabel="댓글 전송"
+          accessibilityLabel={sendAccessibilityLabel}
           accessibilityRole="button"
           activeOpacity={isSendEnabled ? 0.82 : 1}
           disabled={!isSendEnabled}
-          onPress={() => undefined}
+          onPress={handleSend}
           style={[
             styles.sendButton,
             isSendEnabled ? styles.sendButtonActive : null,
@@ -80,6 +145,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     flexDirection: 'row',
     gap: V2_SPACING.sm,
+  },
+  leadingButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   inputSurface: {
     backgroundColor: V2_COLORS.background.subtle,
