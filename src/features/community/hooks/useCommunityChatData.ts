@@ -1,21 +1,16 @@
 import React from 'react';
+import {Alert} from 'react-native';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
-import {useAuth} from '@/features/auth';
-import {
-  getChatRoomIcon,
-  hasUnreadChatRoom,
-  safeToMillis,
-  useChatListPresenter,
-  type ChatRoomListItem,
-} from '@/features/chat';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
 import type {CommunityChatRoomViewData} from '../model/communityViewData';
+import type {CommunityChatRoomSourceItem} from '../model/communityHomeData';
+import {communityHomeRepository} from '../data/repositories/communityHomeRepository';
 
 const formatChatTimeLabel = (timestamp: unknown) => {
-  const millis = safeToMillis(timestamp);
+  const millis = new Date(String(timestamp)).getTime();
 
   if (!millis) {
     return '';
@@ -24,16 +19,7 @@ const formatChatTimeLabel = (timestamp: unknown) => {
   return format(new Date(millis), 'a h:mm', {locale: ko});
 };
 
-const getRoomTitle = (room: ChatRoomListItem) => {
-  if (room.type === 'university') {
-    return '성결대학교 전체';
-  }
-
-  const baseName = room.displayName ?? room.name;
-  return baseName.replace(/ 채팅방$/, '');
-};
-
-const getRoomTone = (type: ChatRoomListItem['type']) => {
+const getRoomTone = (type: CommunityChatRoomSourceItem['tone']) => {
   switch (type) {
     case 'university':
       return {
@@ -60,68 +46,66 @@ const getRoomTone = (type: ChatRoomListItem['type']) => {
 };
 
 export const useCommunityChatData = () => {
-  const {user} = useAuth();
-  const {
-    adminRooms,
-    chatRoomStates,
-    customRooms,
-    fixedRooms,
-    gameRooms,
-    handleChatRoomPress,
-    handleRefresh,
-    isAdmin,
-    loading,
-    refreshing,
-    showAllRooms,
-  } = useChatListPresenter();
+  const [rooms, setRooms] = React.useState<CommunityChatRoomViewData[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const sourceRooms = React.useMemo(
-    () =>
-      isAdmin && showAllRooms
-        ? adminRooms
-        : [...fixedRooms, ...customRooms, ...gameRooms],
-    [adminRooms, customRooms, fixedRooms, gameRooms, isAdmin, showAllRooms],
-  );
+  const loadRooms = React.useCallback(async (mode: 'initial' | 'refresh') => {
+    if (mode === 'initial') {
+      setLoading(true);
+    }
 
-  const rooms = React.useMemo(() => {
-    return sourceRooms.map(room => {
-      const roomState = room.id ? chatRoomStates[room.id] : undefined;
-      const unreadCount =
-        room.id && user?.uid
-          ? room.unreadCount?.[user.uid] ??
-            (hasUnreadChatRoom(room, roomState) ? 1 : 0)
-          : 0;
-      const tone = getRoomTone(room.type);
+    if (mode === 'refresh') {
+      setRefreshing(true);
+    }
 
-      return {
-        iconBackgroundColor: tone.iconBackgroundColor,
-        iconColor: tone.iconColor,
-        iconName: getChatRoomIcon(room.type),
-        id: room.id ?? room.name,
-        memberCountLabel: `${room.members.length.toLocaleString('ko-KR')}명`,
-        timeLabel: formatChatTimeLabel(
-          room.lastMessage?.timestamp ?? room.updatedAt,
-        ),
-        title: getRoomTitle(room),
-        unreadCount,
-        subtitle:
-          room.lastMessage?.text ?? room.description ?? '아직 메시지가 없어요',
-      } satisfies CommunityChatRoomViewData;
-    });
-  }, [chatRoomStates, sourceRooms, user?.uid]);
+    try {
+      const sourceRooms = await communityHomeRepository.getChatRooms();
 
-  const handleOpenRoom = React.useCallback(
-    (roomId: string) => {
-      const targetRoom = sourceRooms.find(room => room.id === roomId);
+      setRooms(
+        sourceRooms.map(room => {
+          const tone = getRoomTone(room.tone);
 
-      if (!targetRoom) {
-        return;
-      }
+          return {
+            iconBackgroundColor: tone.iconBackgroundColor,
+            iconColor: tone.iconColor,
+            iconName:
+              room.tone === 'university'
+                ? 'business-outline'
+                : room.tone === 'department'
+                ? 'people-outline'
+                : room.tone === 'game'
+                ? 'game-controller-outline'
+                : 'chatbubble-outline',
+            id: room.id,
+            memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명`,
+            timeLabel: formatChatTimeLabel(room.updatedAt),
+            title: room.title,
+            unreadCount: room.unreadCount,
+            subtitle: room.lastMessageText,
+          } satisfies CommunityChatRoomViewData;
+        }),
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
-      handleChatRoomPress(targetRoom);
-    },
-    [handleChatRoomPress, sourceRooms],
-  );
+  React.useEffect(() => {
+    loadRooms('initial').catch(() => undefined);
+  }, [loadRooms]);
+
+  const handleRefresh = React.useCallback(() => {
+    loadRooms('refresh').catch(() => undefined);
+  }, [loadRooms]);
+
+  const handleOpenRoom = React.useCallback(() => {
+    Alert.alert(
+      '준비 중',
+      '채팅 상세 화면은 Spring REST API 연동 단계에서 연결할 예정입니다.',
+    );
+  }, []);
 
   return {
     handleOpenRoom,

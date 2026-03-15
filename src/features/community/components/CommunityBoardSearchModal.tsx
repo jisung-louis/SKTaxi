@@ -15,14 +15,19 @@ import {
   type V2FilterChipItem,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
-import type {BoardSearchFilters} from '@/features/board';
+
+import type {CommunityBoardSearchFilters} from '../model/communityHomeData';
 
 interface CommunityBoardSearchModalProps {
-  currentFilters: BoardSearchFilters;
+  currentFilters: CommunityBoardSearchFilters;
   onClose: () => void;
-  onSearch: (filters: BoardSearchFilters) => void;
+  onSearch: (filters: CommunityBoardSearchFilters) => void;
   visible: boolean;
 }
+
+type CategoryFilterValue =
+  | ''
+  | NonNullable<CommunityBoardSearchFilters['category']>;
 
 const CATEGORY_OPTIONS = [
   {id: '', label: '전체'},
@@ -48,9 +53,8 @@ export const CommunityBoardSearchModal = ({
   const [searchText, setSearchText] = React.useState(
     currentFilters.searchText ?? '',
   );
-  const [selectedCategory, setSelectedCategory] = React.useState(
-    currentFilters.category ?? '',
-  );
+  const [selectedCategory, setSelectedCategory] =
+    React.useState<CategoryFilterValue>(currentFilters.category ?? '');
   const [sortBy, setSortBy] = React.useState(currentFilters.sortBy);
 
   React.useEffect(() => {
@@ -63,15 +67,14 @@ export const CommunityBoardSearchModal = ({
     setSortBy(currentFilters.sortBy);
   }, [currentFilters, visible]);
 
-  const categoryItems: V2FilterChipItem<string>[] = CATEGORY_OPTIONS.map(
-    option => ({
+  const categoryItems: V2FilterChipItem<CategoryFilterValue>[] =
+    CATEGORY_OPTIONS.map(option => ({
       id: option.id,
       label: option.label,
       selected: option.id === selectedCategory,
-    }),
-  );
+    }));
 
-  const sortItems: V2FilterChipItem<BoardSearchFilters['sortBy']>[] =
+  const sortItems: V2FilterChipItem<CommunityBoardSearchFilters['sortBy']>[] =
     SORT_OPTIONS.map(option => ({
       id: option.id,
       label: option.label,

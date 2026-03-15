@@ -1,28 +1,31 @@
 import React from 'react';
+import {Alert} from 'react-native';
 import {format, formatDistanceToNow} from 'date-fns';
 import {ko} from 'date-fns/locale';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
-
-import type {CommunityStackParamList} from '@/app/navigation/types';
-import {
-  useBoardPosts,
-  type BoardPost,
-  type BoardSearchFilters,
-} from '@/features/board';
 
 import type {
   CommunityBoardFeaturedViewData,
   CommunityBoardPostViewData,
 } from '../model/communityViewData';
+import type {
+  CommunityBoardSearchFilters,
+  CommunityBoardSourceItem,
+} from '../model/communityHomeData';
+import {communityHomeRepository} from '../data/repositories/communityHomeRepository';
 
-const BOARD_CATEGORY_LABEL_MAP: Record<BoardPost['category'], string> = {
+const PAGE_SIZE = 5;
+
+const BOARD_CATEGORY_LABEL_MAP: Record<
+  CommunityBoardSourceItem['category'],
+  string
+> = {
   announcement: '정보게시판',
   general: '자유게시판',
   question: '질문게시판',
   review: '후기게시판',
 };
 
-const DEFAULT_FILTERS: BoardSearchFilters = {
+const DEFAULT_FILTERS: CommunityBoardSearchFilters = {
   sortBy: 'latest',
 };
 
@@ -31,17 +34,22 @@ const formatBoardListTimeLabel = (date: Date) => {
 };
 
 const toFeaturedViewData = (
-  post: BoardPost,
+  post: CommunityBoardSourceItem,
 ): CommunityBoardFeaturedViewData => ({
   categoryLabel: BOARD_CATEGORY_LABEL_MAP[post.category],
   commentCount: post.commentCount,
   id: post.id,
   likeCount: post.likeCount,
-  timeLabel: formatDistanceToNow(post.createdAt, {addSuffix: true, locale: ko}),
+  timeLabel: formatDistanceToNow(new Date(post.createdAt), {
+    addSuffix: true,
+    locale: ko,
+  }),
   title: post.title,
 });
 
-const toBoardPostViewData = (post: BoardPost): CommunityBoardPostViewData => ({
+const toBoardPostViewData = (
+  post: CommunityBoardSourceItem,
+): CommunityBoardPostViewData => ({
   authorLabel: post.isAnonymous ? '익명' : post.authorName,
   bookmarkCount: post.bookmarkCount,
   categoryLabel: BOARD_CATEGORY_LABEL_MAP[post.category],
@@ -49,72 +57,130 @@ const toBoardPostViewData = (post: BoardPost): CommunityBoardPostViewData => ({
   excerpt: post.content,
   id: post.id,
   likeCount: post.likeCount,
-  timeLabel: formatBoardListTimeLabel(post.createdAt),
+  timeLabel: formatBoardListTimeLabel(new Date(post.createdAt)),
   title: post.title,
 });
 
-interface UseCommunityBoardDataParams {
-  navigation: NativeStackNavigationProp<CommunityStackParamList>;
-}
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
 
-export const useCommunityBoardData = ({
-  navigation,
-}: UseCommunityBoardDataParams) => {
+  return '게시글을 다시 불러와주세요.';
+};
+
+export const useCommunityBoardData = () => {
   const [searchFilters, setSearchFilters] =
-    React.useState<BoardSearchFilters>(DEFAULT_FILTERS);
+    React.useState<CommunityBoardSearchFilters>(DEFAULT_FILTERS);
+  const [items, setItems] = React.useState<CommunityBoardPostViewData[]>([]);
+  const [featuredPost, setFeaturedPost] = React.useState<
+    CommunityBoardFeaturedViewData | undefined
+  >(undefined);
+  const [error, setError] = React.useState<string | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [nextCursor, setNextCursor] = React.useState<string | undefined>(
+    undefined,
+  );
   const [searchVisible, setSearchVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
-
-  const {error, hasMore, loadMore, loading, loadingMore, posts, refresh} =
-    useBoardPosts(searchFilters);
-  const {
-    loading: featuredLoading,
-    posts: popularPosts,
-    refresh: refreshPopular,
-  } = useBoardPosts({sortBy: 'popular'});
-
+  const requestIdRef = React.useRef(0);
   const hasActiveSearch =
     Boolean(searchFilters.searchText) || Boolean(searchFilters.category);
 
-  const featuredPost = React.useMemo(() => {
-    if (hasActiveSearch) {
-      return undefined;
-    }
+  const fetchBoardPage = React.useCallback(
+    async (mode: 'initial' | 'refresh' | 'loadMore', cursor?: string) => {
+      const currentRequestId = requestIdRef.current + 1;
+      requestIdRef.current = currentRequestId;
 
-    return popularPosts[0] ? toFeaturedViewData(popularPosts[0]) : undefined;
-  }, [hasActiveSearch, popularPosts]);
+      if (mode === 'initial') {
+        setLoading(true);
+      }
 
-  const items = React.useMemo(
-    () => posts.map(post => toBoardPostViewData(post)),
-    [posts],
+      if (mode === 'refresh') {
+        setRefreshing(true);
+      }
+
+      if (mode === 'loadMore') {
+        setLoadingMore(true);
+      }
+
+      try {
+        const result = await communityHomeRepository.getBoardPosts({
+          cursor,
+          filters: searchFilters,
+          limit: PAGE_SIZE,
+        });
+
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setError(null);
+        setNextCursor(result.nextCursor);
+        setFeaturedPost(
+          hasActiveSearch || !result.featuredPost
+            ? undefined
+            : toFeaturedViewData(result.featuredPost),
+        );
+        setItems(previousItems =>
+          mode === 'loadMore'
+            ? [...previousItems, ...result.items.map(toBoardPostViewData)]
+            : result.items.map(toBoardPostViewData),
+        );
+      } catch (fetchError) {
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setError(getErrorMessage(fetchError));
+
+        if (mode !== 'loadMore') {
+          setItems([]);
+          setFeaturedPost(undefined);
+          setNextCursor(undefined);
+        }
+      } finally {
+        if (currentRequestId !== requestIdRef.current) {
+          return;
+        }
+
+        setLoading(false);
+        setLoadingMore(false);
+        setRefreshing(false);
+      }
+    },
+    [hasActiveSearch, searchFilters],
   );
 
   React.useEffect(() => {
-    if (refreshing && !loading && !featuredLoading) {
-      setRefreshing(false);
-    }
-  }, [featuredLoading, loading, refreshing]);
+    fetchBoardPage('initial').catch(() => undefined);
+  }, [fetchBoardPage]);
 
   const handleRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    refresh();
-    refreshPopular();
-  }, [refresh, refreshPopular]);
+    fetchBoardPage('refresh').catch(() => undefined);
+  }, [fetchBoardPage]);
 
-  const handleOpenPost = React.useCallback(
-    (postId: string) => {
-      navigation.navigate('BoardDetail', {postId});
-    },
-    [navigation],
-  );
+  const handleOpenPost = React.useCallback(() => {
+    Alert.alert(
+      '준비 중',
+      '게시글 상세 화면은 Spring REST API 연동 단계에서 연결할 예정입니다.',
+    );
+  }, []);
 
   const handleOpenWrite = React.useCallback(() => {
-    navigation.navigate('BoardWrite');
-  }, [navigation]);
-
-  const handleApplySearch = React.useCallback((filters: BoardSearchFilters) => {
-    setSearchFilters(filters);
+    Alert.alert(
+      '준비 중',
+      '글쓰기 기능은 Spring REST API 연동 단계에서 연결할 예정입니다.',
+    );
   }, []);
+
+  const handleApplySearch = React.useCallback(
+    (filters: CommunityBoardSearchFilters) => {
+      setSearchFilters(filters);
+    },
+    [],
+  );
 
   const handleClearSearch = React.useCallback(() => {
     setSearchFilters(DEFAULT_FILTERS);
@@ -127,6 +193,14 @@ export const useCommunityBoardData = ({
     });
   }, []);
 
+  const loadMore = React.useCallback(async () => {
+    if (loading || loadingMore || !nextCursor) {
+      return;
+    }
+
+    await fetchBoardPage('loadMore', nextCursor);
+  }, [fetchBoardPage, loading, loadingMore, nextCursor]);
+
   return {
     error,
     featuredPost,
@@ -137,7 +211,7 @@ export const useCommunityBoardData = ({
     handleOpenPost,
     handleOpenWrite,
     handleRefresh,
-    hasMore,
+    hasMore: Boolean(nextCursor),
     items,
     loadMore,
     loading,

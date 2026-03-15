@@ -37,7 +37,6 @@ export const CommunityScreen = () => {
     React.useState<CommunitySegmentId>('board');
   const {
     error: boardError,
-    featuredPost,
     filters: boardFilters,
     handleApplyRouteSearch,
     handleApplySearch,
@@ -53,7 +52,7 @@ export const CommunityScreen = () => {
     refreshing: boardRefreshing,
     searchVisible,
     setSearchVisible,
-  } = useCommunityBoardData({navigation});
+  } = useCommunityBoardData();
   const chat = useCommunityChatData();
 
   React.useEffect(() => {
@@ -111,7 +110,6 @@ export const CommunityScreen = () => {
           <CommunityBoardSegment
             activeSearchLabel={activeSearchLabel}
             error={boardError}
-            featuredPost={featuredPost}
             hasMore={hasMore}
             items={boardItems}
             loading={boardLoading}

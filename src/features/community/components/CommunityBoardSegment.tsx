@@ -19,17 +19,12 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 
-import {CommunityBoardFeaturedCard} from './CommunityBoardFeaturedCard';
 import {CommunityBoardPostCard} from './CommunityBoardPostCard';
-import type {
-  CommunityBoardFeaturedViewData,
-  CommunityBoardPostViewData,
-} from '../model/communityViewData';
+import type {CommunityBoardPostViewData} from '../model/communityViewData';
 
 interface CommunityBoardSegmentProps {
   activeSearchLabel?: string;
   error: string | null;
-  featuredPost?: CommunityBoardFeaturedViewData;
   hasMore: boolean;
   items: CommunityBoardPostViewData[];
   loading: boolean;
@@ -45,7 +40,6 @@ interface CommunityBoardSegmentProps {
 export const CommunityBoardSegment = ({
   activeSearchLabel,
   error,
-  featuredPost,
   hasMore,
   items,
   loading,
@@ -141,16 +135,6 @@ export const CommunityBoardSegment = ({
                 </TouchableOpacity>
               </View>
             ) : null}
-
-            {featuredPost ? (
-              <View style={styles.featuredSection}>
-                <Text style={styles.sectionTitle}>🔥 인기 게시글</Text>
-                <CommunityBoardFeaturedCard
-                  item={featuredPost}
-                  onPress={onPressPost}
-                />
-              </View>
-            ) : null}
           </View>
         }
         onEndReached={handleEndReached}
@@ -208,16 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     lineHeight: 20,
-  },
-  featuredSection: {
-    marginBottom: V2_SPACING.sm,
-  },
-  sectionTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 24,
-    marginBottom: V2_SPACING.md,
   },
   stateWrap: {
     minHeight: 320,
