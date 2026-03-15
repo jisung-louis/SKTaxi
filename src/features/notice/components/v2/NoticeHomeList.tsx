@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {
@@ -29,10 +22,8 @@ interface NoticeHomeListProps {
   items: NoticeHomeNoticeItemViewData[];
   loading: boolean;
   loadingMore: boolean;
-  onLoadMore: () => Promise<void>;
   onPressNotice: (noticeId: string) => void;
   onRefresh: () => void;
-  refreshing: boolean;
   userJoinedAtLoaded: boolean;
 }
 
@@ -43,13 +34,12 @@ export const NoticeHomeList = ({
   items,
   loading,
   loadingMore,
-  onLoadMore,
   onPressNotice,
   onRefresh,
-  refreshing,
   userJoinedAtLoaded,
 }: NoticeHomeListProps) => {
   const showLoadingState = loading || !userJoinedAtLoaded;
+  const hasFooter = loadingMore || !hasMore;
 
   return (
     <View style={styles.card}>
@@ -101,47 +91,27 @@ export const NoticeHomeList = ({
       ) : null}
 
       {!showLoadingState && !error && items.length > 0 ? (
-        <FlatList
-          data={items}
-          keyExtractor={item => item.id}
-          onEndReached={() => {
-            if (hasMore && !loadingMore) {
-              onLoadMore().catch(() => undefined);
-            }
-          }}
-          onEndReachedThreshold={0.2}
-          refreshControl={
-            <RefreshControl
-              onRefresh={onRefresh}
-              refreshing={refreshing}
-              tintColor={V2_COLORS.brand.primary}
-            />
-          }
-          renderItem={({item, index}) => (
+        <>
+          {items.map((item, index) => (
             <NoticeListItemV2
-              isLast={index === items.length - 1 && !loadingMore}
+              key={item.id}
+              isLast={index === items.length - 1 && !hasFooter}
               item={item}
               onPress={onPressNotice}
             />
-          )}
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={
-            loadingMore ? (
-              <View style={styles.footer}>
-                <ActivityIndicator
-                  color={V2_COLORS.brand.primary}
-                  size="small"
-                />
-              </View>
-            ) : !hasMore ? (
-              <View style={styles.footer}>
-                <Text style={styles.footerLabel}>
-                  모든 공지사항을 확인했습니다
-                </Text>
-              </View>
-            ) : null
-          }
-        />
+          ))}
+          {loadingMore ? (
+            <View style={styles.footer}>
+              <ActivityIndicator color={V2_COLORS.brand.primary} size="small" />
+            </View>
+          ) : !hasMore ? (
+            <View style={styles.footer}>
+              <Text style={styles.footerLabel}>
+                모든 공지사항을 확인했습니다
+              </Text>
+            </View>
+          ) : null}
+        </>
       ) : null}
     </View>
   );
@@ -151,7 +121,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: V2_COLORS.background.surface,
     borderRadius: V2_RADIUS.lg,
-    flex: 1,
+    flexGrow: 1,
     overflow: 'hidden',
     ...V2_SHADOWS.card,
   },

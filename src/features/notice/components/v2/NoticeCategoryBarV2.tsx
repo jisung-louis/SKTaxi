@@ -31,7 +31,7 @@ export const NoticeCategoryBarV2 = ({
 
 const styles = StyleSheet.create({
   content: {
-    paddingBottom: V2_SPACING.sm,
     paddingRight: V2_SPACING.lg,
+    paddingVertical: V2_SPACING.sm,
   },
 });

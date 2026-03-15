@@ -52,8 +52,7 @@ const styles = StyleSheet.create({
   title: {
     color: V2_COLORS.text.primary,
     fontSize: 30,
-    fontWeight: '600',
-    letterSpacing: -0.75,
+    fontWeight: '700',
     lineHeight: 36,
     marginBottom: V2_SPACING.xs,
   },

@@ -55,7 +55,9 @@ export const NoticeListItemV2 = ({
       activeOpacity={0.86}
       onPress={() => onPress(item.id)}
       style={[styles.row, isLast ? styles.rowLast : null]}>
-      <View style={[styles.dot, !item.isUnread ? styles.dotHidden : null]} />
+        {item.isUnread ? (
+          <View style={styles.dot} />
+        ) : null}
       <View style={styles.content}>
         <View style={styles.metaRow}>
           <View
@@ -70,7 +72,7 @@ export const NoticeListItemV2 = ({
           <Text style={styles.dateLabel}>{item.dateLabel}</Text>
         </View>
         <Text
-          numberOfLines={1}
+          numberOfLines={2}
           style={[styles.title, item.isUnread ? styles.titleUnread : null]}>
           {item.title}
         </Text>

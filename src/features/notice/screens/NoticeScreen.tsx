@@ -1,5 +1,12 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -31,6 +38,7 @@ export const NoticeScreen = () => {
 
   const [panelVisible, setPanelVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
+  const loadMoreRequestedRef = React.useRef(false);
 
   const {
     data,
@@ -62,6 +70,12 @@ export const NoticeScreen = () => {
     }
   }, [isFocused, refreshReadStatus]);
 
+  React.useEffect(() => {
+    if (!loadingMore) {
+      loadMoreRequestedRef.current = false;
+    }
+  }, [loadingMore, data.items.length]);
+
   const screenAnimatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
     transform: [{translateY: translateY.value}],
@@ -90,6 +104,34 @@ export const NoticeScreen = () => {
     handleOpenNotice(data.firstUnreadNoticeId);
   }, [data.firstUnreadNoticeId, handleOpenNotice]);
 
+  const handleListSectionScroll = React.useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (
+        loading ||
+        loadingMore ||
+        !hasMore ||
+        error ||
+        loadMoreRequestedRef.current
+      ) {
+        return;
+      }
+
+      const {contentOffset, contentSize, layoutMeasurement} = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+      if (distanceFromBottom > 120) {
+        return;
+      }
+
+      loadMoreRequestedRef.current = true;
+      loadMore().catch(() => {
+        loadMoreRequestedRef.current = false;
+      });
+    },
+    [error, hasMore, loadMore, loading, loadingMore],
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.content, screenAnimatedStyle]}>
@@ -115,19 +157,30 @@ export const NoticeScreen = () => {
         </View>
 
         <View style={styles.listSection}>
-          <NoticeHomeList
-            emptyState={data.emptyState}
-            error={error}
-            hasMore={hasMore}
-            items={data.items}
-            loading={loading}
-            loadingMore={loadingMore}
-            onLoadMore={loadMore}
-            onPressNotice={handleOpenNotice}
-            onRefresh={handleRefresh}
-            refreshing={refreshing}
-            userJoinedAtLoaded={userJoinedAtLoaded}
-          />
+          <ScrollView
+            contentContainerStyle={styles.listScrollContent}
+            onScroll={handleListSectionScroll}
+            refreshControl={
+              <RefreshControl
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+                tintColor={V2_COLORS.brand.primary}
+              />
+            }
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}>
+            <NoticeHomeList
+              emptyState={data.emptyState}
+              error={error}
+              hasMore={hasMore}
+              items={data.items}
+              loading={loading}
+              loadingMore={loadingMore}
+              onPressNotice={handleOpenNotice}
+              onRefresh={handleRefresh}
+              userJoinedAtLoaded={userJoinedAtLoaded}
+            />
+          </ScrollView>
         </View>
       </Animated.View>
 
@@ -152,15 +205,18 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.sm,
+    paddingVertical: V2_SPACING.sm,
   },
   categorySection: {
     paddingHorizontal: V2_SPACING.lg,
   },
   listSection: {
     flex: 1,
-    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xxl,
     paddingHorizontal: V2_SPACING.lg,
     paddingTop: V2_SPACING.xs,
+  },
+  listScrollContent: {
+    flexGrow: 1,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xxl,
   },
 });
