@@ -5,8 +5,7 @@ import {
   subscribeForegroundMessages,
   subscribeNotificationOpenedApp,
 } from '@/shared/lib/firebase/messaging';
-import { navigateToBoardDetail } from '@/features/board';
-import { navigateToAppNoticeDetail } from '@/features/settings';
+import { handlePushNotificationNavigation } from '@/app/navigation/services/notificationNavigation';
 
 export interface ForegroundMessageCallbacks {
   showModal: (data: any) => void;
@@ -422,97 +421,6 @@ export function initBackgroundMessageHandler(
   });
 }
 
-function handleNotificationNavigation(
-  navigation: any,
-  data: any,
-  onJoinRequestReceived?: (joinData: any) => void,
-) {
-  switch (data.type) {
-    case 'notice':
-      if (data.noticeId) {
-        navigation.navigate('Main', {
-          screen: 'NoticeTab',
-          params: {
-            screen: 'NoticeDetail',
-            params: { noticeId: data.noticeId },
-          },
-        });
-      }
-      break;
-    case 'app_notice':
-      if (data.appNoticeId) {
-        navigateToAppNoticeDetail(navigation, data.appNoticeId);
-      }
-      break;
-    case 'join_request':
-      if (onJoinRequestReceived) {
-        console.log('알림을 통해 동승 요청 수신:', data);
-        onJoinRequestReceived(data);
-      }
-      break;
-    case 'party_join_accepted':
-      if (data.partyId) {
-        navigation.navigate('Main', {
-          screen: 'TaxiTab',
-          params: {
-            screen: 'Chat',
-            params: { partyId: data.partyId },
-          },
-        });
-      }
-      break;
-    case 'party_join_rejected':
-      navigation.goBack();
-      break;
-    case 'party_deleted':
-      navigation.navigate('Main', { screen: 'TaxiTab' });
-      break;
-    case 'chat_message':
-    case 'party_closed':
-    case 'party_arrived':
-      if (data.partyId) {
-        navigation.navigate('Main', {
-          screen: 'TaxiTab',
-          params: {
-            screen: 'Chat',
-            params: { partyId: data.partyId },
-          },
-        });
-      }
-      break;
-    case 'chat_room_message':
-      if (data.chatRoomId) {
-        navigation.navigate('Main', {
-          screen: 'CommunityTab',
-          params: {
-            screen: 'ChatDetail',
-            params: { chatRoomId: data.chatRoomId },
-          },
-        });
-      }
-      break;
-    case 'board_post_comment':
-    case 'board_comment_reply':
-    case 'board_post_like':
-      if (data.postId) {
-        navigateToBoardDetail(navigation, data.postId);
-      }
-      break;
-    case 'notice_post_comment':
-    case 'notice_comment_reply':
-      if (data.noticeId) {
-        navigation.navigate('Main', {
-          screen: 'NoticeTab',
-          params: {
-            screen: 'NoticeDetail',
-            params: { noticeId: data.noticeId },
-          },
-        });
-      }
-      break;
-  }
-}
-
 export function initNotificationOpenedAppHandler(
   navigation: any,
   onJoinRequestReceived?: (joinData: any) => void,
@@ -520,7 +428,11 @@ export function initNotificationOpenedAppHandler(
   return subscribeNotificationOpenedApp(remoteMessage => {
     console.log('알림을 통해 앱이 열렸습니다:', remoteMessage);
     const data = remoteMessage.data || {};
-    handleNotificationNavigation(navigation, data, onJoinRequestReceived);
+    handlePushNotificationNavigation({
+      navigation,
+      data,
+      onJoinRequestReceived,
+    });
   });
 }
 
@@ -533,6 +445,10 @@ export async function checkInitialNotification(
   if (remoteMessage) {
     console.log('앱 종료 상태에서 알림을 통해 앱이 열렸습니다:', remoteMessage);
     const data = remoteMessage.data || {};
-    handleNotificationNavigation(navigation, data, onJoinRequestReceived);
+    handlePushNotificationNavigation({
+      navigation,
+      data,
+      onJoinRequestReceived,
+    });
   }
 }

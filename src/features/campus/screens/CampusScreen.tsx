@@ -14,6 +14,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import { createCampusEntryNavigation } from '@/app/navigation/services/campusEntryNavigation';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
 import {
@@ -25,7 +26,6 @@ import {
 import { AcademicCalendarSection, CafeteriaSection } from '@/features/campus';
 import { NoticeSection } from '@/features/home/components/NoticeSection';
 import { TaxiSection } from '@/features/home/components/TaxiSection';
-import type { Party } from '@/features/taxi';
 import { TimetableSection } from '@/features/timetable';
 
 const QUICK_MENU_ITEMS = [
@@ -70,6 +70,10 @@ export const CampusScreen = () => {
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
+  const campusEntryNavigation = React.useMemo(
+    () => createCampusEntryNavigation(navigation),
+    [navigation],
+  );
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -77,38 +81,6 @@ export const CampusScreen = () => {
     }),
     [insets.bottom],
   );
-
-  const openCampusScreen = (screen: string, params?: object) => {
-    navigation.navigate('CampusTab', { screen, params });
-  };
-
-  const openTaxiMain = () => {
-    navigation.navigate('TaxiTab', { screen: 'TaxiMain' });
-  };
-
-  const openPendingJoinRequest = ({
-    party,
-    requestId,
-  }: {
-    party: Party;
-    requestId: string;
-  }) => {
-    navigation.navigate('TaxiTab', {
-      screen: 'AcceptancePending',
-      params: { party, requestId },
-    });
-  };
-
-  const openNoticeList = () => {
-    navigation.navigate('NoticeTab', { screen: 'NoticeMain' });
-  };
-
-  const openNoticeDetail = (noticeId: string) => {
-    navigation.navigate('NoticeTab', {
-      screen: 'NoticeDetail',
-      params: { noticeId },
-    });
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -120,7 +92,7 @@ export const CampusScreen = () => {
           <Text style={styles.wordmark}>SKURI</Text>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => openCampusScreen('Profile')}
+            onPress={() => campusEntryNavigation.openCampusScreen('Profile')}
             style={styles.profileButton}
           >
             <Icon
@@ -133,8 +105,8 @@ export const CampusScreen = () => {
 
         <View style={styles.legacySectionBlock}>
           <NoticeSection
-            onOpenNoticeDetail={openNoticeDetail}
-            onOpenNoticeList={openNoticeList}
+            onOpenNoticeDetail={campusEntryNavigation.openNoticeDetail}
+            onOpenNoticeList={campusEntryNavigation.openNoticeList}
           />
         </View>
 
@@ -144,8 +116,10 @@ export const CampusScreen = () => {
 
         <View style={styles.legacySectionBlock}>
           <TaxiSection
-            onOpenPendingJoinRequest={openPendingJoinRequest}
-            onOpenTaxiHome={openTaxiMain}
+            onOpenPendingJoinRequest={
+              campusEntryNavigation.openPendingJoinRequest
+            }
+            onOpenTaxiHome={campusEntryNavigation.openTaxiMain}
           />
         </View>
 

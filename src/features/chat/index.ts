@@ -57,8 +57,6 @@ export {
   getChatRoomColor,
   getChatRoomDisplayName,
   getChatRoomIcon,
-  getCurrentChatRoomIdFromNavigationState,
-  navigateToChatRoom,
   resolveChatRoomForegroundNotification,
   sendChatTextMessage,
 } from './services/chatRoomService';

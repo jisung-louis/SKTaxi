@@ -13,10 +13,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { handleStoredNotificationNavigation } from '@/app/navigation/services/notificationNavigation';
 import PageHeader from '@/shared/ui/PageHeader';
 import { COLORS } from '@/shared/constants/colors';
-import { navigateToBoardDetail } from '@/features/board';
-import { navigateToAppNoticeDetail } from '@/features/settings';
 import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 
@@ -62,14 +61,6 @@ const getNotificationIcon = (type: string) => {
   return iconMap[type] || { icon: 'notifications', color: COLORS.text.secondary };
 };
 
-const getStringNotificationData = (
-  notification: Notification,
-  key: string,
-): string | null => {
-  const value = notification.data?.[key];
-  return typeof value === 'string' ? value : null;
-};
-
 export const NotificationScreen = () => {
   useScreenView();
   const navigation = useNavigation<NativeStackNavigationProp<any>>();
@@ -93,75 +84,15 @@ export const NotificationScreen = () => {
   };
 
   const handleNotificationPress = async (notification: Notification) => {
-    const partyId = getStringNotificationData(notification, 'partyId');
-    const noticeId = getStringNotificationData(notification, 'noticeId');
-    const appNoticeId = getStringNotificationData(notification, 'appNoticeId');
-    const postId = getStringNotificationData(notification, 'postId');
-
     // 읽음 처리
     await markAsRead(notification.id);
     // 현재 스택을 루트 화면으로 우선 초기화
     navigation.popToTop();
-    // 알림 타입에 따른 네비게이션
-    switch (notification.type) {
-      case 'party_join_request':
-      case 'party_join_accepted':
-      case 'party_deleted':
-      case 'party_closed':
-      case 'party_arrived':
-      case 'chat_message':
-      case 'settlement_completed':
-        // 택시 탭으로 이동하고 채팅 화면으로 이동
-        if (partyId) {
-          (navigation as any).navigate('TaxiTab', {
-            screen: 'Chat',
-            params: { partyId },
-          });
-        } else {
-          (navigation as any).navigate('TaxiTab');
-        }
-        break;
-      case 'member_kicked':
-        // 강퇴 알림은 클릭해도 아무 동작 안함 (읽음 처리만)
-        break;
-      case 'notice':
-        // 공지사항 상세 화면으로 이동
-        (navigation as any).navigate('NoticeTab', {
-          screen: 'NoticeDetail',
-          params: {
-            noticeId,
-          },
-        });
-        break;
-      case 'app_notice':
-        // 앱 공지 상세 화면으로 이동
-        if (appNoticeId) {
-          navigateToAppNoticeDetail(navigation, appNoticeId);
-        }
-        break;
-      case 'board_post_comment':
-      case 'board_comment_reply':
-      case 'board_post_like':
-        // 게시판 상세 화면으로 이동
-        if (postId) {
-          navigateToBoardDetail(navigation, postId);
-        }
-        break;
-      case 'notice_post_comment':
-      case 'notice_comment_reply':
-        // 공지사항 상세 화면으로 이동
-        if (noticeId) {
-          (navigation as any).navigate('NoticeTab', {
-            screen: 'NoticeDetail',
-            params: {
-              noticeId,
-            },
-          });
-        }
-        break;
-      default:
-        break;
-    }
+
+    handleStoredNotificationNavigation({
+      navigation,
+      notification,
+    });
   };
 
   const handleMarkAllAsRead = async () => {

@@ -9,6 +9,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import { createCampusEntryNavigation } from '@/app/navigation/services/campusEntryNavigation';
 import Surface from '@/shared/ui/Surface';
 import { TabBadge } from '@/shared/ui/TabBadge';
 import { COLORS } from '@/shared/constants/colors';
@@ -19,7 +20,6 @@ import {
   CafeteriaSection,
 } from '@/features/campus';
 import { MinecraftSection } from '@/features/minecraft';
-import type { Party } from '@/features/taxi';
 import { TimetableSection } from '@/features/timetable';
 import { useInAppNotifications } from '@/features/user';
 import { useScreenView } from '@/shared/hooks/useScreenView';
@@ -32,6 +32,10 @@ export const HomeScreen = () => {
   const { unreadCount } = useInAppNotifications();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
+  const campusEntryNavigation = React.useMemo(
+    () => createCampusEntryNavigation(navigation),
+    [navigation],
+  );
   const isFocused = useIsFocused();
   const opacity = useSharedValue(1);
   const translateY = useSharedValue(0);
@@ -58,38 +62,6 @@ export const HomeScreen = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const openCampusScreen = (screen: string, params?: object) => {
-    navigation.navigate('CampusTab', { screen, params });
-  };
-
-  const openTaxiMain = () => {
-    navigation.navigate('TaxiTab', { screen: 'TaxiMain' });
-  };
-
-  const openPendingJoinRequest = ({
-    party,
-    requestId,
-  }: {
-    party: Party;
-    requestId: string;
-  }) => {
-    navigation.navigate('TaxiTab', {
-      screen: 'AcceptancePending',
-      params: { party, requestId },
-    });
-  };
-
-  const openNoticeList = () => {
-    navigation.navigate('NoticeTab', { screen: 'NoticeMain' });
-  };
-
-  const openNoticeDetail = (noticeId: string) => {
-    navigation.navigate('NoticeTab', {
-      screen: 'NoticeDetail',
-      params: { noticeId },
-    });
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
@@ -105,14 +77,14 @@ export const HomeScreen = () => {
             <Text style={styles.appName}>SKURI Taxi</Text>
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openCampusScreen('Notification')}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => campusEntryNavigation.openCampusScreen('Notification')}>
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
               <TabBadge count={unreadCount} size="small" style={styles.headerBadge} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openCampusScreen('Setting')}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => campusEntryNavigation.openCampusScreen('Setting')}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => openCampusScreen('Profile')}>
+            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => campusEntryNavigation.openCampusScreen('Profile')}>
               <Icon name="person-circle-outline" size={26} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
@@ -125,16 +97,16 @@ export const HomeScreen = () => {
         >
           {/* Taxi Section */}
           <TaxiSection
-            onOpenTaxiHome={openTaxiMain}
-            onOpenPendingJoinRequest={openPendingJoinRequest}
+            onOpenTaxiHome={campusEntryNavigation.openTaxiMain}
+            onOpenPendingJoinRequest={campusEntryNavigation.openPendingJoinRequest}
           />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
 
           {/* Notice Section */}
           <NoticeSection
-            onOpenNoticeList={openNoticeList}
-            onOpenNoticeDetail={openNoticeDetail}
+            onOpenNoticeList={campusEntryNavigation.openNoticeList}
+            onOpenNoticeDetail={campusEntryNavigation.openNoticeDetail}
           />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />
@@ -151,7 +123,7 @@ export const HomeScreen = () => {
 
           {/* Minecraft Section */}
           <MinecraftSection
-            onOpenMinecraftDetail={() => openCampusScreen('MinecraftDetail')}
+            onOpenMinecraftDetail={() => campusEntryNavigation.openCampusScreen('MinecraftDetail')}
           />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />

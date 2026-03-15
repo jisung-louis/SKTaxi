@@ -2,22 +2,21 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
-import { useAuth } from '@/features/auth';
 import {
   getCurrentChatRoomIdFromNavigationState,
-  navigateToChatRoom,
+} from '@/app/navigation/services/communityNavigation';
+import { handleForegroundNotificationNavigation } from '@/app/navigation/services/notificationNavigation';
+import { useAuth } from '@/features/auth';
+import {
   resolveChatRoomForegroundNotification,
   useChatRepository,
 } from '@/features/chat';
-import { navigateToBoardDetail } from '@/features/board';
 import {
   buildNoticeForegroundNotification,
   buildNoticePushForegroundNotification,
-  navigateToNoticeDetail,
 } from '@/features/notice';
 import {
   buildAppNoticeForegroundNotification,
-  navigateToAppNoticeDetail,
 } from '@/features/settings';
 
 export type ForegroundNotificationType =
@@ -138,51 +137,10 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
   }, [navigation]);
 
   const handleForegroundNotificationPress = useCallback(() => {
-    const { type, noticeId, partyId, postId, chatRoomId } =
-      foregroundNotification;
-
-    switch (type) {
-      case 'notice':
-      case 'notice_notification':
-        if (noticeId) {
-          navigateToNoticeDetail(navigation, noticeId);
-        }
-        break;
-      case 'chat':
-      case 'settlement':
-        if (partyId) {
-          (navigation as any).navigate('Main', {
-            screen: 'TaxiTab',
-            params: { screen: 'Chat', params: { partyId } },
-          });
-        }
-        break;
-      case 'kicked':
-        (navigation as any).popToTop();
-        break;
-      case 'party_created':
-        (navigation as any).navigate('Main', { screen: 'TaxiTab' });
-        break;
-      case 'board_notification':
-        if (postId) {
-          try {
-            navigateToBoardDetail(navigation, postId);
-          } catch {
-            (navigation as any).navigate('Main', { screen: 'CommunityTab' });
-          }
-        }
-        break;
-      case 'app_notice':
-        if (noticeId) {
-          navigateToAppNoticeDetail(navigation, noticeId);
-        }
-        break;
-      case 'chat_room_message':
-        if (chatRoomId) {
-          navigateToChatRoom(navigation, chatRoomId);
-        }
-        break;
-    }
+    handleForegroundNotificationNavigation({
+      navigation,
+      notification: foregroundNotification,
+    });
 
     setForegroundNotification(previous => ({
       ...previous,
