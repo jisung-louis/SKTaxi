@@ -1,4 +1,5 @@
 import type {ITaxiRecruitRepository} from './ITaxiRecruitRepository';
+import {taxiChatRepository} from './taxiChatRepository';
 
 import type {
   TaxiRecruitDraft,
@@ -9,13 +10,14 @@ const MOCK_DELAY_MS = 450;
 
 export class MockTaxiRecruitRepository implements ITaxiRecruitRepository {
   async submitRecruit(
-    _draft: TaxiRecruitDraft,
+    draft: TaxiRecruitDraft,
   ): Promise<TaxiRecruitSubmitResult> {
     await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
+    const {partyId} = await taxiChatRepository.createPartyChat(draft);
 
     return {
-      message:
-        '임시 모집 생성 화면입니다. 추후 Spring REST API와 연결할 예정입니다.',
+      message: '파티 채팅방으로 바로 이동합니다.',
+      partyId,
       status: 'mocked',
     };
   }

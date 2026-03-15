@@ -1,8 +1,10 @@
 import React from 'react';
-import {Alert} from 'react-native';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
+import {useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
+import type {CommunityStackParamList} from '@/app/navigation/types';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
 import type {CommunityChatRoomViewData} from '../model/communityViewData';
@@ -46,6 +48,8 @@ const getRoomTone = (type: CommunityChatRoomSourceItem['tone']) => {
 };
 
 export const useCommunityChatData = () => {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CommunityStackParamList>>();
   const [rooms, setRooms] = React.useState<CommunityChatRoomViewData[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
@@ -100,12 +104,12 @@ export const useCommunityChatData = () => {
     loadRooms('refresh').catch(() => undefined);
   }, [loadRooms]);
 
-  const handleOpenRoom = React.useCallback(() => {
-    Alert.alert(
-      '준비 중',
-      '채팅 상세 화면은 Spring REST API 연동 단계에서 연결할 예정입니다.',
-    );
-  }, []);
+  const handleOpenRoom = React.useCallback(
+    (roomId: string) => {
+      navigation.navigate('ChatDetail', {chatRoomId: roomId});
+    },
+    [navigation],
+  );
 
   return {
     handleOpenRoom,

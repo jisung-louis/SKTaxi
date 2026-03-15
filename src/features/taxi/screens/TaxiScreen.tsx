@@ -32,7 +32,7 @@ import {TaxiHomeSortMenu} from '../components/v2/TaxiHomeSortMenu';
 import {useTaxiHomeData} from '../hooks/useTaxiHomeData';
 import {useTaxiLocation} from '../hooks/useTaxiLocation';
 import {DEPARTURE_LOCATION, DEPARTURE_OPTIONS} from '../model/constants';
-import {useMyParty} from '../hooks/useMyParty';
+import {useTaxiChatSession} from '../hooks/useTaxiChatSession';
 import type {TaxiStackParamList} from '../model/navigation';
 import type {TaxiHomePartyCardViewData} from '../model/taxiHomeViewData';
 import {WINDOW_HEIGHT} from '@/shared/constants/layout';
@@ -102,7 +102,7 @@ export const TaxiScreen = () => {
   const navigation = useNavigation<TaxiNavigationProp>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {hasParty, loading: myPartyLoading, partyId} = useMyParty();
+  const {currentPartyId, hasActiveParty} = useTaxiChatSession();
   const {location} = useTaxiLocation();
   const {
     data,
@@ -116,9 +116,13 @@ export const TaxiScreen = () => {
 
   const contentContainerStyle = React.useMemo(
     () => ({
-      paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + V2_SPACING.xxl,
+      paddingBottom:
+        BOTTOM_TAB_BAR_HEIGHT +
+        insets.bottom +
+        V2_SPACING.xxl +
+        (hasActiveParty ? 72 : 0),
     }),
-    [insets.bottom],
+    [hasActiveParty, insets.bottom],
   );
 
   const mapRegion = React.useMemo<Region>(() => {
@@ -153,7 +157,7 @@ export const TaxiScreen = () => {
   }, [navigation]);
 
   const handlePressMyPartyChat = React.useCallback(() => {
-    if (!partyId) {
+    if (!currentPartyId) {
       Alert.alert(
         '내 파티가 없습니다',
         '현재 참여 중인 파티 채팅방이 없습니다.',
@@ -161,8 +165,8 @@ export const TaxiScreen = () => {
       return;
     }
 
-    navigation.navigate('Chat', {partyId});
-  }, [navigation, partyId]);
+    navigation.navigate('Chat', {partyId: currentPartyId});
+  }, [currentPartyId, navigation]);
 
   const handlePressPartyCard = React.useCallback(
     (party: TaxiHomePartyCardViewData) => {
@@ -245,23 +249,6 @@ export const TaxiScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            {!myPartyLoading && hasParty && partyId ? (
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.88}
-                onPress={handlePressMyPartyChat}
-                style={styles.secondaryButton}>
-                <Icon
-                  color={V2_COLORS.brand.primaryStrong}
-                  name="chatbubble-ellipses-outline"
-                  size={18}
-                />
-                <Text style={styles.secondaryButtonLabel}>
-                  {data?.liveChatActionLabel ?? '내 파티 채팅방'}
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
                 {data?.sectionTitle ?? '모집 중인 파티'}{' '}
@@ -323,6 +310,28 @@ export const TaxiScreen = () => {
             ))}
           </View>
         </ScrollView>
+
+        {hasActiveParty && currentPartyId ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.88}
+            onPress={handlePressMyPartyChat}
+            style={[
+              styles.liveChatFloatingButton,
+              {
+                bottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + V2_SPACING.lg,
+              },
+            ]}>
+            <Icon
+              color={V2_COLORS.text.inverse}
+              name="chatbubble-ellipses-outline"
+              size={18}
+            />
+            <Text style={styles.liveChatFloatingButtonLabel}>
+              {data?.liveChatActionLabel ?? '파티 채팅방'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </Animated.View>
     </SafeAreaView>
   );
@@ -374,20 +383,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 21,
   },
-  secondaryButton: {
+  liveChatFloatingButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
-    borderWidth: 1,
+    backgroundColor: V2_COLORS.brand.primaryStrong,
+    borderRadius: V2_RADIUS.pill,
     flexDirection: 'row',
     gap: V2_SPACING.sm,
     height: 48,
     justifyContent: 'center',
-    ...V2_SHADOWS.card,
+    paddingHorizontal: V2_SPACING.lg,
+    position: 'absolute',
+    right: V2_SPACING.lg,
+    ...V2_SHADOWS.floating,
   },
-  secondaryButtonLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+  liveChatFloatingButtonLabel: {
+    color: V2_COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,

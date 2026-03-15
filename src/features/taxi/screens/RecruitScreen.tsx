@@ -136,8 +136,13 @@ export const RecruitScreen = () => {
   const handleSubmit = React.useCallback(async () => {
     const result = await submitForm();
 
+    if (result.partyId) {
+      navigation.replace('Chat', {partyId: result.partyId});
+      return;
+    }
+
     Alert.alert('파티 만들기', result.message);
-  }, [submitForm]);
+  }, [navigation, submitForm]);
 
   const handleFocusDetailInput = React.useCallback(() => {
     setTimeout(() => {

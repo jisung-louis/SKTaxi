@@ -15,7 +15,7 @@ const avatar = (
 export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
   searchPlaceholder: '출발지 검색',
   primaryActionLabel: '새 파티 만들기',
-  liveChatActionLabel: '내 파티 채팅방',
+  liveChatActionLabel: '파티 채팅방',
   sectionTitle: '모집 중인 파티',
   filters: [
     {
