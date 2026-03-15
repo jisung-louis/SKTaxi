@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {PanResponder, StyleSheet, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -89,6 +89,26 @@ export const CommunityScreen = () => {
     setSearchVisible(true);
   }, [setSearchVisible]);
 
+  const swipeResponder = React.useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gestureState) =>
+          Math.abs(gestureState.dx) > 16 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.25,
+        onPanResponderRelease: (_event, gestureState) => {
+          if (gestureState.dx <= -56 && selectedSegment === 'board') {
+            setSelectedSegment('chat');
+            return;
+          }
+
+          if (gestureState.dx >= 56 && selectedSegment === 'chat') {
+            setSelectedSegment('board');
+          }
+        },
+      }),
+    [selectedSegment],
+  );
+
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
@@ -109,7 +129,7 @@ export const CommunityScreen = () => {
           />
         </View>
 
-        <View style={styles.contentSection}>
+        <View style={styles.contentSection} {...swipeResponder.panHandlers}>
           {selectedSegment === 'board' ? (
             <CommunityBoardSegment
               activeSearchLabel={activeSearchLabel}
