@@ -58,8 +58,8 @@ export const HomeScreen = () => {
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
   };
 
-  const openHomeScreen = (screen: string, params?: object) => {
-    navigation.navigate('HomeTab', { screen, params });
+  const openCampusScreen = (screen: string, params?: object) => {
+    navigation.navigate('CampusTab', { screen, params });
   };
 
   const openTaxiMain = () => {
@@ -105,14 +105,14 @@ export const HomeScreen = () => {
             <Text style={styles.appName}>SKURI Taxi</Text>
           </TouchableOpacity>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Notification')}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openCampusScreen('Notification')}>
               <Icon name="notifications-outline" size={22} color={COLORS.text.primary} />
               <TabBadge count={unreadCount} size="small" style={styles.headerBadge} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openHomeScreen('Setting')}>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => openCampusScreen('Setting')}>
               <Icon name="settings-outline" size={22} color={COLORS.text.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => openHomeScreen('Profile')}>
+            <TouchableOpacity style={[styles.headerIconBtn, styles.profileBtn]} onPress={() => openCampusScreen('Profile')}>
               <Icon name="person-circle-outline" size={26} color={COLORS.accent.green} />
             </TouchableOpacity>
           </View>
@@ -151,7 +151,7 @@ export const HomeScreen = () => {
 
           {/* Minecraft Section */}
           <MinecraftSection
-            onOpenMinecraftDetail={() => openHomeScreen('MinecraftDetail')}
+            onOpenMinecraftDetail={() => openCampusScreen('MinecraftDetail')}
           />
 
           <Surface color={COLORS.background.surface} height={1} margin={24} />

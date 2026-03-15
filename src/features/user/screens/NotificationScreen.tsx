@@ -100,7 +100,7 @@ export const NotificationScreen = () => {
 
     // 읽음 처리
     await markAsRead(notification.id);
-    // HomeTab 스택을 HomeScreen으로 우선 초기화
+    // 현재 스택을 루트 화면으로 우선 초기화
     navigation.popToTop();
     // 알림 타입에 따른 네비게이션
     switch (notification.type) {

@@ -20,14 +20,14 @@ export const buildAppNoticeForegroundNotification = (data: {
 export const navigateToAppNoticeDetail = (navigation: any, noticeId: string) => {
   try {
     navigation.navigate('Main', {
-      screen: 'HomeTab',
+      screen: 'CampusTab',
       params: { screen: 'AppNoticeDetail', params: { noticeId } },
     });
     return;
   } catch {}
 
   try {
-    navigation.navigate('HomeTab', {
+    navigation.navigate('CampusTab', {
       screen: 'AppNoticeDetail',
       params: { noticeId },
     });

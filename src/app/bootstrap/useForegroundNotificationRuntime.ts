@@ -168,7 +168,7 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
           try {
             navigateToBoardDetail(navigation, postId);
           } catch {
-            (navigation as any).navigate('Main', { screen: 'BoardTab' });
+            (navigation as any).navigate('Main', { screen: 'CommunityTab' });
           }
         }
         break;

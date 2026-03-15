@@ -192,7 +192,7 @@ export const MinecraftDetailScreen = () => {
               style={styles.chatRoomButton}
               onPress={() => {
                 (navigation as any).navigate('Main', {
-                  screen: 'ChatTab',
+                  screen: 'CommunityTab',
                   params: {
                     screen: 'ChatDetail',
                     params: { chatRoomId: 'game-minecraft' },

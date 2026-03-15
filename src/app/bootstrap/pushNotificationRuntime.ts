@@ -483,7 +483,7 @@ function handleNotificationNavigation(
     case 'chat_room_message':
       if (data.chatRoomId) {
         navigation.navigate('Main', {
-          screen: 'ChatTab',
+          screen: 'CommunityTab',
           params: {
             screen: 'ChatDetail',
             params: { chatRoomId: data.chatRoomId },
