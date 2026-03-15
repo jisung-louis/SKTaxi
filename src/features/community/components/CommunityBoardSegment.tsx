@@ -174,7 +174,6 @@ const styles = StyleSheet.create({
     paddingTop: V2_SPACING.lg,
   },
   headerContent: {
-    marginBottom: V2_SPACING.md,
   },
   searchSummaryCard: {
     alignItems: 'center',
