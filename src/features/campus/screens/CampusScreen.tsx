@@ -1224,8 +1224,9 @@ const styles = StyleSheet.create({
     paddingVertical: V2_SPACING.sm,
   },
   timetableAccentBar: {
+    alignSelf: 'stretch',
     borderRadius: V2_RADIUS.pill,
-    height: 38,
+    marginVertical: 2,
     width: 4,
   },
   timetableClassTextGroup: {
