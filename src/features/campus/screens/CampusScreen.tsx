@@ -162,17 +162,37 @@ export const CampusScreen = () => {
     [insets.bottom],
   );
 
+  const canExpandTimetable = React.useMemo(() => {
+    if (!data) {
+      return false;
+    }
+
+    return (
+      data.timetable.periods.length > data.timetable.collapsedVisibleCount
+    );
+  }, [data]);
+
+  React.useEffect(() => {
+    if (!canExpandTimetable && isTimetableExpanded) {
+      setIsTimetableExpanded(false);
+    }
+  }, [canExpandTimetable, isTimetableExpanded]);
+
+  React.useEffect(() => {
+    setIsTimetableExpanded(false);
+  }, [data?.timetable.dateLabel]);
+
   const visibleTimetablePeriods = React.useMemo(() => {
     if (!data) {
       return [];
     }
 
-    if (isTimetableExpanded) {
+    if (isTimetableExpanded || !canExpandTimetable) {
       return data.timetable.periods;
     }
 
     return data.timetable.periods.slice(0, data.timetable.collapsedVisibleCount);
-  }, [data, isTimetableExpanded]);
+  }, [canExpandTimetable, data, isTimetableExpanded]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -251,10 +271,7 @@ export const CampusScreen = () => {
                   setIsTimetableExpanded(previous => !previous);
                 }}
                 periods={visibleTimetablePeriods}
-                showToggle={
-                  data.timetable.periods.length >
-                  data.timetable.collapsedVisibleCount
-                }
+                showToggle={canExpandTimetable}
               />
             </View>
 
