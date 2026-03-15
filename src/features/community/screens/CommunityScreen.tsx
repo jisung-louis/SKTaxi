@@ -1,10 +1,17 @@
 import React from 'react';
-import {PanResponder, StyleSheet, View} from 'react-native';
+import {StyleSheet, useWindowDimensions, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import {
   V2PageHeader,
@@ -35,9 +42,13 @@ type CommunityRouteProp = RouteProp<CommunityStackParamList, 'BoardMain'>;
 export const CommunityScreen = () => {
   const navigation = useNavigation<CommunityNavigationProp>();
   const route = useRoute<CommunityRouteProp>();
+  const {width: windowWidth} = useWindowDimensions();
   const [selectedSegment, setSelectedSegment] =
     React.useState<CommunitySegmentId>('board');
   const screenAnimatedStyle = useScreenEnterAnimation();
+  const pageWidth = Math.max(windowWidth, 1);
+  const pagerTranslateX = useSharedValue(0);
+  const pagerDragStartX = useSharedValue(0);
   const {
     error: boardError,
     filters: boardFilters,
@@ -89,25 +100,82 @@ export const CommunityScreen = () => {
     setSearchVisible(true);
   }, [setSearchVisible]);
 
-  const swipeResponder = React.useMemo(
+  React.useEffect(() => {
+    const nextIndex = selectedSegment === 'board' ? 0 : 1;
+    pagerTranslateX.value = withTiming(-nextIndex * pageWidth, {
+      duration: 240,
+    });
+  }, [pageWidth, pagerTranslateX, selectedSegment]);
+
+  const handleSetSegmentByIndex = React.useCallback((nextIndex: number) => {
+    setSelectedSegment(nextIndex === 0 ? 'board' : 'chat');
+  }, []);
+
+  const pagerGesture = React.useMemo(
     () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gestureState) =>
-          Math.abs(gestureState.dx) > 16 &&
-          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.25,
-        onPanResponderRelease: (_event, gestureState) => {
-          if (gestureState.dx <= -56 && selectedSegment === 'board') {
-            setSelectedSegment('chat');
-            return;
+      Gesture.Pan()
+        .enabled(!searchVisible)
+        .activeOffsetX([-18, 18])
+        .failOffsetY([-12, 12])
+        .onBegin(() => {
+          pagerDragStartX.value = pagerTranslateX.value;
+        })
+        .onUpdate(event => {
+          const nextTranslateX = pagerDragStartX.value + event.translationX;
+          pagerTranslateX.value = Math.max(
+            -pageWidth,
+            Math.min(0, nextTranslateX),
+          );
+        })
+        .onEnd(event => {
+          const dragDistance = event.translationX;
+          const dragVelocity = event.velocityX;
+          const currentProgress = Math.abs(pagerTranslateX.value / pageWidth);
+          let nextIndex = currentProgress >= 0.5 ? 1 : 0;
+
+          if (Math.abs(dragDistance) > pageWidth * 0.18) {
+            nextIndex = dragDistance < 0 ? 1 : 0;
           }
 
-          if (gestureState.dx >= 56 && selectedSegment === 'chat') {
-            setSelectedSegment('board');
+          if (Math.abs(dragVelocity) > 700) {
+            nextIndex = dragVelocity < 0 ? 1 : 0;
           }
-        },
-      }),
-    [selectedSegment],
+
+          pagerTranslateX.value = withTiming(-nextIndex * pageWidth, {
+            duration: 220,
+          });
+          runOnJS(handleSetSegmentByIndex)(nextIndex);
+        }),
+    [
+      handleSetSegmentByIndex,
+      pageWidth,
+      pagerDragStartX,
+      pagerTranslateX,
+      searchVisible,
+    ],
   );
+
+  const pagerTrackStyle = useAnimatedStyle(() => ({
+    transform: [{translateX: pagerTranslateX.value}],
+  }));
+
+  const boardPageStyle = useAnimatedStyle(() => {
+    const progress = Math.abs(pagerTranslateX.value / pageWidth);
+
+    return {
+      opacity: interpolate(progress, [0, 1], [1, 0.72]),
+      transform: [{scale: interpolate(progress, [0, 1], [1, 0.985])}],
+    };
+  });
+
+  const chatPageStyle = useAnimatedStyle(() => {
+    const progress = Math.abs((pagerTranslateX.value + pageWidth) / pageWidth);
+
+    return {
+      opacity: interpolate(progress, [0, 1], [1, 0.72]),
+      transform: [{scale: interpolate(progress, [0, 1], [1, 0.985])}],
+    };
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -129,31 +197,46 @@ export const CommunityScreen = () => {
           />
         </View>
 
-        <View style={styles.contentSection} {...swipeResponder.panHandlers}>
-          {selectedSegment === 'board' ? (
-            <CommunityBoardSegment
-              activeSearchLabel={activeSearchLabel}
-              error={boardError}
-              hasMore={hasMore}
-              items={boardItems}
-              loading={boardLoading}
-              loadingMore={loadingMore}
-              onClearSearch={handleClearSearch}
-              onLoadMore={loadMore}
-              onPressPost={handleOpenPost}
-              onPressWrite={handleOpenWrite}
-              onRefresh={handleBoardRefresh}
-              refreshing={boardRefreshing}
-            />
-          ) : (
-            <CommunityChatSegment
-              loading={chat.loading}
-              onPressRoom={chat.handleOpenRoom}
-              onRefresh={chat.handleRefresh}
-              refreshing={chat.refreshing}
-              rooms={chat.rooms}
-            />
-          )}
+        <View style={styles.contentSection}>
+          <GestureDetector gesture={pagerGesture}>
+            <View style={styles.pagerViewport}>
+              <Animated.View
+                style={[
+                  styles.pagerTrack,
+                  {width: pageWidth * SEGMENTS.length},
+                  pagerTrackStyle,
+                ]}>
+                <Animated.View
+                  style={[styles.page, {width: pageWidth}, boardPageStyle]}>
+                  <CommunityBoardSegment
+                    activeSearchLabel={activeSearchLabel}
+                    error={boardError}
+                    hasMore={hasMore}
+                    items={boardItems}
+                    loading={boardLoading}
+                    loadingMore={loadingMore}
+                    onClearSearch={handleClearSearch}
+                    onLoadMore={loadMore}
+                    onPressPost={handleOpenPost}
+                    onPressWrite={handleOpenWrite}
+                    onRefresh={handleBoardRefresh}
+                    refreshing={boardRefreshing}
+                  />
+                </Animated.View>
+
+                <Animated.View
+                  style={[styles.page, {width: pageWidth}, chatPageStyle]}>
+                  <CommunityChatSegment
+                    loading={chat.loading}
+                    onPressRoom={chat.handleOpenRoom}
+                    onRefresh={chat.handleRefresh}
+                    refreshing={chat.refreshing}
+                    rooms={chat.rooms}
+                  />
+                </Animated.View>
+              </Animated.View>
+            </View>
+          </GestureDetector>
         </View>
       </Animated.View>
 
@@ -185,5 +268,16 @@ const styles = StyleSheet.create({
   contentSection: {
     flex: 1,
     paddingTop: V2_SPACING.xs,
+  },
+  pagerViewport: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  pagerTrack: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  page: {
+    flex: 1,
   },
 });
