@@ -7,22 +7,18 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import {useIsFocused, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
-import {useScreenView} from '@/shared/hooks/useScreenView';
+import {V2PageHeader} from '@/shared/design-system/components';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
 import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
 import {NoticeCategoryBarV2} from '../components/v2/NoticeCategoryBarV2';
-import {NoticeHomeHeader} from '../components/v2/NoticeHomeHeader';
 import {NoticeHomeList} from '../components/v2/NoticeHomeList';
 import {NoticeUnreadBanner} from '../components/v2/NoticeUnreadBanner';
 import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
@@ -35,10 +31,10 @@ export const NoticeScreen = () => {
 
   const navigation = useNavigation<NoticeNavigationProp>();
   const isFocused = useIsFocused();
-
   const [panelVisible, setPanelVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const loadMoreRequestedRef = React.useRef(false);
+  const screenAnimatedStyle = useScreenEnterAnimation();
 
   const {
     data,
@@ -56,14 +52,6 @@ export const NoticeScreen = () => {
     userJoinedAtLoaded,
   } = useNoticeHomeData();
 
-  const opacity = useSharedValue(1);
-  const translateY = useSharedValue(0);
-
-  React.useEffect(() => {
-    opacity.value = withTiming(isFocused ? 1 : 0, {duration: 200});
-    translateY.value = withTiming(isFocused ? 0 : 10, {duration: 200});
-  }, [isFocused, opacity, translateY]);
-
   React.useEffect(() => {
     if (isFocused) {
       refreshReadStatus().catch(() => undefined);
@@ -75,11 +63,6 @@ export const NoticeScreen = () => {
       loadMoreRequestedRef.current = false;
     }
   }, [loadingMore, data.items.length]);
-
-  const screenAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{translateY: translateY.value}],
-  }));
 
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
@@ -136,7 +119,8 @@ export const NoticeScreen = () => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.content, screenAnimatedStyle]}>
         <View style={styles.headerSection}>
-          <NoticeHomeHeader
+          <V2PageHeader
+            actionAccessibilityLabel="공지 알림 설정 열기"
             onPressAction={() => setPanelVisible(true)}
             subtitle={data.subtitle}
             title={data.title}

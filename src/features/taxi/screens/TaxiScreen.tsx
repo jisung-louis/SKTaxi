@@ -11,11 +11,12 @@ import {
 } from 'react-native';
 import MapView, {Marker, type Region} from 'react-native-maps';
 import LinearGradient from 'react-native-linear-gradient';
+import Animated from 'react-native-reanimated';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {useScreenView} from '@/shared/hooks/useScreenView';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {
   V2_COLORS,
@@ -100,6 +101,7 @@ export const TaxiScreen = () => {
 
   const navigation = useNavigation<TaxiNavigationProp>();
   const insets = useSafeAreaInsets();
+  const screenAnimatedStyle = useScreenEnterAnimation();
   const {hasParty, loading: myPartyLoading, partyId} = useMyParty();
   const {location} = useTaxiLocation();
   const {
@@ -179,143 +181,149 @@ export const TaxiScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      <LinearGradient
-        colors={[V2_COLORS.brand.primarySoft, V2_COLORS.border.accent]}
-        end={{x: 1, y: 1}}
-        start={{x: 0, y: 0}}
-        style={[styles.hero, {height: WINDOW_HEIGHT * 0.35}]}>
-        <MapView
-          pitchEnabled={false}
-          region={mapRegion}
-          rotateEnabled={false}
-          showsCompass={false}
-          showsMyLocationButton={false}
-          showsUserLocation={Boolean(location)}
-          style={styles.heroMap}
-          toolbarEnabled={false}>
-          {departureMarkers.map(marker => (
-            <Marker
-              coordinate={marker.coordinate}
-              key={marker.id}
-              pinColor={V2_COLORS.brand.primaryStrong}
-              title={marker.title}
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        <LinearGradient
+          colors={[V2_COLORS.brand.primarySoft, V2_COLORS.border.accent]}
+          end={{x: 1, y: 1}}
+          start={{x: 0, y: 0}}
+          style={[styles.hero, {height: WINDOW_HEIGHT * 0.35}]}>
+          <MapView
+            pitchEnabled={false}
+            region={mapRegion}
+            rotateEnabled={false}
+            showsCompass={false}
+            showsMyLocationButton={false}
+            showsUserLocation={Boolean(location)}
+            style={styles.heroMap}
+            toolbarEnabled={false}>
+            {departureMarkers.map(marker => (
+              <Marker
+                coordinate={marker.coordinate}
+                key={marker.id}
+                pinColor={V2_COLORS.brand.primaryStrong}
+                title={marker.title}
+              />
+            ))}
+          </MapView>
+          <View style={[styles.heroContent, {paddingTop: insets.top}]}>
+            <TaxiHomeSearchBar
+              onChangeText={setSearchQuery}
+              placeholder={data?.searchPlaceholder ?? '출발지 검색'}
+              value={data?.searchQuery ?? ''}
             />
-          ))}
-        </MapView>
-        <View style={[styles.heroContent, {paddingTop: insets.top}]}>
-          <TaxiHomeSearchBar
-            onChangeText={setSearchQuery}
-            placeholder={data?.searchPlaceholder ?? '출발지 검색'}
-            value={data?.searchQuery ?? ''}
+          </View>
+        </LinearGradient>
+        <View style={styles.filterSection}>
+          <TaxiHomeFilterChips
+            filters={data?.filterChips ?? []}
+            onPressFilter={selectFilter}
           />
         </View>
-      </LinearGradient>
-      <View style={styles.filterSection}>
-        <TaxiHomeFilterChips
-          filters={data?.filterChips ?? []}
-          onPressFilter={selectFilter}
-        />
-      </View>
-      <ScrollView
-        contentContainerStyle={contentContainerStyle}
-        refreshControl={
-          <RefreshControl
-            onRefresh={refetch}
-            refreshing={loading && !!data}
-            tintColor={V2_COLORS.brand.primary}
-          />
-        }
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.content}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            activeOpacity={0.88}
-            onPress={handlePressCreateParty}
-            style={styles.primaryButton}>
-            <Icon color={V2_COLORS.text.inverse} name="add-outline" size={20} />
-            <Text style={styles.primaryButtonLabel}>
-              {data?.primaryActionLabel ?? '새 파티 만들기'}
-            </Text>
-          </TouchableOpacity>
-
-          {!myPartyLoading && hasParty && partyId ? (
+        <ScrollView
+          contentContainerStyle={contentContainerStyle}
+          refreshControl={
+            <RefreshControl
+              onRefresh={refetch}
+              refreshing={loading && !!data}
+              tintColor={V2_COLORS.brand.primary}
+            />
+          }
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.88}
-              onPress={handlePressMyPartyChat}
-              style={styles.secondaryButton}>
+              onPress={handlePressCreateParty}
+              style={styles.primaryButton}>
               <Icon
-                color={V2_COLORS.brand.primaryStrong}
-                name="chatbubble-ellipses-outline"
-                size={18}
+                color={V2_COLORS.text.inverse}
+                name="add-outline"
+                size={20}
               />
-              <Text style={styles.secondaryButtonLabel}>
-                {data?.liveChatActionLabel ?? '내 파티 채팅방'}
+              <Text style={styles.primaryButtonLabel}>
+                {data?.primaryActionLabel ?? '새 파티 만들기'}
               </Text>
             </TouchableOpacity>
-          ) : null}
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {data?.sectionTitle ?? '모집 중인 파티'}{' '}
-              {data ? `(${data.visiblePartyCount})` : ''}
-            </Text>
-            <TaxiHomeSortMenu
-              onSelect={selectSort}
-              options={data?.sortOptions ?? []}
-              selectedLabel={data?.selectedSortLabel ?? '최신순'}
-            />
+            {!myPartyLoading && hasParty && partyId ? (
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.88}
+                onPress={handlePressMyPartyChat}
+                style={styles.secondaryButton}>
+                <Icon
+                  color={V2_COLORS.brand.primaryStrong}
+                  name="chatbubble-ellipses-outline"
+                  size={18}
+                />
+                <Text style={styles.secondaryButtonLabel}>
+                  {data?.liveChatActionLabel ?? '내 파티 채팅방'}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {data?.sectionTitle ?? '모집 중인 파티'}{' '}
+                {data ? `(${data.visiblePartyCount})` : ''}
+              </Text>
+              <TaxiHomeSortMenu
+                onSelect={selectSort}
+                options={data?.sortOptions ?? []}
+                selectedLabel={data?.selectedSortLabel ?? '최신순'}
+              />
+            </View>
+
+            {loading && !data ? (
+              <TaxiScreenState
+                description="택시 홈 화면을 준비하고 있습니다."
+                icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+                title="Taxi 화면 로딩 중"
+              />
+            ) : null}
+
+            {error && !data ? (
+              <TaxiScreenState
+                actionLabel="다시 시도"
+                description={error}
+                icon={
+                  <Icon
+                    color={V2_COLORS.accent.orange}
+                    name="refresh-outline"
+                    size={24}
+                  />
+                }
+                onPressAction={() => {
+                  refetch().catch(() => undefined);
+                }}
+                title="Taxi 화면을 불러오지 못했습니다"
+              />
+            ) : null}
+
+            {data?.emptyState ? (
+              <TaxiScreenState
+                description={data.emptyState.description}
+                icon={
+                  <Icon
+                    color={V2_COLORS.text.muted}
+                    name="car-sport-outline"
+                    size={28}
+                  />
+                }
+                title={data.emptyState.title}
+              />
+            ) : null}
+
+            {data?.parties.map(party => (
+              <TaxiHomePartyCard
+                key={party.id}
+                onPress={handlePressPartyCard}
+                party={party}
+              />
+            ))}
           </View>
-
-          {loading && !data ? (
-            <TaxiScreenState
-              description="택시 홈 화면을 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
-              title="Taxi 화면 로딩 중"
-            />
-          ) : null}
-
-          {error && !data ? (
-            <TaxiScreenState
-              actionLabel="다시 시도"
-              description={error}
-              icon={
-                <Icon
-                  color={V2_COLORS.accent.orange}
-                  name="refresh-outline"
-                  size={24}
-                />
-              }
-              onPressAction={() => {
-                refetch().catch(() => undefined);
-              }}
-              title="Taxi 화면을 불러오지 못했습니다"
-            />
-          ) : null}
-
-          {data?.emptyState ? (
-            <TaxiScreenState
-              description={data.emptyState.description}
-              icon={
-                <Icon
-                  color={V2_COLORS.text.muted}
-                  name="car-sport-outline"
-                  size={28}
-                />
-              }
-              title={data.emptyState.title}
-            />
-          ) : null}
-
-          {data?.parties.map(party => (
-            <TaxiHomePartyCard
-              key={party.id}
-              onPress={handlePressPartyCard}
-              party={party}
-            />
-          ))}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -324,6 +332,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: V2_COLORS.background.page,
+  },
+  screen: {
+    flex: 1,
   },
   hero: {
     height: 288,

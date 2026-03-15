@@ -13,15 +13,15 @@ import {
   type ParamListBase,
   useNavigation,
 } from '@react-navigation/native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated from 'react-native-reanimated';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {
-  type CampusStackParamList,
-} from '@/app/navigation/types';
-import { createCampusEntryNavigation } from '@/app/navigation/services/campusEntryNavigation';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
+import {type CampusStackParamList} from '@/app/navigation/types';
+import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
+import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
+import {useScreenView} from '@/shared/hooks/useScreenView';
+import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -29,7 +29,7 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 
-import { useCampusHomeViewData } from '../hooks/useCampusHomeViewData';
+import {useCampusHomeViewData} from '../hooks/useCampusHomeViewData';
 import type {
   CampusAcademicEventBadgeViewData,
   CampusAcademicEventViewData,
@@ -209,8 +209,7 @@ const buildVisibleTimetableRows = ({
       period,
       session,
       renderedSpan,
-      endTimeLabel:
-        renderedSpan > 1 ? endPeriod?.endTimeLabel : undefined,
+      endTimeLabel: renderedSpan > 1 ? endPeriod?.endTimeLabel : undefined,
     });
 
     currentPeriodNumber = renderedEndPeriod + 1;
@@ -224,11 +223,12 @@ export const CampusScreen = () => {
 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
+  const screenAnimatedStyle = useScreenEnterAnimation();
   const campusEntryNavigation = React.useMemo(
     () => createCampusEntryNavigation(navigation),
     [navigation],
   );
-  const { data, loading, error, refetch } = useCampusHomeViewData();
+  const {data, loading, error, refetch} = useCampusHomeViewData();
   const [isTimetableExpanded, setIsTimetableExpanded] = React.useState(false);
 
   const contentContainerStyle = React.useMemo(
@@ -283,165 +283,167 @@ export const CampusScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={contentContainerStyle}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <Text style={styles.wordmark}>SKURI</Text>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => campusEntryNavigation.openCampusScreen('Profile')}
-            style={styles.profileButton}
-          >
-            <Icon
-              color={V2_COLORS.text.secondary}
-              name="person-outline"
-              size={18}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {loading && !data ? (
-          <ScreenStateCard
-            description="캠퍼스 정보를 불러오는 중입니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
-            title="Campus 화면 준비 중"
-          />
-        ) : null}
-
-        {error && !data ? (
-          <ScreenStateCard
-            actionLabel="다시 시도"
-            description={error}
-            icon={
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        <ScrollView
+          contentContainerStyle={contentContainerStyle}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            <Text style={styles.wordmark}>SKURI</Text>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => campusEntryNavigation.openCampusScreen('Profile')}
+              style={styles.profileButton}>
               <Icon
-                color={V2_COLORS.accent.orange}
-                name="refresh-outline"
-                size={26}
+                color={V2_COLORS.text.secondary}
+                name="person-outline"
+                size={18}
               />
-            }
-            onPressAction={() => {
-              refetch();
-            }}
-            title="Campus 화면을 불러오지 못했습니다"
-          />
-        ) : null}
+            </TouchableOpacity>
+          </View>
 
-        {data ? (
-          <>
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={NOTICE_ACTION_LABEL}
-                onPressAction={campusEntryNavigation.openNoticeList}
-                title="읽지 않은 공지"
-              />
-              <NoticeCard
-                items={data.notices.items}
-                onPressItem={campusEntryNavigation.openNoticeList}
-              />
-            </View>
+          {loading && !data ? (
+            <ScreenStateCard
+              description="캠퍼스 정보를 불러오는 중입니다."
+              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              title="Campus 화면 준비 중"
+            />
+          ) : null}
 
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={TIMETABLE_ACTION_LABEL}
-                onPressAction={() =>
-                  campusEntryNavigation.openCampusScreen('TimetableDetail')
-                }
-                subtitle={data.timetable.dateLabel}
-                title="오늘 시간표"
-              />
-              <TimetableCard
-                emptyState={data.timetable.emptyState}
-                collapsedVisibleCount={data.timetable.collapsedVisibleCount}
-                isExpanded={isTimetableExpanded}
-                onToggleExpanded={() => {
-                  setIsTimetableExpanded(previous => !previous);
-                }}
-                periods={data.timetable.periods}
-                sessions={data.timetable.sessions}
-                showToggle={canExpandTimetable}
-              />
-            </View>
+          {error && !data ? (
+            <ScreenStateCard
+              actionLabel="다시 시도"
+              description={error}
+              icon={
+                <Icon
+                  color={V2_COLORS.accent.orange}
+                  name="refresh-outline"
+                  size={26}
+                />
+              }
+              onPressAction={() => {
+                refetch();
+              }}
+              title="Campus 화면을 불러오지 못했습니다"
+            />
+          ) : null}
 
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={TAXI_ACTION_LABEL}
-                onPressAction={campusEntryNavigation.openTaxiMain}
-                title="모집 중인 택시"
-              />
-              <TaxiCards
-                items={data.taxi.items}
-                onPressItem={campusEntryNavigation.openTaxiMain}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={CAFETERIA_ACTION_LABEL}
-                onPressAction={() =>
-                  campusEntryNavigation.openCampusScreen('CafeteriaDetail')
-                }
-                title="오늘의 학식"
-              />
-              <CafeteriaCard
-                description={data.cafeteria.featuredMenu?.description ?? ''}
-                onPress={() =>
-                  campusEntryNavigation.openCampusScreen('CafeteriaDetail')
-                }
-                priceLabel={data.cafeteria.featuredMenu?.priceLabel ?? ''}
-                title={data.cafeteria.featuredMenu?.title ?? ''}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <SectionHeader
-                actionLabel={ACADEMIC_ACTION_LABEL}
-                onPressAction={() =>
-                  campusEntryNavigation.openCampusScreen(
-                    'AcademicCalendarDetail',
-                  )
-                }
-                title="다가오는 일정"
-              />
-              <AcademicCalendarCard
-                items={data.academicCalendar.items}
-                onPressItem={() =>
-                  campusEntryNavigation.openCampusScreen(
-                    'AcademicCalendarDetail',
-                  )
-                }
-              />
-            </View>
-
-            <View style={styles.quickMenuSection}>
-              <Text style={styles.sectionTitle}>빠른 메뉴</Text>
-              <View style={styles.quickMenuGrid}>
-                {QUICK_MENU_ITEMS.map(item => (
-                  <TouchableOpacity
-                    key={item.label}
-                    activeOpacity={0.82}
-                    onPress={() =>
-                      campusEntryNavigation.openCampusScreen(item.routeName)
-                    }
-                    style={styles.quickMenuItem}
-                  >
-                    <View
-                      style={[
-                        styles.quickMenuIconBox,
-                        { backgroundColor: item.backgroundColor },
-                      ]}
-                    >
-                      <Icon color={item.iconColor} name={item.icon} size={22} />
-                    </View>
-                    <Text style={styles.quickMenuLabel}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
+          {data ? (
+            <>
+              <View style={styles.section}>
+                <SectionHeader
+                  actionLabel={NOTICE_ACTION_LABEL}
+                  onPressAction={campusEntryNavigation.openNoticeList}
+                  title="읽지 않은 공지"
+                />
+                <NoticeCard
+                  items={data.notices.items}
+                  onPressItem={campusEntryNavigation.openNoticeList}
+                />
               </View>
-            </View>
-          </>
-        ) : null}
-      </ScrollView>
+
+              <View style={styles.section}>
+                <SectionHeader
+                  actionLabel={TIMETABLE_ACTION_LABEL}
+                  onPressAction={() =>
+                    campusEntryNavigation.openCampusScreen('TimetableDetail')
+                  }
+                  subtitle={data.timetable.dateLabel}
+                  title="오늘 시간표"
+                />
+                <TimetableCard
+                  emptyState={data.timetable.emptyState}
+                  collapsedVisibleCount={data.timetable.collapsedVisibleCount}
+                  isExpanded={isTimetableExpanded}
+                  onToggleExpanded={() => {
+                    setIsTimetableExpanded(previous => !previous);
+                  }}
+                  periods={data.timetable.periods}
+                  sessions={data.timetable.sessions}
+                  showToggle={canExpandTimetable}
+                />
+              </View>
+
+              <View style={styles.section}>
+                <SectionHeader
+                  actionLabel={TAXI_ACTION_LABEL}
+                  onPressAction={campusEntryNavigation.openTaxiMain}
+                  title="모집 중인 택시"
+                />
+                <TaxiCards
+                  items={data.taxi.items}
+                  onPressItem={campusEntryNavigation.openTaxiMain}
+                />
+              </View>
+
+              <View style={styles.section}>
+                <SectionHeader
+                  actionLabel={CAFETERIA_ACTION_LABEL}
+                  onPressAction={() =>
+                    campusEntryNavigation.openCampusScreen('CafeteriaDetail')
+                  }
+                  title="오늘의 학식"
+                />
+                <CafeteriaCard
+                  description={data.cafeteria.featuredMenu?.description ?? ''}
+                  onPress={() =>
+                    campusEntryNavigation.openCampusScreen('CafeteriaDetail')
+                  }
+                  priceLabel={data.cafeteria.featuredMenu?.priceLabel ?? ''}
+                  title={data.cafeteria.featuredMenu?.title ?? ''}
+                />
+              </View>
+
+              <View style={styles.section}>
+                <SectionHeader
+                  actionLabel={ACADEMIC_ACTION_LABEL}
+                  onPressAction={() =>
+                    campusEntryNavigation.openCampusScreen(
+                      'AcademicCalendarDetail',
+                    )
+                  }
+                  title="다가오는 일정"
+                />
+                <AcademicCalendarCard
+                  items={data.academicCalendar.items}
+                  onPressItem={() =>
+                    campusEntryNavigation.openCampusScreen(
+                      'AcademicCalendarDetail',
+                    )
+                  }
+                />
+              </View>
+
+              <View style={styles.quickMenuSection}>
+                <Text style={styles.sectionTitle}>빠른 메뉴</Text>
+                <View style={styles.quickMenuGrid}>
+                  {QUICK_MENU_ITEMS.map(item => (
+                    <TouchableOpacity
+                      key={item.label}
+                      activeOpacity={0.82}
+                      onPress={() =>
+                        campusEntryNavigation.openCampusScreen(item.routeName)
+                      }
+                      style={styles.quickMenuItem}>
+                      <View
+                        style={[
+                          styles.quickMenuIconBox,
+                          {backgroundColor: item.backgroundColor},
+                        ]}>
+                        <Icon
+                          color={item.iconColor}
+                          name={item.icon}
+                          size={22}
+                        />
+                      </View>
+                      <Text style={styles.quickMenuLabel}>{item.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </>
+          ) : null}
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -463,7 +465,9 @@ const SectionHeader = ({
     <View style={styles.sectionHeader}>
       <View>
         <Text style={styles.sectionTitle}>{title}</Text>
-        {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
+        {subtitle ? (
+          <Text style={styles.sectionSubtitle}>{subtitle}</Text>
+        ) : null}
       </View>
       {actionLabel && onPressAction ? (
         <TouchableOpacity activeOpacity={0.8} onPress={onPressAction}>
@@ -499,8 +503,7 @@ const ScreenStateCard = ({
           <TouchableOpacity
             activeOpacity={0.82}
             onPress={onPressAction}
-            style={styles.stateButton}
-          >
+            style={styles.stateButton}>
             <Text style={styles.stateButtonLabel}>{actionLabel}</Text>
           </TouchableOpacity>
         ) : null}
@@ -514,7 +517,7 @@ type NoticeCardProps = {
   onPressItem: () => void;
 };
 
-const NoticeCard = ({ items, onPressItem }: NoticeCardProps) => {
+const NoticeCard = ({items, onPressItem}: NoticeCardProps) => {
   if (items.length === 0) {
     return (
       <View style={styles.emptyCard}>
@@ -536,23 +539,20 @@ const NoticeCard = ({ items, onPressItem }: NoticeCardProps) => {
             <TouchableOpacity
               activeOpacity={0.82}
               onPress={onPressItem}
-              style={styles.noticeRow}
-            >
+              style={styles.noticeRow}>
               <View style={styles.noticeDot} />
               <View style={styles.noticeContent}>
                 <View style={styles.noticeMetaRow}>
                   <View
                     style={[
                       styles.noticeCategoryPill,
-                      { backgroundColor: toneColors.backgroundColor },
-                    ]}
-                  >
+                      {backgroundColor: toneColors.backgroundColor},
+                    ]}>
                     <Text
                       style={[
                         styles.noticeCategoryLabel,
-                        { color: toneColors.textColor },
-                      ]}
-                    >
+                        {color: toneColors.textColor},
+                      ]}>
                       {item.categoryLabel}
                     </Text>
                   </View>
@@ -568,7 +568,9 @@ const NoticeCard = ({ items, onPressItem }: NoticeCardProps) => {
                 size={16}
               />
             </TouchableOpacity>
-            {index < items.length - 1 ? <View style={styles.cardSeparator} /> : null}
+            {index < items.length - 1 ? (
+              <View style={styles.cardSeparator} />
+            ) : null}
           </React.Fragment>
         );
       })}
@@ -580,7 +582,7 @@ type TimetableCardProps = {
   periods: CampusTimetablePeriodViewData[];
   sessions: CampusTimetableSessionViewData[];
   collapsedVisibleCount: number;
-  emptyState?: { title: string; description: string };
+  emptyState?: {title: string; description: string};
   showToggle: boolean;
   isExpanded: boolean;
   onToggleExpanded: () => void;
@@ -631,8 +633,7 @@ const TimetableCard = ({
                 index === rows.length - 1 && !showToggle
                   ? styles.timetableRowLast
                   : null,
-              ]}
-            >
+              ]}>
               <View style={styles.timetableTimelineCell}>
                 <Text style={styles.timetablePeriodLabel}>
                   {row.period.periodLabel}
@@ -667,16 +668,14 @@ const TimetableCard = ({
               index === rows.length - 1 && !showToggle
                 ? styles.timetableRowLast
                 : null,
-            ]}
-          >
+            ]}>
             <View
               style={[
                 styles.timetableTimelineCell,
                 row.renderedSpan > 1
                   ? styles.timetableTimelineCellSpanned
                   : null,
-              ]}
-            >
+              ]}>
               <View style={styles.timetableTimelineTop}>
                 <Text
                   style={[
@@ -684,8 +683,7 @@ const TimetableCard = ({
                     row.session.isCurrent
                       ? styles.timetablePeriodLabelCurrent
                       : null,
-                  ]}
-                >
+                  ]}>
                   {row.period.periodLabel}
                 </Text>
                 <Text
@@ -694,8 +692,7 @@ const TimetableCard = ({
                     row.session.isCurrent
                       ? styles.timetableTimeLabelCurrent
                       : null,
-                  ]}
-                >
+                  ]}>
                   {row.period.startTimeLabel}
                 </Text>
               </View>
@@ -706,8 +703,7 @@ const TimetableCard = ({
                     row.session.isCurrent
                       ? styles.timetableTimeLabelCurrent
                       : null,
-                  ]}
-                >
+                  ]}>
                   {row.endTimeLabel}
                 </Text>
               ) : null}
@@ -716,7 +712,7 @@ const TimetableCard = ({
               <View
                 style={[
                   styles.timetableAccentBar,
-                  { backgroundColor: toneColors?.accentColor },
+                  {backgroundColor: toneColors?.accentColor},
                 ]}
               />
               <View style={styles.timetableClassTextGroup}>
@@ -733,8 +729,7 @@ const TimetableCard = ({
                             row.session.status.tone,
                           ).backgroundColor,
                         },
-                      ]}
-                    >
+                      ]}>
                       <Text
                         style={[
                           styles.statusPillLabel,
@@ -743,8 +738,7 @@ const TimetableCard = ({
                               row.session.status.tone,
                             ).textColor,
                           },
-                        ]}
-                      >
+                        ]}>
                         {row.session.status.label}
                       </Text>
                     </View>
@@ -752,9 +746,7 @@ const TimetableCard = ({
                 </View>
                 <Text numberOfLines={1} style={styles.timetableMetaText}>
                   {row.session.instructorLabel}
-                  {row.session.roomLabel
-                    ? ` · ${row.session.roomLabel}`
-                    : ''}
+                  {row.session.roomLabel ? ` · ${row.session.roomLabel}` : ''}
                 </Text>
               </View>
             </View>
@@ -765,13 +757,8 @@ const TimetableCard = ({
         <TouchableOpacity
           activeOpacity={0.82}
           onPress={onToggleExpanded}
-          style={styles.timetableToggleButton}
-        >
-          <Icon
-            color={V2_COLORS.accent.blue}
-            name="moon-outline"
-            size={16}
-          />
+          style={styles.timetableToggleButton}>
+          <Icon color={V2_COLORS.accent.blue} name="moon-outline" size={16} />
           <Text style={styles.timetableToggleLabel}>
             {isExpanded ? TIMETABLE_COLLAPSE_LABEL : TIMETABLE_EXPAND_LABEL}
           </Text>
@@ -791,7 +778,7 @@ type TaxiCardsProps = {
   onPressItem: () => void;
 };
 
-const TaxiCards = ({ items, onPressItem }: TaxiCardsProps) => {
+const TaxiCards = ({items, onPressItem}: TaxiCardsProps) => {
   if (items.length === 0) {
     return (
       <View style={styles.emptyCard}>
@@ -810,8 +797,7 @@ const TaxiCards = ({ items, onPressItem }: TaxiCardsProps) => {
           key={item.id}
           activeOpacity={0.82}
           onPress={onPressItem}
-          style={styles.taxiCard}
-        >
+          style={styles.taxiCard}>
           <View style={styles.taxiInfoRow}>
             <View style={styles.taxiIconBadge}>
               <Icon
@@ -863,10 +849,17 @@ const CafeteriaCard = ({
   }
 
   return (
-    <TouchableOpacity activeOpacity={0.82} onPress={onPress} style={styles.card}>
+    <TouchableOpacity
+      activeOpacity={0.82}
+      onPress={onPress}
+      style={styles.card}>
       <View style={styles.cafeteriaCardContent}>
         <View style={styles.cafeteriaIconBox}>
-          <Icon color={V2_COLORS.text.inverse} name="restaurant-outline" size={28} />
+          <Icon
+            color={V2_COLORS.text.inverse}
+            name="restaurant-outline"
+            size={28}
+          />
         </View>
         <View style={styles.cafeteriaTextGroup}>
           <Text numberOfLines={1} style={styles.cafeteriaTitle}>
@@ -909,8 +902,7 @@ const AcademicCalendarCard = ({
           <TouchableOpacity
             activeOpacity={0.82}
             onPress={onPressItem}
-            style={styles.academicRow}
-          >
+            style={styles.academicRow}>
             <View style={styles.academicDateBox}>
               <Text style={styles.academicMonthText}>{item.monthLabel}</Text>
               <Text style={styles.academicDayText}>{item.dayLabel}</Text>
@@ -929,31 +921,30 @@ const AcademicCalendarCard = ({
                   <EventBadge badge={item.badge} />
                 ) : null}
               </View>
-              <Text style={styles.academicDateRange}>{item.dateRangeLabel}</Text>
+              <Text style={styles.academicDateRange}>
+                {item.dateRangeLabel}
+              </Text>
             </View>
           </TouchableOpacity>
-          {index < items.length - 1 ? <View style={styles.cardSeparator} /> : null}
+          {index < items.length - 1 ? (
+            <View style={styles.cardSeparator} />
+          ) : null}
         </React.Fragment>
       ))}
     </View>
   );
 };
 
-const EventBadge = ({
-  badge,
-}: {
-  badge: CampusAcademicEventBadgeViewData;
-}) => {
+const EventBadge = ({badge}: {badge: CampusAcademicEventBadgeViewData}) => {
   const toneColors = getHighlightToneColors(badge.tone);
 
   return (
     <View
       style={[
         styles.eventBadge,
-        { backgroundColor: toneColors.backgroundColor },
-      ]}
-    >
-      <Text style={[styles.eventBadgeLabel, { color: toneColors.textColor }]}>
+        {backgroundColor: toneColors.backgroundColor},
+      ]}>
+      <Text style={[styles.eventBadgeLabel, {color: toneColors.textColor}]}>
         {badge.label}
       </Text>
     </View>
@@ -964,6 +955,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: V2_COLORS.background.page,
+  },
+  screen: {
+    flex: 1,
   },
   header: {
     alignItems: 'center',

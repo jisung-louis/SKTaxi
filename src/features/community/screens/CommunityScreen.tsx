@@ -4,12 +4,14 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import type {RouteProp} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import Animated from 'react-native-reanimated';
 
 import {
   V2PageHeader,
   V2SegmentedControl,
 } from '@/shared/design-system/components';
 import type {CommunityStackParamList} from '@/app/navigation/types';
+import {useScreenEnterAnimation} from '@/shared/hooks';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
 import {CommunityBoardSearchModal} from '../components/CommunityBoardSearchModal';
@@ -35,6 +37,7 @@ export const CommunityScreen = () => {
   const route = useRoute<CommunityRouteProp>();
   const [selectedSegment, setSelectedSegment] =
     React.useState<CommunitySegmentId>('board');
+  const screenAnimatedStyle = useScreenEnterAnimation();
   const {
     error: boardError,
     filters: boardFilters,
@@ -88,49 +91,51 @@ export const CommunityScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.headerSection}>
-        <V2PageHeader
-          actionAccessibilityLabel="커뮤니티 검색"
-          onPressAction={handlePressHeaderAction}
-          subtitle="학우들과 소통하고 정보를 나눠요"
-          title="커뮤니티"
-        />
-      </View>
-
-      <View style={styles.segmentSection}>
-        <V2SegmentedControl
-          items={SEGMENTS}
-          onSelect={setSelectedSegment}
-          selectedId={selectedSegment}
-        />
-      </View>
-
-      <View style={styles.contentSection}>
-        {selectedSegment === 'board' ? (
-          <CommunityBoardSegment
-            activeSearchLabel={activeSearchLabel}
-            error={boardError}
-            hasMore={hasMore}
-            items={boardItems}
-            loading={boardLoading}
-            loadingMore={loadingMore}
-            onClearSearch={handleClearSearch}
-            onLoadMore={loadMore}
-            onPressPost={handleOpenPost}
-            onPressWrite={handleOpenWrite}
-            onRefresh={handleBoardRefresh}
-            refreshing={boardRefreshing}
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        <View style={styles.headerSection}>
+          <V2PageHeader
+            actionAccessibilityLabel="커뮤니티 검색"
+            onPressAction={handlePressHeaderAction}
+            subtitle="학우들과 소통하고 정보를 나눠요"
+            title="커뮤니티"
           />
-        ) : (
-          <CommunityChatSegment
-            loading={chat.loading}
-            onPressRoom={chat.handleOpenRoom}
-            onRefresh={chat.handleRefresh}
-            refreshing={chat.refreshing}
-            rooms={chat.rooms}
+        </View>
+
+        <View style={styles.segmentSection}>
+          <V2SegmentedControl
+            items={SEGMENTS}
+            onSelect={setSelectedSegment}
+            selectedId={selectedSegment}
           />
-        )}
-      </View>
+        </View>
+
+        <View style={styles.contentSection}>
+          {selectedSegment === 'board' ? (
+            <CommunityBoardSegment
+              activeSearchLabel={activeSearchLabel}
+              error={boardError}
+              hasMore={hasMore}
+              items={boardItems}
+              loading={boardLoading}
+              loadingMore={loadingMore}
+              onClearSearch={handleClearSearch}
+              onLoadMore={loadMore}
+              onPressPost={handleOpenPost}
+              onPressWrite={handleOpenWrite}
+              onRefresh={handleBoardRefresh}
+              refreshing={boardRefreshing}
+            />
+          ) : (
+            <CommunityChatSegment
+              loading={chat.loading}
+              onPressRoom={chat.handleOpenRoom}
+              onRefresh={chat.handleRefresh}
+              refreshing={chat.refreshing}
+              rooms={chat.rooms}
+            />
+          )}
+        </View>
+      </Animated.View>
 
       <CommunityBoardSearchModal
         currentFilters={boardFilters}
@@ -145,6 +150,9 @@ export const CommunityScreen = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: V2_COLORS.background.page,
+    flex: 1,
+  },
+  screen: {
     flex: 1,
   },
   headerSection: {
