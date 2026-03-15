@@ -1,557 +1,257 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   ActivityIndicator,
-  Linking,
-  useWindowDimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import CommentInput, { CommentInputRef } from '@/shared/ui/CommentInput';
-import PageHeader from '@/shared/ui/PageHeader';
-import { ToggleButton } from '@/shared/ui/ToggleButton';
-import { useAuth } from '@/features/auth';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-import {
-  UniversalCommentList,
-  type CommentThreadItem,
-} from '@/shared/ui/comments';
+import Animated from 'react-native-reanimated';
 
 import {
-  NoticeHtmlContent,
-  NoticeImageViewer,
-} from '../components';
-import { useNoticeComments } from '../hooks/useNoticeComments';
-import { useNoticeDetail } from '../hooks/useNoticeDetail';
-import { useNoticeLike } from '../hooks/useNoticeLike';
-import { NoticeStackParamList } from '../model/navigation';
-import { formatNoticePostedAt } from '../model/selectors';
-import { toNoticeSubviewUrl } from '../services/noticeNavigationService';
+  V2DetailBackHeader,
+  V2DetailBodyBlocks,
+  V2DetailCommentCard,
+  V2DetailComposer,
+  V2DetailNotFoundState,
+  V2DetailReactionChip,
+  V2StateCard,
+  V2ToneBadge,
+} from '@/shared/design-system/components';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+
+import {NoticeDetailAttachments} from '../components/v2/NoticeDetailAttachments';
+import {useNoticeDetailData} from '../hooks/useNoticeDetailData';
+import type {NoticeStackParamList} from '../model/navigation';
+
+type NoticeDetailNavigationProp = NativeStackNavigationProp<
+  NoticeStackParamList,
+  'NoticeDetail'
+>;
 
 export const NoticeDetailScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
+  const navigation = useNavigation<NoticeDetailNavigationProp>();
   const route =
-    useRoute<NativeStackScreenProps<NoticeStackParamList, 'NoticeDetail'>['route']>();
-  const noticeId = route.params?.noticeId;
-  const { width } = useWindowDimensions();
-  const { user } = useAuth();
-
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const [replyingTo, setReplyingTo] = useState<{
-    commentId: string;
-    authorName: string;
-    isAnonymous: boolean;
-  } | null>(null);
-  const [isEditingComment, setIsEditingComment] = useState(false);
-  const [inlineImageViewerVisible, setInlineImageViewerVisible] = useState(false);
-  const [inlineImageSelectedIndex, setInlineImageSelectedIndex] = useState(0);
-  const [inlineImageUrls, setInlineImageUrls] = useState<string[]>([]);
-  const [inlineImageMeta, setInlineImageMeta] = useState<
-    Record<string, { width: number; height: number }>
-  >({});
-
-  const commentInputRef = useRef<CommentInputRef>(null);
-  const inlineImagesRef = useRef<string[]>([]);
-
-  const { notice, loading, error } = useNoticeDetail(noticeId);
-  const { isLiked, likeCount, loading: likeLoading, toggleLike } = useNoticeLike(
-    noticeId || '',
-  );
-  const {
-    comments: rawComments,
-    loading: commentsLoading,
-    submitting: commentsSubmitting,
-    addComment,
-    addReply,
-    updateComment,
-    deleteComment,
-  } = useNoticeComments(noticeId || '');
-
-  const handleReply = useCallback(
-    (comment: CommentThreadItem) => {
-      setReplyingTo({
-        commentId: comment.id,
-        authorName: comment.authorName,
-        isAnonymous: !!comment.isAnonymous,
-      });
-      setTimeout(() => {
-        commentInputRef.current?.focus();
-      }, 100);
-    },
-    [],
+    useRoute<
+      NativeStackScreenProps<NoticeStackParamList, 'NoticeDetail'>['route']
+    >();
+  const insets = useSafeAreaInsets();
+  const screenAnimatedStyle = useScreenEnterAnimation();
+  const {data, error, loading, notFound, reload} = useNoticeDetailData(
+    route.params?.noticeId,
   );
 
-  const handleCancelReply = useCallback(() => {
-    setReplyingTo(null);
-  }, []);
+  const headerOffset = insets.top + 56;
+  const composerBottomInset = Math.max(insets.bottom, V2_SPACING.md);
+  const scrollBottomPadding = composerBottomInset + 88;
 
-  const comments = useMemo(() => {
-    const convertComment = (comment: any): CommentThreadItem => {
-      const authorName = comment.isAnonymous
-        ? comment.anonymousOrder
-          ? `익명${comment.anonymousOrder}`
-          : '익명'
-        : comment.userDisplayName || comment.authorName;
-
-      return {
-        id: comment.id,
-        content: comment.content,
-        createdAt: comment.createdAt,
-        updatedAt: comment.updatedAt,
-        parentId: comment.parentId,
-        authorId: comment.userId || comment.authorId,
-        isAnonymous: comment.isAnonymous,
-        authorName,
-        anonymousOrder: comment.anonymousOrder,
-        isDeleted: comment.isDeleted,
-        hiddenReason: comment.isDeleted ? 'deleted' : undefined,
-        canReply: Boolean(user?.uid) && !comment.isDeleted,
-        canEdit: Boolean(user?.uid) && user?.uid === (comment.userId || comment.authorId) && !comment.isDeleted,
-        canDelete: Boolean(user?.uid) && user?.uid === (comment.userId || comment.authorId) && !comment.isDeleted,
-        replies: comment.replies?.map((reply: any) => convertComment(reply)) || [],
-      };
-    };
-
-    return rawComments.map((comment) => convertComment(comment));
-  }, [rawComments, user?.uid]);
-
-  const handleInlineImageLoaded = useCallback(
-    ({ url, width: imageWidth, height: imageHeight }: { url: string; width: number; height: number }) => {
-      if (!url) {
-        return;
-      }
-
-      setInlineImageMeta((prev) =>
-        prev[url] ? prev : { ...prev, [url]: { width: imageWidth, height: imageHeight } },
-      );
-
-      if (!inlineImagesRef.current.includes(url)) {
-        inlineImagesRef.current = [...inlineImagesRef.current, url];
-        setInlineImageUrls(inlineImagesRef.current);
-      }
-    },
-    [],
-  );
-
-  const handleInlineImagePress = useCallback((url: string) => {
-    if (!url) {
+  const handlePressBack = React.useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
       return;
     }
 
-    let index = inlineImagesRef.current.indexOf(url);
-    if (index === -1) {
-      inlineImagesRef.current = [...inlineImagesRef.current, url];
-      setInlineImageUrls(inlineImagesRef.current);
-      index = inlineImagesRef.current.length - 1;
-    }
+    navigation.navigate('NoticeMain');
+  }, [navigation]);
 
-    setInlineImageSelectedIndex(index);
-    setInlineImageViewerVisible(true);
-  }, []);
+  const handlePressReturnToList = React.useCallback(() => {
+    navigation.navigate('NoticeMain');
+  }, [navigation]);
 
-  const formattedDate = useMemo(() => {
-    return formatNoticePostedAt(notice?.postedAt);
-  }, [notice?.postedAt]);
-
-  const inlineViewerImages = useMemo(
-    () =>
-      inlineImageUrls.map((url) => ({
-        url,
-        width: inlineImageMeta[url]?.width || width,
-        height: inlineImageMeta[url]?.height || width,
-      })),
-    [inlineImageMeta, inlineImageUrls, width],
-  );
+  const primaryBadge = data?.metaBadges[0];
+  const secondaryBadges = data?.metaBadges.slice(1) ?? [];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader onBack={() => navigation.goBack()} title="공지사항" borderBottom />
-      {loading ? (
-        <View style={styles.loaderWrap}>
-          <ActivityIndicator color={COLORS.accent.green} size="large" />
-        </View>
-      ) : error ? (
-        <View style={styles.errorWrap}>
-          <Icon name="alert-circle" size={48} color={COLORS.accent.red} />
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={[
-            styles.contentWrap,
-            {
-              paddingBottom: isEditingComment
-                ? keyboardHeight > 0
-                  ? keyboardHeight + 391
-                  : 371
-                : keyboardHeight > 0
-                  ? keyboardHeight + 141
-                  : 121,
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.noticeContainer}>
-            <View style={styles.headerBlock}>
-              <View style={styles.chipsRow}>
-                {!!notice?.department && (
-                  <View style={[styles.chip, styles.deptChip]}>
-                    <Text style={[styles.chipText, styles.deptChipText]}>
-                      {notice.department}
-                    </Text>
-                  </View>
-                )}
-                {!!notice?.category && (
-                  <View style={styles.chip}>
-                    <Text style={styles.chipText}>{notice.category}</Text>
-                  </View>
-                )}
-              </View>
-              <Text style={styles.title}>{notice?.title}</Text>
-              <View style={styles.metaRow}>
-                {!!notice?.author && <Text style={styles.metaText}>{notice.author}</Text>}
-                {!!formattedDate && (
-                  <View style={styles.metaDotRow}>
-                    <View style={styles.dot} />
-                    <Text style={styles.metaText}>{formattedDate}</Text>
-                  </View>
-                )}
-                <View style={styles.metaDotRow}>
-                  <View style={styles.dot} />
-                  <View style={styles.viewCountRow}>
-                    <Icon name="eye-outline" size={14} color={COLORS.text.secondary} />
-                    <Text style={styles.metaText}>{notice?.viewCount || 0}회 조회</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            <NoticeHtmlContent
-              contentWidth={width - 40}
-              html={notice?.contentDetail}
-              fallbackText={notice?.content}
-              onImageLoaded={handleInlineImageLoaded}
-              onImagePress={handleInlineImagePress}
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        {loading ? (
+          <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
+            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+          </View>
+        ) : notFound ? (
+          <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
+            <V2DetailNotFoundState
+              actionLabel="목록으로 돌아가기"
+              onPressAction={handlePressReturnToList}
+              title="공지사항을 찾을 수 없어요"
             />
-
-            {!!notice?.contentAttachments?.length && (
-              <View style={styles.attachmentsCard}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 8,
-                    marginBottom: 8,
-                  }}
-                >
-                  <Icon
-                    name="attach-outline"
-                    size={16}
-                    color={COLORS.text.secondary}
+          </View>
+        ) : error ? (
+          <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
+            <V2StateCard
+              actionLabel="다시 시도"
+              description={error}
+              icon={
+                <Icon
+                  color={V2_COLORS.accent.orange}
+                  name="alert-circle-outline"
+                  size={28}
+                />
+              }
+              onPressAction={() => {
+                reload().catch(() => undefined);
+              }}
+              title="공지사항을 불러오지 못했습니다"
+            />
+          </View>
+        ) : data ? (
+          <>
+            <ScrollView
+              contentContainerStyle={[
+                styles.scrollContent,
+                {
+                  paddingBottom: scrollBottomPadding,
+                  paddingTop: headerOffset,
+                },
+              ]}
+              showsVerticalScrollIndicator={false}>
+              <View style={styles.metaRow}>
+                {primaryBadge ? (
+                  <V2ToneBadge
+                    label={primaryBadge.label}
+                    tone={primaryBadge.tone}
                   />
-                  <Text
-                    style={{
-                      ...TYPOGRAPHY.body2,
-                      color: COLORS.text.secondary,
-                    }}
-                  >
-                    첨부파일
+                ) : null}
+                <Text style={styles.dateLabel}>{data.dateLabel}</Text>
+                {secondaryBadges.map(badge => (
+                  <V2ToneBadge
+                    key={badge.id}
+                    label={badge.label}
+                    tone={badge.tone}
+                  />
+                ))}
+              </View>
+
+              <Text style={styles.title}>{data.title}</Text>
+              <View style={styles.divider} />
+
+              <V2DetailBodyBlocks blocks={data.bodyBlocks} />
+
+              {data.attachments && data.attachments.length > 0 ? (
+                <View style={styles.attachmentsSection}>
+                  <NoticeDetailAttachments attachments={data.attachments} />
+                </View>
+              ) : null}
+
+              <View style={styles.reactionsRow}>
+                {data.reactions.map(reaction => (
+                  <V2DetailReactionChip
+                    count={reaction.count}
+                    iconName={reaction.iconName}
+                    key={reaction.id}
+                  />
+                ))}
+              </View>
+
+              <View style={[styles.divider, styles.commentsDivider]} />
+              <Text style={styles.commentsTitle}>댓글 {data.comments.length}</Text>
+
+              {data.comments.length === 0 ? (
+                <View style={styles.emptyCommentsWrap}>
+                  <Text style={styles.emptyCommentsLabel}>
+                    {data.emptyCommentsLabel}
                   </Text>
                 </View>
-                <View style={{ gap: 10 }}>
-                  {notice.contentAttachments.map((attachment, index) => (
-                    <View key={`${attachment.downloadUrl || index}`} style={styles.attachmentRow}>
-                      <TouchableOpacity
-                        onPress={() => Linking.openURL(attachment.downloadUrl)}
-                        activeOpacity={0.85}
-                        style={{
-                          flexDirection: 'row',
-                          alignItems: 'center',
-                          gap: 10,
-                          flex: 1,
-                        }}
-                      >
-                        <Icon
-                          name="document-text-outline"
-                          size={18}
-                          color={COLORS.accent.green}
-                        />
-                        <Text numberOfLines={1} style={styles.attachmentName}>
-                          {attachment.name || '첨부파일'}
-                        </Text>
-                      </TouchableOpacity>
-                      <View style={{ flexDirection: 'row', gap: 8 }}>
-                        {!!attachment.previewUrl && (
-                          <TouchableOpacity
-                            onPress={() => Linking.openURL(attachment.previewUrl)}
-                            activeOpacity={0.85}
-                            style={styles.chipButton}
-                          >
-                            <Icon
-                              name="eye-outline"
-                              size={14}
-                              color={COLORS.accent.green}
-                            />
-                            <Text style={styles.chipButtonText}>바로보기</Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
+              ) : (
+                <View style={styles.commentsList}>
+                  {data.comments.map(comment => (
+                    <V2DetailCommentCard comment={comment} key={comment.id} />
                   ))}
                 </View>
-              </View>
-            )}
+              )}
+            </ScrollView>
 
-            {!!notice?.link && (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate('NoticeDetailWebView', { noticeId: noticeId || '' })
-                }
-                activeOpacity={0.8}
-                style={styles.linkCard}
-              >
-                <Icon name="link-outline" size={18} color={COLORS.accent.green} />
-                <Text numberOfLines={1} style={styles.linkText}>
-                  {toNoticeSubviewUrl(notice.link)}
-                </Text>
-                <Icon name="open-outline" size={18} color={COLORS.accent.green} />
-              </TouchableOpacity>
-            )}
+            <V2DetailComposer
+              bottomInset={composerBottomInset}
+              placeholder={data.commentInputPlaceholder}
+            />
+          </>
+        ) : null}
 
-            <View style={styles.interactionRow}>
-              <ToggleButton
-                type="like"
-                isActive={isLiked}
-                count={likeCount}
-                onPress={toggleLike}
-                loading={likeLoading}
-                size="medium"
-              />
-              <ToggleButton
-                type="comment"
-                count={notice?.commentCount || 0}
-                onPress={() => {}}
-                size="medium"
-                disabled
-              />
-            </View>
-          </View>
-
-          <UniversalCommentList
-            comments={comments}
-            loading={commentsLoading}
-            onUpdateComment={updateComment}
-            onDeleteComment={deleteComment}
-            submitting={commentsSubmitting}
-            onReply={handleReply}
-            replyingToCommentId={replyingTo?.commentId}
-            onEditStateChange={setIsEditingComment}
-          />
-        </ScrollView>
-      )}
-
-      {!replyingTo && !isEditingComment && (
-        <CommentInput
-          ref={commentInputRef}
-          onSubmit={async (content: string, isAnonymous?: boolean) => {
-            await addComment(content, undefined, isAnonymous);
-          }}
-          submitting={commentsSubmitting}
-          placeholder="댓글을 입력하세요..."
-          parentId={undefined}
-          onKeyboardHeightChange={setKeyboardHeight}
-          onCancelReply={handleCancelReply}
-        />
-      )}
-
-      {replyingTo && !isEditingComment && (
-        <CommentInput
-          ref={commentInputRef}
-          onSubmit={async (content: string, isAnonymous?: boolean) => {
-            await addReply(replyingTo.commentId, content, isAnonymous);
-            setReplyingTo(null);
-          }}
-          submitting={commentsSubmitting}
-          placeholder={
-            replyingTo.isAnonymous
-              ? '익명님에게 답글...'
-              : `${replyingTo.authorName}님에게 답글...`
-          }
-          parentId={replyingTo.commentId}
-          onKeyboardHeightChange={setKeyboardHeight}
-          onCancelReply={handleCancelReply}
-        />
-      )}
-
-      {inlineViewerImages.length > 0 && (
-        <NoticeImageViewer
-          visible={inlineImageViewerVisible}
-          images={inlineViewerImages}
-          initialIndex={inlineImageSelectedIndex}
-          onClose={() => setInlineImageViewerVisible(false)}
-        />
-      )}
+        <V2DetailBackHeader onPressBack={handlePressBack} />
+      </Animated.View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  loaderWrap: {
+  screen: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  errorWrap: {
+  centeredState: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: V2_SPACING.lg,
   },
-  errorText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    marginTop: 12,
-    textAlign: 'center',
-  },
-  contentWrap: {
-    paddingTop: 16,
-    paddingBottom: 30,
-    gap: 16,
-  },
-  noticeContainer: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  headerBlock: {
-    gap: 10,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  chip: {
-    backgroundColor: `${COLORS.accent.green}20`,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  chipText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.accent.green,
-    fontWeight: '700',
-  },
-  deptChip: {
-    backgroundColor: COLORS.background.card,
-    outlineWidth: 1,
-    outlineColor: COLORS.border.default,
-  },
-  deptChipText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    fontWeight: '700',
-  },
-  title: {
-    ...TYPOGRAPHY.title2,
-    color: COLORS.text.primary,
-    lineHeight: 28,
+  scrollContent: {
+    paddingHorizontal: V2_SPACING.lg,
   },
   metaRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  metaDotRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexWrap: 'wrap',
+    gap: V2_SPACING.sm,
+    marginBottom: V2_SPACING.md,
   },
-  viewCountRow: {
+  dateLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  title: {
+    color: V2_COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 28,
+    marginBottom: V2_SPACING.xxl,
+  },
+  divider: {
+    backgroundColor: V2_COLORS.border.default,
+    height: 1,
+    marginBottom: V2_SPACING.xxl,
+  },
+  attachmentsSection: {
+    marginTop: V2_SPACING.xxl,
+  },
+  reactionsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    gap: V2_SPACING.md,
+    marginTop: V2_SPACING.xxl,
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: COLORS.border.dark,
+  commentsDivider: {
+    marginBottom: V2_SPACING.lg,
+    marginTop: V2_SPACING.xxl,
   },
-  metaText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.secondary,
-  },
-  bodyText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    lineHeight: 22,
-  },
-  attachmentsCard: {
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: COLORS.background.card,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  attachmentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  attachmentName: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    flex: 1,
-  },
-  chipButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: `${COLORS.accent.green}14`,
-  },
-  chipButtonText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.accent.green,
+  commentsTitle: {
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
     fontWeight: '700',
+    lineHeight: 20,
+    marginBottom: V2_SPACING.md,
   },
-  linkCard: {
-    flexDirection: 'row',
+  emptyCommentsWrap: {
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    backgroundColor: COLORS.background.card,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+    justifyContent: 'center',
+    minHeight: 84,
+    paddingVertical: 32,
   },
-  linkText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    flex: 1,
+  emptyCommentsLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  interactionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  commentsList: {
+    paddingBottom: V2_SPACING.md,
   },
 });
