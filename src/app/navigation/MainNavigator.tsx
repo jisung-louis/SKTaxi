@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   createBottomTabNavigator,
-  BottomTabBar,
   type BottomTabBarProps,
 } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -63,13 +62,12 @@ import {
   ProfileEditScreen,
   ProfileScreen,
 } from '@/features/user';
-import { COLORS } from '@/shared/constants/colors';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { V2_COLORS } from '@/shared/design-system/tokens';
 import { Dot } from '@/shared/ui/Dot';
 import PermissionBubble from '@/shared/ui/PermissionBubble';
 import { TabBadge } from '@/shared/ui/TabBadge';
 
+import { V2BottomTabBar } from './components/V2BottomTabBar';
 import {
   MainTabParamList,
   CampusStackParamList,
@@ -339,10 +337,6 @@ const MainNavigatorContent = () => {
       <Tab.Navigator
         tabBar={renderAnimatedTabBar}
         screenOptions={{
-          tabBarStyle: styles.tabBar,
-          tabBarActiveTintColor: COLORS.accent.green,
-          tabBarInactiveTintColor: COLORS.text.secondary,
-          tabBarItemStyle: styles.tabBarItem,
           headerShown: false,
           lazy: false,
         }}
@@ -449,7 +443,7 @@ const AnimatedTabBar = (props: BottomTabBarProps) => {
         },
       ]}
     >
-      <BottomTabBar {...props} />
+      <V2BottomTabBar {...props} />
     </Animated.View>
   );
 };
@@ -483,30 +477,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     right: -8,
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: V2_COLORS.brand.primary,
     borderRadius: 10,
     padding: 2,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
+    borderColor: V2_COLORS.background.surface,
   },
   partyBadgeText: {
-    color: COLORS.text.buttonText,
-    ...TYPOGRAPHY.caption3,
+    color: V2_COLORS.text.inverse,
+    fontSize: 8,
     fontWeight: '700',
-  },
-  tabBar: {
-    backgroundColor: COLORS.background.primary,
-    borderTopColor: COLORS.border.dark,
-    backfaceVisibility: 'hidden',
-    borderCurve: 'circular',
-    height: BOTTOM_TAB_BAR_HEIGHT,
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  tabBarItem: {
-    gap: 12,
+    lineHeight: 10,
   },
   tabIcon: {
-    marginBottom: 4,
+    marginBottom: 0,
   },
 });
