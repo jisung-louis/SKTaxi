@@ -1,0 +1,82 @@
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import { type CampusStackParamList } from '@/app/navigation/types';
+import {
+  AcademicCalendarDetailScreen,
+  CafeteriaDetailScreen,
+} from '@/features/campus';
+import { CampusScreen } from '@/features/campus/screens/CampusScreen';
+import {
+  MinecraftDetailScreen,
+  MinecraftMapDetailScreen,
+} from '@/features/minecraft';
+import { TimetableDetailScreen } from '@/features/timetable';
+import {
+  AppNoticeDetailScreen,
+  AppNoticeScreen,
+  InquiriesScreen,
+  PrivacyPolicyScreen,
+  SettingScreen,
+  TermsOfUseScreen,
+} from '@/features/settings';
+import {
+  AccountModificationScreen,
+  NotificationScreen,
+  NotificationSettingsScreen,
+  ProfileEditScreen,
+  ProfileScreen,
+} from '@/features/user';
+
+const CampusStack = createNativeStackNavigator<CampusStackParamList>();
+
+export const CampusStackNavigator = () => {
+  return (
+    <CampusStack.Navigator screenOptions={{ headerShown: false }}>
+      <CampusStack.Screen name="CampusMain" component={CampusScreen} />
+      <CampusStack.Screen name="Notification" component={NotificationScreen} />
+      <CampusStack.Screen name="Setting" component={SettingScreen} />
+      <CampusStack.Screen name="Profile" component={ProfileScreen} />
+      <CampusStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
+      <CampusStack.Screen name="AppNotice" component={AppNoticeScreen} />
+      <CampusStack.Screen
+        name="AppNoticeDetail"
+        component={AppNoticeDetailScreen}
+      />
+      <CampusStack.Screen
+        name="AccountModification"
+        component={AccountModificationScreen}
+      />
+      <CampusStack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
+      />
+      <CampusStack.Screen name="Inquiries" component={InquiriesScreen} />
+      <CampusStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
+      <CampusStack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicyScreen}
+      />
+      <CampusStack.Screen
+        name="CafeteriaDetail"
+        component={CafeteriaDetailScreen}
+      />
+      <CampusStack.Screen
+        name="AcademicCalendarDetail"
+        component={AcademicCalendarDetailScreen}
+      />
+      <CampusStack.Screen
+        name="TimetableDetail"
+        component={TimetableDetailScreen}
+      />
+      <CampusStack.Screen
+        name="MinecraftDetail"
+        component={MinecraftDetailScreen}
+      />
+      <CampusStack.Screen
+        name="MinecraftMapDetail"
+        component={MinecraftMapDetailScreen}
+      />
+    </CampusStack.Navigator>
+  );
+};
