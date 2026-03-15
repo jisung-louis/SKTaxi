@@ -1,8 +1,8 @@
 // SKTaxi: PartyRepository 단위 테스트
 // Mock Repository를 사용하여 Repository 인터페이스 계약 검증
 
-import { MockPartyRepository } from '../../repositories/mock/MockPartyRepository';
-import { Party } from '../../types/party';
+import type { Party } from '../../features/taxi';
+import { MockPartyRepository } from '../../features/taxi/testing/MockPartyRepository';
 import {
   createMockParty,
   createMockSubscriptionCallbacks,

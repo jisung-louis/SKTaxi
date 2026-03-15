@@ -1,23 +1,36 @@
 // SKTaxi: Repository Provider 컴포넌트 - DIP 의존성 주입 구현
 // Repository 인스턴스를 앱 전체에 제공하는 Provider
 
-import React, { useMemo, ReactNode } from 'react';
-import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
+import React, { useMemo, type ReactNode } from 'react';
 
-import { FirestorePartyRepository } from '../repositories/firestore/FirestorePartyRepository';
-import { FirestoreChatRepository } from '../repositories/firestore/FirestoreChatRepository';
-import { FirestoreUserRepository } from '../repositories/firestore/FirestoreUserRepository';
-import { FirestoreBoardRepository } from '../repositories/firestore/FirestoreBoardRepository';
-import { FirestoreNoticeRepository } from '../repositories/firestore/FirestoreNoticeRepository';
-import { FirestoreCourseRepository } from '../repositories/firestore/FirestoreCourseRepository';
-import { FirestoreNotificationRepository } from '../repositories/firestore/FirestoreNotificationRepository';
-import { FirestoreAppNoticeRepository } from '../repositories/firestore/FirestoreAppNoticeRepository';
-import { FirestoreCafeteriaRepository } from '../repositories/firestore/FirestoreCafeteriaRepository';
-import { FirestoreAcademicRepository } from '../repositories/firestore/FirestoreAcademicRepository';
-import { FirestoreInquiryRepository } from '../repositories/firestore/FirestoreInquiryRepository';
-import { FirestoreStorageRepository } from '../repositories/firestore/FirestoreStorageRepository';
-import { FirestoreTimetableRepository } from '../repositories/firestore/FirestoreTimetableRepository';
-import { FirestoreAuthRepository } from '../repositories/firestore/FirestoreAuthRepository';
+import {
+  FirebaseAcademicRepository,
+  FirebaseCafeteriaRepository,
+} from '@/features/campus';
+import {
+  FirebaseBoardRepository,
+} from '@/features/board';
+import { FirebaseChatRepository } from '@/features/chat';
+import { FirebaseNoticeRepository } from '@/features/notice';
+import {
+  FirebaseAppNoticeRepository,
+  FirebaseInquiryRepository,
+} from '@/features/settings';
+import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
+import { FirebaseAuthRepository } from '@/features/auth';
+import {
+  FirebaseNotificationActionRepository,
+  FirebasePartyRepository,
+} from '@/features/taxi';
+import {
+  FirebaseCourseRepository,
+  FirebaseTimetableRepository,
+} from '@/features/timetable';
+import {
+  FirebaseNotificationRepository,
+  FirebaseUserRepository,
+} from '@/features/user';
+import { FirestoreStorageRepository } from '@/shared/lib/firebase/storageRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
@@ -38,20 +51,21 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
   const repositories = useMemo<RepositoryContainer>(() => {
     // 기본 Firestore 구현체
     const defaultRepositories: RepositoryContainer = {
-      partyRepository: new FirestorePartyRepository(),
-      chatRepository: new FirestoreChatRepository(),
-      userRepository: new FirestoreUserRepository(),
-      boardRepository: new FirestoreBoardRepository(),
-      noticeRepository: new FirestoreNoticeRepository(),
-      courseRepository: new FirestoreCourseRepository(),
-      notificationRepository: new FirestoreNotificationRepository(),
-      appNoticeRepository: new FirestoreAppNoticeRepository(),
-      cafeteriaRepository: new FirestoreCafeteriaRepository(),
-      academicRepository: new FirestoreAcademicRepository(),
-      inquiryRepository: new FirestoreInquiryRepository(),
+      partyRepository: new FirebasePartyRepository(),
+      chatRepository: new FirebaseChatRepository(),
+      userRepository: new FirebaseUserRepository(),
+      boardRepository: new FirebaseBoardRepository(),
+      noticeRepository: new FirebaseNoticeRepository(),
+      courseRepository: new FirebaseCourseRepository(),
+      notificationRepository: new FirebaseNotificationRepository(),
+      appNoticeRepository: new FirebaseAppNoticeRepository(),
+      cafeteriaRepository: new FirebaseCafeteriaRepository(),
+      academicRepository: new FirebaseAcademicRepository(),
+      inquiryRepository: new FirebaseInquiryRepository(),
       storageRepository: new FirestoreStorageRepository(),
-      timetableRepository: new FirestoreTimetableRepository(),
-      authRepository: new FirestoreAuthRepository(),
+      timetableRepository: new FirebaseTimetableRepository(),
+      authRepository: new FirebaseAuthRepository(),
+      notificationActionRepository: new FirebaseNotificationActionRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

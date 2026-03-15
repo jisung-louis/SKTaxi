@@ -1,0 +1,299 @@
+import React, { useRef, useState } from 'react';
+import {
+  BackHandler,
+  Image,
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
+import WebView from 'react-native-webview';
+
+import PageHeader from '@/shared/ui/PageHeader';
+import { Text } from '@/shared/ui/Text';
+import { COLORS } from '@/shared/constants/colors';
+import {
+  WINDOW_HEIGHT,
+  WINDOW_WIDTH,
+} from '@/shared/constants/layout';
+import { TYPOGRAPHY } from '@/shared/constants/typography';
+import { useScreenView } from '@/shared/hooks';
+
+export const AccountGuideScreen = () => {
+  useScreenView();
+
+  const navigation = useNavigation();
+  const webViewRef = useRef<WebView>(null);
+  const [canGoBack, setCanGoBack] = useState(false);
+
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (canGoBack && webViewRef.current) {
+          webViewRef.current.goBack();
+          return true;
+        }
+        return false;
+      },
+    );
+
+    return () => backHandler.remove();
+  }, [canGoBack]);
+
+  const handleNavigationStateChange = (navState: any) => {
+    setCanGoBack(navState.canGoBack);
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <PageHeader
+        onBack={() => {
+          navigation.goBack?.();
+        }}
+        title="성결대 이메일 발급 방법"
+        borderBottom
+      />
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled
+      >
+        <View style={styles.webViewContainer}>
+          <PageHeader
+            title="성결대 포탈시스템"
+            titleStyle={{ ...TYPOGRAPHY.title3 }}
+            backIconSize={28}
+            secondIcon="refresh-outline"
+            secondIconSize={28}
+            secondIconPress={() => {
+              webViewRef.current?.reload?.();
+            }}
+            thirdIcon="chevron-forward-outline"
+            thirdIconSize={28}
+            thirdIconPress={() => {
+              webViewRef.current?.goForward?.();
+            }}
+            style={{ backgroundColor: COLORS.background.tertiary }}
+            borderBottom
+            onBack={() => {
+              webViewRef.current?.goBack?.();
+            }}
+            rightButton
+            rightButtonIcon="globe-outline"
+            onRightButtonPress={() => {
+              Linking.openURL(
+                'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do',
+              );
+            }}
+          />
+          <WebView
+            ref={webViewRef}
+            source={{
+              uri: 'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do',
+            }}
+            onNavigationStateChange={handleNavigationStateChange}
+            scrollEnabled
+            nestedScrollEnabled
+          />
+        </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            성결대 이메일 발급 방법
+          </Text>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>1</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>포탈로그인</Text>
+              <Text style={styles.stepDescription}>
+                성결대학교 포털시스템에서 통합로그인을 하세요.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>2</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>웹메일 클릭</Text>
+              <Text style={styles.stepDescription}>
+                웹메일을 클릭하세요.
+              </Text>
+            </View>
+            <View style={styles.stepImage}>
+              <Image
+                source={require('../../../../assets/images/account_guide/step1.jpeg')}
+                style={styles.stepImageContent}
+                resizeMode="cover"
+              />
+            </View>
+          </View>
+
+          <View style={styles.stepContainer}>
+            <View style={styles.stepNumber}>
+              <Text style={styles.stepNumberText}>3</Text>
+            </View>
+            <View style={styles.stepContent}>
+              <Text style={styles.stepTitle}>
+                Gmail 클릭 후 이메일 발급
+              </Text>
+              <Text style={styles.stepDescription}>
+                Gmail을 클릭하고 이메일 발급을 진행하세요.
+              </Text>
+            </View>
+            <View style={styles.stepImage}>
+              <Image
+                source={require('../../../../assets/images/account_guide/step2.jpeg')}
+                style={styles.stepImageContent}
+                resizeMode="cover"
+              />
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>주의사항</Text>
+          <View style={styles.warningContainer}>
+            <Icon
+              name="information-circle-outline"
+              size={20}
+              color={COLORS.accent.orange}
+            />
+            <Text style={styles.warningText}>
+              성결대학교 재학생만 사용할 수 있는 서비스입니다.
+              {'\n'}
+              외부인은 사용할 수 없습니다.
+            </Text>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  contactContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 6,
+  },
+  contactText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.accent.blue,
+    textDecorationLine: 'underline',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background.primary,
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  description: {
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    lineHeight: 22,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  section: {
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    ...TYPOGRAPHY.title2,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 16,
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    marginBottom: 24,
+    alignItems: 'flex-start',
+  },
+  stepContent: {
+    flex: 1,
+  },
+  stepDescription: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.secondary,
+    lineHeight: 20,
+  },
+  stepImage: {
+    width: WINDOW_WIDTH * 0.4,
+    height: WINDOW_WIDTH * 0.4,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginRight: 12,
+  },
+  stepImageContent: {
+    width: '100%',
+    height: '100%',
+  },
+  stepNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.accent.green,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  stepNumberText: {
+    ...TYPOGRAPHY.body2,
+    fontWeight: '700',
+    color: COLORS.background.primary,
+    textAlign: 'center',
+  },
+  stepTitle: {
+    ...TYPOGRAPHY.body1,
+    fontWeight: '600',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  title: {
+    ...TYPOGRAPHY.title1,
+    fontWeight: '700',
+    color: COLORS.text.primary,
+    marginBottom: 12,
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.accent.orange + '15',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.accent.orange + '30',
+    gap: 12,
+  },
+  warningText: {
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.primary,
+    flex: 1,
+    lineHeight: 20,
+  },
+  webViewContainer: {
+    height: WINDOW_HEIGHT * 0.6,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 32,
+  },
+});

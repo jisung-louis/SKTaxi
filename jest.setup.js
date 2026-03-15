@@ -1,3 +1,4 @@
+/* eslint-env jest */
 // SKTaxi: Jest 설정 파일
 // Firebase 및 React Native 모듈 모킹
 
@@ -125,6 +126,16 @@ jest.mock('@react-native-firebase/crashlytics', () => ({
     recordError: jest.fn(),
     setUserId: jest.fn(() => Promise.resolve()),
   })),
+}));
+
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(() => Promise.resolve(true)),
+    signIn: jest.fn(() => Promise.resolve({ data: { idToken: 'mock-google-id-token' } })),
+    signOut: jest.fn(() => Promise.resolve()),
+    revokeAccess: jest.fn(() => Promise.resolve()),
+  },
 }));
 
 // React Native 모듈 모킹

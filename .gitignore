@@ -95,3 +95,6 @@ serviceAccountKey.json
 
 # Python
 .pip_packages/
+
+# Serena
+.serena/

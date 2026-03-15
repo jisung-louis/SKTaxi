@@ -32,9 +32,12 @@ module.exports = {
     },
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(react-native|@react-native|@react-navigation|@react-native-firebase|react-native-vector-icons|react-native-gesture-handler|react-native-reanimated|react-native-safe-area-context|react-native-screens|@gorhom|react-native-linear-gradient|react-native-maps|react-native-modal|react-native-sound|react-native-svg|react-native-webview)/)',
+    'node_modules/(?!(react-native|@react-native|@react-navigation|@react-native-firebase|@react-native-google-signin|react-native-vector-icons|react-native-gesture-handler|react-native-reanimated|react-native-safe-area-context|react-native-screens|@gorhom|react-native-linear-gradient|react-native-maps|react-native-modal|react-native-sound|react-native-svg|react-native-webview)/)',
   ],
   moduleNameMapper: {
+    '^@/app/(.*)$': '<rootDir>/src/app/$1',
+    '^@/shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@/features/(.*)$': '<rootDir>/src/features/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
 };

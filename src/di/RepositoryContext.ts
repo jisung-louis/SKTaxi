@@ -2,22 +2,23 @@
 // React Context를 사용하여 Repository 인스턴스를 앱 전체에 제공
 
 import { createContext } from 'react';
-import {
-  IPartyRepository,
-  IChatRepository,
-  IUserRepository,
-  IBoardRepository,
-  INoticeRepository,
-  ICourseRepository,
-  INotificationRepository,
-  IAppNoticeRepository,
-  ICafeteriaRepository,
+import type {
   IAcademicRepository,
+  IAppNoticeRepository,
+  IAuthRepository,
+  IBoardRepository,
+  ICafeteriaRepository,
+  IChatRepository,
+  ICourseRepository,
   IInquiryRepository,
+  INotificationActionRepository,
+  INotificationRepository,
+  INoticeRepository,
+  IPartyRepository,
   IStorageRepository,
   ITimetableRepository,
-  IAuthRepository,
-} from '../repositories/interfaces';
+  IUserRepository,
+} from './repositoryContracts';
 
 /**
  * 모든 Repository 인스턴스를 포함하는 컨테이너 타입
@@ -37,6 +38,7 @@ export interface RepositoryContainer {
   storageRepository: IStorageRepository;
   timetableRepository: ITimetableRepository;
   authRepository: IAuthRepository;
+  notificationActionRepository: INotificationActionRepository;
 }
 
 /**
