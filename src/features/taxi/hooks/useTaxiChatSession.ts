@@ -3,14 +3,14 @@ import {useSyncExternalStore} from 'react';
 import {taxiChatRepository} from '../data/repositories/taxiChatRepository';
 
 export const useTaxiChatSession = () => {
-  const sessionSnapshot = useSyncExternalStore(
+  const currentPartyId = useSyncExternalStore(
     listener => taxiChatRepository.subscribeToSession(listener),
-    () => taxiChatRepository.getSessionSnapshot(),
-    () => taxiChatRepository.getSessionSnapshot(),
+    () => taxiChatRepository.getSessionSnapshot().currentPartyId,
+    () => taxiChatRepository.getSessionSnapshot().currentPartyId,
   );
 
   return {
-    currentPartyId: sessionSnapshot.currentPartyId,
-    hasActiveParty: Boolean(sessionSnapshot.currentPartyId),
+    currentPartyId,
+    hasActiveParty: Boolean(currentPartyId),
   };
 };
