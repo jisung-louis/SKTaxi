@@ -28,6 +28,7 @@ export const NoticeHomeHeader = ({
       </View>
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel="공지 알림 설정 열기"
         activeOpacity={0.85}
         onPress={onPressAction}
         style={styles.actionButton}>

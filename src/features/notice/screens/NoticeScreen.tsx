@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
   },
   headerSection: {
     paddingHorizontal: V2_SPACING.lg,
+    paddingTop: V2_SPACING.sm,
   },
   categorySection: {
     paddingHorizontal: V2_SPACING.lg,

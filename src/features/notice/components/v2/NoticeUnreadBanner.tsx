@@ -58,6 +58,7 @@ export const NoticeUnreadBanner = ({
       {banner.actionLabel && onPressAction ? (
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel="읽지 않은 공지 보기"
           activeOpacity={0.85}
           onPress={onPressAction}
           style={styles.actionButton}>
