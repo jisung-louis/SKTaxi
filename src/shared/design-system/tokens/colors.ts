@@ -6,6 +6,7 @@ export const V2_COLORS = {
   },
   text: {
     primary: '#111827',
+    strong: '#374151',
     secondary: '#4B5563',
     tertiary: '#6B7280',
     muted: '#9CA3AF',
@@ -17,6 +18,7 @@ export const V2_COLORS = {
     accent: '#BBF7D0',
   },
   brand: {
+    logo: '#10B981',
     primary: '#22C55E',
     primaryStrong: '#16A34A',
     primarySoft: '#DCFCE7',
