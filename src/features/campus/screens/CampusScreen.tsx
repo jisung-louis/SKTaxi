@@ -345,7 +345,9 @@ export const CampusScreen = () => {
                 <SectionHeader
                   actionLabel={TIMETABLE_ACTION_LABEL}
                   onPressAction={() =>
-                    campusEntryNavigation.openCampusScreen('TimetableDetail')
+                    campusEntryNavigation.openCampusScreen('TimetableDetail', {
+                      initialView: 'today',
+                    })
                   }
                   subtitle={data.timetable.dateLabel}
                   title="오늘 시간표"
