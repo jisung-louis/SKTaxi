@@ -10,7 +10,11 @@ import {
 } from '../../model/timetableCourseTones';
 import type {TimetableTodayRowViewData} from '../../model/timetableDetailViewData';
 
+const TODAY_ROW_HEIGHT = 76;
+const TODAY_ROW_GAP = 12;
+
 interface TimetableTodayViewCardProps {
+  collapsed: boolean;
   onPressCourse: (courseId: string) => void;
   onToggleNightClasses: () => void;
   rows: TimetableTodayRowViewData[];
@@ -20,6 +24,7 @@ interface TimetableTodayViewCardProps {
 }
 
 export const TimetableTodayViewCard = ({
+  collapsed,
   onPressCourse,
   onToggleNightClasses,
   rows,
@@ -33,16 +38,25 @@ export const TimetableTodayViewCard = ({
         const course = row.course;
         const tone = course ? TIMETABLE_COURSE_TONES[course.toneId] : undefined;
         const selected = course?.courseId === selectedCourseId;
+        const rowHeight =
+          TODAY_ROW_HEIGHT +
+          (row.visiblePeriodSpan - 1) * (TODAY_ROW_HEIGHT + TODAY_ROW_GAP);
         const courseCardStyle = course
           ? {
               backgroundColor: tone?.softBackground,
               borderColor: selected ? tone?.accent : 'transparent',
+              minHeight: rowHeight,
             }
           : undefined;
 
         return (
           <View key={row.id} style={styles.row}>
-            <View style={styles.timeColumn}>
+            <View
+              style={[
+                styles.timeColumn,
+                {minHeight: rowHeight},
+                row.visiblePeriodSpan > 1 ? styles.timeColumnExpanded : null,
+              ]}>
               <Text style={styles.periodLabel}>{row.periodLabel}</Text>
               <Text style={styles.timeLabel}>{row.startTimeLabel}</Text>
               {course?.endTimeLabel ? (
@@ -86,7 +100,11 @@ export const TimetableTodayViewCard = ({
           onPress={onToggleNightClasses}
           style={styles.toggleButton}>
           <Text style={styles.toggleLabel}>{toggleLabel}</Text>
-          <Icon color={V2_COLORS.text.secondary} name="chevron-down" size={18} />
+          <Icon
+            color={V2_COLORS.text.secondary}
+            name={collapsed ? 'chevron-down' : 'chevron-up'}
+            size={18}
+          />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -112,6 +130,10 @@ const styles = StyleSheet.create({
     marginRight: V2_SPACING.md,
     width: 58,
   },
+  timeColumnExpanded: {
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
   periodLabel: {
     color: V2_COLORS.text.primary,
     fontSize: 14,
@@ -129,7 +151,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     flex: 1,
     justifyContent: 'center',
-    minHeight: 76,
+    minHeight: TODAY_ROW_HEIGHT,
     paddingHorizontal: V2_SPACING.lg,
     paddingVertical: V2_SPACING.md,
   },
@@ -157,7 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     flex: 1,
     flexDirection: 'row',
-    minHeight: 76,
+    minHeight: TODAY_ROW_HEIGHT,
     paddingHorizontal: V2_SPACING.lg,
   },
   emptyDot: {

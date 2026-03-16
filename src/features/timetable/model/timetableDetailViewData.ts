@@ -68,6 +68,7 @@ export interface TimetableTodayRowViewData {
   periodLabel: string;
   startTimeLabel: string;
   state: 'course' | 'empty';
+  visiblePeriodSpan: number;
 }
 
 export interface TimetableCourseDetailRowViewData {

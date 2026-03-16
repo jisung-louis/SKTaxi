@@ -103,7 +103,7 @@ export const createTimetableDetailMockData = (): TimetableSemesterRecord[] => [
   {
     id: '2026-1',
     label: '2026-1학기',
-    currentDay: 'thu',
+    currentDay: 'tue',
     catalogCourses: BASE_CATALOG_COURSES,
     courses: [
       createCourse({
@@ -123,7 +123,7 @@ export const createTimetableDetailMockData = (): TimetableSemesterRecord[] => [
         locationLabel: '공학관 201',
         name: '자료구조',
         professor: '김민수',
-        schedules: [{day: 'tue', startPeriod: 2, endPeriod: 2}],
+        schedules: [{day: 'tue', startPeriod: 1, endPeriod: 1}],
         toneId: 'orange',
       }),
       createCourse({
@@ -133,7 +133,7 @@ export const createTimetableDetailMockData = (): TimetableSemesterRecord[] => [
         locationLabel: '공학관 302',
         name: '운영체제',
         professor: '이서현',
-        schedules: [{day: 'tue', startPeriod: 4, endPeriod: 6}],
+        schedules: [{day: 'tue', startPeriod: 3, endPeriod: 5}],
         toneId: 'blue',
       }),
       createCourse({
@@ -173,7 +173,7 @@ export const createTimetableDetailMockData = (): TimetableSemesterRecord[] => [
         locationLabel: '공학관 502',
         name: '캡스톤세미나',
         professor: '정태현',
-        schedules: [{day: 'thu', startPeriod: 10, endPeriod: 12}],
+        schedules: [{day: 'tue', startPeriod: 9, endPeriod: 11}],
         toneId: 'red',
       }),
     ],

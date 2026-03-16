@@ -295,7 +295,10 @@ const buildScreenViewData = ({
   const hasNightClasses = coursesOnCurrentDay.some(course =>
     course.schedules.some(schedule => schedule.endPeriod > 9),
   );
-  const visibleTodayPeriods = showNightClasses ? periods : allViewPeriods;
+  const showExpandedToday = hasNightClasses ? showNightClasses : false;
+  const visibleTodayPeriods = showExpandedToday ? periods : allViewPeriods;
+  const maxVisiblePeriodNumber =
+    visibleTodayPeriods[visibleTodayPeriods.length - 1]?.periodNumber ?? 9;
   const todayRows: TimetableTodayRowViewData[] = [];
 
   let periodIndex = 0;
@@ -317,6 +320,7 @@ const buildScreenViewData = ({
         periodLabel: `${period.periodNumber}교시`,
         startTimeLabel: period.startTimeLabel,
         state: 'empty',
+        visiblePeriodSpan: 1,
       });
       periodIndex += 1;
       continue;
@@ -334,25 +338,36 @@ const buildScreenViewData = ({
       continue;
     }
 
-    const endPeriod = periods.find(
-      candidate => candidate.periodNumber === schedule.endPeriod,
+    const visibleEndPeriodNumber = Math.min(
+      schedule.endPeriod,
+      maxVisiblePeriodNumber,
     );
+    const visibleEndPeriod = periods.find(
+      candidate => candidate.periodNumber === visibleEndPeriodNumber,
+    );
+    const visiblePeriodSpan =
+      visibleEndPeriodNumber - schedule.startPeriod + 1;
+    const visiblePeriodLabel =
+      schedule.startPeriod === visibleEndPeriodNumber
+        ? `${schedule.startPeriod}교시`
+        : `${schedule.startPeriod}-${visibleEndPeriodNumber}교시`;
 
     todayRows.push({
       course: {
         courseId: session.id,
-        endTimeLabel: endPeriod?.endTimeLabel,
+        endTimeLabel: visibleEndPeriod?.endTimeLabel,
         metaLabel: formatTodayMetaLabel(session),
         title: session.name,
         toneId: session.toneId,
       },
       id: `today-row-${period.periodNumber}`,
-      periodLabel: `${period.periodNumber}교시`,
+      periodLabel: visiblePeriodLabel,
       startTimeLabel: period.startTimeLabel,
       state: 'course',
+      visiblePeriodSpan,
     });
 
-    periodIndex += schedule.endPeriod - schedule.startPeriod + 1;
+    periodIndex += visiblePeriodSpan;
   }
 
   return {
@@ -421,9 +436,11 @@ const buildScreenViewData = ({
     semesterOptions: [],
     totalCreditsLabel: `총 ${courses.reduce((sum, course) => sum + course.credits, 0)}학점`,
     todayView: {
-      collapsed: !showNightClasses,
+      collapsed: !showExpandedToday,
       hasNightClasses,
-      nightToggleLabel: showNightClasses ? '야간수업 접기' : '야간수업 펼치기',
+      nightToggleLabel: showExpandedToday
+        ? '야간 수업 접기'
+        : '야간 수업 펼치기',
       rows: todayRows,
     },
   };
@@ -471,6 +488,7 @@ export const useTimetableDetailData = (
         selectedSemesterIdRef.current = undefined;
         setRecord(null);
         setSelectedSemesterId(undefined);
+        setShowNightClasses(false);
         return;
       }
 
@@ -481,6 +499,11 @@ export const useTimetableDetailData = (
       selectedSemesterIdRef.current = nextSemesterId;
       setRecord(nextRecord ?? null);
       setSelectedSemesterId(nextSemesterId);
+      setShowNightClasses(
+        nextRecord?.courses.some(course =>
+          course.schedules.some(schedule => schedule.endPeriod > 9),
+        ) ?? false,
+      );
     } catch (loadError) {
       console.error(loadError);
       setError('시간표를 불러오지 못했습니다.');
@@ -773,7 +796,6 @@ export const useTimetableDetailData = (
     },
     selectSemester: async (semesterId: string) => {
       setSelectedCourseId(undefined);
-      setShowNightClasses(false);
       await loadSemester(semesterId);
     },
     setAddSheetTab: (tab: 'manual' | 'search') => setActiveTab(tab),

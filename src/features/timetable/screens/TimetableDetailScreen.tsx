@@ -213,6 +213,7 @@ export const TimetableDetailScreen = () => {
                 </>
               ) : (
                 <TimetableTodayViewCard
+                  collapsed={data.todayView.collapsed}
                   onPressCourse={openCourseDetail}
                   onToggleNightClasses={toggleNightClasses}
                   rows={data.todayView.rows}
