@@ -44,7 +44,12 @@ export type CampusStackParamList = {
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;
   CafeteriaDetail: { scrollToCategory?: string };
-  AcademicCalendarDetail: undefined;
+  AcademicCalendarDetail:
+    | {
+        initialDate?: string;
+        scheduleId?: string;
+      }
+    | undefined;
   TimetableDetail:
     | {
         initialView?: TimetableDetailViewMode;
