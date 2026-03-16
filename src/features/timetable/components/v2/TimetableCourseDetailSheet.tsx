@@ -1,4 +1,5 @@
 import React from 'react';
+import {BottomSheetView} from '@gorhom/bottom-sheet';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -7,6 +8,32 @@ import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
 import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
 import type {TimetableCourseDetailViewData} from '../../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
+
+const DETAIL_SNAP_POINTS = ['63%'];
+
+const ROW_ICON_STYLES = {
+  credits: {
+    backgroundColor: V2_COLORS.accent.blueSoft,
+    iconColor: V2_COLORS.accent.blue,
+  },
+  location: {
+    backgroundColor: V2_COLORS.brand.primaryTint,
+    iconColor: V2_COLORS.brand.primary,
+  },
+  professor: {
+    backgroundColor: V2_COLORS.accent.purpleSoft,
+    iconColor: V2_COLORS.accent.purple,
+  },
+  time: {
+    backgroundColor: V2_COLORS.accent.orangeSoft,
+    iconColor: V2_COLORS.accent.orange,
+  },
+} as const;
+
+const DEFAULT_ROW_ICON_STYLE = {
+  backgroundColor: V2_COLORS.background.subtle,
+  iconColor: V2_COLORS.text.secondary,
+} as const;
 
 interface TimetableCourseDetailSheetProps {
   course?: TimetableCourseDetailViewData;
@@ -26,123 +53,170 @@ export const TimetableCourseDetailSheet = ({
   const tone = TIMETABLE_COURSE_TONES[course.toneId];
 
   return (
-    <TimetableBottomSheet onClose={onClose} visible={Boolean(course)}>
-      <View style={styles.hero}>
-        <View style={[styles.codeChip, {backgroundColor: tone.pillBackground}]}>
-          <View style={[styles.codeDot, {backgroundColor: tone.accent}]} />
-          <Text style={[styles.codeLabel, {color: tone.text}]}>
-            {course.codeLabel}
-          </Text>
-        </View>
-        <Text style={styles.title}>{course.title}</Text>
-      </View>
-
-      <View style={styles.rows}>
-        {course.rows.map(row => (
-          <View key={row.id} style={styles.row}>
-            <View style={styles.iconBox}>
-              <Icon
-                color={V2_COLORS.text.secondary}
-                name={row.iconName}
-                size={18}
-              />
-            </View>
-            <View style={styles.rowCopy}>
-              <Text style={styles.rowLabel}>{row.label}</Text>
-              <Text style={styles.rowValue}>{row.value}</Text>
+    <TimetableBottomSheet
+      onClose={onClose}
+      snapPoints={DETAIL_SNAP_POINTS}
+      visible={Boolean(course)}>
+      <BottomSheetView style={styles.content}>
+        <View style={styles.headerRow}>
+          <View style={styles.titleGroup}>
+            <View style={[styles.titleDot, {backgroundColor: tone.accent}]} />
+            <View style={styles.titleCopy}>
+              <Text numberOfLines={1} style={styles.title}>
+                {course.title}
+              </Text>
+              <Text style={styles.codeLabel}>{course.codeLabel}</Text>
             </View>
           </View>
-        ))}
-      </View>
 
-      <TouchableOpacity
-        accessibilityRole="button"
-        activeOpacity={0.88}
-        onPress={onDelete}
-        style={styles.deleteButton}>
-        <Text style={styles.deleteLabel}>{course.deleteLabel}</Text>
-      </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="닫기"
+            accessibilityRole="button"
+            activeOpacity={0.84}
+            onPress={onClose}
+            style={styles.closeButton}>
+            <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.rows}>
+          {course.rows.map(row => {
+            const iconStyle =
+              ROW_ICON_STYLES[row.id as keyof typeof ROW_ICON_STYLES] ??
+              DEFAULT_ROW_ICON_STYLE;
+
+            return (
+              <View key={row.id} style={styles.row}>
+                <View
+                  style={[
+                    styles.iconBox,
+                    {backgroundColor: iconStyle.backgroundColor},
+                  ]}>
+                  <Icon
+                    color={iconStyle.iconColor}
+                    name={row.iconName}
+                    size={15}
+                  />
+                </View>
+                <View style={styles.rowCopy}>
+                  <Text style={styles.rowLabel}>{row.label}</Text>
+                  <Text style={styles.rowValue}>{row.value}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.88}
+          onPress={onDelete}
+          style={styles.deleteButton}>
+          <Icon
+            color={V2_COLORS.status.danger}
+            name="trash-outline"
+            size={16}
+          />
+          <Text style={styles.deleteLabel}>{course.deleteLabel}</Text>
+        </TouchableOpacity>
+      </BottomSheetView>
     </TimetableBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
-  hero: {
-    marginBottom: V2_SPACING.lg,
+  content: {
+    flex: 1,
   },
-  codeChip: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderRadius: V2_RADIUS.pill,
+  headerRow: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.md,
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    paddingTop: 8,
   },
-  codeDot: {
+  titleGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexShrink: 1,
+  },
+  titleDot: {
     borderRadius: V2_RADIUS.pill,
-    height: 8,
-    marginRight: V2_SPACING.sm,
-    width: 8,
+    height: 12,
+    marginRight: 12,
+    width: 12,
   },
-  codeLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
+  titleCopy: {
+    flexShrink: 1,
   },
   title: {
     color: V2_COLORS.text.primary,
-    fontSize: 26,
-    fontWeight: '800',
-    lineHeight: 34,
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  codeLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  closeButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   rows: {
-    gap: V2_SPACING.sm,
+    borderTopColor: V2_COLORS.border.subtle,
+    borderTopWidth: 1,
   },
   row: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
+    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    minHeight: 62,
+    paddingVertical: 12,
   },
   iconBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
     borderRadius: V2_RADIUS.md,
-    height: 36,
+    height: 32,
     justifyContent: 'center',
-    marginRight: V2_SPACING.md,
-    width: 36,
+    marginRight: 12,
+    width: 32,
   },
   rowCopy: {
     flex: 1,
   },
   rowLabel: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    lineHeight: 18,
+    color: V2_COLORS.text.muted,
+    fontSize: 10,
+    lineHeight: 15,
     marginBottom: 2,
   },
   rowValue: {
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
-    fontWeight: '700',
-    lineHeight: 22,
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
   },
   deleteButton: {
     alignItems: 'center',
-    backgroundColor: 'rgba(220, 38, 38, 0.08)',
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: '#FEF2F2',
+    borderRadius: V2_RADIUS.lg,
+    flexDirection: 'row',
+    gap: V2_SPACING.sm,
+    height: 52,
+    justifyContent: 'center',
     marginTop: V2_SPACING.xl,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
   },
   deleteLabel: {
-    color: V2_COLORS.status.danger,
-    fontSize: 15,
+    color: '#EF4444',
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });

@@ -1,4 +1,5 @@
 import React from 'react';
+import {BottomSheetScrollView} from '@gorhom/bottom-sheet';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -6,6 +7,8 @@ import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-syst
 
 import type {TimetableSemesterOptionViewData} from '../../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
+
+const SEMESTER_SNAP_POINTS = ['42%'];
 
 interface TimetableSemesterSheetProps {
   onClose: () => void;
@@ -23,9 +26,25 @@ export const TimetableSemesterSheet = ({
   visible,
 }: TimetableSemesterSheetProps) => {
   return (
-    <TimetableBottomSheet onClose={onClose} visible={visible}>
-      <Text style={styles.title}>학기 선택</Text>
-      <View style={styles.list}>
+    <TimetableBottomSheet
+      onClose={onClose}
+      snapPoints={SEMESTER_SNAP_POINTS}
+      visible={visible}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>학기 선택</Text>
+        <TouchableOpacity
+          accessibilityLabel="닫기"
+          accessibilityRole="button"
+          activeOpacity={0.84}
+          onPress={onClose}
+          style={styles.closeButton}>
+          <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+        </TouchableOpacity>
+      </View>
+
+      <BottomSheetScrollView
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}>
         {options.map(option => {
           const selected = option.label === selectedLabel;
 
@@ -47,26 +66,45 @@ export const TimetableSemesterSheet = ({
                 {option.label}
               </Text>
               {selected ? (
-                <Icon color={V2_COLORS.brand.primaryStrong} name="checkmark" size={20} />
+                <Icon
+                  color={V2_COLORS.brand.primaryStrong}
+                  name="checkmark"
+                  size={18}
+                />
               ) : null}
             </TouchableOpacity>
           );
         })}
-      </View>
+      </BottomSheetScrollView>
     </TimetableBottomSheet>
   );
 };
 
 const styles = StyleSheet.create({
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    paddingTop: 8,
+  },
   title: {
     color: V2_COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: V2_SPACING.lg,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  closeButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   list: {
-    gap: V2_SPACING.sm,
+    paddingTop: 8,
+    rowGap: V2_SPACING.sm,
   },
   option: {
     alignItems: 'center',
@@ -82,13 +120,13 @@ const styles = StyleSheet.create({
     ...V2_SHADOWS.card,
   },
   optionLabel: {
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 22,
+    lineHeight: 20,
   },
   optionLabelSelected: {
     color: V2_COLORS.brand.primaryStrong,
-    fontWeight: '800',
+    fontWeight: '700',
   },
 });

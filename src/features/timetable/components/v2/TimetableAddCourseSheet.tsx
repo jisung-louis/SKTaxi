@@ -1,29 +1,31 @@
 import React from 'react';
 import {
-  ScrollView,
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+} from '@gorhom/bottom-sheet';
+import {
   StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {
-  V2FilterChips,
-  V2SegmentedControl,
-  type V2SegmentedControlItem,
-} from '@/shared/design-system/components';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {V2_COLORS, V2_RADIUS} from '@/shared/design-system/tokens';
 
-import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
+import {
+  TIMETABLE_COURSE_TONES,
+  TIMETABLE_TODAY_EMPTY_DOT_COLOR,
+} from '../../model/timetableCourseTones';
 import type {
   TimetableAddCourseSheetViewData,
   TimetableCourseToneId,
   TimetableManualDayOptionViewData,
 } from '../../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
+
+const SEARCH_SNAP_POINTS = ['88%'];
+const MANUAL_SNAP_POINTS = ['82%'];
 
 interface TimetableAddCourseSheetProps {
   data: TimetableAddCourseSheetViewData;
@@ -45,11 +47,6 @@ interface TimetableAddCourseSheetProps {
   visible: boolean;
 }
 
-const TAB_ITEMS: V2SegmentedControlItem<'manual' | 'search'>[] = [
-  {id: 'search', label: '강의 검색'},
-  {id: 'manual', label: '직접 입력'},
-];
-
 export const TimetableAddCourseSheet = ({
   data,
   onAddCatalogCourse,
@@ -66,539 +63,711 @@ export const TimetableAddCourseSheet = ({
   onUpdateQuery,
   visible,
 }: TimetableAddCourseSheetProps) => {
-  const dayItems = data.manual.dayOptions.map(option => ({
-    id: option.id,
-    label: option.label,
-    selected: option.selected,
-  }));
-  const creditItems = data.manual.credits.map(option => ({
-    id: String(option.id),
-    label: option.label,
-    selected: option.selected,
-  }));
+  const snapPoints =
+    data.activeTab === 'search' ? SEARCH_SNAP_POINTS : MANUAL_SNAP_POINTS;
 
   return (
-    <TimetableBottomSheet onClose={onClose} visible={visible}>
-      <Text style={styles.title}>수업 추가</Text>
-      <Text style={styles.subtitle}>
-        시간표에 강의를 더하고 블록 색상을 미리 선택할 수 있어요.
-      </Text>
+    <TimetableBottomSheet
+      keyboardBehavior="interactive"
+      onClose={onClose}
+      snapPoints={snapPoints}
+      visible={visible}>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>강의 추가</Text>
+        <TouchableOpacity
+          accessibilityLabel="닫기"
+          accessibilityRole="button"
+          activeOpacity={0.84}
+          onPress={onClose}
+          style={styles.closeButton}>
+          <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+        </TouchableOpacity>
+      </View>
 
-      <V2SegmentedControl
-        items={TAB_ITEMS}
-        onSelect={onSwitchTab}
-        selectedId={data.activeTab}
-        style={styles.segmentedControl}
-        variant="surface"
+      <SegmentedTabs
+        activeTab={data.activeTab}
+        onSwitchTab={onSwitchTab}
       />
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>블록 색상</Text>
-          <View style={styles.colorsRow}>
-            {data.colors.map(color => {
-              const tone = TIMETABLE_COURSE_TONES[color.id];
+      <ColorPicker
+        colors={data.colors}
+        onSelectColor={onSelectColor}
+      />
 
-              return (
+      {data.activeTab === 'search' ? (
+        <BottomSheetScrollView
+          contentContainerStyle={styles.searchContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.searchField}>
+            <Icon
+              color={V2_COLORS.text.muted}
+              name="search-outline"
+              size={16}
+            />
+            <BottomSheetTextInput
+              onChangeText={onUpdateQuery}
+              placeholder={data.search.placeholder}
+              placeholderTextColor={V2_COLORS.text.muted}
+              style={styles.searchInput}
+              value={data.search.query}
+            />
+          </View>
+
+          <View style={styles.searchList}>
+            {data.search.items.map(item => (
+              <View key={item.courseId} style={styles.catalogCard}>
+                <View style={styles.catalogCopy}>
+                  <Text numberOfLines={1} style={styles.catalogTitle}>
+                    {item.title}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.catalogMeta}>
+                    {item.metaLabel}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.catalogCode}>
+                    {item.codeLabel}
+                  </Text>
+                </View>
+
                 <TouchableOpacity
-                  key={color.id}
                   accessibilityRole="button"
                   activeOpacity={0.88}
-                  onPress={() => onSelectColor(color.id)}
+                  disabled={item.alreadyAdded}
+                  onPress={() => onAddCatalogCourse(item.courseId)}
                   style={[
-                    styles.colorOption,
-                    {backgroundColor: tone.pillBackground},
-                    color.selected ? {borderColor: tone.accent} : null,
+                    styles.catalogAction,
+                    item.alreadyAdded
+                      ? styles.catalogActionDisabled
+                      : styles.catalogActionEnabled,
                   ]}>
-                  <View
-                    style={[
-                      styles.colorSwatch,
-                      {backgroundColor: tone.accent},
-                    ]}
+                  <Icon
+                    color={
+                      item.alreadyAdded
+                        ? V2_COLORS.text.muted
+                        : V2_COLORS.text.inverse
+                    }
+                    name={item.alreadyAdded ? 'checkmark' : 'add'}
+                    size={18}
                   />
                 </TouchableOpacity>
-              );
-            })}
+              </View>
+            ))}
           </View>
-        </View>
 
-        {data.activeTab === 'search' ? (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>강의 검색</Text>
-              <View style={styles.searchInputWrapper}>
-                <Icon
-                  color={V2_COLORS.text.muted}
-                  name="search-outline"
-                  size={18}
-                />
-                <TextInput
-                  onChangeText={onUpdateQuery}
-                  placeholder={data.search.placeholder}
+          {data.search.emptyLabel ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyLabel}>{data.search.emptyLabel}</Text>
+            </View>
+          ) : null}
+        </BottomSheetScrollView>
+      ) : (
+        <BottomSheetScrollView
+          contentContainerStyle={styles.manualContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <FieldBlock label="강의명 *">
+            <BottomSheetTextInput
+              onChangeText={value => onSetManualField('name', value)}
+              placeholder="강의명을 입력하세요"
+              placeholderTextColor={V2_COLORS.text.muted}
+              style={styles.textField}
+              value={data.manual.nameValue}
+            />
+          </FieldBlock>
+
+          <FieldBlock label="교수명">
+            <BottomSheetTextInput
+              onChangeText={value => onSetManualField('professor', value)}
+              placeholder="교수명을 입력하세요"
+              placeholderTextColor={V2_COLORS.text.muted}
+              style={styles.textField}
+              value={data.manual.professorValue}
+            />
+          </FieldBlock>
+
+          <View style={styles.switchRow}>
+            <Text style={styles.fieldLabel}>온라인 수업</Text>
+            <ToggleSwitch
+              onPress={() => onSetManualOnline(!data.manual.isOnline)}
+              value={data.manual.isOnline}
+            />
+          </View>
+
+          {!data.manual.isOnline ? (
+            <>
+              <FieldBlock label="강의실">
+                <BottomSheetTextInput
+                  onChangeText={value => onSetManualField('locationLabel', value)}
+                  placeholder="예: 공학관 301"
                   placeholderTextColor={V2_COLORS.text.muted}
-                  style={styles.searchInput}
-                  value={data.search.query}
+                  style={styles.textField}
+                  value={data.manual.locationValue}
                 />
-              </View>
-            </View>
+              </FieldBlock>
 
-            <View style={styles.list}>
-              {data.search.items.map(item => (
-                <View key={item.courseId} style={styles.catalogCard}>
-                  <View style={styles.catalogCopy}>
-                    <Text numberOfLines={1} style={styles.catalogTitle}>
-                      {item.title}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.catalogCode}>
-                      {item.codeLabel}
-                    </Text>
-                    <Text numberOfLines={2} style={styles.catalogMeta}>
-                      {item.metaLabel}
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    activeOpacity={0.88}
-                    disabled={item.alreadyAdded}
-                    onPress={() => onAddCatalogCourse(item.courseId)}
-                    style={[
-                      styles.catalogAction,
-                      item.alreadyAdded
-                        ? styles.catalogActionDisabled
-                        : styles.catalogActionEnabled,
-                    ]}>
-                    <Text
+              <FieldBlock label="학점">
+                <View style={styles.inlineRow}>
+                  {data.manual.credits.map(option => (
+                    <TouchableOpacity
+                      key={option.id}
+                      accessibilityRole="button"
+                      activeOpacity={0.88}
+                      onPress={() => onSelectCredits(option.id)}
                       style={[
-                        styles.catalogActionLabel,
-                        item.alreadyAdded
-                          ? styles.catalogActionLabelDisabled
-                          : styles.catalogActionLabelEnabled,
+                        styles.creditButton,
+                        option.selected ? styles.creditButtonSelected : null,
                       ]}>
-                      {item.alreadyAdded ? '추가됨' : '추가'}
-                    </Text>
-                  </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          option.selected ? styles.optionLabelSelected : null,
+                        ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-              ))}
-            </View>
+              </FieldBlock>
 
-            {data.search.emptyLabel ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyLabel}>{data.search.emptyLabel}</Text>
-              </View>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>강의명</Text>
-              <TextInput
-                onChangeText={value => onSetManualField('name', value)}
-                placeholder="예: 운영체제"
-                placeholderTextColor={V2_COLORS.text.muted}
-                style={styles.textField}
-                value={data.manual.nameValue}
-              />
-            </View>
-
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>담당 교수</Text>
-              <TextInput
-                onChangeText={value => onSetManualField('professor', value)}
-                placeholder="예: 이서현"
-                placeholderTextColor={V2_COLORS.text.muted}
-                style={styles.textField}
-                value={data.manual.professorValue}
-              />
-            </View>
-
-            <View style={styles.switchCard}>
-              <View>
-                <Text style={styles.switchTitle}>온라인 수업</Text>
-                <Text style={styles.switchDescription}>
-                  온라인 수업이면 강의실 없이 추가합니다.
-                </Text>
-              </View>
-              <Switch
-                onValueChange={onSetManualOnline}
-                thumbColor={V2_COLORS.background.surface}
-                trackColor={{
-                  false: V2_COLORS.border.default,
-                  true: V2_COLORS.brand.primary,
-                }}
-                value={data.manual.isOnline}
-              />
-            </View>
-
-            {!data.manual.isOnline ? (
-              <>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>강의실</Text>
-                  <TextInput
-                    onChangeText={value => onSetManualField('locationLabel', value)}
-                    placeholder="예: 공학관 302"
-                    placeholderTextColor={V2_COLORS.text.muted}
-                    style={styles.textField}
-                    value={data.manual.locationValue}
-                  />
+              <FieldBlock label="요일">
+                <View style={styles.inlineRow}>
+                  {data.manual.dayOptions.map(option => (
+                    <TouchableOpacity
+                      key={option.id}
+                      accessibilityRole="button"
+                      activeOpacity={0.88}
+                      onPress={() => onSelectDay(option.id)}
+                      style={[
+                        styles.dayButton,
+                        option.selected ? styles.dayButtonSelected : null,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.optionLabel,
+                          option.selected ? styles.optionLabelSelected : null,
+                        ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
+              </FieldBlock>
 
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>요일</Text>
-                  <ScrollView
-                    horizontal
-                    keyboardShouldPersistTaps="handled"
-                    showsHorizontalScrollIndicator={false}>
-                    <V2FilterChips
-                      inactiveVariant="surface"
-                      items={dayItems}
-                      onPressItem={onSelectDay}
-                      style={styles.inlineChips}
-                    />
-                  </ScrollView>
-                </View>
-
-                <View style={styles.stepperGrid}>
-                  <StepperCard
-                    label="시작 교시"
+              <View style={styles.stepperRow}>
+                <FieldBlock label="시작 교시" style={styles.stepperField}>
+                  <StepperField
+                    canDecrease={data.manual.startPeriod.canDecrease}
+                    canIncrease={data.manual.startPeriod.canIncrease}
                     onDecrease={() => onSetManualStartPeriod(-1)}
                     onIncrease={() => onSetManualStartPeriod(1)}
                     valueLabel={data.manual.startPeriod.label}
-                    canDecrease={data.manual.startPeriod.canDecrease}
-                    canIncrease={data.manual.startPeriod.canIncrease}
                   />
-                  <StepperCard
-                    label="종료 교시"
+                </FieldBlock>
+
+                <FieldBlock label="종료 교시" style={styles.stepperField}>
+                  <StepperField
+                    canDecrease={data.manual.endPeriod.canDecrease}
+                    canIncrease={data.manual.endPeriod.canIncrease}
                     onDecrease={() => onSetManualEndPeriod(-1)}
                     onIncrease={() => onSetManualEndPeriod(1)}
                     valueLabel={data.manual.endPeriod.label}
-                    canDecrease={data.manual.endPeriod.canDecrease}
-                    canIncrease={data.manual.endPeriod.canIncrease}
                   />
-                </View>
-              </>
-            ) : null}
+                </FieldBlock>
+              </View>
+            </>
+          ) : (
+            <FieldBlock label="학점">
+              <View style={styles.inlineRow}>
+                {data.manual.credits.map(option => (
+                  <TouchableOpacity
+                    key={option.id}
+                    accessibilityRole="button"
+                    activeOpacity={0.88}
+                    onPress={() => onSelectCredits(option.id)}
+                    style={[
+                      styles.creditButton,
+                      option.selected ? styles.creditButtonSelected : null,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.optionLabel,
+                        option.selected ? styles.optionLabelSelected : null,
+                      ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </FieldBlock>
+          )}
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>학점</Text>
-              <ScrollView
-                horizontal
-                keyboardShouldPersistTaps="handled"
-                showsHorizontalScrollIndicator={false}>
-                <V2FilterChips
-                  inactiveVariant="surface"
-                  items={creditItems}
-                  onPressItem={value => onSelectCredits(Number(value))}
-                  style={styles.inlineChips}
-                />
-              </ScrollView>
-            </View>
-
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.9}
-              disabled={!data.manual.canSubmit}
-              onPress={onSubmitManualCourse}
-              style={[
-                styles.submitButton,
-                data.manual.canSubmit
-                  ? styles.submitButtonEnabled
-                  : styles.submitButtonDisabled,
-              ]}>
-              <Text
-                style={[
-                  styles.submitLabel,
-                  data.manual.canSubmit
-                    ? styles.submitLabelEnabled
-                    : styles.submitLabelDisabled,
-                ]}>
-                직접 입력 강의 추가
-              </Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </ScrollView>
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.9}
+            disabled={!data.manual.canSubmit}
+            onPress={onSubmitManualCourse}
+            style={[
+              styles.submitButton,
+              !data.manual.canSubmit ? styles.submitButtonDisabled : null,
+            ]}>
+            <Text style={styles.submitLabel}>강의 추가하기</Text>
+          </TouchableOpacity>
+        </BottomSheetScrollView>
+      )}
     </TimetableBottomSheet>
   );
 };
 
-const StepperCard = ({
+const SegmentedTabs = ({
+  activeTab,
+  onSwitchTab,
+}: {
+  activeTab: 'manual' | 'search';
+  onSwitchTab: (tab: 'manual' | 'search') => void;
+}) => {
+  return (
+    <View style={styles.segmentedControl}>
+      {(
+        [
+          {id: 'search', label: '강의 검색'},
+          {id: 'manual', label: '직접 입력'},
+        ] as const
+      ).map(item => {
+        const selected = activeTab === item.id;
+
+        return (
+          <TouchableOpacity
+            key={item.id}
+            accessibilityRole="button"
+            activeOpacity={0.88}
+            onPress={() => onSwitchTab(item.id)}
+            style={[
+              styles.segmentButton,
+              selected ? styles.segmentButtonSelected : null,
+            ]}>
+            <Text
+              style={[
+                styles.segmentLabel,
+                selected ? styles.segmentLabelSelected : null,
+              ]}>
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+const ColorPicker = ({
+  colors,
+  onSelectColor,
+}: {
+  colors: TimetableAddCourseSheetViewData['colors'];
+  onSelectColor: (colorId: TimetableCourseToneId) => void;
+}) => {
+  return (
+    <View style={styles.colorSection}>
+      <Text style={styles.colorLabel}>강의 색상</Text>
+      <View style={styles.colorRow}>
+        {colors.map(color => {
+          const tone = TIMETABLE_COURSE_TONES[color.id];
+
+          return (
+            <TouchableOpacity
+              key={color.id}
+              accessibilityRole="button"
+              activeOpacity={0.88}
+              onPress={() => onSelectColor(color.id)}
+              style={[
+                styles.colorButton,
+                {backgroundColor: tone.accent},
+              ]}>
+              {color.selected ? (
+                <Icon
+                  color={V2_COLORS.text.inverse}
+                  name="checkmark"
+                  size={15}
+                />
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+};
+
+const FieldBlock = ({
+  children,
+  label,
+  style,
+}: {
+  children: React.ReactNode;
+  label: string;
+  style?: object;
+}) => {
+  return (
+    <View style={style}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {children}
+    </View>
+  );
+};
+
+const ToggleSwitch = ({
+  onPress,
+  value,
+}: {
+  onPress: () => void;
+  value: boolean;
+}) => {
+  return (
+    <TouchableOpacity
+      accessibilityRole="switch"
+      accessibilityState={{checked: value}}
+      activeOpacity={0.88}
+      onPress={onPress}
+      style={[
+        styles.toggleTrack,
+        value ? styles.toggleTrackSelected : null,
+      ]}>
+      <View
+        style={[
+          styles.toggleThumb,
+          value ? styles.toggleThumbSelected : null,
+        ]}
+      />
+    </TouchableOpacity>
+  );
+};
+
+const StepperField = ({
   canDecrease,
   canIncrease,
-  label,
   onDecrease,
   onIncrease,
   valueLabel,
 }: {
   canDecrease: boolean;
   canIncrease: boolean;
-  label: string;
   onDecrease: () => void;
   onIncrease: () => void;
   valueLabel: string;
 }) => {
   return (
-    <View style={styles.stepperCard}>
-      <Text style={styles.stepperLabel}>{label}</Text>
-      <View style={styles.stepperControls}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.85}
-          disabled={!canDecrease}
-          onPress={onDecrease}
-          style={[
-            styles.stepperButton,
-            !canDecrease ? styles.stepperButtonDisabled : null,
-          ]}>
-          <Icon color={V2_COLORS.text.primary} name="remove" size={18} />
-        </TouchableOpacity>
+    <View style={styles.stepperContainer}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.85}
+        disabled={!canDecrease}
+        onPress={onDecrease}
+        style={styles.stepperButton}>
+        <Icon
+          color={canDecrease ? V2_COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
+          name="remove"
+          size={16}
+        />
+      </TouchableOpacity>
 
-        <Text style={styles.stepperValue}>{valueLabel}</Text>
+      <Text style={styles.stepperValue}>{valueLabel}</Text>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.85}
-          disabled={!canIncrease}
-          onPress={onIncrease}
-          style={[
-            styles.stepperButton,
-            !canIncrease ? styles.stepperButtonDisabled : null,
-          ]}>
-          <Icon color={V2_COLORS.text.primary} name="add" size={18} />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.85}
+        disabled={!canIncrease}
+        onPress={onIncrease}
+        style={styles.stepperButton}>
+        <Icon
+          color={canIncrease ? V2_COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
+          name="add"
+          size={16}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    paddingTop: 8,
+  },
   title: {
     color: V2_COLORS.text.primary,
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 30,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 24,
   },
-  subtitle: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: V2_SPACING.xs,
+  closeButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   segmentedControl: {
-    marginTop: V2_SPACING.lg,
-  },
-  content: {
-    paddingBottom: V2_SPACING.xl,
-    paddingTop: V2_SPACING.lg,
-  },
-  section: {
-    marginBottom: V2_SPACING.lg,
-  },
-  sectionTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 22,
-    marginBottom: V2_SPACING.sm,
-  },
-  colorsRow: {
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    marginBottom: 16,
+    padding: 4,
   },
-  colorOption: {
+  segmentButton: {
     alignItems: 'center',
-    borderColor: 'transparent',
     borderRadius: V2_RADIUS.pill,
-    borderWidth: 2,
-    height: 40,
+    flex: 1,
+    height: 32,
     justifyContent: 'center',
-    width: 40,
   },
-  colorSwatch: {
+  segmentButtonSelected: {
+    backgroundColor: V2_COLORS.background.surface,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  segmentLabel: {
+    color: V2_COLORS.text.tertiary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  segmentLabelSelected: {
+    color: V2_COLORS.text.primary,
+  },
+  colorSection: {
+    marginBottom: 12,
+  },
+  colorLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  colorRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  colorButton: {
+    alignItems: 'center',
     borderRadius: V2_RADIUS.pill,
-    height: 18,
-    width: 18,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
   },
-  searchInputWrapper: {
+  searchContent: {
+    paddingBottom: 8,
+  },
+  searchField: {
     alignItems: 'center',
     backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
+    borderColor: V2_COLORS.border.subtle,
+    borderRadius: V2_RADIUS.md,
+    borderWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.lg,
+    height: 42,
+    marginBottom: 12,
+    paddingHorizontal: 12,
   },
   searchInput: {
-    color: V2_COLORS.text.primary,
+    color: V2_COLORS.text.strong,
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
-    marginLeft: V2_SPACING.sm,
-    paddingVertical: 14,
+    fontSize: 14,
+    lineHeight: 20,
+    marginLeft: 8,
+    paddingVertical: 0,
   },
-  list: {
-    gap: V2_SPACING.sm,
+  searchList: {
+    rowGap: 8,
   },
   catalogCard: {
+    alignItems: 'center',
     backgroundColor: V2_COLORS.background.page,
     borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
-    padding: V2_SPACING.lg,
+    minHeight: 79,
+    padding: 12,
   },
   catalogCopy: {
     flex: 1,
-    paddingRight: V2_SPACING.md,
+    paddingRight: 12,
   },
   catalogTitle: {
     color: V2_COLORS.text.primary,
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 22,
-  },
-  catalogCode: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
   },
   catalogMeta: {
-    color: V2_COLORS.text.secondary,
+    color: V2_COLORS.text.muted,
     fontSize: 12,
-    lineHeight: 18,
-    marginTop: V2_SPACING.sm,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  catalogCode: {
+    color: '#D1D5DB',
+    fontSize: 10,
+    lineHeight: 15,
+    marginTop: 2,
   },
   catalogAction: {
     alignItems: 'center',
-    alignSelf: 'center',
     borderRadius: V2_RADIUS.pill,
+    height: 32,
     justifyContent: 'center',
-    minWidth: 68,
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
+    width: 32,
   },
   catalogActionEnabled: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: V2_COLORS.brand.primary,
   },
   catalogActionDisabled: {
     backgroundColor: V2_COLORS.background.subtle,
   },
-  catalogActionLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  catalogActionLabelEnabled: {
-    color: V2_COLORS.brand.primaryStrong,
-  },
-  catalogActionLabelDisabled: {
-    color: V2_COLORS.text.muted,
-  },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: V2_SPACING.xxl,
+    paddingVertical: 32,
   },
   emptyLabel: {
     color: V2_COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
   },
+  manualContent: {
+    paddingBottom: 8,
+    rowGap: 16,
+  },
+  fieldLabel: {
+    color: V2_COLORS.text.tertiary,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+    marginBottom: 6,
+  },
   textField: {
     backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
-    lineHeight: 22,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: 14,
+    borderColor: V2_COLORS.border.subtle,
+    borderRadius: V2_RADIUS.md,
+    borderWidth: 1,
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
+    height: 46,
+    lineHeight: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
   },
-  switchCard: {
+  switchRow: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
   },
-  switchTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 22,
+  toggleTrack: {
+    backgroundColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.pill,
+    height: 24,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+    width: 44,
   },
-  switchDescription: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
+  toggleTrackSelected: {
+    backgroundColor: V2_COLORS.brand.primary,
   },
-  inlineChips: {
-    paddingRight: V2_SPACING.lg,
+  toggleThumb: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderRadius: V2_RADIUS.pill,
+    height: 20,
+    transform: [{translateX: 0}],
+    width: 20,
   },
-  stepperGrid: {
+  toggleThumbSelected: {
+    transform: [{translateX: 20}],
+  },
+  inlineRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.lg,
+    gap: 8,
   },
-  stepperCard: {
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
+  creditButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.md,
     flex: 1,
-    padding: V2_SPACING.lg,
+    height: 40,
+    justifyContent: 'center',
   },
-  stepperLabel: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginBottom: V2_SPACING.sm,
+  creditButtonSelected: {
+    backgroundColor: V2_COLORS.brand.primary,
   },
-  stepperControls: {
+  dayButton: {
     alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.md,
+    flex: 1,
+    height: 40,
+    justifyContent: 'center',
+  },
+  dayButtonSelected: {
+    backgroundColor: V2_COLORS.brand.primary,
+  },
+  optionLabel: {
+    color: V2_COLORS.text.secondary,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  optionLabelSelected: {
+    color: V2_COLORS.text.inverse,
+  },
+  stepperRow: {
     flexDirection: 'row',
+    gap: 12,
+  },
+  stepperField: {
+    flex: 1,
+  },
+  stepperContainer: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.page,
+    borderColor: V2_COLORS.border.subtle,
+    borderRadius: V2_RADIUS.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    height: 46,
     justifyContent: 'space-between',
+    paddingHorizontal: 12,
   },
   stepperButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: V2_COLORS.border.default,
     borderRadius: V2_RADIUS.pill,
-    height: 32,
+    height: 24,
     justifyContent: 'center',
-    width: 32,
-  },
-  stepperButtonDisabled: {
-    opacity: 0.35,
+    width: 24,
   },
   stepperValue: {
-    color: V2_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 24,
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
   },
   submitButton: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
-    marginTop: V2_SPACING.sm,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: 15,
-  },
-  submitButtonEnabled: {
     backgroundColor: V2_COLORS.brand.primary,
+    borderRadius: V2_RADIUS.lg,
+    height: 48,
+    justifyContent: 'center',
   },
   submitButtonDisabled: {
-    backgroundColor: V2_COLORS.background.subtle,
+    opacity: 0.4,
   },
   submitLabel: {
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 22,
-  },
-  submitLabelEnabled: {
     color: V2_COLORS.text.inverse,
-  },
-  submitLabelDisabled: {
-    color: V2_COLORS.text.muted,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
   },
 });

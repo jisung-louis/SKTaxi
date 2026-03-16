@@ -7,6 +7,7 @@
 
 import 'react-native-gesture-handler';
 import React from 'react';
+import {BottomSheetModalProvider} from '@gorhom/bottom-sheet';
 import { StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -39,7 +40,9 @@ const App = () => {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <AppContent />
+        <BottomSheetModalProvider>
+          <AppContent />
+        </BottomSheetModalProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
