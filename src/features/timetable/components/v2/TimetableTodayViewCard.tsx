@@ -10,8 +10,8 @@ import {
 } from '../../model/timetableCourseTones';
 import type {TimetableTodayRowViewData} from '../../model/timetableDetailViewData';
 
-const TODAY_ROW_HEIGHT = 76;
-const TODAY_ROW_GAP = 12;
+const TODAY_ROW_HEIGHT = 60;
+const TODAY_ROW_GAP = 8;
 
 interface TimetableTodayViewCardProps {
   collapsed: boolean;
@@ -55,13 +55,13 @@ export const TimetableTodayViewCard = ({
               style={[
                 styles.timeColumn,
                 {minHeight: rowHeight},
-                row.visiblePeriodSpan > 1 ? styles.timeColumnExpanded : null,
               ]}>
-              <Text style={styles.periodLabel}>{row.periodLabel}</Text>
-              <Text style={styles.timeLabel}>{row.startTimeLabel}</Text>
-              {course?.endTimeLabel ? (
-                <Text style={styles.timeLabel}>{course.endTimeLabel}</Text>
-              ) : null}
+              {row.timeSlots.map(slot => (
+                <View key={`${row.id}-${slot.periodLabel}`} style={styles.timeSlot}>
+                  <Text style={styles.periodLabel}>{slot.periodLabel}</Text>
+                  <Text style={styles.timeLabel}>{slot.startTimeLabel}</Text>
+                </View>
+              ))}
             </View>
 
             {course ? (
@@ -126,57 +126,61 @@ const styles = StyleSheet.create({
   },
   timeColumn: {
     alignItems: 'center',
-    justifyContent: 'center',
     marginRight: V2_SPACING.md,
     width: 58,
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.lg,
+    paddingHorizontal: V2_SPACING.sm,
+    paddingVertical: V2_SPACING.sm,
   },
-  timeColumnExpanded: {
-    justifyContent: 'space-between',
-    paddingVertical: 6,
+  timeSlot: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   periodLabel: {
+    color: V2_COLORS.text.primary,
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+    marginBottom: 2,
+  },
+  timeLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  courseCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: TODAY_ROW_HEIGHT,
+    paddingHorizontal: V2_SPACING.lg,
+    paddingVertical: 10,
+  },
+  courseAccent: {
+    borderRadius: V2_RADIUS.pill,
+    height: 4,
+    marginBottom: 6,
+    width: 24,
+  },
+  courseTitle: {
     color: V2_COLORS.text.primary,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
     marginBottom: 2,
   },
-  timeLabel: {
-    color: V2_COLORS.text.muted,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  courseCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: TODAY_ROW_HEIGHT,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
-  },
-  courseAccent: {
-    borderRadius: V2_RADIUS.pill,
-    height: 4,
-    marginBottom: V2_SPACING.sm,
-    width: 28,
-  },
-  courseTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 22,
-    marginBottom: 4,
-  },
   courseMeta: {
     color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 16,
   },
   emptyCard: {
     alignItems: 'center',
     backgroundColor: V2_COLORS.background.page,
-    borderRadius: 18,
+    borderRadius: 16,
     flex: 1,
     flexDirection: 'row',
     minHeight: TODAY_ROW_HEIGHT,
@@ -191,9 +195,9 @@ const styles = StyleSheet.create({
   },
   emptyLabel: {
     color: V2_COLORS.text.muted,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   toggleButton: {
     alignItems: 'center',
@@ -207,9 +211,9 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     color: V2_COLORS.text.secondary,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 18,
     marginRight: V2_SPACING.xs,
   },
 });

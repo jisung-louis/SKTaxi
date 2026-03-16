@@ -190,9 +190,13 @@ export const TimetableDetailScreen = () => {
                 <>
                   <TimetableAllViewCard
                     blocks={data.allView.blocks}
+                    collapsed={data.allView.collapsed}
                     columns={data.allView.columns}
+                    hasNightClasses={data.allView.hasNightClasses}
                     onPressBlock={openCourseDetail}
+                    onToggleNightClasses={toggleNightClasses}
                     periods={data.allView.periods}
+                    toggleLabel={data.allView.nightToggleLabel}
                   />
 
                 <TimetableSupplementSection

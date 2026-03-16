@@ -292,13 +292,20 @@ const buildScreenViewData = ({
       const rightStart = right.schedules[0]?.startPeriod ?? Number.MAX_SAFE_INTEGER;
       return leftStart - rightStart;
     });
-  const hasNightClasses = coursesOnCurrentDay.some(course =>
+  const hasCurrentDayNightClasses = coursesOnCurrentDay.some(course =>
     course.schedules.some(schedule => schedule.endPeriod > 9),
   );
-  const showExpandedToday = hasNightClasses ? showNightClasses : false;
+  const hasAnyNightClasses = courses.some(course =>
+    course.schedules.some(schedule => schedule.endPeriod > 9),
+  );
+  const showExpandedToday = hasCurrentDayNightClasses ? showNightClasses : false;
+  const showExpandedAllView = hasAnyNightClasses ? showNightClasses : false;
   const visibleTodayPeriods = showExpandedToday ? periods : allViewPeriods;
-  const maxVisiblePeriodNumber =
+  const visibleAllViewPeriods = showExpandedAllView ? periods : allViewPeriods;
+  const maxVisibleTodayPeriodNumber =
     visibleTodayPeriods[visibleTodayPeriods.length - 1]?.periodNumber ?? 9;
+  const maxVisibleAllViewPeriodNumber =
+    visibleAllViewPeriods[visibleAllViewPeriods.length - 1]?.periodNumber ?? 9;
   const todayRows: TimetableTodayRowViewData[] = [];
 
   let periodIndex = 0;
@@ -320,6 +327,12 @@ const buildScreenViewData = ({
         periodLabel: `${period.periodNumber}교시`,
         startTimeLabel: period.startTimeLabel,
         state: 'empty',
+        timeSlots: [
+          {
+            periodLabel: `${period.periodNumber}교시`,
+            startTimeLabel: period.startTimeLabel,
+          },
+        ],
         visiblePeriodSpan: 1,
       });
       periodIndex += 1;
@@ -340,7 +353,7 @@ const buildScreenViewData = ({
 
     const visibleEndPeriodNumber = Math.min(
       schedule.endPeriod,
-      maxVisiblePeriodNumber,
+      maxVisibleTodayPeriodNumber,
     );
     const visibleEndPeriod = periods.find(
       candidate => candidate.periodNumber === visibleEndPeriodNumber,
@@ -351,6 +364,16 @@ const buildScreenViewData = ({
       schedule.startPeriod === visibleEndPeriodNumber
         ? `${schedule.startPeriod}교시`
         : `${schedule.startPeriod}-${visibleEndPeriodNumber}교시`;
+    const timeSlots = periods
+      .filter(
+        candidate =>
+          candidate.periodNumber >= schedule.startPeriod &&
+          candidate.periodNumber <= visibleEndPeriodNumber,
+      )
+      .map(candidate => ({
+        periodLabel: `${candidate.periodNumber}교시`,
+        startTimeLabel: candidate.startTimeLabel,
+      }));
 
     todayRows.push({
       course: {
@@ -364,6 +387,7 @@ const buildScreenViewData = ({
       periodLabel: visiblePeriodLabel,
       startTimeLabel: period.startTimeLabel,
       state: 'course',
+      timeSlots,
       visiblePeriodSpan,
     });
 
@@ -385,11 +409,16 @@ const buildScreenViewData = ({
         .flatMap(course =>
           course.schedules
             .filter(
-              schedule => schedule.day !== 'sat' && schedule.startPeriod <= 9,
+              schedule =>
+                schedule.day !== 'sat' &&
+                schedule.startPeriod <= maxVisibleAllViewPeriodNumber,
             )
             .map(schedule => ({
               courseId: course.id,
-              endPeriod: Math.min(schedule.endPeriod, 9),
+              endPeriod: Math.min(
+                schedule.endPeriod,
+                maxVisibleAllViewPeriodNumber,
+              ),
               id: `${course.id}-${schedule.day}-${schedule.startPeriod}`,
               roomLabel: course.isOnline ? '온라인' : course.locationLabel,
               selected: course.id === selectedCourseId,
@@ -402,7 +431,12 @@ const buildScreenViewData = ({
         .filter(block =>
           columns.some(column => column.id === block.weekdayId),
         ),
+      collapsed: !showExpandedAllView,
       columns,
+      hasNightClasses: hasAnyNightClasses,
+      nightToggleLabel: showExpandedAllView
+        ? '야간 수업 접기'
+        : '야간 수업 펼치기',
       onlineItems: courses
         .filter(course => course.isOnline)
         .sort((left, right) => left.name.localeCompare(right.name, 'ko'))
@@ -413,7 +447,7 @@ const buildScreenViewData = ({
           title: course.name,
           toneId: course.toneId,
         })),
-      periods: allViewPeriods,
+      periods: visibleAllViewPeriods,
       saturdayItems: courses
         .filter(course =>
           course.schedules.some(schedule => schedule.day === 'sat'),
@@ -437,7 +471,7 @@ const buildScreenViewData = ({
     totalCreditsLabel: `총 ${courses.reduce((sum, course) => sum + course.credits, 0)}학점`,
     todayView: {
       collapsed: !showExpandedToday,
-      hasNightClasses,
+      hasNightClasses: hasCurrentDayNightClasses,
       nightToggleLabel: showExpandedToday
         ? '야간 수업 접기'
         : '야간 수업 펼치기',

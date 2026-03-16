@@ -346,7 +346,7 @@ export const CampusScreen = () => {
                   actionLabel={TIMETABLE_ACTION_LABEL}
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen('TimetableDetail', {
-                      initialView: 'today',
+                      initialView: 'all',
                     })
                   }
                   subtitle={data.timetable.dateLabel}

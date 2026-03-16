@@ -68,6 +68,10 @@ export interface TimetableTodayRowViewData {
   periodLabel: string;
   startTimeLabel: string;
   state: 'course' | 'empty';
+  timeSlots: Array<{
+    periodLabel: string;
+    startTimeLabel: string;
+  }>;
   visiblePeriodSpan: number;
 }
 
@@ -147,7 +151,10 @@ export interface TimetableAddCourseSheetViewData {
 
 export interface TimetableAllViewData {
   blocks: TimetableGridBlockViewData[];
+  collapsed: boolean;
   columns: TimetableDayColumnViewData[];
+  hasNightClasses: boolean;
+  nightToggleLabel: string;
   onlineItems: TimetableSupplementItemViewData[];
   periods: TimetablePeriodViewData[];
   saturdayItems: TimetableSupplementItemViewData[];

@@ -1,4 +1,5 @@
 import React from 'react';
+import Icon from 'react-native-vector-icons/Ionicons';
 import {StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 
 import {V2_COLORS, V2_SHADOWS} from '@/shared/design-system/tokens';
@@ -12,9 +13,13 @@ import type {
 
 interface TimetableAllViewCardProps {
   blocks: TimetableGridBlockViewData[];
+  collapsed: boolean;
   columns: TimetableDayColumnViewData[];
+  hasNightClasses: boolean;
   onPressBlock: (courseId: string) => void;
+  onToggleNightClasses: () => void;
   periods: TimetablePeriodViewData[];
+  toggleLabel: string;
 }
 
 const HEADER_HEIGHT = 37;
@@ -27,9 +32,13 @@ const BLOCK_RADIUS = 8;
 
 export const TimetableAllViewCard = ({
   blocks,
+  collapsed,
   columns,
+  hasNightClasses,
   onPressBlock,
+  onToggleNightClasses,
   periods,
+  toggleLabel,
 }: TimetableAllViewCardProps) => {
   const {width} = useWindowDimensions();
   const cardWidth = width - CARD_HORIZONTAL_MARGIN * 2;
@@ -37,121 +46,142 @@ export const TimetableAllViewCard = ({
   const cardHeight = HEADER_HEIGHT + periods.length * ROW_HEIGHT;
 
   return (
-    <View style={[styles.card, {height: cardHeight, width: cardWidth}]}>
-      <View style={[styles.gridLineHorizontal, {top: HEADER_HEIGHT - 1, width: cardWidth}]} />
+    <View style={styles.container}>
+      <View style={[styles.card, {height: cardHeight, width: cardWidth}]}>
+        <View style={[styles.gridLineHorizontal, {top: HEADER_HEIGHT - 1, width: cardWidth}]} />
 
-      {Array.from({length: columns.length + 1}).map((_, index) => (
-        <View
-          key={`col-${index}`}
-          style={[
-            styles.gridLineVertical,
-            {
-              height: cardHeight - HEADER_HEIGHT,
-              left: columnWidth * index,
-              top: HEADER_HEIGHT,
-            },
-          ]}
-        />
-      ))}
-
-      {periods.map((period, index) => (
-        <View
-          key={`row-${period.id}`}
-          style={[
-            styles.gridLineHorizontal,
-            {
-              top: HEADER_HEIGHT + index * ROW_HEIGHT,
-              width: cardWidth,
-            },
-          ]}
-        />
-      ))}
-
-      <View style={styles.headerRow}>
-        <View style={[styles.headerCell, {width: columnWidth}]}>
-          <Text style={styles.axisLabel}>교시</Text>
-        </View>
-        {columns.map(column => (
+        {Array.from({length: columns.length + 1}).map((_, index) => (
           <View
-            key={column.id}
-            style={[styles.headerCell, {width: columnWidth}]}>
-            <Text style={styles.dayLabel}>{column.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {periods.map((period, index) => (
-        <View
-          key={period.id}
-          style={[
-            styles.timeCell,
-            {
-              height: ROW_HEIGHT,
-              top: HEADER_HEIGHT + index * ROW_HEIGHT,
-              width: columnWidth,
-            },
-          ]}>
-          <Text style={styles.periodIndex}>{period.periodNumber}</Text>
-          <Text style={styles.periodTime}>{period.startTimeLabel}</Text>
-        </View>
-      ))}
-
-      {blocks.map(block => {
-        const tone = TIMETABLE_COURSE_TONES[block.toneId];
-        const dayIndex = columns.findIndex(column => column.id === block.weekdayId);
-        const rowSpan = block.endPeriod - block.startPeriod + 1;
-        const showSubtitle = rowSpan > 1 && Boolean(block.roomLabel);
-
-        if (dayIndex < 0) {
-          return null;
-        }
-
-        return (
-          <TouchableOpacity
-            key={block.id}
-            accessibilityRole="button"
-            activeOpacity={0.9}
-            onPress={() => onPressBlock(block.courseId)}
+            key={`col-${index}`}
             style={[
-              styles.block,
+              styles.gridLineVertical,
               {
-                height: rowSpan * ROW_HEIGHT - BLOCK_INSET_Y * 2,
-                left:
-                  columnWidth +
-                  dayIndex * columnWidth +
-                  BLOCK_INSET_X,
-                top:
-                  HEADER_HEIGHT +
-                  (block.startPeriod - 1) * ROW_HEIGHT +
-                  BLOCK_INSET_Y,
-                width: columnWidth - BLOCK_INSET_X * 2 - 1,
+                height: cardHeight - HEADER_HEIGHT,
+                left: columnWidth * index,
+                top: HEADER_HEIGHT,
+              },
+            ]}
+          />
+        ))}
+
+        {periods.map((period, index) => (
+          <View
+            key={`row-${period.id}`}
+            style={[
+              styles.gridLineHorizontal,
+              {
+                top: HEADER_HEIGHT + index * ROW_HEIGHT,
+                width: cardWidth,
+              },
+            ]}
+          />
+        ))}
+
+        <View style={styles.headerRow}>
+          <View style={[styles.headerCell, {width: columnWidth}]}>
+            <Text style={styles.axisLabel}>교시</Text>
+          </View>
+          {columns.map(column => (
+            <View
+              key={column.id}
+              style={[styles.headerCell, {width: columnWidth}]}>
+              <Text style={styles.dayLabel}>{column.label}</Text>
+            </View>
+          ))}
+        </View>
+
+        {periods.map((period, index) => (
+          <View
+            key={period.id}
+            style={[
+              styles.timeCell,
+              {
+                height: ROW_HEIGHT,
+                top: HEADER_HEIGHT + index * ROW_HEIGHT,
+                width: columnWidth,
               },
             ]}>
-            <View style={styles.blockBase} />
-            <View
+            <Text style={styles.periodIndex}>{period.periodNumber}</Text>
+            <Text style={styles.periodTime}>{period.startTimeLabel}</Text>
+          </View>
+        ))}
+
+        {blocks.map(block => {
+          const tone = TIMETABLE_COURSE_TONES[block.toneId];
+          const dayIndex = columns.findIndex(column => column.id === block.weekdayId);
+          const rowSpan = block.endPeriod - block.startPeriod + 1;
+          const showSubtitle = rowSpan > 1 && Boolean(block.roomLabel);
+
+          if (dayIndex < 0) {
+            return null;
+          }
+
+          return (
+            <TouchableOpacity
+              key={block.id}
+              accessibilityRole="button"
+              activeOpacity={0.9}
+              onPress={() => onPressBlock(block.courseId)}
               style={[
-                styles.blockTint,
-                {backgroundColor: tone.softBackground},
-              ]}
-            />
-            <Text
-              numberOfLines={showSubtitle ? 2 : 3}
-              style={[styles.blockTitle, {color: tone.text}]}>
-              {block.title}
-            </Text>
-            {showSubtitle ? (
-              <Text numberOfLines={1} style={[styles.blockSubtitle, {color: tone.text}]}>
-                {block.roomLabel}
+                styles.block,
+                {
+                  height: rowSpan * ROW_HEIGHT - BLOCK_INSET_Y * 2,
+                  left:
+                    columnWidth +
+                    dayIndex * columnWidth +
+                    BLOCK_INSET_X,
+                  top:
+                    HEADER_HEIGHT +
+                    (block.startPeriod - 1) * ROW_HEIGHT +
+                    BLOCK_INSET_Y,
+                  width: columnWidth - BLOCK_INSET_X * 2 - 1,
+                },
+              ]}>
+              <View style={styles.blockBase} />
+              <View
+                style={[
+                  styles.blockTint,
+                  {backgroundColor: tone.softBackground},
+                ]}
+              />
+              <Text
+                numberOfLines={showSubtitle ? 2 : 3}
+                style={[styles.blockTitle, {color: tone.text}]}>
+                {block.title}
               </Text>
-            ) : null}
-          </TouchableOpacity>
-        );
-      })}
+              {showSubtitle ? (
+                <Text numberOfLines={1} style={[styles.blockSubtitle, {color: tone.text}]}>
+                  {block.roomLabel}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {hasNightClasses ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.85}
+          onPress={onToggleNightClasses}
+          style={styles.toggleButton}>
+          <Text style={styles.toggleLabel}>{toggleLabel}</Text>
+          <Icon
+            color={V2_COLORS.text.secondary}
+            name={collapsed ? 'chevron-down' : 'chevron-up'}
+            size={18}
+          />
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
   card: {
     alignSelf: 'center',
     backgroundColor: V2_COLORS.background.surface,
@@ -239,5 +269,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
     opacity: 0.7,
     textAlign: 'center',
+  },
+  toggleButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.subtle,
+    borderWidth: 1,
+    borderRadius: 9999,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 10,
+    minHeight: 38,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    zIndex: 1,
+    ...V2_SHADOWS.card,
+  },
+  toggleLabel: {
+    color: V2_COLORS.text.secondary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginRight: 4,
   },
 });
