@@ -98,7 +98,7 @@ export const TimetableDetailScreen = () => {
 
   return (
     <SafeAreaView
-      edges={['left', 'right', 'bottom']}
+      edges={['left', 'right']}
       style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.headerSurface}>
@@ -118,6 +118,9 @@ export const TimetableDetailScreen = () => {
               onSelect={selectMode}
               selectedId={activeMode}
               style={styles.modeControl}
+              isFullWidth={false}
+              isRounded={true}
+              height={36}
               variant="surface"
             />
 
@@ -293,7 +296,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   modeControl: {
-    width: 188,
   },
   creditContainer: {
     alignItems: 'center',

@@ -115,7 +115,6 @@ export const TimetableAllViewCard = ({
             style={[
               styles.block,
               {
-                backgroundColor: tone.softBackground,
                 height: rowSpan * ROW_HEIGHT - BLOCK_INSET_Y * 2,
                 left:
                   columnWidth +
@@ -128,6 +127,13 @@ export const TimetableAllViewCard = ({
                 width: columnWidth - BLOCK_INSET_X * 2 - 1,
               },
             ]}>
+            <View style={styles.blockBase} />
+            <View
+              style={[
+                styles.blockTint,
+                {backgroundColor: tone.softBackground},
+              ]}
+            />
             <Text
               numberOfLines={showSubtitle ? 2 : 3}
               style={[styles.blockTitle, {color: tone.text}]}>
@@ -164,7 +170,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   axisLabel: {
-    color: '#D1D5DB',
+    color: V2_COLORS.text.secondary,
     fontSize: 10,
     fontWeight: '500',
     lineHeight: 15,
@@ -182,25 +188,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   periodIndex: {
-    color: '#D1D5DB',
+    color: V2_COLORS.text.secondary,
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 15,
   },
   periodTime: {
-    color: '#E5E7EB',
+    color: V2_COLORS.text.secondary,
     fontSize: 8,
     lineHeight: 12,
     marginTop: 2,
   },
   gridLineHorizontal: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: V2_COLORS.border.subtle,
     height: 1,
     left: 0,
     position: 'absolute',
   },
   gridLineVertical: {
-    backgroundColor: '#F9FAFB',
+    backgroundColor: V2_COLORS.border.subtle,
     position: 'absolute',
     width: 1,
   },
@@ -208,8 +214,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: BLOCK_RADIUS,
     justifyContent: 'center',
+    overflow: 'hidden',
     paddingHorizontal: 2,
     position: 'absolute',
+  },
+  blockBase: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: V2_COLORS.background.surface,
+    borderRadius: BLOCK_RADIUS,
+  },
+  blockTint: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: BLOCK_RADIUS,
   },
   blockTitle: {
     fontSize: 9,

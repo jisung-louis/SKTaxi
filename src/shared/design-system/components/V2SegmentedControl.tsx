@@ -21,6 +21,9 @@ interface V2SegmentedControlProps<T extends string = string> {
   selectedId: T;
   style?: StyleProp<ViewStyle>;
   variant?: 'brand' | 'surface';
+  isFullWidth?: boolean;
+  isRounded?: boolean;
+  height?: number;
 }
 
 export const V2SegmentedControl = <T extends string>({
@@ -29,12 +32,15 @@ export const V2SegmentedControl = <T extends string>({
   selectedId,
   style,
   variant = 'brand',
+  isFullWidth = true,
+  isRounded = false,
+  height = 40,
 }: V2SegmentedControlProps<T>) => {
   const containerStyle =
     variant === 'surface' ? styles.containerSurface : styles.containerBrand;
 
   return (
-    <View style={[styles.containerBase, containerStyle, style]}>
+    <View style={[styles.containerBase, containerStyle, style, {borderRadius: isRounded ? V2_RADIUS.pill : V2_RADIUS.lg}]}>
       {items.map(item => {
         const selected = item.id === selectedId;
         const segmentSelectedStyle =
@@ -52,7 +58,7 @@ export const V2SegmentedControl = <T extends string>({
             accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => onSelect(item.id)}
-            style={[styles.segment, selected ? segmentSelectedStyle : null]}>
+            style={[styles.segment, selected ? segmentSelectedStyle : null, isFullWidth ? {flex: 1} : null, isRounded ? {borderRadius: V2_RADIUS.pill} : {borderRadius: V2_RADIUS.md}, {height: height}]}>
             <Text
               style={[
                 styles.label,
@@ -69,7 +75,6 @@ export const V2SegmentedControl = <T extends string>({
 
 const styles = StyleSheet.create({
   containerBase: {
-    borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
     gap: V2_SPACING.xs,
     padding: V2_SPACING.xs,
@@ -83,9 +88,6 @@ const styles = StyleSheet.create({
   },
   segment: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
-    flex: 1,
-    height: 40,
     justifyContent: 'center',
     paddingHorizontal: V2_SPACING.md,
   },

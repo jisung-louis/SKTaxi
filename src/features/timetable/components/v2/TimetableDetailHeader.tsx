@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   semesterLabel: {
     color: V2_COLORS.text.primary,
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '700',
     lineHeight: 28,
     marginRight: V2_SPACING.xs,
   },
