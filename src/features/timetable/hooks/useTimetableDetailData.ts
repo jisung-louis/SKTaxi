@@ -90,19 +90,11 @@ const findConflictCourseIds = (
     .map(existingCourse => existingCourse.id);
 };
 
-const toDayColumns = (
-  courses: TimetableCourseRecord[],
-): TimetableDayColumnViewData[] => {
-  const hasSaturdayCourse = courses.some(course =>
-    course.schedules.some(schedule => schedule.day === 'sat'),
-  );
-
-  const visibleDays = hasSaturdayCourse ? DAY_ORDER : DAY_ORDER.slice(0, 5);
-  return visibleDays.map(day => ({
+const toDayColumns = (): TimetableDayColumnViewData[] =>
+  DAY_ORDER.slice(0, 5).map(day => ({
     id: day,
     label: DAY_LABELS[day],
   }));
-};
 
 const formatCourseMetaLabel = (course: TimetableCourseRecord) => {
   if (course.isOnline) {
@@ -289,7 +281,7 @@ const buildScreenViewData = ({
 }): TimetableDetailScreenViewData => {
   const periods = PERIOD_VIEW_DATA;
   const allViewPeriods = periods.filter(period => period.periodNumber <= 9);
-  const columns = toDayColumns(courses);
+  const columns = toDayColumns();
   const selectedCourse = courses.find(course => course.id === selectedCourseId);
   const coursesOnCurrentDay = courses
     .filter(course =>
@@ -377,7 +369,9 @@ const buildScreenViewData = ({
       blocks: courses
         .flatMap(course =>
           course.schedules
-            .filter(schedule => schedule.startPeriod <= 9)
+            .filter(
+              schedule => schedule.day !== 'sat' && schedule.startPeriod <= 9,
+            )
             .map(schedule => ({
               courseId: course.id,
               endPeriod: Math.min(schedule.endPeriod, 9),
@@ -396,6 +390,7 @@ const buildScreenViewData = ({
       columns,
       onlineItems: courses
         .filter(course => course.isOnline)
+        .sort((left, right) => left.name.localeCompare(right.name, 'ko'))
         .map(course => ({
           courseId: course.id,
           id: `online-${course.id}`,
@@ -408,6 +403,11 @@ const buildScreenViewData = ({
         .filter(course =>
           course.schedules.some(schedule => schedule.day === 'sat'),
         )
+        .sort((left, right) => {
+          const leftStart = left.schedules[0]?.startPeriod ?? 0;
+          const rightStart = right.schedules[0]?.startPeriod ?? 0;
+          return leftStart - rightStart;
+        })
         .map(course => ({
           courseId: course.id,
           id: `sat-${course.id}`,

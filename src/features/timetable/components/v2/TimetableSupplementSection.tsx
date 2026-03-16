@@ -2,13 +2,14 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-system/tokens';
+import {V2_COLORS, V2_RADIUS, V2_SHADOWS} from '@/shared/design-system/tokens';
 
 import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
 import type {TimetableSupplementItemViewData} from '../../model/timetableDetailViewData';
 
 interface TimetableSupplementSectionProps {
   items: TimetableSupplementItemViewData[];
+  kind: 'online' | 'saturday';
   onPressItem: (courseId: string) => void;
   selectedCourseId?: string;
   title: string;
@@ -16,6 +17,7 @@ interface TimetableSupplementSectionProps {
 
 export const TimetableSupplementSection = ({
   items,
+  kind,
   onPressItem,
   selectedCourseId,
   title,
@@ -24,9 +26,15 @@ export const TimetableSupplementSection = ({
     return null;
   }
 
+  const iconName = kind === 'online' ? 'desktop-outline' : 'calendar-outline';
+  const iconColor = kind === 'online' ? '#60A5FA' : '#FB923C';
+
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        <Icon color={iconColor} name={iconName} size={14} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
 
       <View style={styles.list}>
         {items.map(item => {
@@ -41,28 +49,27 @@ export const TimetableSupplementSection = ({
               onPress={() => onPressItem(item.courseId)}
               style={[
                 styles.card,
-                {borderColor: selected ? tone.accent : V2_COLORS.border.subtle},
                 selected ? {backgroundColor: tone.softBackground} : null,
               ]}>
-              <View style={styles.cardBody}>
-                <View
-                  style={[styles.toneDot, {backgroundColor: tone.accent}]}
-                />
-                <View style={styles.copy}>
+              <View style={[styles.accentBar, {backgroundColor: tone.accent}]} />
+
+              <View style={styles.copy}>
+                <View style={styles.titleRow}>
                   <Text numberOfLines={1} style={styles.itemTitle}>
                     {item.title}
                   </Text>
-                  <Text numberOfLines={1} style={styles.metaLabel}>
-                    {item.metaLabel}
-                  </Text>
+                  {kind === 'online' ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeLabel}>온라인</Text>
+                    </View>
+                  ) : null}
                 </View>
+                <Text numberOfLines={1} style={styles.metaLabel}>
+                  {item.metaLabel}
+                </Text>
               </View>
 
-              <Icon
-                color={V2_COLORS.text.muted}
-                name="chevron-forward"
-                size={18}
-              />
+              <Icon color={V2_COLORS.border.default} name="chevron-forward" size={18} />
             </TouchableOpacity>
           );
         })}
@@ -73,53 +80,71 @@ export const TimetableSupplementSection = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginTop: V2_SPACING.xxl,
+    marginTop: 16,
+    paddingHorizontal: 8,
   },
-  title: {
-    color: V2_COLORS.text.primary,
-    fontSize: 18,
-    fontWeight: '800',
-    lineHeight: 26,
-    marginBottom: V2_SPACING.md,
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  sectionTitle: {
+    color: V2_COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    marginLeft: 8,
   },
   list: {
-    gap: V2_SPACING.sm,
+    gap: 8,
   },
   card: {
     alignItems: 'center',
     backgroundColor: V2_COLORS.background.surface,
     borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    height: 62,
+    paddingHorizontal: 16,
     ...V2_SHADOWS.card,
   },
-  cardBody: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-  },
-  toneDot: {
+  accentBar: {
     borderRadius: V2_RADIUS.pill,
-    height: 10,
-    marginRight: V2_SPACING.md,
-    width: 10,
+    height: 38,
+    marginRight: 12,
+    width: 4,
   },
   copy: {
     flex: 1,
+    justifyContent: 'center',
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 2,
   },
   itemTitle: {
     color: V2_COLORS.text.primary,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 22,
-    marginBottom: 2,
+    lineHeight: 20,
+  },
+  badge: {
+    backgroundColor: '#EFF6FF',
+    borderRadius: V2_RADIUS.pill,
+    marginLeft: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  badgeLabel: {
+    color: '#3B82F6',
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 15,
   },
   metaLabel: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 13,
-    lineHeight: 18,
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

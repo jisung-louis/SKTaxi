@@ -3,7 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-system/tokens';
+import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
 
 interface TimetableDetailHeaderProps {
   onPressAdd: () => void;
@@ -76,9 +76,7 @@ export const TimetableDetailHeader = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
-    borderBottomWidth: 1,
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: 12,
     paddingHorizontal: V2_SPACING.lg,
   },
   row: {
@@ -88,9 +86,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: 'center',
-    height: 40,
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.pill,
+    height: 36,
     justifyContent: 'center',
-    width: 40,
+    width: 36,
   },
   semesterButton: {
     alignItems: 'center',
@@ -112,22 +112,18 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: V2_COLORS.background.subtle,
     borderRadius: V2_RADIUS.pill,
-    borderWidth: 1,
-    height: 40,
+    height: 36,
     justifyContent: 'center',
-    width: 40,
-    ...V2_SHADOWS.card,
+    width: 36,
   },
   addButton: {
     alignItems: 'center',
     backgroundColor: V2_COLORS.brand.primary,
     borderRadius: V2_RADIUS.pill,
-    height: 40,
+    height: 36,
     justifyContent: 'center',
-    width: 40,
-    ...V2_SHADOWS.floating,
+    width: 36,
   },
 });

@@ -4,7 +4,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import {
@@ -22,7 +21,7 @@ import {
   V2StateCard,
   type V2SegmentedControlItem,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {TimetableAddCourseSheet} from '../components/v2/TimetableAddCourseSheet';
@@ -36,8 +35,8 @@ import {useTimetableDetailData} from '../hooks/useTimetableDetailData';
 import type {TimetableDetailViewMode} from '../model/timetableDetailViewData';
 
 const MODE_ITEMS: V2SegmentedControlItem<TimetableDetailViewMode>[] = [
-  {id: 'all', label: '전체'},
-  {id: 'today', label: '오늘'},
+  {id: 'today', label: '오늘 시간표'},
+  {id: 'all', label: '전체 시간표'},
 ];
 
 type TimetableDetailRouteProp = RouteProp<CampusStackParamList, 'TimetableDetail'>;
@@ -102,19 +101,17 @@ export const TimetableDetailScreen = () => {
       edges={['left', 'right', 'bottom']}
       style={styles.safeArea}>
       <View style={styles.container}>
-        <TimetableDetailHeader
-          onPressAdd={openAddSheet}
-          onPressBack={() => navigation.goBack()}
-          onPressSemester={() => setSemesterSheetVisible(true)}
-          onPressShare={() => {
-            shareTimetable().catch(() => undefined);
-          }}
-          semesterLabel={data?.semesterLabel ?? '시간표'}
-        />
+        <View style={styles.headerSurface}>
+          <TimetableDetailHeader
+            onPressAdd={openAddSheet}
+            onPressBack={() => navigation.goBack()}
+            onPressSemester={() => setSemesterSheetVisible(true)}
+            onPressShare={() => {
+              shareTimetable().catch(() => undefined);
+            }}
+            semesterLabel={data?.semesterLabel ?? '시간표'}
+          />
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
           <View style={styles.toolbar}>
             <V2SegmentedControl
               items={MODE_ITEMS}
@@ -125,16 +122,25 @@ export const TimetableDetailScreen = () => {
             />
 
             {data ? (
-              <View style={styles.creditPill}>
-                <Text style={styles.creditLabel}>{data.totalCreditsLabel}</Text>
+              <View style={styles.creditContainer}>
+                <Text style={styles.creditMuted}>총 </Text>
+                <Text style={styles.creditStrong}>
+                  {data.totalCreditsLabel.replace(/^총\s*/, '').replace('학점', '')}
+                </Text>
+                <Text style={styles.creditMuted}>학점</Text>
               </View>
             ) : null}
           </View>
+        </View>
 
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
           {loading && !data ? (
             <V2StateCard
               description="이번 학기 시간표를 준비하고 있습니다."
               icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              style={styles.stateCard}
               title="시간표를 불러오는 중"
             />
           ) : null}
@@ -153,6 +159,7 @@ export const TimetableDetailScreen = () => {
               onPressAction={() => {
                 reload().catch(() => undefined);
               }}
+              style={styles.stateCard}
               title="시간표를 불러오지 못했습니다"
             />
           ) : null}
@@ -169,6 +176,7 @@ export const TimetableDetailScreen = () => {
                 />
               }
               onPressAction={openAddSheet}
+              style={styles.stateCard}
               title="등록된 수업이 없습니다"
             />
           ) : null}
@@ -184,18 +192,20 @@ export const TimetableDetailScreen = () => {
                     periods={data.allView.periods}
                   />
 
-                  <TimetableSupplementSection
-                    items={data.allView.onlineItems}
-                    onPressItem={openCourseDetail}
-                    selectedCourseId={selectedCourseId}
-                    title="온라인 수업"
-                  />
+                <TimetableSupplementSection
+                  items={data.allView.onlineItems}
+                  kind="online"
+                  onPressItem={openCourseDetail}
+                  selectedCourseId={selectedCourseId}
+                  title="온라인 수업"
+                />
 
-                  <TimetableSupplementSection
-                    items={data.allView.saturdayItems}
-                    onPressItem={openCourseDetail}
-                    selectedCourseId={selectedCourseId}
-                    title="토요일 수업"
+                <TimetableSupplementSection
+                  items={data.allView.saturdayItems}
+                  kind="saturday"
+                  onPressItem={openCourseDetail}
+                  selectedCourseId={selectedCourseId}
+                  title="토요일 수업"
                   />
                 </>
               ) : (
@@ -209,17 +219,6 @@ export const TimetableDetailScreen = () => {
                 />
               )}
             </>
-          ) : null}
-
-          {data ? (
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.88}
-              onPress={openAddSheet}
-              style={styles.secondaryAddButton}>
-              <Icon color={V2_COLORS.brand.primaryStrong} name="add" size={18} />
-              <Text style={styles.secondaryAddLabel}>수업 추가</Text>
-            </TouchableOpacity>
           ) : null}
         </ScrollView>
 
@@ -278,45 +277,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: V2_SPACING.lg,
-    paddingBottom: V2_SPACING.xxl * 2,
+    paddingBottom: V2_SPACING.xxl,
+    paddingTop: 16,
+  },
+  headerSurface: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomWidth: 1,
   },
   toolbar: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.lg,
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    paddingHorizontal: 16,
   },
   modeControl: {
-    flex: 1,
+    width: 188,
   },
-  creditPill: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
-    marginLeft: V2_SPACING.sm,
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
+  creditContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
-  creditLabel: {
-    color: V2_COLORS.text.secondary,
+  creditMuted: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  creditStrong: {
+    color: V2_COLORS.brand.primary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
   },
-  secondaryAddButton: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
-    flexDirection: 'row',
-    marginTop: V2_SPACING.xxl,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
-  },
-  secondaryAddLabel: {
-    color: V2_COLORS.brand.primaryStrong,
-    fontSize: 14,
-    fontWeight: '800',
-    lineHeight: 20,
-    marginLeft: V2_SPACING.xs,
+  stateCard: {
+    marginHorizontal: 16,
   },
 });
