@@ -20,6 +20,7 @@ interface V2SegmentedControlProps<T extends string = string> {
   onSelect: (itemId: T) => void;
   selectedId: T;
   style?: StyleProp<ViewStyle>;
+  variant?: 'brand' | 'surface';
 }
 
 export const V2SegmentedControl = <T extends string>({
@@ -27,11 +28,23 @@ export const V2SegmentedControl = <T extends string>({
   onSelect,
   selectedId,
   style,
+  variant = 'brand',
 }: V2SegmentedControlProps<T>) => {
+  const containerStyle =
+    variant === 'surface' ? styles.containerSurface : styles.containerBrand;
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.containerBase, containerStyle, style]}>
       {items.map(item => {
         const selected = item.id === selectedId;
+        const segmentSelectedStyle =
+          variant === 'surface'
+            ? styles.segmentSelectedSurface
+            : styles.segmentSelectedBrand;
+        const labelSelectedStyle =
+          variant === 'surface'
+            ? styles.labelSelectedSurface
+            : styles.labelSelectedBrand;
 
         return (
           <TouchableOpacity
@@ -39,11 +52,11 @@ export const V2SegmentedControl = <T extends string>({
             accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => onSelect(item.id)}
-            style={[styles.segment, selected ? styles.segmentSelected : null]}>
+            style={[styles.segment, selected ? segmentSelectedStyle : null]}>
             <Text
               style={[
                 styles.label,
-                selected ? styles.labelSelected : styles.labelDefault,
+                selected ? labelSelectedStyle : styles.labelDefault,
               ]}>
               {item.label}
             </Text>
@@ -55,13 +68,18 @@ export const V2SegmentedControl = <T extends string>({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: V2_COLORS.background.surface,
+  containerBase: {
     borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
     gap: V2_SPACING.xs,
     padding: V2_SPACING.xs,
+  },
+  containerBrand: {
+    backgroundColor: V2_COLORS.background.surface,
     ...V2_SHADOWS.card,
+  },
+  containerSurface: {
+    backgroundColor: V2_COLORS.background.subtle,
   },
   segment: {
     alignItems: 'center',
@@ -71,8 +89,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: V2_SPACING.md,
   },
-  segmentSelected: {
+  segmentSelectedBrand: {
     backgroundColor: V2_COLORS.brand.primary,
+    ...V2_SHADOWS.card,
+  },
+  segmentSelectedSurface: {
+    backgroundColor: V2_COLORS.background.surface,
     ...V2_SHADOWS.card,
   },
   label: {
@@ -84,10 +106,13 @@ const styles = StyleSheet.create({
   labelDefault: {
     color: V2_COLORS.text.muted,
   },
-  labelSelected: {
+  labelSelectedBrand: {
     color: V2_COLORS.text.inverse,
     textShadowColor: 'rgba(0, 0, 0, 0.05)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 2,
+  },
+  labelSelectedSurface: {
+    color: V2_COLORS.text.primary,
   },
 });
