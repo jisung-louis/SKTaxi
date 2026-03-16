@@ -1,430 +1,322 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/shared/constants/colors';
-import { DAY_CELL_HEIGHT } from '@/shared/constants/layout';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import PageHeader from '@/shared/ui/PageHeader';
-import { SemesterDropdown } from '../components/SemesterDropdown';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-
-import { TimetableEditBottomSheet } from '../components/TimetableEditBottomSheet';
-import { TimetableGrid } from '../components/TimetableGrid';
-import { TimetableShareModal } from '../components/TimetableShareModal';
-import { useTimetable } from '../hooks/useTimetable';
-import { Course } from '../model/types';
+import React from 'react';
 import {
-  generateSemesterOptions,
-  getCurrentSemester,
-} from '../services/timetableUtils';
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import Icon from 'react-native-vector-icons/Ionicons';
+import {SafeAreaView} from 'react-native-safe-area-context';
+
+import type {CampusStackParamList} from '@/app/navigation/types';
+import {
+  V2SegmentedControl,
+  V2StateCard,
+  type V2SegmentedControlItem,
+} from '@/shared/design-system/components';
+import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
+
+import {TimetableAddCourseSheet} from '../components/v2/TimetableAddCourseSheet';
+import {TimetableAllViewCard} from '../components/v2/TimetableAllViewCard';
+import {TimetableCourseDetailSheet} from '../components/v2/TimetableCourseDetailSheet';
+import {TimetableDetailHeader} from '../components/v2/TimetableDetailHeader';
+import {TimetableSemesterSheet} from '../components/v2/TimetableSemesterSheet';
+import {TimetableSupplementSection} from '../components/v2/TimetableSupplementSection';
+import {TimetableTodayViewCard} from '../components/v2/TimetableTodayViewCard';
+import {useTimetableDetailData} from '../hooks/useTimetableDetailData';
+import type {TimetableDetailViewMode} from '../model/timetableDetailViewData';
+
+const MODE_ITEMS: V2SegmentedControlItem<TimetableDetailViewMode>[] = [
+  {id: 'all', label: '전체'},
+  {id: 'today', label: '오늘'},
+];
+
+type TimetableDetailRouteProp = RouteProp<CampusStackParamList, 'TimetableDetail'>;
+type TimetableDetailNavigationProp = NativeStackNavigationProp<
+  CampusStackParamList,
+  'TimetableDetail'
+>;
 
 export const TimetableDetailScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const [selectedSemester, setSelectedSemester] = useState(getCurrentSemester());
-  const { courses, loading, error, addCourse, removeCourse } = useTimetable(selectedSemester);
-  const [showEditBottomSheet, setShowEditBottomSheet] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const semesterOptions = generateSemesterOptions();
 
-  // addCourse와 courses를 ref로 래핑 → 안정적인 콜백 참조 유지
-  const addCourseRef = useRef(addCourse);
-  addCourseRef.current = addCourse;
-  const coursesRef = useRef(courses);
-  coursesRef.current = courses;
+  const navigation = useNavigation<TimetableDetailNavigationProp>();
+  const route = useRoute<TimetableDetailRouteProp>();
+  const initialView = route.params?.initialView ?? 'all';
+  const [semesterSheetVisible, setSemesterSheetVisible] = React.useState(false);
+  const autoOpenedEditRef = React.useRef(false);
 
-  const handleBack = () => {
-    navigation.goBack();
-  };
+  const {
+    activeMode,
+    addCatalogCourse,
+    addManualCourse,
+    addSheetVisible,
+    closeAddSheet,
+    closeCourseDetail,
+    data,
+    error,
+    loading,
+    openAddSheet,
+    openCourseDetail,
+    reload,
+    removeSelectedCourse,
+    selectColor,
+    selectMode,
+    selectSemester,
+    setAddSheetTab,
+    setManualCredits,
+    setManualDay,
+    setManualEndPeriod,
+    setManualField,
+    setManualOnline,
+    setManualStartPeriod,
+    setQuery,
+    shareTimetable,
+    toggleNightClasses,
+  } = useTimetableDetailData(initialView);
 
-  const handleEdit = () => {
-    setShowEditBottomSheet(true);
-  };
-
-  const handleEditClose = useCallback(() => {
-    setShowEditBottomSheet(false);
-  }, []);
-
-  const handleShare = () => {
-    setShowShareModal(true);
-  };
-
-  const handleSemesterChange = (semester: string) => {
-    setSelectedSemester(semester);
-    console.log('학기 변경:', semester);
-    // 학기 변경 시 시간표는 useTimetable 훅에서 자동으로 다시 로드됩니다
-  };
-
-  const handleCourseAdd = useCallback(async (course: Course) => {
-    try {
-      await addCourseRef.current(course);
-    } catch (error) {
-      console.error('Failed to add course:', error);
+  React.useEffect(() => {
+    if (route.params?.mode === 'edit' && !autoOpenedEditRef.current) {
+      autoOpenedEditRef.current = true;
+      openAddSheet();
     }
-  }, []);
+  }, [openAddSheet, route.params?.mode]);
 
-  const handleCourseRemove = (course: Course) => {
-    Alert.alert(
-      '수업 삭제',
-      `"${course.name}" 수업을 삭제하시겠습니까?`,
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-        },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await removeCourse(course.id);
-              console.log('수업이 삭제되었습니다:', course.name);
-            } catch (error) {
-              console.error('Failed to remove course:', error);
-              Alert.alert('오류', '수업 삭제에 실패했습니다.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderTimetableGrid = () => {
-    return <TimetableGrid courses={courses} onBlockPress={handleCourseRemove} onFooterItemPress={handleCourseRemove} />;
-  };
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.accent.blue} />
-          <Text style={styles.loadingText}>시간표를 불러오는 중...</Text>
-        </View>
-      );
-    }
-
-    if (error) {
-      return (
-        <View style={styles.errorContainer}>
-          <Icon name="alert-circle" size={48} color={COLORS.text.secondary} />
-          <Text style={styles.errorText}>시간표를 불러올 수 없습니다.</Text>
-          <Text style={styles.errorSubtext}>잠시 후 다시 시도해주세요.</Text>
-        </View>
-      );
-    }
-
-    return (
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 학기 선택 및 액션 버튼 */}
-        <View style={styles.headerActions}>
-          <SemesterDropdown
-            selectedSemester={selectedSemester}
-            onSemesterChange={handleSemesterChange}
-            semesterOptions={semesterOptions}
-          />
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-              <Icon name="add-outline" size={20} color={COLORS.accent.blue} />
-              <Text style={styles.actionButtonText}>추가</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Icon name="share-outline" size={20} color={COLORS.accent.green} />
-              <Text style={styles.actionButtonText}>공유</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <Text style={styles.infoText}>수업 블록을 터치하여 수업을 삭제할 수 있어요</Text>
-
-        {/* 시간표 그리드 */}
-        <View style={styles.timetableContainer}>
-          {/* {courses.length > 0 ? ( */}
-          {true ? (
-            renderTimetableGrid()
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Icon name="calendar-outline" size={64} color={COLORS.text.secondary} />
-              <Text style={styles.emptyTitle}>등록된 수업이 없습니다</Text>
-              <Text style={styles.emptySubtext}>편집 버튼을 눌러 수업을 추가해보세요</Text>
-              <TouchableOpacity style={styles.addCourseButton} onPress={handleEdit}>
-                <Icon name="add" size={20} color={COLORS.text.buttonText} />
-                <Text style={styles.addCourseButtonText}>수업 추가하기</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    );
-  };
+  const selectedCourseId = data?.selectedCourse?.courseId;
+  const hasAnyCourse =
+    Boolean(data?.allView.blocks.length) ||
+    Boolean(data?.allView.onlineItems.length) ||
+    Boolean(data?.allView.saturdayItems.length);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader onBack={handleBack} title="내 시간표" borderBottom />
+    <SafeAreaView
+      edges={['left', 'right', 'bottom']}
+      style={styles.safeArea}>
+      <View style={styles.container}>
+        <TimetableDetailHeader
+          onPressAdd={openAddSheet}
+          onPressBack={() => navigation.goBack()}
+          onPressSemester={() => setSemesterSheetVisible(true)}
+          onPressShare={() => {
+            shareTimetable().catch(() => undefined);
+          }}
+          semesterLabel={data?.semesterLabel ?? '시간표'}
+        />
 
-      {renderContent()}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.toolbar}>
+            <V2SegmentedControl
+              items={MODE_ITEMS}
+              onSelect={selectMode}
+              selectedId={activeMode}
+              style={styles.modeControl}
+              variant="surface"
+            />
 
-      {/* 편집 바텀시트 — loading/error 상태에서도 unmount되지 않음 */}
-      <TimetableEditBottomSheet
-        visible={showEditBottomSheet}
-        onClose={handleEditClose}
-        onCourseAdd={handleCourseAdd}
-        currentCourses={coursesRef.current}
-        semester={selectedSemester}
-      />
+            {data ? (
+              <View style={styles.creditPill}>
+                <Text style={styles.creditLabel}>{data.totalCreditsLabel}</Text>
+              </View>
+            ) : null}
+          </View>
 
-      {/* 공유 모달 */}
-      <TimetableShareModal
-        visible={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        courses={courses}
-        semester={selectedSemester}
-      />
+          {loading && !data ? (
+            <V2StateCard
+              description="이번 학기 시간표를 준비하고 있습니다."
+              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              title="시간표를 불러오는 중"
+            />
+          ) : null}
+
+          {error && !data ? (
+            <V2StateCard
+              actionLabel="다시 시도"
+              description={error}
+              icon={
+                <Icon
+                  color={V2_COLORS.accent.orange}
+                  name="alert-circle-outline"
+                  size={28}
+                />
+              }
+              onPressAction={() => {
+                reload().catch(() => undefined);
+              }}
+              title="시간표를 불러오지 못했습니다"
+            />
+          ) : null}
+
+          {data && !hasAnyCourse ? (
+            <V2StateCard
+              actionLabel="수업 추가"
+              description="우측 상단 추가 버튼이나 직접 입력으로 새 수업을 넣어보세요."
+              icon={
+                <Icon
+                  color={V2_COLORS.brand.primaryStrong}
+                  name="calendar-outline"
+                  size={28}
+                />
+              }
+              onPressAction={openAddSheet}
+              title="등록된 수업이 없습니다"
+            />
+          ) : null}
+
+          {data && hasAnyCourse ? (
+            <>
+              {activeMode === 'all' ? (
+                <>
+                  <TimetableAllViewCard
+                    blocks={data.allView.blocks}
+                    columns={data.allView.columns}
+                    onPressBlock={openCourseDetail}
+                    periods={data.allView.periods}
+                  />
+
+                  <TimetableSupplementSection
+                    items={data.allView.onlineItems}
+                    onPressItem={openCourseDetail}
+                    selectedCourseId={selectedCourseId}
+                    title="온라인 수업"
+                  />
+
+                  <TimetableSupplementSection
+                    items={data.allView.saturdayItems}
+                    onPressItem={openCourseDetail}
+                    selectedCourseId={selectedCourseId}
+                    title="토요일 수업"
+                  />
+                </>
+              ) : (
+                <TimetableTodayViewCard
+                  onPressCourse={openCourseDetail}
+                  onToggleNightClasses={toggleNightClasses}
+                  rows={data.todayView.rows}
+                  selectedCourseId={selectedCourseId}
+                  showNightToggle={data.todayView.hasNightClasses}
+                  toggleLabel={data.todayView.nightToggleLabel}
+                />
+              )}
+            </>
+          ) : null}
+
+          {data ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.88}
+              onPress={openAddSheet}
+              style={styles.secondaryAddButton}>
+              <Icon color={V2_COLORS.brand.primaryStrong} name="add" size={18} />
+              <Text style={styles.secondaryAddLabel}>수업 추가</Text>
+            </TouchableOpacity>
+          ) : null}
+        </ScrollView>
+
+        {data ? (
+          <TimetableSemesterSheet
+            onClose={() => setSemesterSheetVisible(false)}
+            onSelectSemester={semesterId => {
+              selectSemester(semesterId).catch(() => undefined);
+            }}
+            options={data.semesterOptions}
+            selectedLabel={data.semesterLabel}
+            visible={semesterSheetVisible}
+          />
+        ) : null}
+
+        {data ? (
+          <TimetableAddCourseSheet
+            data={data.addCourseSheet}
+            onAddCatalogCourse={courseId => {
+              addCatalogCourse(courseId).catch(() => undefined);
+            }}
+            onClose={closeAddSheet}
+            onSelectColor={selectColor}
+            onSelectCredits={setManualCredits}
+            onSelectDay={setManualDay}
+            onSetManualEndPeriod={setManualEndPeriod}
+            onSetManualField={setManualField}
+            onSetManualOnline={setManualOnline}
+            onSetManualStartPeriod={setManualStartPeriod}
+            onSubmitManualCourse={() => {
+              addManualCourse().catch(() => undefined);
+            }}
+            onSwitchTab={setAddSheetTab}
+            onUpdateQuery={setQuery}
+            visible={addSheetVisible}
+          />
+        ) : null}
+
+        <TimetableCourseDetailSheet
+          course={data?.selectedCourse}
+          onClose={closeCourseDetail}
+          onDelete={removeSelectedCourse}
+        />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    backgroundColor: V2_COLORS.background.surface,
+    flex: 1,
+  },
   container: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-    paddingHorizontal: 40,
-  },
-  errorText: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
-    textAlign: 'center',
-  },
-  errorSubtext: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
   },
   content: {
+    padding: V2_SPACING.lg,
+    paddingBottom: V2_SPACING.xxl * 2,
+  },
+  toolbar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: V2_SPACING.lg,
+  },
+  modeControl: {
     flex: 1,
   },
-  headerActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingBottom: 8,
+  creditPill: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderRadius: V2_RADIUS.pill,
+    marginLeft: V2_SPACING.sm,
+    paddingHorizontal: V2_SPACING.md,
+    paddingVertical: V2_SPACING.sm,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  actionButtonText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  infoText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.tertiary,
-    paddingHorizontal: 10,
-    marginBottom: 8,
-  },
-  timetableContainer: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingBottom: 40,
-  },
-  gridContainer: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.dark,
-    overflow: 'hidden',
-  },
-  gridHeader: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.background.secondary,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
-  },
-  timeColumn: {
-    width: 35,
-    paddingVertical: 2,
-    paddingHorizontal: 2,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border.dark,
-    justifyContent: 'center',
-  },
-  timeHeaderText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.secondary,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  dayColumn: {
-    paddingVertical: 4,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border.dark,
-  },
-  dayHeaderText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  gridBody: {
-    minWidth: 400,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
-  },
-  timeCell: {
-    width: 35,
-    paddingVertical: 8,
-    paddingHorizontal: 2,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border.dark,
-    justifyContent: 'center',
-  },
-  timeText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-  },
-  dayCell: {
-    paddingVertical: 4,
-    paddingHorizontal: 4,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border.dark,
-  },
-  courseBlock: {
-    position: 'absolute',
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-    left: 0,
-    right: 0,
-    borderRadius: 6,
-    zIndex: 1000,
-    margin: 2,
-  },
-  courseText: {
-    ...TYPOGRAPHY.caption3,
-    color: COLORS.text.buttonText,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  courseLocation: {
-    ...TYPOGRAPHY.caption3,
-    color: COLORS.text.buttonText,
-    opacity: 0.8,
-    textAlign: 'center',
-    marginTop: 1,
-  },
-  emptyCell: {
-    flex: 1,
-    minHeight: DAY_CELL_HEIGHT,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyTitle: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  addCourseButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: COLORS.accent.blue,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  addCourseButtonText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.buttonText,
-    fontWeight: '600',
-  },
-  gridFooter: {
-    backgroundColor: COLORS.background.card,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.dark,
-    padding: 10,
-  },
-  gridFooterText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  footerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  footerHeaderText: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
+  creditLabel: {
+    color: V2_COLORS.text.secondary,
+    fontSize: 12,
     fontWeight: '700',
+    lineHeight: 16,
   },
-  footerCourseItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.dark,
-  },
-  footerCourseName: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  footerCourseInfo: {
-    marginTop: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+  secondaryAddButton: {
     alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: V2_COLORS.brand.primaryTint,
+    borderRadius: V2_RADIUS.pill,
+    flexDirection: 'row',
+    marginTop: V2_SPACING.xxl,
+    paddingHorizontal: V2_SPACING.lg,
+    paddingVertical: V2_SPACING.md,
   },
-  footerCourseDetail: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
+  secondaryAddLabel: {
+    color: V2_COLORS.brand.primaryStrong,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
+    marginLeft: V2_SPACING.xs,
   },
 });

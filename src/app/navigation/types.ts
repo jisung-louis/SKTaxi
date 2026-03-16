@@ -4,6 +4,7 @@ import type { BoardStackParamList } from '@/features/board';
 import type { ChatStackParamList } from '@/features/chat';
 import type { NoticeStackParamList } from '@/features/notice';
 import type { TaxiStackParamList } from '@/features/taxi';
+import type {TimetableDetailViewMode} from '@/features/timetable/model/timetableDetailViewData';
 
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
@@ -44,7 +45,12 @@ export type CampusStackParamList = {
   PrivacyPolicy: undefined;
   CafeteriaDetail: { scrollToCategory?: string };
   AcademicCalendarDetail: undefined;
-  TimetableDetail: { mode?: 'edit' };
+  TimetableDetail:
+    | {
+        initialView?: TimetableDetailViewMode;
+        mode?: 'edit';
+      }
+    | undefined;
   MinecraftDetail: undefined;
   MinecraftMapDetail: undefined;
 };
