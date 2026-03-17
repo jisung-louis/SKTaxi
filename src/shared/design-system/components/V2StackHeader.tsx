@@ -12,11 +12,13 @@ import {V2_COLORS, V2_SPACING} from '../tokens';
 
 interface V2StackHeaderProps {
   onPressBack: () => void;
+  rightAccessory?: React.ReactNode;
   title: string;
 }
 
 export const V2StackHeader = ({
   onPressBack,
+  rightAccessory,
   title,
 }: V2StackHeaderProps) => {
   const insets = useSafeAreaInsets();
@@ -33,7 +35,12 @@ export const V2StackHeader = ({
           <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
         </TouchableOpacity>
 
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.content}>
+          <Text style={styles.title}>{title}</Text>
+          {rightAccessory ? (
+            <View style={styles.rightAccessory}>{rightAccessory}</View>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -51,6 +58,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 56,
   },
+  content: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   backButton: {
     alignItems: 'center',
     height: 36,
@@ -63,5 +76,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
+  },
+  rightAccessory: {
+    marginLeft: V2_SPACING.md,
   },
 });

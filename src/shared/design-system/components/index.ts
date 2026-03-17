@@ -9,6 +9,7 @@ export type {V2FilterChipItem} from './V2FilterChips';
 export {V2FormField} from './V2FormField';
 export {V2InfoBanner} from './V2InfoBanner';
 export {V2PageHeader} from './V2PageHeader';
+export {V2SelectionDropdown} from './V2SelectionDropdown';
 export {V2SettingsRow} from './V2SettingsRow';
 export {V2SettingsSection} from './V2SettingsSection';
 export {
