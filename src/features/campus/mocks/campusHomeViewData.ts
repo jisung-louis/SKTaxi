@@ -1,4 +1,5 @@
 import type { CampusHomeViewData } from '../model/campusHome';
+import {cafeteriaDetailMockData} from './cafeteriaDetail.mock';
 import {
   generatePeriods,
   getPeriodTimeInfo,
@@ -16,6 +17,33 @@ const createCampusTimetablePeriods = () =>
       endTimeLabel: timeInfo.endTime,
     };
   });
+
+const createCampusRecommendedMenus = () =>
+  cafeteriaDetailMockData.categories
+    .flatMap(category =>
+      category.items.map(item => ({
+        categoryLabel: category.title,
+        id: item.id,
+        likeCount: item.positiveCount,
+        netScore: item.positiveCount - item.secondaryCount,
+        priceLabel: `${item.price.toLocaleString('ko-KR')}원`,
+        title: item.title,
+      })),
+    )
+    .sort(
+      (left, right) =>
+        right.netScore - left.netScore ||
+        right.likeCount - left.likeCount ||
+        left.title.localeCompare(right.title, 'ko-KR'),
+    )
+    .slice(0, 3)
+    .map(({categoryLabel, id, likeCount, priceLabel, title}) => ({
+      categoryLabel,
+      id,
+      likeCountLabel: `${likeCount}`,
+      priceLabel,
+      title,
+    }));
 
 export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
   notices: {
@@ -83,12 +111,7 @@ export const createDefaultCampusHomeViewData = (): CampusHomeViewData => ({
     ],
   },
   cafeteria: {
-    featuredMenu: {
-      id: 'cafeteria-featured-menu',
-      title: '제육볶음',
-      description: '된장국, 시금치나물, 배추김치',
-      priceLabel: '5,000원',
-    },
+    recommendedMenus: createCampusRecommendedMenus(),
   },
   academicCalendar: {
     items: [
@@ -230,12 +253,7 @@ export const createNoCourseCampusHomeViewData = (): CampusHomeViewData => ({
     ],
   },
   cafeteria: {
-    featuredMenu: {
-      id: 'cafeteria-featured-menu-weekend',
-      title: '김치찌개',
-      description: '계란말이, 깍두기, 배추김치',
-      priceLabel: '5,000원',
-    },
+    recommendedMenus: createCampusRecommendedMenus(),
   },
   academicCalendar: {
     items: [

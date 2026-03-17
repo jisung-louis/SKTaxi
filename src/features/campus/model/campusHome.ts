@@ -47,11 +47,12 @@ export interface CampusTaxiPartyViewData {
   seatStatusLabel: string;
 }
 
-export interface CampusCafeteriaFeaturedMenuViewData {
+export interface CampusCafeteriaRecommendedMenuViewData {
+  categoryLabel: string;
   id: string;
-  title: string;
-  description: string;
+  likeCountLabel: string;
   priceLabel: string;
+  title: string;
 }
 
 export interface CampusAcademicEventBadgeViewData {
@@ -84,7 +85,7 @@ export interface CampusHomeViewData {
     items: CampusTaxiPartyViewData[];
   };
   cafeteria: {
-    featuredMenu: CampusCafeteriaFeaturedMenuViewData | null;
+    recommendedMenus: CampusCafeteriaRecommendedMenuViewData[];
   };
   academicCalendar: {
     items: CampusAcademicEventViewData[];

@@ -52,7 +52,7 @@ export type {
 export type {
   CampusAcademicEventBadgeViewData,
   CampusAcademicEventViewData,
-  CampusCafeteriaFeaturedMenuViewData,
+  CampusCafeteriaRecommendedMenuViewData,
   CampusHighlightTone,
   CampusHomeViewData,
   CampusNoticeItemViewData,
