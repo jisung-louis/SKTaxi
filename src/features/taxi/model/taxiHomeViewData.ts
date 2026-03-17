@@ -25,6 +25,17 @@ export interface TaxiHomePartyAction {
   type: 'preview' | 'open-chat';
 }
 
+export type TaxiHomePartyJoinActionState =
+  | 'request'
+  | 'joined'
+  | 'blocked-by-other-party';
+
+export interface TaxiHomePartyJoinActionViewData {
+  helperText?: string;
+  label: string;
+  state: TaxiHomePartyJoinActionState;
+}
+
 export interface TaxiHomePartyCardViewData {
   acceptancePendingSeed?: TaxiAcceptancePendingSeed;
   id: string;
@@ -42,6 +53,7 @@ export interface TaxiHomePartyCardViewData {
   memberSummaryLabel: string;
   estimatedFareLabel: string;
   filterIds: TaxiHomeFilterId[];
+  joinAction: TaxiHomePartyJoinActionViewData;
   searchKeywords: string[];
   action: TaxiHomePartyAction;
 }

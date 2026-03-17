@@ -3,6 +3,7 @@ import type {TaxiAcceptancePendingSeed} from '../../model/taxiAcceptancePendingV
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomeFilterDefinition,
+  TaxiHomePartyJoinActionViewData,
   TaxiHomePartyCardViewData,
   TaxiHomeSortDefinition,
   TaxiHomeSourceData,
@@ -13,6 +14,12 @@ const cloneAvatar = (
   avatar: TaxiHomeAvatarViewData,
 ): TaxiHomeAvatarViewData => ({
   ...avatar,
+});
+
+const cloneJoinAction = (
+  joinAction: TaxiHomePartyJoinActionViewData,
+): TaxiHomePartyJoinActionViewData => ({
+  ...joinAction,
 });
 
 const cloneAcceptancePendingSeed = (
@@ -44,6 +51,7 @@ const cloneParty = (
   leaderAvatar: cloneAvatar(party.leaderAvatar),
   participantAvatars: party.participantAvatars.map(cloneAvatar),
   filterIds: [...party.filterIds],
+  joinAction: cloneJoinAction(party.joinAction),
   searchKeywords: [...party.searchKeywords],
   action: {...party.action},
 });

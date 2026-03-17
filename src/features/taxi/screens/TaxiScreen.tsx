@@ -32,7 +32,6 @@ import {TaxiHomeSortMenu} from '../components/v2/TaxiHomeSortMenu';
 import {useTaxiHomeData} from '../hooks/useTaxiHomeData';
 import {useTaxiLocation} from '../hooks/useTaxiLocation';
 import {DEPARTURE_LOCATION, DEPARTURE_OPTIONS} from '../model/constants';
-import {useTaxiChatSession} from '../hooks/useTaxiChatSession';
 import type {TaxiStackParamList} from '../model/navigation';
 import type {TaxiHomePartyCardViewData} from '../model/taxiHomeViewData';
 import {WINDOW_HEIGHT} from '@/shared/constants/layout';
@@ -102,7 +101,6 @@ export const TaxiScreen = () => {
   const navigation = useNavigation<TaxiNavigationProp>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {currentPartyId, hasActiveParty} = useTaxiChatSession();
   const {location} = useTaxiLocation();
   const {
     data,
@@ -113,6 +111,11 @@ export const TaxiScreen = () => {
     selectSort,
     setSearchQuery,
   } = useTaxiHomeData();
+  const [expandedPartyId, setExpandedPartyId] = React.useState<string | null>(
+    null,
+  );
+  const hasActiveParty = true;
+  // TODO: 참여 중인 파티 세션 API와 연결해서 플로팅 버튼 노출 여부를 결정한다.
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -157,21 +160,44 @@ export const TaxiScreen = () => {
   }, [navigation]);
 
   const handlePressMyPartyChat = React.useCallback(() => {
-    if (!currentPartyId) {
-      Alert.alert(
-        '내 파티가 없습니다',
-        '현재 참여 중인 파티 채팅방이 없습니다.',
-      );
+    Alert.alert('준비 중', 'TODO: 실제 참여 중인 파티 채팅으로 연결할 예정입니다.');
+    // TODO: 참여 중인 파티 세션 API와 연결한 뒤 실제 partyId로 Chat 화면으로 이동한다.
+  }, []);
+
+  React.useEffect(() => {
+    if (!expandedPartyId) {
       return;
     }
 
-    navigation.navigate('Chat', {partyId: currentPartyId});
-  }, [currentPartyId, navigation]);
+    if (!data?.parties.some(party => party.id === expandedPartyId)) {
+      setExpandedPartyId(null);
+    }
+  }, [data?.parties, expandedPartyId]);
 
   const handlePressPartyCard = React.useCallback(
     (party: TaxiHomePartyCardViewData) => {
-      if (party.action.type === 'open-chat') {
-        handlePressMyPartyChat();
+      if (party.statusTone !== 'active') {
+        return;
+      }
+
+      setExpandedPartyId(currentExpandedId =>
+        currentExpandedId === party.id ? null : party.id,
+      );
+    },
+    [],
+  );
+
+  const handlePressPartyJoinAction = React.useCallback(
+    (party: TaxiHomePartyCardViewData) => {
+      if (party.joinAction.state === 'joined') {
+        return;
+      }
+
+      if (party.joinAction.state === 'blocked-by-other-party') {
+        Alert.alert(
+          '이미 다른 파티에 참여중이에요.',
+          '기존 파티 탈퇴 후 다시 요청해주세요.',
+        );
         return;
       }
 
@@ -184,7 +210,7 @@ export const TaxiScreen = () => {
 
       Alert.alert('대기 정보를 찾을 수 없습니다', '잠시 후 다시 시도해주세요.');
     },
-    [handlePressMyPartyChat, navigation],
+    [navigation],
   );
 
   return (
@@ -307,15 +333,17 @@ export const TaxiScreen = () => {
 
             {data?.parties.map(party => (
               <TaxiHomePartyCard
+                expanded={expandedPartyId === party.id}
                 key={party.id}
-                onPress={handlePressPartyCard}
+                onPressCard={handlePressPartyCard}
+                onPressJoinAction={handlePressPartyJoinAction}
                 party={party}
               />
             ))}
           </View>
         </ScrollView>
 
-        {hasActiveParty && currentPartyId ? (
+        {hasActiveParty ? (
           <TouchableOpacity
             accessibilityRole="button"
             activeOpacity={0.88}
@@ -332,7 +360,7 @@ export const TaxiScreen = () => {
               size={18}
             />
             <Text style={styles.liveChatFloatingButtonLabel}>
-              {data?.liveChatActionLabel ?? '파티 채팅방'}
+              {data?.liveChatActionLabel ?? '파티 채팅 가기'}
             </Text>
           </TouchableOpacity>
         ) : null}

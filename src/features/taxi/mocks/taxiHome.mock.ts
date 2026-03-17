@@ -25,10 +25,34 @@ const acceptancePendingAvatar = (
   textColor,
 });
 
+const joinAction = (state: 'request' | 'joined' | 'blocked-by-other-party') => {
+  if (state === 'joined') {
+    return {
+      helperText: '현재 내가 참여 중인 파티예요',
+      label: '내가 참여중인 파티',
+      state,
+    };
+  }
+
+  if (state === 'blocked-by-other-party') {
+    return {
+      helperText: '기존 파티 탈퇴 후 다시 요청할 수 있어요',
+      label: '동승 요청하기',
+      state,
+    };
+  }
+
+  return {
+    helperText: '파티장이 수락하면 동승이 확정돼요',
+    label: '동승 요청하기',
+    state,
+  };
+};
+
 export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
   searchPlaceholder: '출발지 검색',
   primaryActionLabel: '새 파티 만들기',
-  liveChatActionLabel: '파티 채팅방',
+  liveChatActionLabel: '파티 채팅 가기',
   sectionTitle: '모집 중인 파티',
   filters: [
     {
@@ -93,6 +117,7 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       memberSummaryLabel: '2/4명',
       estimatedFareLabel: '3,500원',
       filterIds: ['all', 'anyang'],
+      joinAction: joinAction('request'),
       searchKeywords: ['안양역', '성결대학교', '김성결', '오전 09:00'],
       action: {type: 'preview'},
     },
@@ -131,6 +156,7 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       memberSummaryLabel: '3/3명',
       estimatedFareLabel: '4,000원',
       filterIds: ['all', 'beomgye'],
+      joinAction: joinAction('request'),
       searchKeywords: ['범계역', '성결대학교', '박지은', '오전 10:30'],
       action: {type: 'preview'},
     },
@@ -165,6 +191,7 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       memberSummaryLabel: '1/4명',
       estimatedFareLabel: '3,500원',
       filterIds: ['all', 'anyang'],
+      joinAction: joinAction('request'),
       searchKeywords: ['안양역', '성결대학교', '강태완', '오후 01:00'],
       action: {type: 'preview'},
     },
@@ -203,6 +230,7 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       memberSummaryLabel: '2/4명',
       estimatedFareLabel: '4,000원',
       filterIds: ['all', 'beomgye'],
+      joinAction: joinAction('request'),
       searchKeywords: ['범계역', '성결대학교', '윤서연', '오후 02:30'],
       action: {type: 'preview'},
     },
