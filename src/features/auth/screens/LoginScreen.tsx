@@ -1,34 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, {useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
+  ImageBackground,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Modal from 'react-native-modal';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { WINDOW_WIDTH } from '@/shared/constants/layout';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks';
-import { Text } from '@/shared/ui/Text';
+import type {
+  AuthStackParamList,
+  RootStackParamList,
+} from '@/app/navigation/types';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SHADOWS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks';
 
-import { useAuth } from '../hooks/useAuth';
+import {AuthFeatureChip} from '../components/v2/AuthFeatureChip';
+import {useAuth} from '../hooks/useAuth';
+
+const FEATURE_CHIPS = [
+  '🚕 택시 파티',
+  '📢 학교 공지',
+  '📅 시간표',
+  '🍱 학식 메뉴',
+];
 
 const getFirebaseErrorMessage = (error: any): string => {
   const firebaseCode = error?.context?.firebaseCode || error?.code;
@@ -47,8 +55,13 @@ const getFirebaseErrorMessage = (error: any): string => {
   return errorMap[firebaseCode] || '로그인에 실패했습니다.';
 };
 
-export const LoginScreen = ({ navigation }: any) => {
+type LoginScreenProps = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type LoginNavigation = NavigationProp<RootStackParamList & AuthStackParamList>;
+
+export const LoginScreen = (_props: LoginScreenProps) => {
   useScreenView();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<LoginNavigation>();
 
   const [loading, setLoading] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
@@ -61,267 +74,212 @@ export const LoginScreen = ({ navigation }: any) => {
     signInWithGoogle,
   } = useAuth();
 
-  const largeCircleScale = useSharedValue(1);
-  const smallCircleScale = useSharedValue(1);
+  const handlePressGoogleLogin = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      const {firstLogin} = await signInWithGoogle();
+      if (__DEV__) {
+        const firebaseIdToken = await refreshAuthToken();
+        console.log('[DEV] Firebase ID Token:', firebaseIdToken);
+      }
+      if (firstLogin) {
+        navigation.navigate('CompleteProfile');
+      }
+    } catch (error: any) {
+      const code = error?.code;
+      const message = error?.message || '';
+      if (code === 'auth/cancelled') {
+        return;
+      }
+      Alert.alert('로그인 실패', message || '다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
+  }, [navigation, refreshAuthToken, signInWithGoogle]);
 
-  useEffect(() => {
-    largeCircleScale.value = withRepeat(
-      withSequence(
-        withTiming(1.1, {
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(1.0, {
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ),
-      -1,
-      false,
-    );
-
-    smallCircleScale.value = withRepeat(
-      withSequence(
-        withTiming(1.1, {
-          duration: 5000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withTiming(1.0, {
-          duration: 5000,
-          easing: Easing.inOut(Easing.ease),
-        }),
-      ),
-      -1,
-      false,
-    );
-  }, [largeCircleScale, smallCircleScale]);
-
-  const largeCircleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: largeCircleScale.value }],
-  }));
-
-  const smallCircleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: smallCircleScale.value }],
-  }));
+  const handlePressAdminLogin = React.useCallback(async () => {
+    try {
+      setAdminLoading(true);
+      if (!adminEmail || !adminPassword) {
+        Alert.alert('입력 필요', '이메일과 비밀번호를 입력해주세요.');
+        return;
+      }
+      await signInWithEmailAndPassword(adminEmail, adminPassword);
+      if (__DEV__) {
+        const firebaseIdToken = await refreshAuthToken();
+        console.log('[DEV] Firebase ID Token:', firebaseIdToken);
+      }
+      setAdminVisible(false);
+    } catch (error: any) {
+      Alert.alert(
+        '관리자 로그인 실패',
+        error?.message || getFirebaseErrorMessage(error),
+      );
+    } finally {
+      setAdminLoading(false);
+    }
+  }, [
+    adminEmail,
+    adminPassword,
+    refreshAuthToken,
+    signInWithEmailAndPassword,
+  ]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <Animated.View
-          style={[styles.bgCircleLarge, largeCircleStyle]}
-        />
-        <Animated.View
-          style={[styles.bgCircleSmall, smallCircleStyle]}
-        />
-        <View style={styles.header}>
-          <View style={styles.logoMark}>
-            <Icon
-              name="car"
-              size={28}
-              color={COLORS.background.primary}
-            />
-          </View>
-          <Text style={styles.title}>SKURI Taxi</Text>
-          <Text style={styles.subtitle}>
-            성결대 학생들을 위한 스마트한 캠퍼스 라이프
-          </Text>
-          <Text style={styles.subtitleSecondary}>
-            택시 동승자 찾기 • 실시간 공지 • 시간표 • 학사일정
-          </Text>
-        </View>
-
-        <View style={styles.body}>
-          <Image
-            source={require('../../../../assets/icons/skuri_icon.png')}
-            style={styles.logoImage}
-          />
-        </View>
-
-        <View style={styles.form}>
-          <TouchableOpacity
-            style={[
-              styles.googleButton,
-              loading && styles.loginButtonDisabled,
-            ]}
-            onPress={async () => {
-              try {
-                setLoading(true);
-                const { firstLogin } = await signInWithGoogle();
-                if (__DEV__) {
-                  const firebaseIdToken = await refreshAuthToken();
-                  console.log(
-                    '[DEV] Firebase ID Token:',
-                    firebaseIdToken,
-                  );
-                }
-                if (firstLogin) {
-                  navigation.navigate('CompleteProfile');
-                }
-              } catch (error: any) {
-                const code = error?.code;
-                const message = error?.message || '';
-                if (code === 'auth/cancelled') {
-                  return;
-                }
-                Alert.alert(
-                  '로그인 실패',
-                  message || '다시 시도해주세요.',
-                );
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            accessibilityLabel="성결대 이메일로 로그인하기"
-            accessibilityHint="성결대학교 이메일로 로그인합니다"
-          >
-            <View style={styles.googleIconBadge}>
-              {loading ? (
-                <ActivityIndicator
-                  size="small"
-                  color={COLORS.accent.green}
-                />
-              ) : (
-                <Icon
-                  name="logo-google"
-                  size={18}
-                  color={COLORS.accent.green}
-                />
-              )}
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
+      <View style={styles.screen}>
+        <View style={styles.heroSection}>
+          <ImageBackground
+            resizeMode="cover"
+            source={require('../../../../assets/images/login/login_main.png')}
+            style={styles.heroImage}>
+            <View style={[styles.brandPill, {marginTop: insets.top + 8}]}>
+              <Text style={styles.brandPillText}>SKURI</Text>
             </View>
-            <Text style={styles.googleButtonText}>
-              {loading
-                ? '로그인 중...'
-                : '성결대 이메일로 로그인하기'}
+
+            <LinearGradient
+              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.96)', '#FFFFFF']}
+              locations={[0, 0.55, 1]}
+              style={styles.heroGradient}
+            />
+          </ImageBackground>
+        </View>
+
+        <View style={styles.contentSection}>
+          <View style={styles.brandRow}>
+            <View style={styles.brandIconBox}>
+              <Icon color={V2_COLORS.text.inverse} name="car-sport" size={22} />
+            </View>
+
+            <View>
+              <Text style={styles.brandTitle}>SKURI</Text>
+              <Text style={styles.brandSubtitle}>성결대학교 캠퍼스 라이프</Text>
+            </View>
+          </View>
+
+          <View style={styles.copyBlock}>
+            <Text style={styles.copyLine}>택시 동승부터 공지사항, 학사일정까지</Text>
+            <Text style={styles.copyAccentLine}>성결대 학생이라면 모두 한 곳에서.</Text>
+          </View>
+
+          <View style={styles.featureChipGroup}>
+            {FEATURE_CHIPS.map(chip => (
+              <AuthFeatureChip key={chip} label={chip} />
+            ))}
+          </View>
+
+          <View style={styles.ctaBlock}>
+            <TouchableOpacity
+              accessibilityHint="성결대학교 이메일로 로그인합니다"
+              accessibilityLabel="성결대 이메일로 로그인하기"
+              accessibilityRole="button"
+              activeOpacity={0.92}
+              disabled={loading}
+              onPress={handlePressGoogleLogin}
+              style={[
+                styles.googleButton,
+                loading ? styles.buttonDisabled : undefined,
+              ]}>
+              {loading ? (
+                <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
+              ) : (
+                <Icon color={V2_COLORS.text.inverse} name="logo-google" size={20} />
+              )}
+              <Text style={styles.googleButtonText}>
+                {loading ? '로그인 중...' : '성결대 이메일로 로그인하기'}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.helperText}>
+              성결대학교 이메일(@sungkyul.ac.kr)로만 이용 가능해요
             </Text>
-          </TouchableOpacity>
-          <Text style={styles.helperText}>
-            성결대학교 이메일(@sungkyul.ac.kr)만 사용할 수 있어요
-          </Text>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('AccountGuide')}
-            style={styles.guideLink}
-          >
-            <Text style={styles.guideLinkText}>
-              성결대 이메일이 없나요?
-            </Text>
-          </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.75}
+              onPress={() => navigation.navigate('AccountGuide')}
+              style={styles.guideLink}>
+              <Text style={styles.guideLinkText}>성결대 이메일이 없나요?</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
-          style={styles.adminFab}
-          onPress={() => setAdminVisible(true)}
-          accessibilityLabel="관리자 로그인"
           accessibilityHint="관리자 이메일/비밀번호 로그인 모달을 엽니다"
-        >
+          accessibilityLabel="관리자 로그인"
+          activeOpacity={0.85}
+          onPress={() => setAdminVisible(true)}
+          style={styles.adminFab}>
           <Icon
+            color={V2_COLORS.text.primary}
             name="shield-checkmark"
             size={16}
-            color={COLORS.background.primary}
           />
           <Text style={styles.adminFabText}>관리자</Text>
         </TouchableOpacity>
 
         <Modal
+          animationIn="zoomIn"
+          animationInTiming={280}
+          animationOut="zoomOut"
+          animationOutTiming={280}
+          avoidKeyboard
+          backdropTransitionInTiming={280}
+          backdropTransitionOutTiming={280}
+          hardwareAccelerated
+          hideModalContentWhileAnimating
           isVisible={adminVisible}
-          onBackdropPress={() =>
-            !adminLoading ? setAdminVisible(false) : null
-          }
           onBackButtonPress={() =>
             !adminLoading ? setAdminVisible(false) : null
           }
+          onBackdropPress={() => (!adminLoading ? setAdminVisible(false) : null)}
           useNativeDriver
-          hideModalContentWhileAnimating
-          animationIn="zoomIn"
-          animationOut="zoomOut"
-          animationInTiming={280}
-          animationOutTiming={280}
-          backdropTransitionInTiming={280}
-          backdropTransitionOutTiming={280}
-          useNativeDriverForBackdrop
-          avoidKeyboard
-          hardwareAccelerated
-        >
+          useNativeDriverForBackdrop>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>관리자 로그인</Text>
+
             <TextInput
-              value={adminEmail}
+              autoCapitalize="none"
+              editable={!adminLoading}
+              keyboardType="email-address"
               onChangeText={setAdminEmail}
               placeholder="이메일"
-              placeholderTextColor={COLORS.text.disabled}
-              autoCapitalize="none"
-              keyboardType="email-address"
+              placeholderTextColor={V2_COLORS.text.muted}
               style={styles.input}
-              editable={!adminLoading}
+              value={adminEmail}
             />
+
             <TextInput
-              value={adminPassword}
+              editable={!adminLoading}
               onChangeText={setAdminPassword}
               placeholder="비밀번호"
+              placeholderTextColor={V2_COLORS.text.muted}
               secureTextEntry
-              placeholderTextColor={COLORS.text.disabled}
               style={styles.input}
-              editable={!adminLoading}
+              value={adminPassword}
             />
+
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalCancel]}
-                onPress={() =>
-                  !adminLoading ? setAdminVisible(false) : null
-                }
+                accessibilityRole="button"
+                activeOpacity={0.9}
                 disabled={adminLoading}
-              >
+                onPress={() => (!adminLoading ? setAdminVisible(false) : null)}
+                style={[styles.modalButton, styles.modalCancel]}>
                 <Text style={styles.modalCancelText}>취소</Text>
               </TouchableOpacity>
+
               <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.9}
+                disabled={adminLoading}
+                onPress={handlePressAdminLogin}
                 style={[
                   styles.modalButton,
                   styles.modalConfirm,
-                  adminLoading && styles.loginButtonDisabled,
-                ]}
-                onPress={async () => {
-                  try {
-                    setAdminLoading(true);
-                    if (!adminEmail || !adminPassword) {
-                      Alert.alert(
-                        '입력 필요',
-                        '이메일과 비밀번호를 입력해주세요.',
-                      );
-                      return;
-                    }
-                    await signInWithEmailAndPassword(
-                      adminEmail,
-                      adminPassword,
-                    );
-                    if (__DEV__) {
-                      const firebaseIdToken =
-                        await refreshAuthToken();
-                      console.log(
-                        '[DEV] Firebase ID Token:',
-                        firebaseIdToken,
-                      );
-                    }
-                    setAdminVisible(false);
-                  } catch (error: any) {
-                    Alert.alert(
-                      '관리자 로그인 실패',
-                      error?.message ||
-                        getFirebaseErrorMessage(error),
-                    );
-                  } finally {
-                    setAdminLoading(false);
-                  }
-                }}
-                disabled={adminLoading}
-              >
+                  adminLoading ? styles.buttonDisabled : undefined,
+                ]}>
                 {adminLoading ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={COLORS.text.buttonText}
-                  />
+                  <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
                 ) : (
                   <Text style={styles.modalConfirmText}>로그인</Text>
                 )}
@@ -329,202 +287,230 @@ export const LoginScreen = ({ navigation }: any) => {
             </View>
           </View>
         </Modal>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   adminFab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 16,
-    backgroundColor: COLORS.background.whiteSecondary,
-    paddingHorizontal: 10,
-    height: 32,
-    borderRadius: 16,
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    borderColor: 'rgba(255,255,255,0.72)',
+    borderRadius: 16,
+    borderWidth: 1,
+    bottom: 16,
     flexDirection: 'row',
     gap: 6,
+    height: 32,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    position: 'absolute',
+    right: 16,
+    ...V2_SHADOWS.card,
   },
   adminFabText: {
-    color: COLORS.text.blackSecondary,
+    color: V2_COLORS.text.primary,
     fontSize: 12,
     fontWeight: '700',
+    lineHeight: 16,
   },
-  bgCircleLarge: {
-    position: 'absolute',
-    top: -80,
-    right: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: COLORS.accent.green + '20',
-  },
-  bgCircleSmall: {
-    position: 'absolute',
-    top: 120,
-    left: -40,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.accent.blue + '15',
-  },
-  body: {
+  brandIconBox: {
     alignItems: 'center',
+    backgroundColor: '#4ADE80',
+    borderRadius: 16,
+    height: 48,
     justifyContent: 'center',
-    paddingVertical: 48,
-    shadowColor: COLORS.accent.green,
-    shadowOpacity: 0.2,
+    marginRight: 12,
+    shadowColor: '#4ADE80',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.3,
     shadowRadius: 6,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 2,
+    width: 48,
+  },
+  brandPill: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.86)',
+    borderColor: 'rgba(255,255,255,0.72)',
+    borderRadius: V2_RADIUS.pill,
+    borderWidth: 1,
+    height: 43,
+    justifyContent: 'center',
+    marginLeft: V2_SPACING.xl,
+    paddingHorizontal: 17,
+    ...V2_SHADOWS.card,
+  },
+  brandPillText: {
+    color: V2_COLORS.brand.primaryStrong,
+    fontSize: 16,
+    fontStyle: 'italic',
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    lineHeight: 24,
+  },
+  brandRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  brandSubtitle: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  brandTitle: {
+    color: V2_COLORS.text.primary,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   container: {
+    backgroundColor: V2_COLORS.background.surface,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  form: {
-    paddingHorizontal: 24,
+  contentSection: {
+    backgroundColor: V2_COLORS.background.surface,
+    flex: 1,
+    paddingHorizontal: V2_SPACING.xxl,
+  },
+  copyAccentLine: {
+    color: V2_COLORS.brand.primary,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  copyBlock: {
+    marginTop: 24,
+  },
+  copyLine: {
+    color: V2_COLORS.text.strong,
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  ctaBlock: {
+    marginTop: 48,
+  },
+  featureChipGroup: {
+    columnGap: V2_SPACING.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 24,
+    rowGap: V2_SPACING.sm,
   },
   googleButton: {
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 14,
-    paddingVertical: 14,
     alignItems: 'center',
-    marginBottom: 12,
+    backgroundColor: '#4ADE80',
+    borderRadius: 16,
     flexDirection: 'row',
+    gap: V2_SPACING.md,
+    height: 56,
     justifyContent: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: COLORS.accent.green,
+    shadowColor: '#4ADE80',
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.24,
+    shadowRadius: 14,
   },
   googleButtonText: {
-    color: COLORS.text.buttonText,
-    fontSize: 16,
+    color: V2_COLORS.text.inverse,
+    fontSize: 15,
     fontWeight: '700',
-  },
-  googleIconBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.background.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    lineHeight: 22.5,
   },
   guideLink: {
-    marginTop: 12,
     alignItems: 'center',
+    marginTop: V2_SPACING.md,
   },
   guideLinkText: {
-    color: COLORS.accent.green,
-    ...TYPOGRAPHY.body2,
-    fontWeight: '600',
+    color: V2_COLORS.brand.primary,
+    fontSize: 14,
+    lineHeight: 20,
     textDecorationLine: 'underline',
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-  },
   helperText: {
-    color: COLORS.text.secondary,
+    color: V2_COLORS.text.muted,
     fontSize: 12,
+    lineHeight: 16,
+    marginTop: V2_SPACING.md,
     textAlign: 'center',
-    marginTop: 8,
   },
-  input: {
-    ...TYPOGRAPHY.body2,
-    height: 40,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    backgroundColor: COLORS.background.card,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: COLORS.text.primary,
-    marginBottom: 10,
+  heroGradient: {
+    bottom: 0,
+    height: 128,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
-  keyboardView: {
+  heroImage: {
     flex: 1,
   },
-  loadingButtonDisabled: {
-    opacity: 0.7,
+  heroSection: {
+    height: 390,
+    overflow: 'hidden',
   },
-  loginButtonDisabled: {
-    opacity: 0.7,
-  },
-  logoMark: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: COLORS.accent.green,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  logoImage: {
-    width: WINDOW_WIDTH * 0.5,
-    height: WINDOW_WIDTH * 0.5,
-    borderRadius: 24,
+  input: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: 10,
+    borderWidth: 1,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    height: 40,
+    lineHeight: 20,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   modalButton: {
+    borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 10,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     gap: 8,
+    justifyContent: 'flex-end',
     marginTop: 4,
   },
   modalCancel: {
-    backgroundColor: COLORS.background.card,
+    backgroundColor: V2_COLORS.background.subtle,
+    borderColor: V2_COLORS.border.default,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
   },
   modalCancelText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
+    color: V2_COLORS.text.secondary,
+    fontSize: 14,
     fontWeight: '600',
+    lineHeight: 20,
   },
   modalCard: {
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
+    padding: 16,
   },
   modalConfirm: {
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: V2_COLORS.brand.primary,
   },
   modalConfirmText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.buttonText,
+    color: V2_COLORS.text.inverse,
+    fontSize: 14,
     fontWeight: '700',
+    lineHeight: 20,
   },
   modalTitle: {
-    ...TYPOGRAPHY.title2,
+    color: V2_COLORS.text.primary,
+    fontSize: 18,
     fontWeight: '700',
-    color: COLORS.text.primary,
+    lineHeight: 26,
     marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.text.secondary,
-  },
-  subtitleSecondary: {
-    fontSize: 13,
-    color: COLORS.text.secondary,
-    opacity: 0.8,
-    marginTop: 4,
-  },
-  title: {
-    fontSize: 32,
-    lineHeight: 40,
-    fontWeight: 'bold',
-    color: COLORS.text.primary,
-    marginBottom: 8,
+  screen: {
+    flex: 1,
   },
 });

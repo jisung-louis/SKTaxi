@@ -1,32 +1,69 @@
-import React, { useRef, useState } from 'react';
+import React, {useRef, useState} from 'react';
 import {
   BackHandler,
-  Image,
   Linking,
   Platform,
   ScrollView,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useNavigation} from '@react-navigation/native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
-import PageHeader from '@/shared/ui/PageHeader';
-import { Text } from '@/shared/ui/Text';
-import { COLORS } from '@/shared/constants/colors';
+import type {AuthStackParamList} from '@/app/navigation/types';
+import {V2StackHeader} from '@/shared/design-system/components';
 import {
-  WINDOW_HEIGHT,
-  WINDOW_WIDTH,
-} from '@/shared/constants/layout';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks';
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SHADOWS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks';
+
+import {AccountGuidePortalCard} from '../components/v2/AccountGuidePortalCard';
+import {AccountGuideStepCard} from '../components/v2/AccountGuideStepCard';
+
+const PORTAL_URL =
+  'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do';
+
+interface GuideStepItem {
+  description: string;
+  imageSource?: number;
+  step: number;
+  successMessage?: string;
+  title: string;
+}
+
+const GUIDE_STEPS: GuideStepItem[] = [
+  {
+    description: '성결대학교 포털시스템에서 통합로그인을 하세요.',
+    step: 1,
+    title: '포탈 로그인',
+  },
+  {
+    description: '웹메일을 클릭하세요.',
+    imageSource: require('../../../../assets/images/account_guide/step1.jpeg'),
+    step: 2,
+    title: '웹메일 클릭',
+  },
+  {
+    description: 'Gmail을 클릭하고 이메일 발급을 진행하세요.',
+    imageSource: require('../../../../assets/images/account_guide/step2.jpeg'),
+    step: 3,
+    successMessage: '발급 완료 후 SKURI에서 로그인하세요!',
+    title: 'Gmail 클릭 후 이메일 발급',
+  },
+];
 
 export const AccountGuideScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
 
@@ -49,251 +86,136 @@ export const AccountGuideScreen = () => {
     return () => backHandler.remove();
   }, [canGoBack]);
 
-  const handleNavigationStateChange = (navState: any) => {
-    setCanGoBack(navState.canGoBack);
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader
-        onBack={() => {
-          navigation.goBack?.();
-        }}
-        title="성결대 이메일 발급 방법"
-        borderBottom
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
+      <V2StackHeader
+        onPressBack={() => navigation.goBack()}
+        title="성결대 이메일 발급 안내"
       />
 
       <ScrollView
-        style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
         nestedScrollEnabled
-      >
+        showsVerticalScrollIndicator={false}>
         <View style={styles.webViewContainer}>
-          <PageHeader
-            title="성결대 포탈시스템"
-            titleStyle={{ ...TYPOGRAPHY.title3 }}
-            backIconSize={28}
-            secondIcon="refresh-outline"
-            secondIconSize={28}
-            secondIconPress={() => {
-              webViewRef.current?.reload?.();
-            }}
-            thirdIcon="chevron-forward-outline"
-            thirdIconSize={28}
-            thirdIconPress={() => {
-              webViewRef.current?.goForward?.();
-            }}
-            style={{ backgroundColor: COLORS.background.tertiary }}
-            borderBottom
-            onBack={() => {
-              webViewRef.current?.goBack?.();
-            }}
-            rightButton
-            rightButtonIcon="globe-outline"
-            onRightButtonPress={() => {
-              Linking.openURL(
-                'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do',
-              );
-            }}
-          />
           <WebView
-            ref={webViewRef}
-            source={{
-              uri: 'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do',
-            }}
-            onNavigationStateChange={handleNavigationStateChange}
-            scrollEnabled
             nestedScrollEnabled
+            onNavigationStateChange={navState => {
+              setCanGoBack(navState.canGoBack);
+            }}
+            ref={webViewRef}
+            scrollEnabled
+            source={{uri: PORTAL_URL}}
+            startInLoadingState
           />
         </View>
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            성결대 이메일 발급 방법
+
+        <AccountGuidePortalCard
+          onPressPortal={() => {
+            Linking.openURL(PORTAL_URL).catch(() => undefined);
+          }}
+        />
+
+        <View style={styles.titleSection}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>이메일 발급 방법</Text>
+            <View style={styles.sectionDivider} />
+          </View>
+          <Text style={styles.sectionSubtitle}>
+            아래 단계에 따라 성결대학교 Gmail을 발급받을 수 있어요.
           </Text>
-
-          <View style={styles.stepContainer}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>1</Text>
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>포탈로그인</Text>
-              <Text style={styles.stepDescription}>
-                성결대학교 포털시스템에서 통합로그인을 하세요.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.stepContainer}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>2</Text>
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>웹메일 클릭</Text>
-              <Text style={styles.stepDescription}>
-                웹메일을 클릭하세요.
-              </Text>
-            </View>
-            <View style={styles.stepImage}>
-              <Image
-                source={require('../../../../assets/images/account_guide/step1.jpeg')}
-                style={styles.stepImageContent}
-                resizeMode="cover"
-              />
-            </View>
-          </View>
-
-          <View style={styles.stepContainer}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>3</Text>
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>
-                Gmail 클릭 후 이메일 발급
-              </Text>
-              <Text style={styles.stepDescription}>
-                Gmail을 클릭하고 이메일 발급을 진행하세요.
-              </Text>
-            </View>
-            <View style={styles.stepImage}>
-              <Image
-                source={require('../../../../assets/images/account_guide/step2.jpeg')}
-                style={styles.stepImageContent}
-                resizeMode="cover"
-              />
-            </View>
-          </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>주의사항</Text>
-          <View style={styles.warningContainer}>
-            <Icon
-              name="information-circle-outline"
-              size={20}
-              color={COLORS.accent.orange}
+        <View style={styles.stepList}>
+          {GUIDE_STEPS.map(step => (
+            <AccountGuideStepCard
+              key={step.step}
+              description={step.description}
+              imageSource={step.imageSource}
+              step={step.step}
+              successMessage={step.successMessage}
+              title={step.title}
             />
-            <Text style={styles.warningText}>
-              성결대학교 재학생만 사용할 수 있는 서비스입니다.
-              {'\n'}
-              외부인은 사용할 수 없습니다.
-            </Text>
-          </View>
+          ))}
         </View>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.9}
+          onPress={() => navigation.goBack()}
+          style={styles.backToLoginButton}>
+          <Text style={styles.backToLoginLabel}>로그인 화면으로 돌아가기</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  contactContainer: {
-    flexDirection: 'row',
+  backToLoginButton: {
     alignItems: 'center',
-    marginTop: 8,
-    gap: 6,
+    backgroundColor: '#4ADE80',
+    borderRadius: V2_RADIUS.lg,
+    height: 60,
+    justifyContent: 'center',
+    marginTop: 24,
+    shadowColor: '#4ADE80',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.24,
+    shadowRadius: 8,
   },
-  contactText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.accent.blue,
-    textDecorationLine: 'underline',
+  backToLoginLabel: {
+    color: V2_COLORS.text.inverse,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 22.5,
   },
   container: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
   contentContainer: {
-    padding: 16,
+    paddingBottom: 40,
+    paddingHorizontal: V2_SPACING.lg,
+    paddingTop: V2_SPACING.lg,
   },
-  description: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    lineHeight: 22,
-  },
-  scrollView: {
+  sectionDivider: {
+    backgroundColor: V2_COLORS.border.default,
     flex: 1,
+    height: 1,
+    marginLeft: V2_SPACING.md,
   },
-  section: {
-    marginBottom: 32,
+  sectionHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  sectionSubtitle: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 6,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.title2,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-    marginBottom: 16,
-  },
-  stepContainer: {
-    flexDirection: 'row',
-    marginBottom: 24,
-    alignItems: 'flex-start',
-  },
-  stepContent: {
-    flex: 1,
-  },
-  stepDescription: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    fontWeight: '700',
     lineHeight: 20,
   },
-  stepImage: {
-    width: WINDOW_WIDTH * 0.4,
-    height: WINDOW_WIDTH * 0.4,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginRight: 12,
+  stepList: {
+    gap: V2_SPACING.md,
   },
-  stepImageContent: {
-    width: '100%',
-    height: '100%',
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: COLORS.accent.green,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  stepNumberText: {
-    ...TYPOGRAPHY.body2,
-    fontWeight: '700',
-    color: COLORS.background.primary,
-    textAlign: 'center',
-  },
-  stepTitle: {
-    ...TYPOGRAPHY.body1,
-    fontWeight: '600',
-    color: COLORS.text.primary,
-    marginBottom: 4,
-  },
-  title: {
-    ...TYPOGRAPHY.title1,
-    fontWeight: '700',
-    color: COLORS.text.primary,
-    marginBottom: 12,
-  },
-  warningContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: COLORS.accent.orange + '15',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent.orange + '30',
-    gap: 12,
-  },
-  warningText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    flex: 1,
-    lineHeight: 20,
+  titleSection: {
+    marginBottom: V2_SPACING.md,
+    marginTop: 24,
   },
   webViewContainer: {
-    height: WINDOW_HEIGHT * 0.6,
+    ...V2_SHADOWS.card,
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
-    borderRadius: 12,
+    height: 220,
+    marginBottom: V2_SPACING.lg,
     overflow: 'hidden',
-    marginBottom: 32,
   },
 });
