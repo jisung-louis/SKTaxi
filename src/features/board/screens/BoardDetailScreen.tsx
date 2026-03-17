@@ -83,8 +83,13 @@ export const BoardDetailScreen = () => {
   }, []);
 
   const handlePressEdit = React.useCallback(() => {
-    Alert.alert('게시글 수정', '수정 메뉴 연결은 다음 단계에서 진행할 예정입니다.');
-  }, []);
+    if (route.params?.postId) {
+      navigation.navigate('BoardEdit', {postId: route.params.postId});
+      return;
+    }
+
+    Alert.alert('게시글 수정', '수정할 게시글 정보를 찾지 못했습니다.');
+  }, [navigation, route.params?.postId]);
 
   const handlePressDelete = React.useCallback(() => {
     Alert.alert('게시글 삭제', '삭제 메뉴 연결은 다음 단계에서 진행할 예정입니다.');
