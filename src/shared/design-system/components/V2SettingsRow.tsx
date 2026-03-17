@@ -25,7 +25,6 @@ interface V2SettingsRowProps {
   minHeight?: number;
   onPress?: () => void;
   onToggle?: (nextValue: boolean) => void;
-  toggleOffThumbAlignment?: 'left' | 'right';
   showDivider?: boolean;
   subtitle?: string;
   subtitleNumberOfLines?: number;
@@ -46,7 +45,6 @@ export const V2SettingsRow = ({
   minHeight = 72,
   onPress,
   onToggle,
-  toggleOffThumbAlignment = 'left',
   showDivider = false,
   subtitle,
   subtitleNumberOfLines = 1,
@@ -113,7 +111,6 @@ export const V2SettingsRow = ({
         <V2ToggleSwitch
           accessibilityLabel={accessibilityLabel ?? title}
           disabled={disabled}
-          offThumbAlignment={toggleOffThumbAlignment}
           onValueChange={onToggle}
           value={toggleValue}
         />

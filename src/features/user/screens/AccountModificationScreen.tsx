@@ -165,7 +165,6 @@ export const AccountModificationScreen = () => {
 
               <V2ToggleSwitch
                 accessibilityLabel="이름 일부만 공개"
-                offThumbAlignment="right"
                 onValueChange={setHideName}
                 value={data.hideName}
               />

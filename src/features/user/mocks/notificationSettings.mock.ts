@@ -2,8 +2,6 @@ import type {NotificationSettingsScreenSource} from '../model/notificationSettin
 
 export const notificationSettingsMockData: NotificationSettingsScreenSource = {
   allNotifications: true,
-  helperText:
-    '기기의 알림 설정이 꺼져 있으면 알림을 받을 수 없어요. 기기 설정에서 알림 권한을 허용해주세요.',
   items: [
     {
       enabled: true,

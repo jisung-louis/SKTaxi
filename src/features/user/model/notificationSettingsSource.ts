@@ -30,6 +30,5 @@ export interface NotificationSettingItemSource {
 
 export interface NotificationSettingsScreenSource {
   allNotifications: boolean;
-  helperText: string;
   items: NotificationSettingItemSource[];
 }

@@ -10,7 +10,6 @@ import {V2_COLORS, V2_RADIUS} from '../tokens';
 interface V2ToggleSwitchProps {
   accessibilityLabel?: string;
   disabled?: boolean;
-  offThumbAlignment?: 'left' | 'right';
   onValueChange?: (nextValue: boolean) => void;
   value: boolean;
 }
@@ -18,7 +17,6 @@ interface V2ToggleSwitchProps {
 export const V2ToggleSwitch = ({
   accessibilityLabel,
   disabled = false,
-  offThumbAlignment = 'left',
   onValueChange,
   value,
 }: V2ToggleSwitchProps) => {
@@ -35,15 +33,7 @@ export const V2ToggleSwitch = ({
         value ? styles.trackOn : styles.trackOff,
         disabled ? styles.trackDisabled : undefined,
       ]}>
-      <View
-        style={[
-          styles.thumb,
-          value
-            ? styles.thumbOn
-            : offThumbAlignment === 'right'
-              ? styles.thumbOffRight
-              : styles.thumbOffLeft,
-        ]}
+      <View style={[ styles.thumb, value ? styles.thumbOn : styles.thumbOff]}
       />
     </TouchableOpacity>
   );
@@ -79,10 +69,7 @@ const styles = StyleSheet.create({
   thumbOn: {
     left: 22,
   },
-  thumbOffLeft: {
+  thumbOff: {
     left: 2,
-  },
-  thumbOffRight: {
-    left: 28,
   },
 });
