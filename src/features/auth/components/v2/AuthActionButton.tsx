@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  StyleSheet as RNStyleSheet,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -39,27 +40,35 @@ export const AuthActionButton = ({
       disabled={isDisabled}
       onPress={onPress}
       style={styles.touchable}>
-      {isDisabled || !colors ? (
-        <View style={[styles.buttonBase, styles.disabledButton]}>
+      <View
+        style={[
+          styles.buttonOuter,
+          isDisabled ? styles.disabledButton : styles.gradientButton,
+          {shadowColor: colors?.[0] || V2_COLORS.brand.primary},
+        ]}>
+        <View style={styles.buttonInner}>
+          {!isDisabled && colors ? (
+            <LinearGradient
+              colors={colors}
+              end={{x: 1, y: 1}}
+              pointerEvents="none"
+              start={{x: 0, y: 0}}
+              style={RNStyleSheet.absoluteFill}
+            />
+          ) : null}
+
           {loading ? (
-            <ActivityIndicator color={V2_COLORS.text.muted} size="small" />
+            <ActivityIndicator
+              color={isDisabled ? V2_COLORS.text.muted : V2_COLORS.text.inverse}
+              size="small"
+            />
           ) : (
-            <Text style={styles.disabledLabel}>{label}</Text>
+            <Text style={isDisabled ? styles.disabledLabel : styles.enabledLabel}>
+              {label}
+            </Text>
           )}
         </View>
-      ) : (
-        <LinearGradient
-          colors={colors}
-          end={{x: 1, y: 1}}
-          start={{x: 0, y: 0}}
-          style={[styles.buttonBase, styles.gradientButton]}>
-          {loading ? (
-            <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
-          ) : (
-            <Text style={styles.enabledLabel}>{label}</Text>
-          )}
-        </LinearGradient>
-      )}
+      </View>
     </TouchableOpacity>
   );
 };
@@ -68,11 +77,16 @@ const styles = StyleSheet.create({
   touchable: {
     width: '100%',
   },
-  buttonBase: {
+  buttonOuter: {
+    borderRadius: V2_RADIUS.lg,
+    width: '100%',
+  },
+  buttonInner: {
     alignItems: 'center',
     borderRadius: V2_RADIUS.lg,
     height: 52,
     justifyContent: 'center',
+    overflow: 'hidden',
     paddingHorizontal: V2_SPACING.lg,
     width: '100%',
   },

@@ -23,7 +23,7 @@ export const OnboardingFeatureCard = ({
   return (
     <View style={styles.card}>
       <View style={styles.iconBox}>
-        <Icon color={iconColor} name={iconName} size={16} />
+        <Icon color={iconColor} name={iconName} size={18} />
       </View>
       <Text style={styles.label}>{label}</Text>
     </View>

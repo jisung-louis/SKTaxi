@@ -19,7 +19,7 @@ export interface OnboardingVisualStep {
   heroIconName: string;
   id: OnboardingVisualStepId;
   kicker?: string;
-  subtitle: string;
+  subtitle?: string;
   title: string;
 }
 
@@ -34,7 +34,7 @@ export const ONBOARDING_STEP_VIEW_DATA: Record<
       {iconName: 'car-sport', label: '택시 동승 파티로 택시비 절약'},
       {iconName: 'notifications', label: '학교 공지 알림을 실시간으로'},
       {iconName: 'calendar', label: '학사일정과 시간표를 한 곳에서'},
-      {iconName: 'restaurant', label: '오늘의 학식도 확인하고'},
+      {iconName: 'restaurant', label: '오늘의 학식도 확인해요'},
     ],
     heroColor: '#4ADE80',
     heroIconName: 'car-sport',
@@ -56,7 +56,6 @@ export const ONBOARDING_STEP_VIEW_DATA: Record<
     heroIconName: 'notifications',
     id: 'notification',
     kicker: '이 앱이 잘 작동하려면...',
-    subtitle: '',
     title: '알림 허용이\n필요해요',
   },
   att: {
@@ -75,7 +74,6 @@ export const ONBOARDING_STEP_VIEW_DATA: Record<
     heroIconName: 'shield-checkmark',
     id: 'att',
     kicker: '개인정보 보호를 위해',
-    subtitle: '',
     title: '광고 추적 권한\n설정이 필요해요',
   },
   location: {
@@ -95,7 +93,6 @@ export const ONBOARDING_STEP_VIEW_DATA: Record<
     heroIconName: 'location',
     id: 'location',
     kicker: '정확한 위치 정보가 필요해요',
-    subtitle: '',
     title: '택시 동승을 위해\n현재 위치를 확인해요',
   },
   complete: {

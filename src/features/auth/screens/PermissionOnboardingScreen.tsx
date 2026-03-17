@@ -46,9 +46,9 @@ const ANDROID_STEP_SEQUENCE: PermissionOnboardingStep[] = [
 ];
 
 const COMPLETE_DECORATIONS = [
-  {backgroundColor: '#FACC15', left: 214, size: 24, top: 18},
-  {backgroundColor: '#60A5FA', left: 108, size: 12, top: 34},
-  {backgroundColor: '#F472B6', left: 112, size: 16, top: 126},
+  {backgroundColor: '#FACC15', left: 222, size: 24, top: 10},
+  {backgroundColor: '#60A5FA', left: 100, size: 12, top: 26},
+  {backgroundColor: '#F472B6', left: 104, size: 16, top: 134},
 ] as const;
 
 export const PermissionOnboardingScreen = () => {
@@ -233,7 +233,11 @@ export const PermissionOnboardingScreen = () => {
             ) : null}
 
             <Text style={styles.title}>{currentViewData.title}</Text>
-            <Text style={styles.subtitle}>{currentViewData.subtitle}</Text>
+            {currentViewData.subtitle ? (
+              <Text style={styles.subtitle}>{currentViewData.subtitle}</Text>
+            ) : (
+              <View style={styles.subtitleSpace}/>
+            )}
 
             <View style={styles.featureList}>
               {currentViewData.features.map(feature => (
@@ -261,7 +265,7 @@ export const PermissionOnboardingScreen = () => {
         <View
           style={[
             styles.bottomActionWrap,
-            {paddingBottom: 20 + insets.bottom},
+            {paddingBottom: 20},
           ]}>
           <AuthActionButton
             colors={currentViewData.buttonColors}
@@ -317,7 +321,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 152,
     justifyContent: 'center',
-    width: 240,
+    width: '100%',
   },
   completeDecoration: {
     borderRadius: 9999,
@@ -367,6 +371,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     minHeight: 22,
     textAlign: 'center',
+    height: 22,
+  },
+  subtitleSpace: {
+    marginBottom: 32,
   },
   featureList: {
     gap: 12,

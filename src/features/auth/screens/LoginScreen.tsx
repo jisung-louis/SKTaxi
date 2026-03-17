@@ -460,10 +460,9 @@ const styles = StyleSheet.create({
     color: V2_COLORS.text.primary,
     fontSize: 14,
     height: 40,
-    lineHeight: 20,
+    lineHeight: 16,
     marginBottom: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
   },
   modalButton: {
     borderRadius: 10,

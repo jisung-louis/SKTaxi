@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {RootStackParamList} from '@/app/navigation/types';
 import {DEPARTMENT_OPTIONS} from '@/shared/constants/departments';
-import {V2SelectionDropdown, V2StackHeader} from '@/shared/design-system/components';
+import {V2SelectionDropdown} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -119,15 +119,8 @@ export const CompleteProfileScreen = () => {
     termsAccepted,
   ]);
 
-  const handlePressBack = React.useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
-  }, [navigation]);
-
   return (
-    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader onPressBack={handlePressBack} title="프로필 설정" />
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={styles.safeArea}>
 
       <TouchableWithoutFeedback
         accessible={false}
@@ -240,12 +233,7 @@ export const CompleteProfileScreen = () => {
           </ScrollView>
 
           <View
-            style={[
-              styles.footer,
-              {
-                paddingBottom: 20 + insets.bottom,
-              },
-            ]}>
+            style={styles.footer}>
             <AuthActionButton
               colors={['#4ADE80', '#22C55E']}
               disabled={!isReady}
@@ -258,7 +246,9 @@ export const CompleteProfileScreen = () => {
               <Text style={styles.footerHelper}>
                 모든 항목을 입력하고 약관에 동의해주세요
               </Text>
-            ) : null}
+            ) : (
+              <View style={styles.footerHelperSpace}/>
+            )}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -405,5 +395,10 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 8,
     textAlign: 'center',
+    height: 16,
+  },
+  footerHelperSpace: {
+    height: 16,
+    marginTop: 8,
   },
 });
