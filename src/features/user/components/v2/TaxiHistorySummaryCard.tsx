@@ -19,17 +19,19 @@ export const TaxiHistorySummaryCard = ({
       end={{x: 1, y: 1}}
       start={{x: 0, y: 0}}
       style={styles.card}>
-      <Text style={styles.title}>{item.title}</Text>
+      <View style={styles.content}>
+        <Text style={styles.title}>{item.title}</Text>
 
-      <View style={styles.statsRow}>
-        <View style={styles.statBlock}>
-          <Text style={styles.value}>{item.completedRideCountLabel}</Text>
-          <Text style={styles.subtitle}>{item.subtitleCompleted}</Text>
-        </View>
+        <View style={styles.statsRow}>
+          <View style={styles.statBlock}>
+            <Text style={styles.value}>{item.completedRideCountLabel}</Text>
+            <Text style={styles.subtitle}>{item.subtitleCompleted}</Text>
+          </View>
 
-        <View style={styles.statBlock}>
-          <Text style={styles.value}>{item.savedFareLabel}</Text>
-          <Text style={styles.subtitle}>{item.subtitleSaved}</Text>
+          <View style={styles.statBlock}>
+            <Text style={styles.value}>{item.savedFareLabel}</Text>
+            <Text style={styles.subtitle}>{item.subtitleSaved}</Text>
+          </View>
         </View>
       </View>
     </LinearGradient>
@@ -40,6 +42,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: V2_RADIUS.lg,
     minHeight: 118,
+  },
+  content: {
     padding: V2_SPACING.xl,
   },
   title: {

@@ -77,7 +77,6 @@ export const BookmarksScreen = () => {
           />
 
           <ScrollView
-            bounces={false}
             showsVerticalScrollIndicator={false}
             style={styles.scroll}>
             {activeTab === 'community'

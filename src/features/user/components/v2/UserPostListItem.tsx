@@ -84,7 +84,6 @@ const styles = StyleSheet.create({
     backgroundColor: V2_COLORS.background.surface,
     borderBottomColor: V2_COLORS.border.subtle,
     borderBottomWidth: 1,
-    minHeight: 151,
     paddingHorizontal: V2_SPACING.lg,
     paddingVertical: V2_SPACING.lg,
   },
