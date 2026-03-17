@@ -43,9 +43,7 @@ export interface MyPageMenuSectionSource {
 }
 
 export interface MyPageSource {
-  logoutLabel: string;
   profile: MyPageProfileSource;
   sections: MyPageMenuSectionSource[];
   stats: MyPageStatSource[];
-  withdrawLabel: string;
 }

@@ -22,10 +22,10 @@ import {
 } from '@/features/settings';
 import {
   AccountModificationScreen,
+  MyScreen,
   NotificationScreen,
   NotificationSettingsScreen,
   ProfileEditScreen,
-  ProfileScreen,
 } from '@/features/user';
 
 const CampusStack = createNativeStackNavigator<CampusStackParamList>();
@@ -36,7 +36,7 @@ export const CampusStackNavigator = () => {
       <CampusStack.Screen name="CampusMain" component={CampusScreen} />
       <CampusStack.Screen name="Notification" component={NotificationScreen} />
       <CampusStack.Screen name="Setting" component={SettingScreen} />
-      <CampusStack.Screen name="Profile" component={ProfileScreen} />
+      <CampusStack.Screen name="Profile" component={MyScreen} />
       <CampusStack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       <CampusStack.Screen name="AppNotice" component={AppNoticeScreen} />
       <CampusStack.Screen

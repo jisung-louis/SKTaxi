@@ -46,7 +46,6 @@ const getToneColors = (tone: MyPageMenuTone) => {
 };
 
 const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
-  logoutLabel: source.logoutLabel,
   profile: {
     avatarLabel: source.profile.displayName.slice(0, 1) || '?',
     displayName: source.profile.displayName,
@@ -74,7 +73,6 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
     label: stat.label,
     valueLabel: `${stat.value}`,
   })),
-  withdrawLabel: source.withdrawLabel,
 });
 
 export const useMyPageData = () => {

@@ -1,7 +1,6 @@
 import type {MyPageSource} from '../model/myPageSource';
 
 export const myPageMockData: MyPageSource = {
-  logoutLabel: '로그아웃',
   profile: {
     displayName: '김성결',
     editLabel: '프로필 수정',
@@ -87,5 +86,4 @@ export const myPageMockData: MyPageSource = {
       value: 5,
     },
   ],
-  withdrawLabel: '회원탈퇴',
 };

@@ -64,7 +64,7 @@ export type {
 } from './model/types';
 export type { LinkedAccount, UserAccountInfo } from '@/shared/types/user';
 
-export { ProfileScreen } from './screens/ProfileScreen';
+export { MyScreen } from './screens/MyScreen';
 export { ProfileEditScreen } from './screens/ProfileEditScreen';
 export { AccountModificationScreen } from './screens/AccountModificationScreen';
 export { NotificationScreen } from './screens/NotificationScreen';

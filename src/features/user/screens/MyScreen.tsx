@@ -33,7 +33,7 @@ import {useMyPageData} from '../hooks/useMyPageData';
 import type {MyPageMenuItemViewData} from '../model/myPageViewData';
 import {withdrawCurrentUser} from '../services/userProfileService';
 
-export const ProfileScreen = () => {
+export const MyScreen = () => {
   useScreenView();
 
   const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
@@ -283,7 +283,7 @@ export const ProfileScreen = () => {
                   {signingOut ? (
                     <ActivityIndicator color={V2_COLORS.status.danger} />
                   ) : (
-                    <Text style={styles.logoutLabel}>{data.logoutLabel}</Text>
+                    <Text style={styles.logoutLabel}>로그아웃</Text>
                   )}
                 </TouchableOpacity>
 
@@ -302,7 +302,7 @@ export const ProfileScreen = () => {
                       <Text style={styles.withdrawLabel}>처리 중...</Text>
                     </View>
                   ) : (
-                    <Text style={styles.withdrawLabel}>{data.withdrawLabel}</Text>
+                    <Text style={styles.withdrawLabel}>회원탈퇴</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -472,9 +472,10 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   withdrawLabel: {
-    color: V2_COLORS.status.danger,
+    color: V2_COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
+    textDecorationLine: 'underline',
   },
   withdrawLoadingRow: {
     alignItems: 'center',

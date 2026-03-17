@@ -29,9 +29,7 @@ export interface MyPageMenuSectionViewData {
 }
 
 export interface MyPageScreenViewData {
-  logoutLabel: string;
   profile: MyPageProfileViewData;
   sections: MyPageMenuSectionViewData[];
   stats: MyPageStatViewData[];
-  withdrawLabel: string;
 }
