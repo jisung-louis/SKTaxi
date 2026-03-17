@@ -1,264 +1,186 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image,
+import {
   ActivityIndicator,
-  Alert
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { Pressable } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, cancelAnimation } from 'react-native-reanimated';
+import DraggableFlatList, {
+  type RenderItemParams,
+} from 'react-native-draggable-flatlist';
 import Icon from 'react-native-vector-icons/Ionicons';
-import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import type { BoardSelectedImage } from '../model/types';
+
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+
+import type {BoardSelectedImage} from '../model/types';
 
 interface ImageSelectorProps {
-  selectedImages: BoardSelectedImage[];
+  maxImages?: number;
   onPickImages: () => void;
   onRemoveImage: (imageId: string) => void;
   onReorderImages: (fromIndex: number, toIndex: number) => void;
-  maxImages?: number;
+  selectedImages: BoardSelectedImage[];
   uploading?: boolean;
 }
 
-export const ImageSelector: React.FC<ImageSelectorProps> = ({
-  selectedImages,
+export const ImageSelector = ({
+  maxImages = 10,
   onPickImages,
   onRemoveImage,
   onReorderImages,
-  maxImages = 10,
-  uploading = false
-}) => {
+  selectedImages,
+  uploading = false,
+}: ImageSelectorProps) => {
   const canAddMore = selectedImages.length < maxImages;
 
-  const WiggleItem: React.FC<{ active: boolean; children: React.ReactNode; }> = ({ active, children }) => {
-    const rotation = useSharedValue(0);
-    const scale = useSharedValue(1);
-
-    React.useEffect(() => {
-      if (active) {
-        scale.value = withTiming(1.03, { duration: 120 });
-        rotation.value = withRepeat(
-          withSequence(
-            withTiming(-2.5, { duration: 120 }),
-            withTiming(2.5, { duration: 120 })
-          ),
-          -1,
-          true
-        );
-      } else {
-        cancelAnimation(rotation);
-        rotation.value = withTiming(0, { duration: 120 });
-        scale.value = withTiming(1, { duration: 120 });
-      }
-    }, [active, rotation, scale]);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-      transform: [{ rotate: `${rotation.value}deg` }, { scale: scale.value }],
-    }));
-
-    return <Animated.View style={animatedStyle}>{children}</Animated.View>;
-  };
-
-  const renderImageItem = ({ item, drag, isActive }: RenderItemParams<BoardSelectedImage>) => {
-    const getStatusIcon = () => {
-      switch (item.status) {
-        case 'uploading':
-          return <ActivityIndicator size="small" color={COLORS.accent.blue} />;
-        case 'uploaded':
-          return <Icon name="checkmark-circle" size={20} color={COLORS.accent.green} />;
-        case 'failed':
-          return <Icon name="close-circle" size={20} color={COLORS.accent.red} />;
-        default:
-          return null;
-      }
-    };
+  const renderImageItem = ({
+    drag,
+    isActive,
+    item,
+  }: RenderItemParams<BoardSelectedImage>) => {
+    const isUploading = item.status === 'uploading';
 
     return (
-      <WiggleItem active={isActive}>
-        <Pressable
-          key={item.id}
-          onLongPress={drag}
-          delayLongPress={250}
-          style={({ pressed }) => [
-            styles.imageItem,
-            (pressed || isActive) && styles.imageItemActive,
-          ]}
-        >
-          <Image source={{ uri: item.localUri }} style={styles.imagePreview} />
-          <View style={styles.imageOverlay}>
-            {getStatusIcon()}
-            {item.status === 'uploading' && (
-              <View style={styles.progressContainer}>
-                <View style={[styles.progressBar, { width: `${item.progress}%` }]} />
-              </View>
-            )}
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.92}
+        delayLongPress={220}
+        onLongPress={drag}
+        style={[styles.imageItem, isActive ? styles.imageItemActive : undefined]}>
+        <Image source={{uri: item.localUri}} style={styles.imagePreview} />
+
+        {isUploading ? (
+          <View style={styles.uploadOverlay}>
+            <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
           </View>
-          <TouchableOpacity
-            style={styles.removeButton}
-            onPress={() => onRemoveImage(item.id)}
-            disabled={uploading}
-          >
-            <Icon name="close" size={16} color={COLORS.text.white} />
-          </TouchableOpacity>
-          {item.status === 'failed' && (
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                Alert.alert('재시도', '이미지 업로드를 다시 시도하시겠습니까?');
-              }}
-            >
-              <Icon name="refresh" size={16} color={COLORS.text.white} />
-            </TouchableOpacity>
-          )}
-        </Pressable>
-      </WiggleItem>
+        ) : null}
+
+        <TouchableOpacity
+          accessibilityLabel="이미지 삭제"
+          accessibilityRole="button"
+          activeOpacity={0.82}
+          disabled={uploading}
+          onPress={() => onRemoveImage(item.id)}
+          style={styles.removeButton}>
+          <Icon color={V2_COLORS.text.inverse} name="close" size={12} />
+        </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
+  if (selectedImages.length === 0) {
+    return (
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.82}
+        disabled={!canAddMore || uploading}
+        onPress={onPickImages}
+        style={styles.addButton}>
+        <Icon color={V2_COLORS.text.muted} name="add" size={28} />
+        <Text style={styles.addButtonLabel}>추가</Text>
+      </TouchableOpacity>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <DraggableFlatList
-        data={selectedImages}
-        keyExtractor={(item) => item.id}
-        horizontal
-        activationDistance={20}
-        contentContainerStyle={styles.imageListContent}
-        showsHorizontalScrollIndicator={false}
-        renderItem={renderImageItem}
-        onDragEnd={({ from, to }) => {
-          if (from !== to) {
-            onReorderImages(from, to);
-          }
-        }}
-        ListFooterComponent={
-          canAddMore ? (
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={onPickImages}
-              disabled={uploading}
-            >
-              <Icon 
-                name="camera" 
-                size={24} 
-                color={uploading ? COLORS.text.disabled : COLORS.accent.blue} 
-              />
-              <Text style={[
-                styles.addButtonText,
-                uploading && styles.addButtonTextDisabled
-              ]}>
-                추가
-              </Text>
-            </TouchableOpacity>
-          ) : null
+    <DraggableFlatList
+      activationDistance={20}
+      contentContainerStyle={styles.listContent}
+      data={selectedImages}
+      horizontal
+      keyExtractor={item => item.id}
+      onDragEnd={({from, to}) => {
+        if (from !== to) {
+          onReorderImages(from, to);
         }
-      />
-      
-      {selectedImages.length > 0 && (
-        <Text style={styles.hint}>
-          사진을 길게 눌러 순서를 변경할 수 있습니다
-        </Text>
-      )}
-    </View>
+      }}
+      renderItem={renderImageItem}
+      showsHorizontalScrollIndicator={false}
+      ListFooterComponent={
+        canAddMore ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            disabled={uploading}
+            onPress={onPickImages}
+            style={styles.addButton}>
+            <Icon color={V2_COLORS.text.muted} name="add" size={28} />
+            <Text style={styles.addButtonLabel}>추가</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.footerSpacer} />
+        )
+      }
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  addButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.page,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    height: 80,
+    justifyContent: 'center',
+    marginRight: V2_SPACING.sm,
+    width: 80,
   },
-  imageListContent: {
-    paddingRight: 16,
-    paddingLeft: 0,
-    marginTop: 6, // removeButton, retryButton 상단 클리핑 방지
+  addButtonLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: V2_SPACING.xs,
+  },
+  footerSpacer: {
+    width: V2_SPACING.sm,
   },
   imageItem: {
+    height: 80,
+    marginRight: V2_SPACING.sm,
     position: 'relative',
-    marginRight: 12,
+    width: 80,
   },
   imageItemActive: {
-    opacity: 0.6,
+    opacity: 0.65,
   },
   imagePreview: {
-    width: 80,
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.lg,
     height: 80,
-    borderRadius: 8,
-    backgroundColor: COLORS.background.secondary,
+    width: 80,
   },
-  imageOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 8,
-    justifyContent: 'center',
+  listContent: {
     alignItems: 'center',
-  },
-  progressContainer: {
-    position: 'absolute',
-    bottom: 4,
-    left: 4,
-    right: 4,
-    height: 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 1,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: COLORS.accent.blue,
-    borderRadius: 1,
   },
   removeButton: {
-    position: 'absolute',
-    top: -6,
-    right: -6,
-    width: 20,
+    alignItems: 'center',
+    backgroundColor: 'rgba(17,24,39,0.82)',
+    borderRadius: V2_RADIUS.pill,
     height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.accent.red,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-  retryButton: {
     position: 'absolute',
-    bottom: 4,
-    right: -6,
+    right: 6,
+    top: 6,
     width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.accent.orange,
-    justifyContent: 'center',
+  },
+  uploadOverlay: {
     alignItems: 'center',
-  },
-  addButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: COLORS.border.primary,
-    borderStyle: 'dashed',
+    backgroundColor: 'rgba(17,24,39,0.32)',
+    borderRadius: V2_RADIUS.lg,
+    bottom: 0,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.secondary,
-  },
-  addButtonText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.accent.blue,
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  addButtonTextDisabled: {
-    color: COLORS.text.disabled,
-  },
-  hint: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginTop: 12,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
 });
