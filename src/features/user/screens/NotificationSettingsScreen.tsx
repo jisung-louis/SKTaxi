@@ -1,185 +1,135 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-import PageHeader from '@/shared/ui/PageHeader';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks/useScreenView';
+import {type CampusStackParamList} from '@/app/navigation/types';
+import {
+  V2SettingsRow,
+  V2SettingsSection,
+  V2StackHeader,
+  V2StateCard,
+} from '@/shared/design-system/components';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import { NotificationSettingItem } from '../components/NotificationSettingItem';
-import { useNotificationSettings } from '../hooks/useNotificationSettings';
+import {useNotificationSettingsScreenData} from '../hooks/useNotificationSettingsScreenData';
 
 export const NotificationSettingsScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { loading, settings, updateSetting } = useNotificationSettings();
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PageHeader
-          onBack={() => navigation.goBack()}
-          title="알림 설정"
-          borderBottom
-        />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>설정을 불러오는 중...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
+  const {data, error, loading, reload, toggleAll, toggleItem} =
+    useNotificationSettingsScreenData();
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader
-        onBack={() => navigation.goBack()}
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <V2StackHeader
+        onPressBack={() => navigation.goBack()}
         title="알림 설정"
-        borderBottom
       />
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-      >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>전체 알림</Text>
-          <NotificationSettingItem
-            title="모든 알림"
-            description="모든 알림을 한 번에 켜거나 끌 수 있습니다"
-            icon="notifications"
-            value={settings.allNotifications}
-            onValueChange={value => updateSetting('allNotifications', value)}
+        contentContainerStyle={styles.contentContainer}>
+        {loading && !data ? (
+          <V2StateCard
+            description="알림 설정을 준비하고 있습니다."
+            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            title="알림 설정을 불러오는 중"
           />
-        </View>
+        ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>택시 파티</Text>
-          <NotificationSettingItem
-            title="파티 알림"
-            description="새로운 파티 생성, 파티 참여 요청, 파티 상태 변경 알림"
-            icon="car"
-            value={settings.partyNotifications}
-            onValueChange={value => updateSetting('partyNotifications', value)}
-            disabled={!settings.allNotifications}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>공지사항</Text>
-          <NotificationSettingItem
-            title="공지사항 알림"
-            description="학교 공지사항 실시간 알림"
-            icon="document-text"
-            value={settings.noticeNotifications}
-            onValueChange={value => updateSetting('noticeNotifications', value)}
-            disabled={!settings.allNotifications}
-          />
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>게시판</Text>
-          <NotificationSettingItem
-            title="좋아요 알림"
-            description="내 게시물에 좋아요가 눌렸을 때 알림"
-            icon="heart"
-            value={settings.boardLikeNotifications}
-            onValueChange={value =>
-              updateSetting('boardLikeNotifications', value)
+        {error && !data ? (
+          <V2StateCard
+            actionLabel="다시 시도"
+            description={error}
+            icon={
+              <Icon
+                color={V2_COLORS.accent.orange}
+                name="alert-circle-outline"
+                size={28}
+              />
             }
-            disabled={!settings.allNotifications}
+            onPressAction={() => {
+              reload().catch(() => undefined);
+            }}
+            title="알림 설정을 불러오지 못했습니다"
           />
-          <NotificationSettingItem
-            title="댓글/답글 알림"
-            description="내 게시물에 댓글이나 답글이 달렸을 때 알림"
-            icon="chatbubble-ellipses"
-            value={settings.boardCommentNotifications}
-            onValueChange={value =>
-              updateSetting('boardCommentNotifications', value)
-            }
-            disabled={!settings.allNotifications}
-          />
-        </View>
+        ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>시스템</Text>
-          <NotificationSettingItem
-            title="시스템 알림"
-            description="앱 업데이트, 서비스 점검, 보안 관련 알림"
-            icon="settings"
-            value={settings.systemNotifications}
-            onValueChange={value => updateSetting('systemNotifications', value)}
-            disabled={!settings.allNotifications}
-          />
-        </View>
+        {data ? (
+          <>
+            <V2SettingsSection style={styles.masterSection}>
+              <V2SettingsRow
+                accessoryType="toggle"
+                iconBackgroundColor={data.master.iconBackgroundColor}
+                iconColor={data.master.iconColor}
+                iconName={data.master.iconName}
+                minHeight={72}
+                onToggle={toggleAll}
+                subtitle={data.master.subtitle}
+                title={data.master.title}
+                titleWeight="700"
+                toggleValue={data.master.value}
+              />
+            </V2SettingsSection>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>마케팅</Text>
-          <NotificationSettingItem
-            title="마케팅 알림"
-            description="이벤트, 프로모션, 추천 서비스 알림"
-            icon="gift"
-            value={settings.marketingNotifications}
-            onValueChange={value =>
-              updateSetting('marketingNotifications', value)
-            }
-            disabled={!settings.allNotifications}
-          />
-        </View>
+            <V2SettingsSection style={styles.detailSection} title="세부 알림 설정">
+              {data.items.map((item, index) => (
+                <V2SettingsRow
+                  key={item.key}
+                  accessoryType="toggle"
+                  disabled={item.disabled}
+                  iconBackgroundColor={item.iconBackgroundColor}
+                  iconColor={item.iconColor}
+                  iconName={item.iconName}
+                  minHeight={73}
+                  onToggle={nextValue => toggleItem(item.key, nextValue)}
+                  showDivider={index < data.items.length - 1}
+                  subtitle={item.subtitle}
+                  title={item.title}
+                  titleWeight="700"
+                  toggleValue={item.value}
+                />
+              ))}
+            </V2SettingsSection>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            알림 설정을 변경하면 즉시 적용됩니다.
-          </Text>
-        </View>
+            <Text style={styles.footerText}>{data.helperText}</Text>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
   contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: V2_SPACING.lg,
+    paddingTop: 20,
+    paddingBottom: 32,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  masterSection: {
+    marginBottom: 20,
   },
-  loadingText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-  footer: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+  detailSection: {
+    marginBottom: 20,
   },
   footerText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 20,
+    paddingHorizontal: 16,
     textAlign: 'center',
-    lineHeight: 18,
   },
 });
-
