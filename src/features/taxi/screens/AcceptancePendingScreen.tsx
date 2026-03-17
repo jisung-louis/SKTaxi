@@ -1,272 +1,222 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Alert } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useUserDisplayNames } from '@/features/user';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-import Button from '@/shared/ui/Button';
-import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
-import { formatKoreanAmPmTime } from '@/shared/lib/date';
+import Animated from 'react-native-reanimated';
 
-import type { TaxiStackParamList } from '../model/navigation';
-import { useJoinRequestStatus } from '../hooks/useJoinRequestStatus';
+import {
+  V2StateCard,
+} from '@/shared/design-system/components';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SHADOWS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 
-type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'AcceptancePending'>;
-type AcceptancePendingScreenRouteProp = RouteProp<TaxiStackParamList, 'AcceptancePending'>;
+import {TaxiAcceptancePendingInfoCard} from '../components/v2/TaxiAcceptancePendingInfoCard';
+import {TaxiAcceptancePendingStatus} from '../components/v2/TaxiAcceptancePendingStatus';
+import {useTaxiAcceptancePendingData} from '../hooks/useTaxiAcceptancePendingData';
+
+import type {TaxiStackParamList} from '../model/navigation';
+
+type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<
+  TaxiStackParamList,
+  'AcceptancePending'
+>;
+type AcceptancePendingScreenRouteProp = RouteProp<
+  TaxiStackParamList,
+  'AcceptancePending'
+>;
 
 export const AcceptancePendingScreen = () => {
   useScreenView();
+
   const navigation = useNavigation<AcceptancePendingScreenNavigationProp>();
   const route = useRoute<AcceptancePendingScreenRouteProp>();
-  const { party, requestId } = route.params as any;
   const insets = useSafeAreaInsets();
-  const { displayNameMap } = useUserDisplayNames([party?.leaderId]);
+  const screenAnimatedStyle = useScreenEnterAnimation();
+  const {cancelRequest, data, error, loading, refetch} =
+    useTaxiAcceptancePendingData(route.params ?? {});
 
-  // Repository 패턴 훅 사용
-  const { requestStatus, cancelRequest } = useJoinRequestStatus(requestId);
+  const handleCancelRequest = React.useCallback(async () => {
+    try {
+      await cancelRequest();
+      navigation.goBack();
+    } catch (cancelError) {
+      console.error('taxi acceptance pending cancel failed', cancelError);
+      Alert.alert('오류', '동승 요청 취소에 실패했습니다.');
+    }
+  }, [cancelRequest, navigation]);
 
-  // 동승 요청 취소 핸들러
-  const handleCancelRequest = async () => {
-    Alert.alert(
-      '동승 요청 취소',
-      '동승 요청을 취소하시겠어요?',
-      [
-        {
-          text: '아니오',
-          style: 'cancel',
-        },
-        {
-          text: '네, 취소할게요',
-          style: 'destructive',
-          onPress: async () => {
-            if (!requestId) return;
+  React.useEffect(() => {
+    if (!data) {
+      return;
+    }
 
-            try {
-              await cancelRequest();
-              navigation.goBack();
-            } catch (error) {
-              console.error('동승 요청 취소 실패:', error);
-              Alert.alert('오류', '동승 요청 취소에 실패했습니다.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  // 요청 상태 변경 감지 - accepted 시 채팅 화면으로 이동, declined 시 이전 화면으로
-  useEffect(() => {
-    if (!requestStatus) return;
-
-    if (requestStatus.status === 'accepted') {
+    if (data.requestState === 'accepted') {
       navigation.reset({
         index: 1,
         routes: [
-          { name: 'TaxiMain' as any },
-          { name: 'Chat' as any, params: { partyId: party?.id } },
+          {name: 'TaxiMain'},
+          {name: 'Chat', params: {partyId: data.partyId}},
         ],
       });
-    } else if (requestStatus.status === 'declined') {
-      Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.');
-      navigation.popToTop();
+      return;
     }
-  }, [requestStatus, party?.id, navigation]);
+
+    if (data.requestState === 'declined') {
+      Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    }
+  }, [data, navigation]);
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-        <ScrollView 
-        contentContainerStyle={[styles.content, { paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom }]}
-        showsVerticalScrollIndicator={false}
-        >
-          {/* 상단 상태 카드 */}
-          <View style={styles.statusCard}>
-            <View style={styles.statusIconContainer}>
-              <Icon name="hourglass-outline" size={32} color={COLORS.accent.green} />
-            </View>
-            <ActivityIndicator size="large" color={COLORS.accent.green} style={{marginBottom: 16}} />
-            <Text style={styles.statusTitle}>수락 대기중</Text>
-            <Text style={styles.statusSubtitle}>
-              파티장의 동승 요청 수락을{'\n'}
-              기다리고 있습니다
-            </Text>
-            <Button title="취소하기" onPress={handleCancelRequest} style={styles.button} />
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        {loading && !data ? (
+          <View style={styles.stateWrap}>
+            <V2StateCard
+              description="동승 요청 대기 화면을 준비하고 있습니다."
+              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              title="수락 대기 화면 로딩 중"
+            />
           </View>
+        ) : null}
 
-          {/* 파티 정보 카드 */}
-          <View style={styles.partyCard}>
-            <Text style={styles.cardTitle}>파티 정보</Text>
-            
-            <View style={styles.routeContainer}>
-            <View style={styles.routeItem}>
-                <View style={styles.routeIconContainer}>
-                  <Icon name="radio-button-on" size={16} color={COLORS.accent.green} />
-                </View>
-              <Text style={styles.routeText}>{party?.departure?.name ?? ''}</Text>
-              </View>
-              
-              <View style={styles.routeLine} />
-              
-            <View style={styles.routeItem}>
-                <View style={styles.routeIconContainer}>
-                  <Icon name="location" size={16} color={COLORS.accent.green} />
-                </View>
-              <Text style={styles.routeText}>{party?.destination?.name ?? ''}</Text>
-              </View>
+        {!loading && error ? (
+          <View style={styles.stateWrap}>
+            <V2StateCard
+              actionLabel="다시 시도"
+              description={error}
+              icon={
+                <Icon
+                  color={V2_COLORS.accent.orange}
+                  name="refresh-outline"
+                  size={24}
+                />
+              }
+              onPressAction={() => {
+                refetch().catch(() => undefined);
+              }}
+              title="대기 정보를 불러오지 못했습니다"
+            />
+          </View>
+        ) : null}
+
+        {!loading && !error && data ? (
+          <View style={styles.content}>
+            <View
+              style={[
+                styles.mainSection,
+                {
+                  paddingTop: Math.max(insets.top, V2_SPACING.lg) + 20,
+                },
+              ]}>
+              <TaxiAcceptancePendingStatus
+                description={data.heroDescription}
+                title={data.heroTitle}
+              />
+
+              <TaxiAcceptancePendingInfoCard
+                departureLabel={data.route.departureLabel}
+                destinationLabel={data.route.destinationLabel}
+                rows={data.rows}
+                title={data.cardTitle}
+              />
             </View>
 
-            <View style={styles.partyDetails}>
-              <View style={styles.detailRow}>
-                <Icon name="time-outline" size={20} color={COLORS.text.secondary} />
-                <Text style={styles.detailLabel}>출발시간</Text>
-              <Text style={styles.detailValue}>{formatKoreanAmPmTime(party?.departureTime)}</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Icon name="person-outline" size={20} color={COLORS.text.secondary} />
-              <Text style={styles.detailLabel}>파티장</Text>
-              <Text style={styles.detailValue}>{displayNameMap[party?.leaderId] ?? party?.leaderId}</Text>
-              </View>
-              
-              <View style={styles.detailRow}>
-                <Icon name="people-outline" size={20} color={COLORS.text.secondary} />
-              <Text style={styles.detailLabel}>인원</Text>
-              <Text style={styles.detailValue}>{Array.isArray(party?.members) ? party.members.length : party?.members}/{party?.maxMembers}명</Text>
-              </View>
+            <View
+              style={[
+                styles.bottomSection,
+                {
+                  paddingBottom: Math.max(insets.bottom, V2_SPACING.lg) + 24,
+                },
+              ]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.88}
+                onPress={handleCancelRequest}
+                style={styles.cancelButton}>
+                <Icon
+                  color={V2_COLORS.text.strong}
+                  name="close-circle-outline"
+                  size={18}
+                />
+                <Text style={styles.cancelButtonLabel}>
+                  {data.cancelButtonLabel}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.cancelHint}>{data.cancelHintLabel}</Text>
             </View>
           </View>
-        </ScrollView>
+        ) : null}
+      </Animated.View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+  },
+  screen: {
+    flex: 1,
+  },
+  stateWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: V2_SPACING.lg,
   },
   content: {
-    flexGrow: 1,
-    padding: 20,
-    gap: 24,
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
   },
-  // 상태 카드 스타일
-  statusCard: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 20,
-    padding: 24,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: COLORS.accent.green + '20',
-  },
-  statusIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.accent.green + '15',
+  mainSection: {
+    flex: 1,
     justifyContent: 'center',
+  },
+  bottomSection: {
+    paddingTop: V2_SPACING.sm,
+  },
+  cancelButton: {
     alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.lg,
+    flexDirection: 'row',
+    gap: V2_SPACING.sm,
+    height: 60,
+    justifyContent: 'center',
+    ...V2_SHADOWS.card,
   },
-  statusTitle: {
-    ...TYPOGRAPHY.title2,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  statusSubtitle: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-
-  // 파티 카드 스타일
-  partyCard: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  cardTitle: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
+  cancelButtonLabel: {
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 20,
+    lineHeight: 21,
   },
-
-  // 경로 표시 스타일
-  routeContainer: {
-    marginBottom: 10,
-  },
-  routeItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  routeIconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  routeText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '500',
-    flex: 1,
-  },
-  routeLine: {
-    width: 2,
-    height: 16,
-    backgroundColor: COLORS.accent.green + '40',
-    marginLeft: 11,
-    marginVertical: 4,
-  },
-
-  // 파티 상세 정보 스타일
-  partyDetails: {
-    gap: 8,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  detailLabel: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    minWidth: 60,
-  },
-  detailValue: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '500',
-    flex: 1,
-  },
-
-  // 로딩 영역 스타일
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  loadingText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    marginTop: 12,
-  },
-  button: {
-    height: 40,
-    borderRadius: 12,
-    marginTop: 16,
+  cancelHint: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    paddingTop: V2_SPACING.sm,
+    textAlign: 'center',
   },
 });
