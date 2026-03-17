@@ -22,6 +22,7 @@ export type {
   VersionModalConfig,
 } from './data/repositories/IAppConfigRepository';
 export type {IAppSettingRepository} from './data/repositories/IAppSettingRepository';
+export type {ILegalDocumentRepository} from './data/repositories/ILegalDocumentRepository';
 export type {
   IInquiryFormRepository,
   SubmitInquiryFormPayload,
@@ -34,6 +35,7 @@ export type {
 } from './data/repositories/IInquiryRepository';
 
 export {useAppSettingData} from './hooks/useAppSettingData';
+export {useLegalDocumentData} from './hooks/useLegalDocumentData';
 export {useInquiryFormData} from './hooks/useInquiryFormData';
 export { useAppNotice } from './hooks/useAppNotice';
 export type { UseAppNoticeResult } from './hooks/useAppNotice';
@@ -52,6 +54,7 @@ export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
 export {MockAppSettingRepository} from './data/repositories/MockAppSettingRepository';
+export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
 export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
 export type {
@@ -63,6 +66,21 @@ export type {
   InquiryFormScreenViewData,
   InquiryTypeOptionViewData,
 } from './model/inquiryFormViewData';
+export type {
+  LegalDocumentBannerIconKey,
+  LegalDocumentBannerLineSource,
+  LegalDocumentBannerLineTone,
+  LegalDocumentBannerTone,
+  LegalDocumentKey,
+  LegalDocumentSectionSource,
+  LegalDocumentSource,
+} from './model/legalDocumentSource';
+export type {
+  LegalDocumentBannerLineViewData,
+  LegalDocumentBannerViewData,
+  LegalDocumentScreenViewData,
+  LegalDocumentSectionViewData,
+} from './model/legalDocumentViewData';
 
 export {
   buildAppNoticeForegroundNotification,
