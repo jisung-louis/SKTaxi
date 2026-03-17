@@ -23,6 +23,7 @@ export interface MyPageProfileSource {
 }
 
 export interface MyPageStatSource {
+  actionKey: Extract<MyPageMenuActionKey, 'myPosts' | 'bookmarks' | 'taxiHistory'>;
   id: string;
   label: string;
   value: number;

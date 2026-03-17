@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 import {
   V2_COLORS,
@@ -12,14 +12,29 @@ import type {MyPageStatViewData} from '../../model/myPageViewData';
 
 interface MyPageStatCardProps {
   item: MyPageStatViewData;
+  onPress?: (item: MyPageStatViewData) => void;
 }
 
-export const MyPageStatCard = ({item}: MyPageStatCardProps) => {
-  return (
-    <View style={styles.card}>
+export const MyPageStatCard = ({item, onPress}: MyPageStatCardProps) => {
+  const content = (
+    <>
       <Text style={styles.valueLabel}>{item.valueLabel}</Text>
       <Text style={styles.label}>{item.label}</Text>
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.card}>{content}</View>;
+  }
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      activeOpacity={0.88}
+      onPress={() => onPress(item)}
+      style={styles.card}>
+      {content}
+    </TouchableOpacity>
   );
 };
 

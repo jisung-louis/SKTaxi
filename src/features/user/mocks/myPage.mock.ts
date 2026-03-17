@@ -71,16 +71,19 @@ export const myPageMockData: MyPageSource = {
   ],
   stats: [
     {
+      actionKey: 'myPosts',
       id: 'post-count',
       label: '작성한 글',
-      value: 12,
+      value: 5,
     },
     {
+      actionKey: 'bookmarks',
       id: 'bookmark-count',
       label: '북마크',
-      value: 8,
+      value: 7,
     },
     {
+      actionKey: 'taxiHistory',
       id: 'taxi-usage-count',
       label: '택시 이용',
       value: 5,

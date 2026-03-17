@@ -47,11 +47,20 @@ export const MyScreen = () => {
   const [withdrawing, setWithdrawing] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
 
-  const handlePressMenuItem = React.useCallback(
-    (item: MyPageMenuItemViewData) => {
-      switch (item.actionKey) {
+  const openAction = React.useCallback(
+    (actionKey: MyPageMenuItemViewData['actionKey']) => {
+      switch (actionKey) {
         case 'profileEdit':
           navigation.navigate('ProfileEdit');
+          return;
+        case 'myPosts':
+          navigation.navigate('MyPosts');
+          return;
+        case 'bookmarks':
+          navigation.navigate('Bookmarks');
+          return;
+        case 'taxiHistory':
+          navigation.navigate('TaxiHistory');
           return;
         case 'notificationSettings':
           navigation.navigate('NotificationSettings');
@@ -65,14 +74,18 @@ export const MyScreen = () => {
         case 'appSettings':
           navigation.navigate('Setting');
           return;
-        case 'myPosts':
-        case 'bookmarks':
-        case 'taxiHistory':
         default:
           Alert.alert('구현 예정', '추후 구현 예정입니다.');
       }
     },
     [navigation],
+  );
+
+  const handlePressMenuItem = React.useCallback(
+    (item: MyPageMenuItemViewData) => {
+      openAction(item.actionKey);
+    },
+    [openAction],
   );
 
   const handleConfirmWithdraw = React.useCallback(
@@ -256,7 +269,11 @@ export const MyScreen = () => {
 
               <View style={styles.statsRow}>
                 {data.stats.map(item => (
-                  <MyPageStatCard key={item.id} item={item} />
+                  <MyPageStatCard
+                    key={item.id}
+                    item={item}
+                    onPress={stat => openAction(stat.actionKey)}
+                  />
                 ))}
               </View>
 

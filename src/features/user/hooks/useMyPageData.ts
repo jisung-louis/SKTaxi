@@ -69,6 +69,7 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
     title: section.title,
   })),
   stats: source.stats.map(stat => ({
+    actionKey: stat.actionKey,
     id: stat.id,
     label: stat.label,
     valueLabel: `${stat.value}`,

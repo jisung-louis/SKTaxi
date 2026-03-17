@@ -8,6 +8,7 @@ export interface MyPageProfileViewData {
 }
 
 export interface MyPageStatViewData {
+  actionKey: 'myPosts' | 'bookmarks' | 'taxiHistory';
   id: string;
   label: string;
   valueLabel: string;
