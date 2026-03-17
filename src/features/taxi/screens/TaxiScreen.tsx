@@ -175,12 +175,16 @@ export const TaxiScreen = () => {
         return;
       }
 
-      Alert.alert(
-        '다음 단계에서 연결합니다',
-        '파티 상세 진입은 다음 단계에서 route를 붙일 예정입니다.',
-      );
+      if (party.acceptancePendingSeed) {
+        navigation.navigate('AcceptancePending', {
+          seed: party.acceptancePendingSeed,
+        });
+        return;
+      }
+
+      Alert.alert('대기 정보를 찾을 수 없습니다', '잠시 후 다시 시도해주세요.');
     },
-    [handlePressMyPartyChat],
+    [handlePressMyPartyChat, navigation],
   );
 
   return (
