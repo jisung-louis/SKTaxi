@@ -6,6 +6,8 @@ export {V2DetailNotFoundState} from './V2DetailNotFoundState';
 export {V2DetailReactionChip} from './V2DetailReactionChip';
 export {V2FilterChips} from './V2FilterChips';
 export type {V2FilterChipItem} from './V2FilterChips';
+export {V2FormField} from './V2FormField';
+export {V2InfoBanner} from './V2InfoBanner';
 export {V2PageHeader} from './V2PageHeader';
 export {V2SettingsRow} from './V2SettingsRow';
 export {V2SettingsSection} from './V2SettingsSection';
