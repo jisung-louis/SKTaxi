@@ -76,9 +76,12 @@ const styles = StyleSheet.create({
   },
   image: {
     borderRadius: 12,
-    height: 160,
+    height: 400,
     marginTop: V2_SPACING.lg,
     width: '100%',
+    resizeMode: 'cover',
+    borderWidth: 1,
+    borderColor: V2_COLORS.border.default,
   },
   numberLabel: {
     color: V2_COLORS.text.inverse,

@@ -210,7 +210,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
           onPress={() => setAdminVisible(true)}
           style={styles.adminFab}>
           <Icon
-            color={V2_COLORS.text.primary}
+            color={V2_COLORS.text.inverse}
             name="shield-checkmark"
             size={16}
           />
@@ -295,8 +295,8 @@ export const LoginScreen = (_props: LoginScreenProps) => {
 const styles = StyleSheet.create({
   adminFab: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderColor: 'rgba(255,255,255,0.72)',
+    backgroundColor: 'rgba(16,16,16,0.88)',
+    borderColor: 'rgba(16,16,16,0.88)',
     borderRadius: 16,
     borderWidth: 1,
     bottom: 16,
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     ...V2_SHADOWS.card,
   },
   adminFabText: {
-    color: V2_COLORS.text.primary,
+    color: V2_COLORS.text.inverse,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
