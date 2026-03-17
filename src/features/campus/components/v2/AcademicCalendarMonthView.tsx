@@ -15,7 +15,7 @@ import type {
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 const CALENDAR_HORIZONTAL_PADDING = 16;
 const MONTH_DAY_HEIGHT = 36;
-const MONTH_BAR_HEIGHT = 8;
+const MONTH_BAR_HEIGHT = 12;
 const MONTH_BAR_GAP = 2;
 const MONTH_BASE_WEEK_HEIGHT = 52;
 
@@ -213,7 +213,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     height: MONTH_BAR_HEIGHT,
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     position: 'absolute',
   },
   monthBarLabel: {

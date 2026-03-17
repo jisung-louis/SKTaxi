@@ -85,8 +85,8 @@ const TIMETABLE_ACTION_LABEL = '시간표';
 const TIMETABLE_EXPAND_LABEL = '야간수업 펼치기';
 const TIMETABLE_COLLAPSE_LABEL = '야간수업 접기';
 const TAXI_ACTION_LABEL = '전체보기';
-const CAFETERIA_ACTION_LABEL = '주간메뉴';
-const ACADEMIC_ACTION_LABEL = '전체보기';
+const CAFETERIA_ACTION_LABEL = '학식 전체보기';
+const ACADEMIC_ACTION_LABEL = '학사일정 전체보기';
 const TIMETABLE_ROW_HEIGHT = 52;
 
 const getNoticeToneColors = (tone: CampusNoticeTone) => {
@@ -383,7 +383,7 @@ export const CampusScreen = () => {
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen('CafeteriaDetail')
                   }
-                  title="오늘의 학식"
+                  title="오늘의 추천 학식"
                 />
                 <CafeteriaCard
                   description={data.cafeteria.featuredMenu?.description ?? ''}
@@ -403,7 +403,7 @@ export const CampusScreen = () => {
                       'AcademicCalendarDetail',
                     )
                   }
-                  title="다가오는 일정"
+                  title="다가오는 학사일정"
                 />
                 <AcademicCalendarCard
                   items={data.academicCalendar.items}
@@ -992,7 +992,7 @@ const styles = StyleSheet.create({
     ...V2_SHADOWS.card,
   },
   section: {
-    marginBottom: V2_SPACING.lg,
+    marginBottom: V2_SPACING.xxl,
     paddingHorizontal: V2_SPACING.lg,
   },
   sectionHeader: {
