@@ -23,7 +23,8 @@ interface V2SelectionDropdownProps {
   onPressSelect: (value: string) => void;
   onPressTrigger: () => void;
   options: string[];
-  selectedValue: string;
+  placeholder?: string;
+  selectedValue?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -33,9 +34,12 @@ export const V2SelectionDropdown = ({
   onPressSelect,
   onPressTrigger,
   options,
+  placeholder = '',
   selectedValue,
   style,
 }: V2SelectionDropdownProps) => {
+  const triggerLabel = selectedValue || placeholder;
+
   return (
     <View style={[styles.wrapper, isOpen ? styles.wrapperRaised : undefined, style]}>
       <TouchableOpacity
@@ -43,7 +47,13 @@ export const V2SelectionDropdown = ({
         activeOpacity={0.82}
         onPress={onPressTrigger}
         style={styles.trigger}>
-        <Text style={styles.triggerLabel}>{selectedValue}</Text>
+        <Text
+          style={[
+            styles.triggerLabel,
+            !selectedValue ? styles.triggerPlaceholderLabel : undefined,
+          ]}>
+          {triggerLabel}
+        </Text>
         <Icon
           color={V2_COLORS.text.muted}
           name={isOpen ? 'chevron-up' : 'chevron-down'}
@@ -116,6 +126,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
+  },
+  triggerPlaceholderLabel: {
+    color: V2_COLORS.text.muted,
   },
   dropdown: {
     backgroundColor: V2_COLORS.background.surface,

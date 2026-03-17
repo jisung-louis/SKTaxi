@@ -1,43 +1,33 @@
-import { useEffect } from 'react';
+import {useCallback, useState} from 'react';
 
-import { useUserRepository } from '@/features/user';
+import {useUserRepository} from '@/features/user';
 
-import { PermissionOnboardingStep } from '../model/types';
-import { completePermissionOnboarding } from '../services/permissionOnboardingService';
-import { useAuth } from './useAuth';
+import {completePermissionOnboarding} from '../services/permissionOnboardingService';
+import {useAuth} from './useAuth';
 
-export const usePermissionOnboarding = (
-  currentStep: PermissionOnboardingStep,
-  completeOnboarding: () => void,
-) => {
-  const { user } = useAuth();
+export const usePermissionOnboarding = () => {
+  const {user} = useAuth();
   const userRepository = useUserRepository();
+  const [completing, setCompleting] = useState(false);
 
-  useEffect(() => {
-    if (currentStep !== 'complete') {
-      return;
-    }
+  const finalizeOnboarding = useCallback(
+    async (completeOnboarding: () => void) => {
+      try {
+        setCompleting(true);
+        await completePermissionOnboarding({
+          completeOnboarding,
+          userId: user?.uid,
+          userRepository,
+        });
+      } finally {
+        setCompleting(false);
+      }
+    },
+    [user?.uid, userRepository],
+  );
 
-    let cancelled = false;
-
-    const handleComplete = async () => {
-      await completePermissionOnboarding({
-        completeOnboarding: () => {
-          if (!cancelled) {
-            completeOnboarding();
-          }
-        },
-        userId: user?.uid,
-        userRepository,
-      });
-    };
-
-    handleComplete().catch(error => {
-      console.warn('권한 온보딩 완료 처리 실패:', error);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [completeOnboarding, currentStep, user?.uid, userRepository]);
+  return {
+    completing,
+    finalizeOnboarding,
+  };
 };
