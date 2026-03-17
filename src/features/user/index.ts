@@ -17,6 +17,7 @@ export type { UseInAppNotificationsResult } from './hooks/useInAppNotifications'
 
 export { useUserRepository } from './hooks/useUserRepository';
 export {useMyPageData} from './hooks/useMyPageData';
+export {useNotificationSettingsScreenData} from './hooks/useNotificationSettingsScreenData';
 export {
   useUserProfile,
   useUserProfileById,
@@ -54,6 +55,11 @@ export type {
   MyPageStatViewData,
 } from './model/myPageViewData';
 export type {
+  NotificationSettingItemViewData,
+  NotificationSettingMasterViewData,
+  NotificationSettingsScreenViewData,
+} from './model/notificationSettingsViewData';
+export type {
   UserAgreements,
   UserDoc,
   UserDisplayNameMap,
@@ -70,6 +76,7 @@ export { AccountModificationScreen } from './screens/AccountModificationScreen';
 export { NotificationScreen } from './screens/NotificationScreen';
 export { NotificationSettingsScreen } from './screens/NotificationSettingsScreen';
 export {MockMyPageRepository} from './data/repositories/MockMyPageRepository';
+export {MockNotificationSettingsScreenRepository} from './data/repositories/MockNotificationSettingsScreenRepository';
 
 export {
   completeUserPermissionOnboarding,
