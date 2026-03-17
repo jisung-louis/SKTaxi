@@ -9,6 +9,12 @@ import {
   ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import {
   V2_COLORS,
@@ -39,6 +45,32 @@ export const V2SelectionDropdown = ({
   style,
 }: V2SelectionDropdownProps) => {
   const triggerLabel = selectedValue || placeholder;
+  const progress = useSharedValue(isOpen ? 1 : 0);
+  const dropdownHeight = Math.min(options.length * 44, maxHeight);
+
+  React.useEffect(() => {
+    progress.value = withTiming(isOpen ? 1 : 0, {
+      duration: 220,
+    });
+  }, [isOpen, progress]);
+
+  const dropdownAnimatedStyle = useAnimatedStyle(() => ({
+    height: interpolate(progress.value, [0, 1], [0, dropdownHeight]),
+    opacity: progress.value,
+    transform: [
+      {
+        translateY: interpolate(progress.value, [0, 1], [-8, 0]),
+      },
+    ],
+  }));
+
+  const chevronAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg`,
+      },
+    ],
+  }));
 
   return (
     <View style={[styles.wrapper, isOpen ? styles.wrapperRaised : undefined, style]}>
@@ -54,16 +86,19 @@ export const V2SelectionDropdown = ({
           ]}>
           {triggerLabel}
         </Text>
-        <Icon
-          color={V2_COLORS.text.muted}
-          name={isOpen ? 'chevron-up' : 'chevron-down'}
-          size={16}
-        />
+        <Animated.View style={chevronAnimatedStyle}>
+          <Icon
+            color={V2_COLORS.text.muted}
+            name="chevron-down"
+            size={16}
+          />
+        </Animated.View>
       </TouchableOpacity>
 
-      {isOpen ? (
-        <View style={[styles.dropdown, {maxHeight}]}>
-          <ScrollView bounces={false} nestedScrollEnabled style={{maxHeight}}>
+      <Animated.View
+        pointerEvents={isOpen ? 'auto' : 'none'}
+        style={[styles.dropdown, dropdownAnimatedStyle]}>
+          <ScrollView bounces={false} nestedScrollEnabled style={{maxHeight: dropdownHeight}}>
             {options.map(option => {
               const isSelected = option === selectedValue;
 
@@ -96,8 +131,7 @@ export const V2SelectionDropdown = ({
               );
             })}
           </ScrollView>
-        </View>
-      ) : null}
+      </Animated.View>
     </View>
   );
 };

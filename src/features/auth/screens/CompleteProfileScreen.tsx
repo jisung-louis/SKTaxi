@@ -12,6 +12,13 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -43,6 +50,43 @@ const ProfileCheckRow = ({
   onPress: () => void;
   onPressLink?: () => void;
 }) => {
+  const progress = useSharedValue(checked ? 1 : 0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(checked ? 1 : 0, {
+      damping: 16,
+      stiffness: 220,
+      mass: 0.9,
+    });
+  }, [checked, progress]);
+
+  const animatedCheckBoxStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      [V2_COLORS.background.surface, '#4ADE80'],
+    ),
+    borderColor: interpolateColor(
+      progress.value,
+      [0, 1],
+      ['#D1D5DB', '#4ADE80'],
+    ),
+    transform: [
+      {
+        scale: interpolate(progress.value, [0, 1], [1, 1.04]),
+      },
+    ],
+  }));
+
+  const animatedCheckIconStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      {
+        scale: interpolate(progress.value, [0, 1], [0.5, 1]),
+      },
+    ],
+  }));
+
   return (
     <TouchableOpacity
       accessibilityRole="checkbox"
@@ -50,11 +94,11 @@ const ProfileCheckRow = ({
       activeOpacity={0.85}
       onPress={onPress}
       style={styles.checkRow}>
-      <View style={[styles.checkBox, checked ? styles.checkBoxChecked : undefined]}>
-        {checked ? (
+      <Animated.View style={[styles.checkBox, animatedCheckBoxStyle]}>
+        <Animated.View style={animatedCheckIconStyle}>
           <Icon color={V2_COLORS.text.inverse} name="checkmark" size={14} />
-        ) : null}
-      </View>
+        </Animated.View>
+      </Animated.View>
 
       <Text style={styles.checkLabel}>{label}</Text>
 
