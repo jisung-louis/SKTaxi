@@ -15,9 +15,9 @@ export interface CafeteriaReactionChipViewData {
 export interface CafeteriaMenuItemViewData {
   id: string;
   badges: CafeteriaMenuBadgeViewData[];
+  negativeReaction: CafeteriaReactionChipViewData;
   priceLabel: string;
   primaryReaction: CafeteriaReactionChipViewData;
-  secondaryReaction: CafeteriaReactionChipViewData;
   title: string;
 }
 

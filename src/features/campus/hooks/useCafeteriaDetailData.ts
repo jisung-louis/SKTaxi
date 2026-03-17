@@ -43,9 +43,9 @@ const toMenuItemViewData = (item: CafeteriaMenuItemSource) => ({
     countLabel: `${item.positiveCount}`,
     iconName: 'thumbs-up-outline',
   },
-  secondaryReaction: {
+  negativeReaction: {
     countLabel: `${item.secondaryCount}`,
-    iconName: 'chatbubble-ellipses-outline',
+    iconName: 'thumbs-down-outline',
   },
   title: item.title,
 });

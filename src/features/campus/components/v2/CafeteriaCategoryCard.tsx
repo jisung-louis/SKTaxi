@@ -55,8 +55,8 @@ export const CafeteriaCategoryCard = ({
                 iconName={item.primaryReaction.iconName}
               />
               <CafeteriaReactionChip
-                countLabel={item.secondaryReaction.countLabel}
-                iconName={item.secondaryReaction.iconName}
+                countLabel={item.negativeReaction.countLabel}
+                iconName={item.negativeReaction.iconName}
               />
             </View>
           </View>
