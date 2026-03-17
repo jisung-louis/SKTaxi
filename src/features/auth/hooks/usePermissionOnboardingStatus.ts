@@ -10,6 +10,56 @@ export interface PermissionStatus {
   needsOnboarding: boolean | null;
 }
 
+const IOS_AUTHORIZATION_CALLBACK_WAIT_MS = 350;
+const IOS_LOCATION_PROBE_TIMEOUT_MS = 1500;
+
+const resolveIosLocationPermission = (): Promise<boolean> =>
+  new Promise(resolve => {
+    let settled = false;
+
+    const finish = (value: boolean) => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      resolve(value);
+    };
+
+    const fallbackTimer = setTimeout(() => {
+      Geolocation.getCurrentPosition(
+        () => {
+          finish(true);
+        },
+        error => {
+          if (error?.code === 1) {
+            finish(false);
+            return;
+          }
+
+          // Permission is likely already granted and only location fix failed.
+          finish(true);
+        },
+        {
+          enableHighAccuracy: false,
+          maximumAge: 30000,
+          timeout: IOS_LOCATION_PROBE_TIMEOUT_MS,
+        },
+      );
+    }, IOS_AUTHORIZATION_CALLBACK_WAIT_MS);
+
+    Geolocation.requestAuthorization(
+      () => {
+        clearTimeout(fallbackTimer);
+        finish(true);
+      },
+      () => {
+        clearTimeout(fallbackTimer);
+        finish(false);
+      },
+    );
+  });
+
 export const usePermissionOnboardingStatus = () => {
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>({
     notification: null,
@@ -39,19 +89,7 @@ export const usePermissionOnboardingStatus = () => {
       let granted = false;
 
       if (Platform.OS === 'ios') {
-        await new Promise<void>(resolve => {
-          Geolocation.requestAuthorization(
-            () => {
-              granted = true;
-              resolve();
-            },
-            error => {
-              console.warn('iOS 위치 권한 요청 실패:', error);
-              granted = false;
-              resolve();
-            },
-          );
-        });
+        granted = await resolveIosLocationPermission();
       } else if (Platform.OS === 'android') {
         const result = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,

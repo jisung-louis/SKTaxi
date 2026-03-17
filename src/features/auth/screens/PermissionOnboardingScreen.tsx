@@ -263,10 +263,7 @@ export const PermissionOnboardingScreen = () => {
         </ScrollView>
 
         <View
-          style={[
-            styles.bottomActionWrap,
-            {paddingBottom: 20},
-          ]}>
+          style={styles.bottomActionWrap}>
           <AuthActionButton
             colors={currentViewData.buttonColors}
             disabled={false}
@@ -398,5 +395,6 @@ const styles = StyleSheet.create({
     paddingTop: 17,
     position: 'absolute',
     right: 0,
+    paddingBottom: 20,
   },
 });
