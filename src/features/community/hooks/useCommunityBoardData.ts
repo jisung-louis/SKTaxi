@@ -1,5 +1,4 @@
 import React from 'react';
-import {Alert} from 'react-native';
 import {format, formatDistanceToNow} from 'date-fns';
 import {ko} from 'date-fns/locale';
 import {useNavigation} from '@react-navigation/native';
@@ -174,11 +173,8 @@ export const useCommunityBoardData = () => {
   );
 
   const handleOpenWrite = React.useCallback(() => {
-    Alert.alert(
-      '준비 중',
-      '글쓰기 기능은 Spring REST API 연동 단계에서 연결할 예정입니다.',
-    );
-  }, []);
+    navigation.navigate('BoardWrite');
+  }, [navigation]);
 
   const handleApplySearch = React.useCallback(
     (filters: CommunityBoardSearchFilters) => {
