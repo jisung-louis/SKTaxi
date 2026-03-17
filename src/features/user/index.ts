@@ -1,6 +1,9 @@
 export { NotificationSettingItem } from './components/NotificationSettingItem';
+export {MyPageMenuSection} from './components/v2/MyPageMenuSection';
+export {MyPageStatCard} from './components/v2/MyPageStatCard';
 
 export { FirebaseUserRepository } from './data/repositories/FirebaseUserRepository';
+export type {IMyPageRepository} from './data/repositories/IMyPageRepository';
 export {
   FirebaseNotificationRepository,
   FirestoreNotificationRepository,
@@ -13,6 +16,7 @@ export type { IUserRepository } from './data/repositories/IUserRepository';
 export type { UseInAppNotificationsResult } from './hooks/useInAppNotifications';
 
 export { useUserRepository } from './hooks/useUserRepository';
+export {useMyPageData} from './hooks/useMyPageData';
 export {
   useUserProfile,
   useUserProfileById,
@@ -35,6 +39,21 @@ export { useUserBookmarks } from './hooks/useUserBookmarks';
 export type { UseUserBookmarksResult } from './hooks/useUserBookmarks';
 
 export type {
+  MyPageMenuActionKey,
+  MyPageMenuItemSource,
+  MyPageMenuSectionSource,
+  MyPageProfileSource,
+  MyPageSource,
+  MyPageStatSource,
+} from './model/myPageSource';
+export type {
+  MyPageMenuItemViewData,
+  MyPageMenuSectionViewData,
+  MyPageProfileViewData,
+  MyPageScreenViewData,
+  MyPageStatViewData,
+} from './model/myPageViewData';
+export type {
   UserAgreements,
   UserDoc,
   UserDisplayNameMap,
@@ -50,6 +69,7 @@ export { ProfileEditScreen } from './screens/ProfileEditScreen';
 export { AccountModificationScreen } from './screens/AccountModificationScreen';
 export { NotificationScreen } from './screens/NotificationScreen';
 export { NotificationSettingsScreen } from './screens/NotificationSettingsScreen';
+export {MockMyPageRepository} from './data/repositories/MockMyPageRepository';
 
 export {
   completeUserPermissionOnboarding,
