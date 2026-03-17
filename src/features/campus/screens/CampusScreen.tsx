@@ -1,226 +1,34 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Image,
-} from 'react-native';
+import {ActivityIndicator, ScrollView, StyleSheet, View} from 'react-native';
 import {
   type NavigationProp,
   type ParamListBase,
   useNavigation,
 } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
-import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {type CampusStackParamList} from '@/app/navigation/types';
 import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
+import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
+import {V2StateCard} from '@/shared/design-system/components/V2StateCard';
+import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
-import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
+
+import {CampusAcademicCalendarPreviewCard} from '../components/v2/CampusAcademicCalendarPreviewCard';
+import {CampusCafeteriaPreviewCarousel} from '../components/v2/CampusCafeteriaPreviewCarousel';
+import {CampusHomeHeader} from '../components/v2/CampusHomeHeader';
+import {CampusNoticePreviewCard} from '../components/v2/CampusNoticePreviewCard';
+import {CampusQuickMenuGrid} from '../components/v2/CampusQuickMenuGrid';
+import {CampusSectionHeader} from '../components/v2/CampusSectionHeader';
+import {CampusTaxiPreviewCards} from '../components/v2/CampusTaxiPreviewCards';
+import {CampusTimetablePreviewCard} from '../components/v2/CampusTimetablePreviewCard';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
-} from '@/shared/design-system/tokens';
-
+  CAMPUS_HOME_ACTION_LABELS,
+  CAMPUS_HOME_QUICK_MENU_ITEMS,
+} from '../constants/campusHomePreview';
 import {useCampusHomeViewData} from '../hooks/useCampusHomeViewData';
-import type {
-  CampusAcademicEventBadgeViewData,
-  CampusAcademicEventViewData,
-  CampusCafeteriaRecommendedMenuViewData,
-  CampusHighlightTone,
-  CampusNoticeItemViewData,
-  CampusNoticeTone,
-  CampusTaxiPartyViewData,
-  CampusTimetablePeriodViewData,
-  CampusTimetableSessionViewData,
-} from '../model/campusHome';
-
-type QuickMenuItem = {
-  label: string;
-  icon: string;
-  iconColor: string;
-  backgroundColor: string;
-  routeName: keyof CampusStackParamList;
-};
-
-const QUICK_MENU_ITEMS: readonly QuickMenuItem[] = [
-  {
-    label: '시간표',
-    icon: 'calendar-outline',
-    iconColor: V2_COLORS.accent.purple,
-    backgroundColor: V2_COLORS.accent.purpleSoft,
-    routeName: 'TimetableDetail',
-  },
-  {
-    label: '학식',
-    icon: 'restaurant-outline',
-    iconColor: V2_COLORS.accent.orange,
-    backgroundColor: V2_COLORS.accent.orangeSoft,
-    routeName: 'CafeteriaDetail',
-  },
-  {
-    label: '학사일정',
-    icon: 'calendar-clear-outline',
-    iconColor: V2_COLORS.accent.blue,
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    routeName: 'AcademicCalendarDetail',
-  },
-  {
-    label: '설정',
-    icon: 'settings-outline',
-    iconColor: V2_COLORS.text.secondary,
-    backgroundColor: V2_COLORS.background.subtle,
-    routeName: 'Setting',
-  },
-] as const;
-
-const NOTICE_ACTION_LABEL = '전체보기';
-const TIMETABLE_ACTION_LABEL = '시간표';
-const TIMETABLE_EXPAND_LABEL = '야간수업 펼치기';
-const TIMETABLE_COLLAPSE_LABEL = '야간수업 접기';
-const TAXI_ACTION_LABEL = '전체보기';
-const CAFETERIA_ACTION_LABEL = '학식 전체 보기';
-const ACADEMIC_ACTION_LABEL = '학사일정 전체보기';
-const TIMETABLE_ROW_HEIGHT = 52;
-
-const getNoticeToneColors = (tone: CampusNoticeTone) => {
-  switch (tone) {
-    case 'blue':
-      return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
-      };
-    case 'orange':
-      return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
-      };
-    case 'purple':
-      return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
-        textColor: V2_COLORS.accent.purple,
-      };
-    case 'brand':
-    default:
-      return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
-      };
-  }
-};
-
-const getHighlightToneColors = (tone: CampusHighlightTone) => {
-  switch (tone) {
-    case 'orange':
-      return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
-        accentColor: V2_COLORS.accent.orange,
-      };
-    case 'pink':
-      return {
-        backgroundColor: V2_COLORS.accent.pinkSoft,
-        textColor: V2_COLORS.status.danger,
-        accentColor: V2_COLORS.status.danger,
-      };
-    case 'brand':
-      return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
-        accentColor: V2_COLORS.brand.primary,
-      };
-    case 'blue':
-    default:
-      return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
-        accentColor: V2_COLORS.accent.blue,
-      };
-  }
-};
-
-type RenderedTimetableRow =
-  | {
-      type: 'empty';
-      period: CampusTimetablePeriodViewData;
-    }
-  | {
-      type: 'session';
-      period: CampusTimetablePeriodViewData;
-      session: CampusTimetableSessionViewData;
-      renderedSpan: number;
-      endTimeLabel?: string;
-    };
-
-const buildVisibleTimetableRows = ({
-  periods,
-  sessions,
-  visibleEndPeriod,
-}: {
-  periods: CampusTimetablePeriodViewData[];
-  sessions: CampusTimetableSessionViewData[];
-  visibleEndPeriod: number;
-}): RenderedTimetableRow[] => {
-  const rows: RenderedTimetableRow[] = [];
-  const periodsByNumber = new Map(
-    periods.map(period => [period.periodNumber, period]),
-  );
-  const sortedSessions = [...sessions].sort(
-    (left, right) => left.startPeriod - right.startPeriod,
-  );
-
-  let currentPeriodNumber = 1;
-
-  while (currentPeriodNumber <= visibleEndPeriod) {
-    const period = periodsByNumber.get(currentPeriodNumber);
-
-    if (!period) {
-      currentPeriodNumber += 1;
-      continue;
-    }
-
-    const session = sortedSessions.find(
-      candidate =>
-        candidate.startPeriod <= currentPeriodNumber &&
-        candidate.endPeriod >= currentPeriodNumber,
-    );
-
-    if (!session) {
-      rows.push({
-        type: 'empty',
-        period,
-      });
-      currentPeriodNumber += 1;
-      continue;
-    }
-
-    const renderedEndPeriod = Math.min(session.endPeriod, visibleEndPeriod);
-    const renderedSpan = renderedEndPeriod - currentPeriodNumber + 1;
-    const endPeriod = periodsByNumber.get(renderedEndPeriod);
-
-    rows.push({
-      type: 'session',
-      period,
-      session,
-      renderedSpan,
-      endTimeLabel: renderedSpan > 1 ? endPeriod?.endTimeLabel : undefined,
-    });
-
-    currentPeriodNumber = renderedEndPeriod + 1;
-  }
-
-  return rows;
-};
 
 export const CampusScreen = () => {
   useScreenView();
@@ -233,7 +41,6 @@ export const CampusScreen = () => {
     [navigation],
   );
   const {data, loading, error, refetch} = useCampusHomeViewData();
-  const [isTimetableExpanded, setIsTimetableExpanded] = React.useState(false);
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -242,118 +49,68 @@ export const CampusScreen = () => {
     [insets.bottom],
   );
 
-  const canExpandTimetable = React.useMemo(() => {
-    if (!data) {
-      return false;
-    }
-
-    return (
-      !data.timetable.emptyState &&
-      data.timetable.periods.length > data.timetable.collapsedVisibleCount
-    );
-  }, [data]);
-
-  const shouldAutoExpandTimetable = React.useMemo(() => {
-    if (!data) {
-      return false;
-    }
-
-    return data.timetable.sessions.some(
-      session =>
-        session.startPeriod <= data.timetable.collapsedVisibleCount &&
-        session.endPeriod > data.timetable.collapsedVisibleCount,
-    );
-  }, [data]);
-
-  const timetableStateKey = React.useMemo(() => {
-    if (!data) {
-      return 'empty';
-    }
-
-    return [
-      data.timetable.dateLabel,
-      data.timetable.sessions
-        .map(
-          session =>
-            `${session.id}:${session.startPeriod}-${session.endPeriod}`,
-        )
-        .join('|'),
-    ].join(':');
-  }, [data]);
-
-  React.useEffect(() => {
-    setIsTimetableExpanded(shouldAutoExpandTimetable);
-  }, [shouldAutoExpandTimetable, timetableStateKey]);
-
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         <ScrollView
           contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <View style={styles.wordmarkContainer}>
-              <Image
-                source={require('../../../../assets/icons/skuri_icon.png')}
-                style={styles.wordmarkImage}
-              />
-              <Text style={styles.wordmark}>SKURI</Text>
-            </View>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => campusEntryNavigation.openCampusScreen('Profile')}
-              style={styles.profileButton}>
-              <Icon
-                color={V2_COLORS.text.secondary}
-                name="person-outline"
-                size={18}
-              />
-            </TouchableOpacity>
-          </View>
+          <CampusHomeHeader
+            onPressNotification={() =>
+            {
+              // TODO : 알림 버튼 누르면 알림 화면으로 이동
+            }
+            }
+            onPressProfile={() =>
+              campusEntryNavigation.openCampusScreen('Profile')
+            }
+          />
 
           {loading && !data ? (
-            <ScreenStateCard
-              description="캠퍼스 정보를 불러오는 중입니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
-              title="Campus 화면 준비 중"
-            />
+            <View style={styles.section}>
+              <V2StateCard
+                description="캠퍼스 정보를 불러오는 중입니다."
+                icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+                title="Campus 화면 준비 중"
+              />
+            </View>
           ) : null}
 
           {error && !data ? (
-            <ScreenStateCard
-              actionLabel="다시 시도"
-              description={error}
-              icon={
-                <Icon
-                  color={V2_COLORS.accent.orange}
-                  name="refresh-outline"
-                  size={26}
-                />
-              }
-              onPressAction={() => {
-                refetch();
-              }}
-              title="Campus 화면을 불러오지 못했습니다"
-            />
+            <View style={styles.section}>
+              <V2StateCard
+                actionLabel="다시 시도"
+                description={error}
+                icon={
+                  <Icon
+                    color={V2_COLORS.accent.orange}
+                    name="refresh-outline"
+                    size={26}
+                  />
+                }
+                onPressAction={refetch}
+                title="Campus 화면을 불러오지 못했습니다"
+              />
+            </View>
           ) : null}
 
           {data ? (
             <>
               <View style={styles.section}>
-                <SectionHeader
-                  actionLabel={NOTICE_ACTION_LABEL}
+                <CampusSectionHeader
+                  actionLabel={CAMPUS_HOME_ACTION_LABELS.notices}
                   onPressAction={campusEntryNavigation.openNoticeList}
                   title="읽지 않은 공지"
                 />
-                <NoticeCard
+                <CampusNoticePreviewCard
                   items={data.notices.items}
                   onPressItem={campusEntryNavigation.openNoticeList}
                 />
               </View>
 
               <View style={styles.section}>
-                <SectionHeader
-                  actionLabel={TIMETABLE_ACTION_LABEL}
+                <CampusSectionHeader
+                  actionLabel={CAMPUS_HOME_ACTION_LABELS.timetable}
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen('TimetableDetail', {
                       initialView: 'all',
@@ -362,40 +119,35 @@ export const CampusScreen = () => {
                   subtitle={data.timetable.dateLabel}
                   title="오늘 시간표"
                 />
-                <TimetableCard
-                  emptyState={data.timetable.emptyState}
+                <CampusTimetablePreviewCard
                   collapsedVisibleCount={data.timetable.collapsedVisibleCount}
-                  isExpanded={isTimetableExpanded}
-                  onToggleExpanded={() => {
-                    setIsTimetableExpanded(previous => !previous);
-                  }}
+                  emptyState={data.timetable.emptyState}
                   periods={data.timetable.periods}
                   sessions={data.timetable.sessions}
-                  showToggle={canExpandTimetable}
                 />
               </View>
 
               <View style={styles.section}>
-                <SectionHeader
-                  actionLabel={TAXI_ACTION_LABEL}
+                <CampusSectionHeader
+                  actionLabel={CAMPUS_HOME_ACTION_LABELS.taxi}
                   onPressAction={campusEntryNavigation.openTaxiMain}
                   title="모집 중인 택시"
                 />
-                <TaxiCards
+                <CampusTaxiPreviewCards
                   items={data.taxi.items}
                   onPressItem={campusEntryNavigation.openTaxiMain}
                 />
               </View>
 
               <View style={styles.section}>
-                <SectionHeader
-                  actionLabel={CAFETERIA_ACTION_LABEL}
+                <CampusSectionHeader
+                  actionLabel={CAMPUS_HOME_ACTION_LABELS.cafeteria}
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen('CafeteriaDetail')
                   }
                   title="오늘의 추천 학식"
                 />
-                <CafeteriaCards
+                <CampusCafeteriaPreviewCarousel
                   items={data.cafeteria.recommendedMenus}
                   onPressItem={() =>
                     campusEntryNavigation.openCampusScreen('CafeteriaDetail')
@@ -404,8 +156,8 @@ export const CampusScreen = () => {
               </View>
 
               <View style={styles.section}>
-                <SectionHeader
-                  actionLabel={ACADEMIC_ACTION_LABEL}
+                <CampusSectionHeader
+                  actionLabel={CAMPUS_HOME_ACTION_LABELS.academicCalendar}
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen(
                       'AcademicCalendarDetail',
@@ -413,7 +165,7 @@ export const CampusScreen = () => {
                   }
                   title="다가오는 학사일정"
                 />
-                <AcademicCalendarCard
+                <CampusAcademicCalendarPreviewCard
                   items={data.academicCalendar.items}
                   onPressItem={() =>
                     campusEntryNavigation.openCampusScreen(
@@ -423,33 +175,12 @@ export const CampusScreen = () => {
                 />
               </View>
 
-              <View style={styles.quickMenuSection}>
-                <Text style={styles.sectionTitle}>빠른 메뉴</Text>
-                <View style={styles.quickMenuGrid}>
-                  {QUICK_MENU_ITEMS.map(item => (
-                    <TouchableOpacity
-                      key={item.label}
-                      activeOpacity={0.82}
-                      onPress={() =>
-                        campusEntryNavigation.openCampusScreen(item.routeName)
-                      }
-                      style={styles.quickMenuItem}>
-                      <View
-                        style={[
-                          styles.quickMenuIconBox,
-                          {backgroundColor: item.backgroundColor},
-                        ]}>
-                        <Icon
-                          color={item.iconColor}
-                          name={item.icon}
-                          size={22}
-                        />
-                      </View>
-                      <Text style={styles.quickMenuLabel}>{item.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
+              <CampusQuickMenuGrid
+                items={CAMPUS_HOME_QUICK_MENU_ITEMS}
+                onPressItem={routeName => {
+                  campusEntryNavigation.openCampusScreen(routeName);
+                }}
+              />
             </>
           ) : null}
         </ScrollView>
@@ -458,1084 +189,16 @@ export const CampusScreen = () => {
   );
 };
 
-type SectionHeaderProps = {
-  title: string;
-  subtitle?: string;
-  actionLabel?: string;
-  onPressAction?: () => void;
-};
-
-const SectionHeader = ({
-  title,
-  subtitle,
-  actionLabel,
-  onPressAction,
-}: SectionHeaderProps) => {
-  return (
-    <View style={styles.sectionHeader}>
-      <View>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        {subtitle ? (
-          <Text style={styles.sectionSubtitle}>{subtitle}</Text>
-        ) : null}
-      </View>
-      {actionLabel && onPressAction ? (
-        <TouchableOpacity activeOpacity={0.8} onPress={onPressAction}>
-          <Text style={styles.sectionAction}>{actionLabel}</Text>
-        </TouchableOpacity>
-      ) : null}
-    </View>
-  );
-};
-
-type ScreenStateCardProps = {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  actionLabel?: string;
-  onPressAction?: () => void;
-};
-
-const ScreenStateCard = ({
-  title,
-  description,
-  icon,
-  actionLabel,
-  onPressAction,
-}: ScreenStateCardProps) => {
-  return (
-    <View style={styles.section}>
-      <View style={styles.stateCard}>
-        <View style={styles.stateIcon}>{icon}</View>
-        <Text style={styles.stateTitle}>{title}</Text>
-        <Text style={styles.stateDescription}>{description}</Text>
-        {actionLabel && onPressAction ? (
-          <TouchableOpacity
-            activeOpacity={0.82}
-            onPress={onPressAction}
-            style={styles.stateButton}>
-            <Text style={styles.stateButtonLabel}>{actionLabel}</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-    </View>
-  );
-};
-
-type NoticeCardProps = {
-  items: CampusNoticeItemViewData[];
-  onPressItem: () => void;
-};
-
-const NoticeCard = ({items, onPressItem}: NoticeCardProps) => {
-  if (items.length === 0) {
-    return (
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyTitle}>새로운 공지가 없습니다</Text>
-        <Text style={styles.emptyDescription}>
-          확인하지 않은 공지가 생기면 여기에 표시됩니다.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.card}>
-      {items.map((item, index) => {
-        const toneColors = getNoticeToneColors(item.tone);
-
-        return (
-          <React.Fragment key={item.id}>
-            <TouchableOpacity
-              activeOpacity={0.82}
-              onPress={onPressItem}
-              style={styles.noticeRow}>
-              <View style={styles.noticeDot} />
-              <View style={styles.noticeContent}>
-                <View style={styles.noticeMetaRow}>
-                  <View
-                    style={[
-                      styles.noticeCategoryPill,
-                      {backgroundColor: toneColors.backgroundColor},
-                    ]}>
-                    <Text
-                      style={[
-                        styles.noticeCategoryLabel,
-                        {color: toneColors.textColor},
-                      ]}>
-                      {item.categoryLabel}
-                    </Text>
-                  </View>
-                  <Text style={styles.noticeDate}>{item.publishedAtLabel}</Text>
-                </View>
-                <Text numberOfLines={1} style={styles.noticeTitle}>
-                  {item.title}
-                </Text>
-              </View>
-              <Icon
-                color={V2_COLORS.text.muted}
-                name="chevron-forward-outline"
-                size={16}
-              />
-            </TouchableOpacity>
-            {index < items.length - 1 ? (
-              <View style={styles.cardSeparator} />
-            ) : null}
-          </React.Fragment>
-        );
-      })}
-    </View>
-  );
-};
-
-type TimetableCardProps = {
-  periods: CampusTimetablePeriodViewData[];
-  sessions: CampusTimetableSessionViewData[];
-  collapsedVisibleCount: number;
-  emptyState?: {title: string; description: string};
-  showToggle: boolean;
-  isExpanded: boolean;
-  onToggleExpanded: () => void;
-};
-
-const TimetableCard = ({
-  periods,
-  sessions,
-  collapsedVisibleCount,
-  emptyState,
-  showToggle,
-  isExpanded,
-  onToggleExpanded,
-}: TimetableCardProps) => {
-  if (emptyState || periods.length === 0) {
-    return (
-      <View style={[styles.card, styles.timetableEmptyCard]}>
-        <Icon color={V2_COLORS.accent.orange} name="sunny-outline" size={34} />
-        <Text style={styles.timetableEmptyTitle}>{emptyState?.title}</Text>
-        <Text style={styles.timetableEmptyDescription}>
-          {emptyState?.description}
-        </Text>
-      </View>
-    );
-  }
-
-  const visibleEndPeriod =
-    isExpanded || !showToggle
-      ? periods[periods.length - 1]?.periodNumber ?? collapsedVisibleCount
-      : collapsedVisibleCount;
-
-  const rows = buildVisibleTimetableRows({
-    periods,
-    sessions,
-    visibleEndPeriod,
-  });
-
-  return (
-    <View style={styles.card}>
-      {rows.map((row, index) => {
-        if (row.type === 'empty') {
-          return (
-            <View
-              key={row.period.id}
-              style={[
-                styles.timetableRow,
-                styles.timetableEmptyRow,
-                index === rows.length - 1 && !showToggle
-                  ? styles.timetableRowLast
-                  : null,
-              ]}>
-              <View style={styles.timetableTimelineCell}>
-                <Text style={styles.timetablePeriodLabel}>
-                  {row.period.periodLabel}
-                </Text>
-                <Text style={styles.timetableTimeLabel}>
-                  {row.period.startTimeLabel}
-                </Text>
-              </View>
-              <View style={styles.timetableEmptyRowContent}>
-                <View style={styles.timetableEmptyDot} />
-                <Text style={styles.timetableEmptyRowLabel}>수업 없음</Text>
-              </View>
-            </View>
-          );
-        }
-
-        const toneColors = row.session.tone
-          ? getHighlightToneColors(row.session.tone)
-          : undefined;
-        const rowHeight = row.renderedSpan * TIMETABLE_ROW_HEIGHT;
-
-        return (
-          <View
-            key={`${row.session.id}-${row.period.periodNumber}`}
-            style={[
-              styles.timetableRow,
-              styles.timetableSessionRow,
-              {
-                backgroundColor: toneColors?.backgroundColor,
-                height: rowHeight,
-              },
-              index === rows.length - 1 && !showToggle
-                ? styles.timetableRowLast
-                : null,
-            ]}>
-            <View
-              style={[
-                styles.timetableTimelineCell,
-                row.renderedSpan > 1
-                  ? styles.timetableTimelineCellSpanned
-                  : null,
-              ]}>
-              <View style={styles.timetableTimelineTop}>
-                <Text
-                  style={[
-                    styles.timetablePeriodLabel,
-                    row.session.isCurrent
-                      ? styles.timetablePeriodLabelCurrent
-                      : null,
-                  ]}>
-                  {row.period.periodLabel}
-                </Text>
-                <Text
-                  style={[
-                    styles.timetableTimeLabel,
-                    row.session.isCurrent
-                      ? styles.timetableTimeLabelCurrent
-                      : null,
-                  ]}>
-                  {row.period.startTimeLabel}
-                </Text>
-              </View>
-              {row.endTimeLabel ? (
-                <Text
-                  style={[
-                    styles.timetableTimeLabelBottom,
-                    row.session.isCurrent
-                      ? styles.timetableTimeLabelCurrent
-                      : null,
-                  ]}>
-                  {row.endTimeLabel}
-                </Text>
-              ) : null}
-            </View>
-            <View style={styles.timetableClassContent}>
-              <View
-                style={[
-                  styles.timetableAccentBar,
-                  {backgroundColor: toneColors?.accentColor},
-                ]}
-              />
-              <View style={styles.timetableClassTextGroup}>
-                <View style={styles.timetableClassTitleRow}>
-                  <Text numberOfLines={1} style={styles.timetableClassTitle}>
-                    {row.session.title}
-                  </Text>
-                  {row.session.status ? (
-                    <View
-                      style={[
-                        styles.statusPill,
-                        {
-                          backgroundColor: getHighlightToneColors(
-                            row.session.status.tone,
-                          ).backgroundColor,
-                        },
-                      ]}>
-                      <Text
-                        style={[
-                          styles.statusPillLabel,
-                          {
-                            color: getHighlightToneColors(
-                              row.session.status.tone,
-                            ).textColor,
-                          },
-                        ]}>
-                        {row.session.status.label}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text numberOfLines={1} style={styles.timetableMetaText}>
-                  {row.session.instructorLabel}
-                  {row.session.roomLabel ? ` · ${row.session.roomLabel}` : ''}
-                </Text>
-              </View>
-            </View>
-          </View>
-        );
-      })}
-      {showToggle ? (
-        <TouchableOpacity
-          activeOpacity={0.82}
-          onPress={onToggleExpanded}
-          style={styles.timetableToggleButton}>
-          <Icon color={V2_COLORS.accent.blue} name="moon-outline" size={16} />
-          <Text style={styles.timetableToggleLabel}>
-            {isExpanded ? TIMETABLE_COLLAPSE_LABEL : TIMETABLE_EXPAND_LABEL}
-          </Text>
-          <Icon
-            color={V2_COLORS.accent.blue}
-            name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-            size={16}
-          />
-        </TouchableOpacity>
-      ) : null}
-    </View>
-  );
-};
-
-type TaxiCardsProps = {
-  items: CampusTaxiPartyViewData[];
-  onPressItem: () => void;
-};
-
-const TaxiCards = ({items, onPressItem}: TaxiCardsProps) => {
-  if (items.length === 0) {
-    return (
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyTitle}>현재 모집 중인 택시가 없습니다</Text>
-        <Text style={styles.emptyDescription}>
-          새로운 합승 모집이 생기면 이 섹션에서 바로 확인할 수 있습니다.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.stackList}>
-      {items.map(item => (
-        <TouchableOpacity
-          key={item.id}
-          activeOpacity={0.82}
-          onPress={onPressItem}
-          style={styles.taxiCard}>
-          <View style={styles.taxiInfoRow}>
-            <View style={styles.taxiIconBadge}>
-              <Icon
-                color={V2_COLORS.brand.primary}
-                name="bag-handle-outline"
-                size={14}
-              />
-            </View>
-            <Text numberOfLines={1} style={styles.taxiRouteText}>
-              <Text style={styles.taxiRouteTextStrong}>{item.routeLabel}</Text>
-              <Text style={styles.taxiRouteTextMuted}>
-                {` · ${item.departureTimeLabel} · ${item.seatStatusLabel}`}
-              </Text>
-            </Text>
-          </View>
-          <Icon
-            color={V2_COLORS.text.muted}
-            name="chevron-forward-outline"
-            size={16}
-          />
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-};
-
-type CafeteriaCardsProps = {
-  items: CampusCafeteriaRecommendedMenuViewData[];
-  onPressItem: () => void;
-};
-
-const CafeteriaCards = ({
-  items,
-  onPressItem,
-}: CafeteriaCardsProps) => {
-  if (items.length === 0) {
-    return (
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyTitle}>오늘 등록된 학식 메뉴가 없습니다</Text>
-        <Text style={styles.emptyDescription}>
-          주간메뉴가 올라오면 이 카드에 대표 메뉴를 보여줍니다.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <FlatList
-      horizontal
-      data={items}
-      keyExtractor={item => item.id}
-      renderItem={({item}) => (
-        <TouchableOpacity
-          activeOpacity={0.82}
-          onPress={onPressItem}
-          style={styles.cafeteriaRecommendationCard}>
-          <View style={styles.cafeteriaCardContent}>
-            <LinearGradient
-              colors={['#FB923C', '#F97316']}
-              end={{x: 1, y: 1}}
-              start={{x: 0, y: 0}}
-              style={styles.cafeteriaIconBox}>
-              <Icon
-                color={V2_COLORS.text.inverse}
-                name="restaurant-outline"
-                size={28}
-              />
-            </LinearGradient>
-
-            <View style={styles.cafeteriaTextGroup}>
-              <View style={styles.cafeteriaCategoryPill}>
-                <Text numberOfLines={1} style={styles.cafeteriaCategoryLabel}>
-                  {item.categoryLabel}
-                </Text>
-              </View>
-
-              <Text numberOfLines={1} style={styles.cafeteriaTitle}>
-                {item.title}
-              </Text>
-              <Text style={styles.cafeteriaPrice}>{item.priceLabel}</Text>
-
-              <View style={styles.cafeteriaLikeRow}>
-                <Icon
-                  color={V2_COLORS.text.muted}
-                  name="thumbs-up-outline"
-                  size={12}
-                />
-                <Text style={styles.cafeteriaLikeCount}>
-                  {item.likeCountLabel}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      )}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.cafeteriaListContent}
-      style={styles.cafeteriaList}
-    />
-  );
-};
-
-type AcademicCalendarCardProps = {
-  items: CampusAcademicEventViewData[];
-  onPressItem: () => void;
-};
-
-const AcademicCalendarCard = ({
-  items,
-  onPressItem,
-}: AcademicCalendarCardProps) => {
-  if (items.length === 0) {
-    return (
-      <View style={styles.emptyCard}>
-        <Text style={styles.emptyTitle}>예정된 학사일정이 없습니다</Text>
-        <Text style={styles.emptyDescription}>
-          중요한 학교 일정이 생기면 여기에 정리됩니다.
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.card}>
-      {items.map((item, index) => (
-        <React.Fragment key={item.id}>
-          <TouchableOpacity
-            activeOpacity={0.82}
-            onPress={onPressItem}
-            style={styles.academicRow}>
-            <View style={styles.academicDateBox}>
-              <Text style={styles.academicMonthText}>{item.monthLabel}</Text>
-              <Text style={styles.academicDayText}>{item.dayLabel}</Text>
-            </View>
-            <View style={styles.academicContent}>
-              <View style={styles.academicTitleRow}>
-                <View style={styles.academicTitleInline}>
-                  <Text numberOfLines={1} style={styles.academicTitle}>
-                    {item.title}
-                  </Text>
-                  {item.badge?.placement === 'inline' ? (
-                    <EventBadge badge={item.badge} />
-                  ) : null}
-                </View>
-                {item.badge?.placement !== 'inline' && item.badge ? (
-                  <EventBadge badge={item.badge} />
-                ) : null}
-              </View>
-              <Text style={styles.academicDateRange}>
-                {item.dateRangeLabel}
-              </Text>
-            </View>
-          </TouchableOpacity>
-          {index < items.length - 1 ? (
-            <View style={styles.cardSeparator} />
-          ) : null}
-        </React.Fragment>
-      ))}
-    </View>
-  );
-};
-
-const EventBadge = ({badge}: {badge: CampusAcademicEventBadgeViewData}) => {
-  const toneColors = getHighlightToneColors(badge.tone);
-
-  return (
-    <View
-      style={[
-        styles.eventBadge,
-        {backgroundColor: toneColors.backgroundColor},
-      ]}>
-      <Text style={[styles.eventBadgeLabel, {color: toneColors.textColor}]}>
-        {badge.label}
-      </Text>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: V2_COLORS.background.page,
+    flex: 1,
   },
   screen: {
     flex: 1,
   },
-  header: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.xxl,
-    paddingBottom: V2_SPACING.lg,
-  },
-  wordmarkContainer: {
-    alignItems: 'center',
-    textAlign: 'center',
-    flexDirection: 'row',
-    gap: V2_SPACING.lg,
-  },
-  wordmarkImage: {
-    width: 48,
-    height: 48,
-    borderRadius: V2_RADIUS.sm,
-  },
-  wordmark: {
-    color: V2_COLORS.brand.logo,
-    fontSize: 48,
-    fontWeight: '700',
-    lineHeight: 64,
-  },
-  profileButton: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-    ...V2_SHADOWS.card,
-  },
   section: {
     marginBottom: V2_SPACING.xxl,
     paddingHorizontal: V2_SPACING.lg,
-  },
-  sectionHeader: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: V2_SPACING.md,
-  },
-  sectionTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 24,
-  },
-  sectionSubtitle: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2,
-  },
-  sectionAction: {
-    color: V2_COLORS.brand.primary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
-    overflow: 'hidden',
-    ...V2_SHADOWS.card,
-  },
-  cardSeparator: {
-    backgroundColor: V2_COLORS.border.subtle,
-    height: 1,
-  },
-  stateCard: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
-    ...V2_SHADOWS.card,
-  },
-  stateIcon: {
-    alignItems: 'center',
-    height: 32,
-    justifyContent: 'center',
-    marginBottom: V2_SPACING.md,
-    width: 32,
-  },
-  stateTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 24,
-    marginBottom: V2_SPACING.xs,
-    textAlign: 'center',
-  },
-  stateDescription: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  stateButton: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
-    marginTop: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.sm,
-  },
-  stateButtonLabel: {
-    color: V2_COLORS.brand.primaryStrong,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
-    ...V2_SHADOWS.card,
-  },
-  emptyTitle: {
-    color: V2_COLORS.text.strong,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
-    marginBottom: V2_SPACING.xs,
-    textAlign: 'center',
-  },
-  emptyDescription: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  noticeRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: V2_SPACING.md,
-    minHeight: 76,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
-  },
-  noticeDot: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
-    height: 8,
-    width: 8,
-  },
-  noticeContent: {
-    flex: 1,
-  },
-  noticeMetaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.xs,
-  },
-  noticeCategoryPill: {
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
-    paddingVertical: 2,
-  },
-  noticeCategoryLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  noticeDate: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  noticeTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  timetableRow: {
-    borderBottomColor: V2_COLORS.border.subtle,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    minHeight: TIMETABLE_ROW_HEIGHT,
-  },
-  timetableRowLast: {
-    borderBottomWidth: 0,
-  },
-  timetableEmptyRow: {
-    backgroundColor: V2_COLORS.background.surface,
-  },
-  timetableSessionRow: {},
-  timetableTimelineCell: {
-    alignItems: 'center',
-    borderColor: V2_COLORS.border.subtle,
-    borderRightWidth: 1,
-    justifyContent: 'center',
-    paddingVertical: V2_SPACING.sm,
-    width: 64,
-  },
-  timetableTimelineCellSpanned: {
-    justifyContent: 'space-between',
-  },
-  timetableTimelineTop: {
-    alignItems: 'center',
-  },
-  timetablePeriodLabel: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 16,
-  },
-  timetablePeriodLabelCurrent: {
-    color: V2_COLORS.accent.blue,
-  },
-  timetableTimeLabel: {
-    color: V2_COLORS.text.muted,
-    fontSize: 10,
-    lineHeight: 15,
-    marginTop: 2,
-  },
-  timetableTimeLabelCurrent: {
-    color: V2_COLORS.accent.blue,
-  },
-  timetableTimeLabelBottom: {
-    color: V2_COLORS.accent.blue,
-    fontSize: 10,
-    lineHeight: 15,
-  },
-  timetableEmptyRowContent: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: V2_SPACING.lg,
-  },
-  timetableEmptyDot: {
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
-    height: 4,
-    width: 4,
-  },
-  timetableEmptyRowLabel: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  timetableClassContent: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: V2_SPACING.md,
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
-  },
-  timetableAccentBar: {
-    alignSelf: 'stretch',
-    borderRadius: V2_RADIUS.pill,
-    marginVertical: 2,
-    width: 4,
-  },
-  timetableClassTextGroup: {
-    flex: 1,
-  },
-  timetableClassTitleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
-    marginBottom: 2,
-  },
-  timetableClassTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  timetableMetaText: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  statusPill: {
-    borderRadius: V2_RADIUS.pill,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  statusPillLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 15,
-  },
-  timetableToggleButton: {
-    alignItems: 'center',
-    borderColor: V2_COLORS.border.subtle,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: 4,
-    justifyContent: 'center',
-    minHeight: 44,
-    paddingHorizontal: V2_SPACING.lg,
-  },
-  timetableToggleLabel: {
-    color: V2_COLORS.accent.blue,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  timetableEmptyCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 140,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
-  },
-  timetableEmptyTitle: {
-    color: V2_COLORS.text.strong,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-    marginTop: V2_SPACING.sm,
-  },
-  timetableEmptyDescription: {
-    color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2,
-  },
-  stackList: {
-    gap: V2_SPACING.md,
-  },
-  taxiCard: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 58,
-    paddingHorizontal: 17,
-    paddingVertical: 15,
-    ...V2_SHADOWS.card,
-  },
-  taxiInfoRow: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginRight: V2_SPACING.sm,
-  },
-  taxiIconBadge: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
-  taxiRouteText: {
-    color: V2_COLORS.text.muted,
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  taxiRouteTextStrong: {
-    color: V2_COLORS.text.primary,
-    fontWeight: '600',
-  },
-  taxiRouteTextMuted: {
-    color: V2_COLORS.text.muted,
-  },
-  cafeteriaCardContent: {
-    flexDirection: 'row',
-    gap: V2_SPACING.md,
-    padding: V2_SPACING.lg,
-  },
-  cafeteriaList: {
-    marginHorizontal: -V2_SPACING.lg,
-  },
-  cafeteriaListContent: {
-    columnGap: V2_SPACING.md,
-    paddingBottom: V2_SPACING.sm,
-    paddingHorizontal: V2_SPACING.lg,
-  },
-  cafeteriaRecommendationCard: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
-    borderWidth: 1,
-    minHeight: 125,
-    width: 280,
-    ...V2_SHADOWS.card,
-  },
-  cafeteriaIconBox: {
-    alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
-    height: 64,
-    justifyContent: 'center',
-    width: 64,
-  },
-  cafeteriaTextGroup: {
-    flex: 1,
-  },
-  cafeteriaCategoryPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: V2_COLORS.accent.orangeSoft,
-    borderRadius: V2_RADIUS.pill,
-    marginBottom: V2_SPACING.xs,
-    paddingHorizontal: V2_SPACING.sm,
-    paddingVertical: 2,
-  },
-  cafeteriaCategoryLabel: {
-    color: V2_COLORS.accent.orange,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  cafeteriaTitle: {
-    color: V2_COLORS.text.primary,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-    marginBottom: V2_SPACING.xs,
-  },
-  cafeteriaPrice: {
-    color: V2_COLORS.accent.orange,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-    marginBottom: V2_SPACING.sm,
-  },
-  cafeteriaLikeRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: V2_SPACING.xs,
-  },
-  cafeteriaLikeCount: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  academicRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: V2_SPACING.md,
-    minHeight: 80,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
-  },
-  academicDateBox: {
-    alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    borderRadius: V2_RADIUS.md,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  academicMonthText: {
-    color: V2_COLORS.accent.blue,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  academicDayText: {
-    color: V2_COLORS.accent.blue,
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 28,
-  },
-  academicContent: {
-    flex: 1,
-  },
-  academicTitleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 2,
-  },
-  academicTitleInline: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginRight: V2_SPACING.sm,
-  },
-  academicTitle: {
-    color: V2_COLORS.text.primary,
-    flexShrink: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  academicDateRange: {
-    color: V2_COLORS.text.tertiary,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  eventBadge: {
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
-    paddingVertical: 4,
-  },
-  eventBadgeLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  quickMenuSection: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: 4,
-  },
-  quickMenuGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  quickMenuItem: {
-    alignItems: 'center',
-    width: 76,
-  },
-  quickMenuIconBox: {
-    alignItems: 'center',
-    borderRadius: V2_RADIUS.lg,
-    height: 56,
-    justifyContent: 'center',
-    marginBottom: V2_SPACING.sm,
-    width: 56,
-  },
-  quickMenuLabel: {
-    color: V2_COLORS.text.strong,
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-    textAlign: 'center',
   },
 });
