@@ -1,182 +1,264 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Alert,
   Keyboard,
+  ScrollView,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { Dropdown } from '@/shared/ui/Dropdown';
-import { Text } from '@/shared/ui/Text';
-import { DEPARTMENT_OPTIONS } from '@/shared/constants/departments';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks';
+import type {RootStackParamList} from '@/app/navigation/types';
+import {DEPARTMENT_OPTIONS} from '@/shared/constants/departments';
+import {V2SelectionDropdown, V2StackHeader} from '@/shared/design-system/components';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks';
 
-import { useCompleteProfile } from '../hooks/useCompleteProfile';
+import {AuthActionButton} from '../components/v2/AuthActionButton';
+import {useCompleteProfile} from '../hooks/useCompleteProfile';
+
+const NICKNAME_MAX_LENGTH = 7;
+
+const ProfileCheckRow = ({
+  checked,
+  label,
+  linkLabel,
+  onPress,
+  onPressLink,
+}: {
+  checked: boolean;
+  label: string;
+  linkLabel?: string;
+  onPress: () => void;
+  onPressLink?: () => void;
+}) => {
+  return (
+    <TouchableOpacity
+      accessibilityRole="checkbox"
+      accessibilityState={{checked}}
+      activeOpacity={0.85}
+      onPress={onPress}
+      style={styles.checkRow}>
+      <View style={[styles.checkBox, checked ? styles.checkBoxChecked : undefined]}>
+        {checked ? (
+          <Icon color={V2_COLORS.text.inverse} name="checkmark" size={14} />
+        ) : null}
+      </View>
+
+      <Text style={styles.checkLabel}>{label}</Text>
+
+      {linkLabel && onPressLink ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.75}
+          onPress={onPressLink}>
+          <Text style={styles.checkLinkLabel}>{linkLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </TouchableOpacity>
+  );
+};
 
 export const CompleteProfileScreen = () => {
   useScreenView();
 
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { loading, submitProfile } = useCompleteProfile();
-  const [displayName, setDisplayName] = useState('');
-  const [department, setDepartment] = useState('');
-  const [studentId, setStudentId] = useState('');
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const {loading, submitProfile} = useCompleteProfile();
+  const [displayName, setDisplayName] = React.useState('');
+  const [department, setDepartment] = React.useState('');
+  const [studentId, setStudentId] = React.useState('');
+  const [ageConfirmed, setAgeConfirmed] = React.useState(false);
+  const [termsAccepted, setTermsAccepted] = React.useState(false);
+  const [isDropdownOpen, setDropdownOpen] = React.useState(false);
 
-  const handleSave = async () => {
+  const isReady =
+    displayName.trim().length > 0 &&
+    displayName.trim().length <= NICKNAME_MAX_LENGTH &&
+    department.trim().length > 0 &&
+    studentId.trim().length > 0 &&
+    ageConfirmed &&
+    termsAccepted;
+
+  const closeDropdown = React.useCallback(() => {
+    setDropdownOpen(false);
+  }, []);
+
+  const handleSave = React.useCallback(async () => {
     try {
       await submitProfile({
-        displayName,
-        department,
-        studentId,
         ageConfirmed,
+        department,
+        displayName,
+        studentId,
         termsAccepted,
       });
     } catch (error: any) {
       Alert.alert(
         '오류',
-        error?.message ||
-          '프로필 저장에 실패했습니다. 다시 시도해주세요.',
+        error?.message || '프로필 저장에 실패했습니다. 다시 시도해주세요.',
       );
     }
-  };
+  }, [
+    ageConfirmed,
+    department,
+    displayName,
+    studentId,
+    submitProfile,
+    termsAccepted,
+  ]);
+
+  const handlePressBack = React.useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <V2StackHeader onPressBack={handlePressBack} title="프로필 설정" />
+
       <TouchableWithoutFeedback
-        onPress={Keyboard.dismiss}
         accessible={false}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>프로필 설정</Text>
+        onPress={() => {
+          Keyboard.dismiss();
+          closeDropdown();
+        }}>
+        <View style={styles.screen}>
+          <ScrollView
+            contentContainerStyle={[
+              styles.content,
+              {paddingBottom: 148 + insets.bottom},
+            ]}
+            keyboardShouldPersistTaps="handled"
+            onScrollBeginDrag={() => {
+              Keyboard.dismiss();
+              closeDropdown();
+            }}
+            showsVerticalScrollIndicator={false}>
+            <View style={styles.heroBadge}>
+              <LinearGradient
+                colors={['#4ADE80', '#22C55E']}
+                end={{x: 1, y: 1}}
+                start={{x: 0, y: 0}}
+                style={styles.heroBadgeInner}>
+                <Icon color={V2_COLORS.text.inverse} name="person" size={30} />
+              </LinearGradient>
+            </View>
+
+            <Text style={styles.title}>프로필을 설정해요</Text>
             <Text style={styles.subtitle}>
-              닉네임, 학과, 학번을 입력해주세요
+              성결대 학생임을 확인하고 서비스를 이용할 수 있어요
             </Text>
-          </View>
 
-          <View style={styles.form}>
-            <Text style={styles.label}>닉네임</Text>
-            <TextInput
-              style={styles.input}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="닉네임을 입력하세요"
-              placeholderTextColor={COLORS.text.disabled}
-              maxLength={7}
-            />
-
-            <View style={styles.labelGroup}>
-              <Text style={styles.labelWithGap}>학과</Text>
-              <Text style={styles.labelDescription}>
-                학과별 맞춤 공지사항 알림을 받을 수 있어요
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>
+                닉네임 <Text style={styles.requiredMark}>*</Text>
               </Text>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  maxLength={NICKNAME_MAX_LENGTH}
+                  onChangeText={setDisplayName}
+                  onFocus={closeDropdown}
+                  placeholder="사용할 닉네임을 입력해요"
+                  placeholderTextColor={V2_COLORS.text.muted}
+                  style={styles.input}
+                  value={displayName}
+                />
+                <Text style={styles.countLabel}>
+                  {displayName.length}/{NICKNAME_MAX_LENGTH}
+                </Text>
+              </View>
             </View>
-            <Dropdown
-              value={department}
-              options={DEPARTMENT_OPTIONS}
-              onSelect={setDepartment}
-              placeholder="학과를 선택해주세요"
-              modalTitle="학과 선택"
-            />
 
-            <View style={styles.labelGroup}>
-              <Text style={styles.labelWithGap}>학번</Text>
-              <Text style={styles.labelDescription}>
-                학번은 공개되지 않아요
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>
+                학과 <Text style={styles.requiredMark}>*</Text>
               </Text>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={studentId}
-              onChangeText={setStudentId}
-              placeholder="예: 20231234"
-              keyboardType="numeric"
-              placeholderTextColor={COLORS.text.disabled}
-            />
-
-            <View style={styles.checkRow}>
-              <TouchableOpacity
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: ageConfirmed }}
-                style={[
-                  styles.checkBox,
-                  ageConfirmed && styles.checkBoxChecked,
-                ]}
-                onPress={() => setAgeConfirmed(value => !value)}
-              >
-                {ageConfirmed && (
-                  <Icon
-                    name="checkmark"
-                    size={14}
-                    color={COLORS.background.primary}
-                  />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setAgeConfirmed(value => !value)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.checkLabel}>
-                  성결대 학생이고 19세 이상이에요.
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.checkRow}>
-              <TouchableOpacity
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: termsAccepted }}
-                style={[
-                  styles.checkBox,
-                  termsAccepted && styles.checkBoxChecked,
-                ]}
-                onPress={() => setTermsAccepted(value => !value)}
-              >
-                {termsAccepted && (
-                  <Icon
-                    name="checkmark"
-                    size={14}
-                    color={COLORS.background.primary}
-                  />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setTermsAccepted(value => !value)}
-                accessibilityRole="button"
-              >
-                <Text style={styles.checkLabel}>
-                  이용약관(EULA 포함)에 동의해요.
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate?.('TermsOfUseForAuth');
+              <V2SelectionDropdown
+                isOpen={isDropdownOpen}
+                onPressSelect={value => {
+                  setDepartment(value);
+                  setDropdownOpen(false);
                 }}
-                accessibilityLabel="이용 약관 보기"
-              >
-                <Text style={styles.linkText}> 약관 보기</Text>
-              </TouchableOpacity>
+                onPressTrigger={() => {
+                  Keyboard.dismiss();
+                  setDropdownOpen(current => !current);
+                }}
+                options={DEPARTMENT_OPTIONS}
+                placeholder="학과를 선택해요"
+                selectedValue={department}
+                style={styles.dropdown}
+              />
             </View>
 
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSave}
-              disabled={loading}
-            >
-              <Text style={styles.saveButtonText}>
-                {loading ? '저장 중...' : '완료'}
+            <View style={styles.fieldBlock}>
+              <Text style={styles.fieldLabel}>
+                학번 <Text style={styles.requiredMark}>*</Text>
               </Text>
-            </TouchableOpacity>
+              <TextInput
+                keyboardType="number-pad"
+                maxLength={8}
+                onChangeText={value => {
+                  setStudentId(value.replace(/[^0-9]/g, ''));
+                }}
+                onFocus={closeDropdown}
+                placeholder="학번을 입력해요 (예: 20241234)"
+                placeholderTextColor={V2_COLORS.text.muted}
+                style={styles.input}
+                value={studentId}
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.checkSection}>
+              <ProfileCheckRow
+                checked={ageConfirmed}
+                label="성결대 학생이고 19세 이상이에요"
+                onPress={() => setAgeConfirmed(value => !value)}
+              />
+              <ProfileCheckRow
+                checked={termsAccepted}
+                label="이용약관(EULA 포함)에 동의해요"
+                linkLabel="약관 보기"
+                onPress={() => setTermsAccepted(value => !value)}
+                onPressLink={() => navigation.navigate('TermsOfUseForAuth' as keyof RootStackParamList)}
+              />
+            </View>
+          </ScrollView>
+
+          <View
+            style={[
+              styles.footer,
+              {
+                paddingBottom: 20 + insets.bottom,
+              },
+            ]}>
+            <AuthActionButton
+              colors={['#4ADE80', '#22C55E']}
+              disabled={!isReady}
+              label={loading ? '저장 중...' : '프로필 설정 완료'}
+              loading={loading}
+              onPress={handleSave}
+            />
+
+            {!isReady ? (
+              <Text style={styles.footerHelper}>
+                모든 항목을 입력하고 약관에 동의해주세요
+              </Text>
+            ) : null}
           </View>
         </View>
       </TouchableWithoutFeedback>
@@ -185,103 +267,143 @@ export const CompleteProfileScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  checkBox: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: COLORS.border.dark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: COLORS.background.primary,
-    marginRight: 8,
-  },
-  checkBoxChecked: {
-    backgroundColor: COLORS.accent.green,
-    borderColor: COLORS.accent.green,
-  },
-  checkLabel: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-  },
-  checkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  container: {
+  safeArea: {
+    backgroundColor: V2_COLORS.background.surface,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+  },
+  screen: {
+    backgroundColor: V2_COLORS.background.surface,
+    flex: 1,
   },
   content: {
-    flex: 1,
+    paddingHorizontal: V2_SPACING.xxl,
+    paddingTop: 24,
   },
-  form: {
-    paddingHorizontal: 24,
+  heroBadge: {
+    marginBottom: 16,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 24,
-    gap: 8,
-  },
-  input: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
-    padding: 14,
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    height: 48,
-  },
-  label: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  labelDescription: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.disabled,
-    marginBottom: 8,
-    marginTop: 4,
-  },
-  labelGroup: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  labelWithGap: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    marginBottom: 8,
-    marginTop: 16,
-    fontWeight: '600',
-  },
-  linkText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.accent.green,
-    fontWeight: '700',
-  },
-  saveButton: {
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 12,
-    padding: 16,
+  heroBadgeInner: {
     alignItems: 'center',
-    marginTop: 24,
-  },
-  saveButtonText: {
-    color: COLORS.text.buttonText,
-    ...TYPOGRAPHY.body1,
-    fontWeight: '600',
-  },
-  subtitle: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
+    borderRadius: 24,
+    height: 64,
+    justifyContent: 'center',
+    width: 64,
+    shadowColor: '#4ADE80',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 8,
   },
   title: {
-    ...TYPOGRAPHY.title1,
-    color: COLORS.text.primary,
+    color: V2_COLORS.text.primary,
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: V2_COLORS.text.muted,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 32,
+  },
+  fieldBlock: {
+    marginBottom: 20,
+  },
+  fieldLabel: {
+    color: V2_COLORS.text.strong,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  requiredMark: {
+    color: V2_COLORS.brand.primary,
+  },
+  inputWrap: {
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  input: {
+    backgroundColor: V2_COLORS.background.page,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
+    borderWidth: 1,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    height: 50,
+    lineHeight: 20,
+    paddingHorizontal: 17,
+    paddingRight: 64,
+  },
+  countLabel: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    position: 'absolute',
+    right: 16,
+  },
+  dropdown: {
+    zIndex: 10,
+  },
+  divider: {
+    backgroundColor: V2_COLORS.border.subtle,
+    height: 1,
+    marginBottom: 24,
+    marginTop: 12,
+  },
+  checkSection: {
+    gap: 16,
+  },
+  checkRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  checkBox: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    borderWidth: 2,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  checkBoxChecked: {
+    backgroundColor: '#4ADE80',
+    borderColor: '#4ADE80',
+  },
+  checkLabel: {
+    color: V2_COLORS.text.strong,
+    flexShrink: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  checkLinkLabel: {
+    color: V2_COLORS.brand.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+    textDecorationLine: 'underline',
+  },
+  footer: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopColor: V2_COLORS.border.subtle,
+    borderTopWidth: 1,
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: V2_SPACING.xxl,
+    paddingTop: 21,
+    position: 'absolute',
+    right: 0,
+  },
+  footerHelper: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 8,
+    textAlign: 'center',
   },
 });

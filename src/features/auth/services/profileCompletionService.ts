@@ -8,7 +8,7 @@ export const validateCompleteProfileForm = (
   values: CompleteProfileFormValues,
 ) => {
   if (!values.ageConfirmed || !values.termsAccepted) {
-    return '계정 사용 전에 18세 이상 확인과 이용약관(EULA 포함) 동의가 필요합니다.';
+    return '계정 사용 전에 19세 이상 확인과 이용약관(EULA 포함) 동의가 필요합니다.';
   }
 
   if (
