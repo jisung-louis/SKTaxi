@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import {
   type NavigationProp,
@@ -291,7 +292,13 @@ export const CampusScreen = () => {
           contentContainerStyle={contentContainerStyle}
           showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Text style={styles.wordmark}>SKURI</Text>
+            <View style={styles.wordmarkContainer}>
+              <Image
+                source={require('../../../../assets/icons/skuri_icon.png')}
+                style={styles.wordmarkImage}
+              />
+              <Text style={styles.wordmark}>SKURI</Text>
+            </View>
             <TouchableOpacity
               activeOpacity={0.8}
               onPress={() => campusEntryNavigation.openCampusScreen('Profile')}
@@ -995,18 +1002,22 @@ const styles = StyleSheet.create({
     paddingTop: V2_SPACING.xxl,
     paddingBottom: V2_SPACING.lg,
   },
+  wordmarkContainer: {
+    alignItems: 'center',
+    textAlign: 'center',
+    flexDirection: 'row',
+    gap: V2_SPACING.lg,
+  },
+  wordmarkImage: {
+    width: 48,
+    height: 48,
+    borderRadius: V2_RADIUS.sm,
+  },
   wordmark: {
     color: V2_COLORS.brand.logo,
-    fontFamily: Platform.select({
-      ios: 'Snell Roundhand',
-      android: 'cursive',
-      default: undefined,
-    }),
-    fontSize: 30,
-    fontStyle: 'italic',
+    fontSize: 48,
     fontWeight: '700',
-    letterSpacing: -0.6,
-    lineHeight: 32,
+    lineHeight: 64,
   },
   profileButton: {
     alignItems: 'center',
