@@ -125,10 +125,7 @@ const InfoRow = ({
         </View>
       ) : (
         <Text
-          style={[
-            styles.infoValue,
-            row.tone === 'accent' ? styles.infoValueAccent : null,
-          ]}>
+          style={styles.infoValue}>
           {row.value}
         </Text>
       )}
@@ -285,7 +282,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   infoRows: {
-    paddingTop: V2_SPACING.md,
+    paddingTop: V2_SPACING.sm,
   },
   infoRow: {
     alignItems: 'center',
@@ -321,9 +318,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-  },
-  infoValueAccent: {
-    color: V2_COLORS.brand.primaryStrong,
   },
   infoRowRightInline: {
     alignItems: 'center',

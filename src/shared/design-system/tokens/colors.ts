@@ -3,6 +3,7 @@ export const V2_COLORS = {
     page: '#F9FAFB',
     surface: '#FFFFFF',
     subtle: '#F3F4F6',
+    gray: '#E5E7EB',
   },
   text: {
     primary: '#111827',

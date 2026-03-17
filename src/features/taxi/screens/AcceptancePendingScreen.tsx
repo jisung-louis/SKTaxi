@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
@@ -29,6 +30,7 @@ import {TaxiAcceptancePendingStatus} from '../components/v2/TaxiAcceptancePendin
 import {useTaxiAcceptancePendingData} from '../hooks/useTaxiAcceptancePendingData';
 
 import type {TaxiStackParamList} from '../model/navigation';
+import { WINDOW_HEIGHT } from '@/shared/constants/layout';
 
 type AcceptancePendingScreenNavigationProp = NativeStackNavigationProp<
   TaxiStackParamList,
@@ -119,12 +121,14 @@ export const AcceptancePendingScreen = () => {
         ) : null}
 
         {!loading && !error && data ? (
-          <View style={styles.content}>
+          <ScrollView
+            contentContainerStyle={[styles.content, {paddingBottom: insets.bottom + V2_SPACING.lg}]}
+            showsVerticalScrollIndicator={false}>
             <View
               style={[
                 styles.mainSection,
                 {
-                  paddingTop: Math.max(insets.top, V2_SPACING.lg) + 20,
+                  paddingTop: Math.max(WINDOW_HEIGHT * 0.18, insets.top + V2_SPACING.lg),
                 },
               ]}>
               <TaxiAcceptancePendingStatus
@@ -132,21 +136,6 @@ export const AcceptancePendingScreen = () => {
                 title={data.heroTitle}
               />
 
-              <TaxiAcceptancePendingInfoCard
-                departureLabel={data.route.departureLabel}
-                destinationLabel={data.route.destinationLabel}
-                rows={data.rows}
-                title={data.cardTitle}
-              />
-            </View>
-
-            <View
-              style={[
-                styles.bottomSection,
-                {
-                  paddingBottom: Math.max(insets.bottom, V2_SPACING.lg) + 24,
-                },
-              ]}>
               <TouchableOpacity
                 accessibilityRole="button"
                 activeOpacity={0.88}
@@ -161,10 +150,22 @@ export const AcceptancePendingScreen = () => {
                   {data.cancelButtonLabel}
                 </Text>
               </TouchableOpacity>
-
-              <Text style={styles.cancelHint}>{data.cancelHintLabel}</Text>
             </View>
-          </View>
+
+            <View
+              style={[
+                {
+                  paddingBottom: Math.max(insets.bottom, V2_SPACING.lg) + 48,
+                },
+              ]}>
+              <TaxiAcceptancePendingInfoCard
+                departureLabel={data.route.departureLabel}
+                destinationLabel={data.route.destinationLabel}
+                rows={data.rows}
+                title={data.cardTitle}
+              />
+            </View>
+          </ScrollView>
         ) : null}
       </Animated.View>
     </SafeAreaView>
@@ -185,7 +186,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: V2_SPACING.lg,
   },
   content: {
-    flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 24,
   },
@@ -193,18 +193,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  bottomSection: {
-    paddingTop: V2_SPACING.sm,
-  },
   cancelButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: V2_COLORS.background.gray,
     borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
     gap: V2_SPACING.sm,
     height: 60,
     justifyContent: 'center',
     ...V2_SHADOWS.card,
+    marginVertical: V2_SPACING.xxl,
   },
   cancelButtonLabel: {
     color: V2_COLORS.text.strong,

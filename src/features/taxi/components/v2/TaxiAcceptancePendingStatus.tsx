@@ -31,7 +31,7 @@ const LoadingDot = ({
   progress: SharedValue<number>;
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
-    const shiftedProgress = (progress.value + index / 3) % 1;
+    const shiftedProgress = (progress.value - index / 3 + 1) % 1;
 
     return {
       opacity: interpolate(
@@ -122,7 +122,7 @@ export const TaxiAcceptancePendingStatus = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingBottom: 32,
+    paddingBottom: V2_SPACING.md,
   },
   loaderWrap: {
     alignItems: 'center',

@@ -113,7 +113,6 @@ const buildViewData = (
   source: TaxiAcceptancePendingSourceData,
 ): TaxiAcceptancePendingViewData => ({
   cancelButtonLabel: source.cancelButtonLabel,
-  cancelHintLabel: source.cancelHintLabel,
   cardTitle: source.cardTitle,
   heroDescription: source.statusDescription,
   heroTitle: source.statusTitle,
@@ -147,13 +146,6 @@ const buildViewData = (
       label: '현재 인원',
       type: 'members',
       value: `${source.currentMemberCount}/${source.maxMemberCount}명`,
-    },
-    {
-      id: 'fare',
-      label: '예상 요금',
-      type: 'text',
-      tone: 'accent',
-      value: source.estimatedFareLabel,
     },
   ],
 });

@@ -36,7 +36,6 @@ export interface TaxiAcceptancePendingSeed {
 export interface TaxiAcceptancePendingSourceData
   extends TaxiAcceptancePendingSeed {
   cancelButtonLabel: string;
-  cancelHintLabel: string;
   cardTitle: string;
   requestState: TaxiAcceptancePendingRequestState;
   statusDescription: string;
@@ -67,18 +66,10 @@ export type TaxiAcceptancePendingInfoRowViewData =
       label: string;
       value: string;
       avatars: TaxiAcceptancePendingAvatarViewData[];
-    }
-  | {
-      id: 'fare';
-      type: 'text';
-      label: string;
-      tone: 'accent';
-      value: string;
     };
 
 export interface TaxiAcceptancePendingViewData {
   cancelButtonLabel: string;
-  cancelHintLabel: string;
   cardTitle: string;
   heroDescription: string;
   heroTitle: string;

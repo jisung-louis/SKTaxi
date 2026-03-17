@@ -45,7 +45,6 @@ export class MockTaxiAcceptancePendingRepository
     return cloneSourceData({
       ...cloneSeed(seed),
       cancelButtonLabel: '동승 요청 취소하기',
-      cancelHintLabel: '취소하면 파티장에게 알림이 가지 않아요',
       cardTitle: '동승 요청한 파티 정보',
       requestState: 'pending',
       statusDescription: '파티장이 요청을 확인하고 있어요',
