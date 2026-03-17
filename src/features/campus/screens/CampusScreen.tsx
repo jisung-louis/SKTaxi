@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
   ScrollView,
   StyleSheet,
@@ -14,6 +15,7 @@ import {
   useNavigation,
 } from '@react-navigation/native';
 import Animated from 'react-native-reanimated';
+import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -33,6 +35,7 @@ import {useCampusHomeViewData} from '../hooks/useCampusHomeViewData';
 import type {
   CampusAcademicEventBadgeViewData,
   CampusAcademicEventViewData,
+  CampusCafeteriaRecommendedMenuViewData,
   CampusHighlightTone,
   CampusNoticeItemViewData,
   CampusNoticeTone,
@@ -85,7 +88,7 @@ const TIMETABLE_ACTION_LABEL = '시간표';
 const TIMETABLE_EXPAND_LABEL = '야간수업 펼치기';
 const TIMETABLE_COLLAPSE_LABEL = '야간수업 접기';
 const TAXI_ACTION_LABEL = '전체보기';
-const CAFETERIA_ACTION_LABEL = '학식 전체보기';
+const CAFETERIA_ACTION_LABEL = '학식 전체 보기';
 const ACADEMIC_ACTION_LABEL = '학사일정 전체보기';
 const TIMETABLE_ROW_HEIGHT = 52;
 
@@ -385,13 +388,11 @@ export const CampusScreen = () => {
                   }
                   title="오늘의 추천 학식"
                 />
-                <CafeteriaCard
-                  description={data.cafeteria.featuredMenu?.description ?? ''}
-                  onPress={() =>
+                <CafeteriaCards
+                  items={data.cafeteria.recommendedMenus}
+                  onPressItem={() =>
                     campusEntryNavigation.openCampusScreen('CafeteriaDetail')
                   }
-                  priceLabel={data.cafeteria.featuredMenu?.priceLabel ?? ''}
-                  title={data.cafeteria.featuredMenu?.title ?? ''}
                 />
               </View>
 
@@ -826,20 +827,16 @@ const TaxiCards = ({items, onPressItem}: TaxiCardsProps) => {
   );
 };
 
-type CafeteriaCardProps = {
-  title: string;
-  description: string;
-  priceLabel: string;
-  onPress: () => void;
+type CafeteriaCardsProps = {
+  items: CampusCafeteriaRecommendedMenuViewData[];
+  onPressItem: () => void;
 };
 
-const CafeteriaCard = ({
-  title,
-  description,
-  priceLabel,
-  onPress,
-}: CafeteriaCardProps) => {
-  if (!title) {
+const CafeteriaCards = ({
+  items,
+  onPressItem,
+}: CafeteriaCardsProps) => {
+  if (items.length === 0) {
     return (
       <View style={styles.emptyCard}>
         <Text style={styles.emptyTitle}>오늘 등록된 학식 메뉴가 없습니다</Text>
@@ -851,29 +848,58 @@ const CafeteriaCard = ({
   }
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.82}
-      onPress={onPress}
-      style={styles.card}>
-      <View style={styles.cafeteriaCardContent}>
-        <View style={styles.cafeteriaIconBox}>
-          <Icon
-            color={V2_COLORS.text.inverse}
-            name="restaurant-outline"
-            size={28}
-          />
-        </View>
-        <View style={styles.cafeteriaTextGroup}>
-          <Text numberOfLines={1} style={styles.cafeteriaTitle}>
-            {title}
-          </Text>
-          <Text numberOfLines={1} style={styles.cafeteriaDescription}>
-            {description}
-          </Text>
-          <Text style={styles.cafeteriaPrice}>{priceLabel}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+    <FlatList
+      horizontal
+      data={items}
+      keyExtractor={item => item.id}
+      renderItem={({item}) => (
+        <TouchableOpacity
+          activeOpacity={0.82}
+          onPress={onPressItem}
+          style={styles.cafeteriaRecommendationCard}>
+          <View style={styles.cafeteriaCardContent}>
+            <LinearGradient
+              colors={['#FB923C', '#F97316']}
+              end={{x: 1, y: 1}}
+              start={{x: 0, y: 0}}
+              style={styles.cafeteriaIconBox}>
+              <Icon
+                color={V2_COLORS.text.inverse}
+                name="restaurant-outline"
+                size={28}
+              />
+            </LinearGradient>
+
+            <View style={styles.cafeteriaTextGroup}>
+              <View style={styles.cafeteriaCategoryPill}>
+                <Text numberOfLines={1} style={styles.cafeteriaCategoryLabel}>
+                  {item.categoryLabel}
+                </Text>
+              </View>
+
+              <Text numberOfLines={1} style={styles.cafeteriaTitle}>
+                {item.title}
+              </Text>
+              <Text style={styles.cafeteriaPrice}>{item.priceLabel}</Text>
+
+              <View style={styles.cafeteriaLikeRow}>
+                <Icon
+                  color={V2_COLORS.text.muted}
+                  name="thumbs-up-outline"
+                  size={12}
+                />
+                <Text style={styles.cafeteriaLikeCount}>
+                  {item.likeCountLabel}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      )}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.cafeteriaListContent}
+      style={styles.cafeteriaList}
+    />
   );
 };
 
@@ -1337,40 +1363,75 @@ const styles = StyleSheet.create({
     color: V2_COLORS.text.muted,
   },
   cafeteriaCardContent: {
-    alignItems: 'center',
     flexDirection: 'row',
     gap: V2_SPACING.md,
     padding: V2_SPACING.lg,
   },
+  cafeteriaList: {
+    marginHorizontal: -V2_SPACING.lg,
+  },
+  cafeteriaListContent: {
+    columnGap: V2_SPACING.md,
+    paddingBottom: V2_SPACING.sm,
+    paddingHorizontal: V2_SPACING.lg,
+  },
+  cafeteriaRecommendationCard: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.subtle,
+    borderRadius: V2_RADIUS.lg,
+    borderWidth: 1,
+    minHeight: 125,
+    width: 280,
+    ...V2_SHADOWS.card,
+  },
   cafeteriaIconBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.orange,
-    borderRadius: V2_RADIUS.lg,
-    height: 60,
+    borderRadius: V2_RADIUS.md,
+    height: 64,
     justifyContent: 'center',
-    width: 60,
+    width: 64,
   },
   cafeteriaTextGroup: {
     flex: 1,
   },
+  cafeteriaCategoryPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: V2_COLORS.accent.orangeSoft,
+    borderRadius: V2_RADIUS.pill,
+    marginBottom: V2_SPACING.xs,
+    paddingHorizontal: V2_SPACING.sm,
+    paddingVertical: 2,
+  },
+  cafeteriaCategoryLabel: {
+    color: V2_COLORS.accent.orange,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
   cafeteriaTitle: {
     color: V2_COLORS.text.primary,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
-    lineHeight: 28,
-    marginBottom: 2,
-  },
-  cafeteriaDescription: {
-    color: V2_COLORS.text.secondary,
-    fontSize: 13,
     lineHeight: 20,
+    marginBottom: V2_SPACING.xs,
   },
   cafeteriaPrice: {
     color: V2_COLORS.accent.orange,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginTop: V2_SPACING.xs,
+    marginBottom: V2_SPACING.sm,
+  },
+  cafeteriaLikeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: V2_SPACING.xs,
+  },
+  cafeteriaLikeCount: {
+    color: V2_COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
   },
   academicRow: {
     alignItems: 'center',
