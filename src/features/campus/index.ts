@@ -13,12 +13,14 @@ export {
 } from './data/repositories/FirebaseCafeteriaRepository';
 export type { IAcademicRepository } from './data/repositories/IAcademicRepository';
 export type { ICafeteriaRepository } from './data/repositories/ICafeteriaRepository';
+export type {ICafeteriaDetailRepository} from './data/repositories/ICafeteriaDetailRepository';
 export type {
   ICampusHomeRepository,
 } from './data/repositories/ICampusHomeRepository';
 
 export { useAcademicSchedules } from './hooks/useAcademicSchedules';
 export type { UseAcademicSchedulesResult } from './hooks/useAcademicSchedules';
+export {useCafeteriaDetailData} from './hooks/useCafeteriaDetailData';
 export { useCafeteriaMenu } from './hooks/useCafeteriaMenu';
 export type {
   ProcessedMenu,
@@ -34,6 +36,7 @@ export {
   MockCampusHomeRepository,
   mockCampusHomeRepository,
 } from './mocks/MockCampusHomeRepository';
+export {MockCafeteriaDetailRepository} from './data/repositories/MockCafeteriaDetailRepository';
 export {
   createCrossBoundaryCampusHomeViewData,
   createDefaultCampusHomeViewData,
@@ -65,6 +68,18 @@ export {
   getAllMenuItems,
   getMenuForDate,
 } from './model/cafeteria';
+export type {
+  CafeteriaCategoryId,
+  CafeteriaCategorySource,
+  CafeteriaDetailSource,
+  CafeteriaMenuBadgeSource,
+  CafeteriaMenuItemSource,
+} from './model/cafeteriaDetailSource';
+export type {
+  CafeteriaCategorySectionViewData,
+  CafeteriaDetailScreenViewData,
+  CafeteriaMenuItemViewData,
+} from './model/cafeteriaDetailViewData';
 export type {
   DailyMenu,
   MenuCategory,
