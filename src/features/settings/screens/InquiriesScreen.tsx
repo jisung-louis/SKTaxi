@@ -1,284 +1,298 @@
-import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, ScrollView, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import PageHeader from '@/shared/ui/PageHeader';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useScreenView } from '@/shared/hooks/useScreenView';
 
-import { useSubmitInquiry } from '../hooks/useSubmitInquiry';
+import {type CampusStackParamList} from '@/app/navigation/types';
+import {
+  V2FormField,
+  V2InfoBanner,
+  V2StackHeader,
+  V2StateCard,
+} from '@/shared/design-system/components';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
 
-const INQUIRY_TYPES = [
-  { id: 'feature', label: '기능 제안', icon: 'bulb-outline' },
-  { id: 'bug', label: '버그 신고', icon: 'bug-outline' },
-  { id: 'account', label: '계정 문의', icon: 'person-outline' },
-  { id: 'service', label: '서비스 문의', icon: 'help-circle-outline' },
-  { id: 'other', label: '기타', icon: 'chatbubble-outline' },
-];
+import {InquiryTypeChips} from '../components/v2/InquiryTypeChips';
+import {useInquiryFormData} from '../hooks/useInquiryFormData';
+
+type InquiriesRouteProp = RouteProp<CampusStackParamList, 'Inquiries'>;
 
 export const InquiriesScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<any>();
 
-  // Repository 패턴 훅 사용
-  const { submitting, submitInquiry } = useSubmitInquiry();
+  const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
+  const route = useRoute<InquiriesRouteProp>();
+  const {
+    content,
+    data,
+    error,
+    loading,
+    reload,
+    reset,
+    selectType,
+    setContent,
+    setTitle,
+    submit,
+    submitting,
+    title,
+  } = useInquiryFormData(route.params?.type);
 
-  const [selectedType, setSelectedType] = useState<string>('');
-  const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
-
-  // 파라미터로 받은 타입에 따라 자동 선택
-  useEffect(() => {
-    const type = route?.params?.type;
-    if (type && ['feature', 'bug', 'account', 'service', 'other'].includes(type)) {
-      setSelectedType(type);
-    }
-  }, [route?.params?.type]);
-
-  const handleSubmitInquiry = async () => {
-    if (!selectedType) {
-      Alert.alert('알림', '문의 유형을 선택해주세요.');
-      return;
-    }
-
-    if (!subject.trim()) {
-      Alert.alert('알림', '제목을 입력해주세요.');
-      return;
-    }
-
-    if (!content.trim()) {
-      Alert.alert('알림', '문의 내용을 입력해주세요.');
-      return;
-    }
-
+  const handleSubmit = React.useCallback(async () => {
     try {
-      await submitInquiry({
-        type: selectedType,
-        subject: subject.trim(),
-        content: content.trim(),
-      });
-
-      Alert.alert(
-        '문의 전송 완료',
-        '보내주셔서 감사해요!',
-        [
-          {
-            text: '확인',
-            onPress: () => {
-              // 폼 초기화
-              setSelectedType('');
-              setSubject('');
-              setContent('');
-              navigation.goBack();
-            },
+      await submit();
+      Alert.alert('문의 접수 완료', '문의가 접수되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => {
+            reset();
+            navigation.goBack();
           },
-        ]
-      );
-    } catch (error) {
-      Alert.alert('오류', '문의사항 접수에 실패했습니다. 다시 시도해주세요.');
+        },
+      ]);
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : '문의 접수에 실패했습니다.';
+      Alert.alert('알림', message);
     }
-  };
+  }, [navigation, reset, submit]);
 
-  const InquiryTypeButton = ({ type }: { type: typeof INQUIRY_TYPES[0] }) => (
-    <TouchableOpacity
-      style={[
-        styles.typeButton,
-        selectedType === type.id && styles.typeButtonSelected
-      ]}
-      onPress={() => setSelectedType(type.id)}
-    >
-      <Icon 
-        name={type.icon} 
-        size={20} 
-        color={selectedType === type.id ? COLORS.accent.blue : COLORS.text.secondary} 
-      />
-      <Text style={[
-        styles.typeButtonText,
-        selectedType === type.id && styles.typeButtonTextSelected
-      ]}>
-        {type.label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const handlePressAttachment = React.useCallback(() => {
+    Alert.alert('파일 첨부', 'mock 파일 첨부는 추후 연결 예정입니다.');
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader onBack={() => navigation.goBack()} title="문의사항" borderBottom />
-      
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-        {/* 문의 유형 선택 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>문의 유형</Text>
-          <View style={styles.typeContainer}>
-            {INQUIRY_TYPES.map((type) => (
-              <InquiryTypeButton key={type.id} type={type} />
-            ))}
-          </View>
-        </View>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <V2StackHeader onPressBack={() => navigation.goBack()} title="문의하기" />
 
-        {/* 제목 입력 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>제목</Text>
-          <TextInput
-            style={styles.input}
-            value={subject}
-            onChangeText={setSubject}
-            placeholder="문의 제목을 입력하세요"
-            placeholderTextColor={COLORS.text.disabled}
-            maxLength={100}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        {loading && !data ? (
+          <V2StateCard
+            description="문의하기 화면을 준비하고 있습니다."
+            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            title="문의하기를 불러오는 중"
           />
-        </View>
+        ) : null}
 
-        {/* 내용 입력 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>문의 내용</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={content}
-            onChangeText={setContent}
-            placeholder="문의 내용을 자세히 입력해주세요"
-            placeholderTextColor={COLORS.text.disabled}
-            multiline
-            numberOfLines={8}
-            textAlignVertical="top"
-            maxLength={1000}
+        {error && !data ? (
+          <V2StateCard
+            actionLabel="다시 시도"
+            description={error}
+            icon={
+              <Icon
+                color={V2_COLORS.accent.orange}
+                name="alert-circle-outline"
+                size={28}
+              />
+            }
+            onPressAction={() => {
+              reload().catch(() => undefined);
+            }}
+            title="문의하기를 불러오지 못했습니다"
           />
-          <Text style={styles.characterCount}>{content.length}/1000</Text>
-        </View>
+        ) : null}
 
-        {/* 전송 버튼 */}
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            (!selectedType || !subject.trim() || !content.trim() || submitting) && styles.sendButtonDisabled
-          ]}
-          onPress={handleSubmitInquiry}
-          disabled={!selectedType || !subject.trim() || !content.trim() || submitting}
-        >
-          <Icon name="send-outline" size={20} color={COLORS.text.white} />
-          <Text style={styles.sendButtonText}>
-            {submitting ? '처리 중...' : '문의 접수하기'}
-          </Text>
-        </TouchableOpacity>
+        {data ? (
+          <>
+            <V2FormField label="문의 유형" required style={styles.section}>
+              <InquiryTypeChips
+                items={data.typeOptions}
+                onPressItem={selectType}
+              />
+            </V2FormField>
 
-        {/* 안내 메시지 */}
-        <View style={styles.infoContainer}>
-          <Icon name="information-circle-outline" size={16} color={COLORS.text.secondary} />
-          <Text style={styles.infoText}>
-            문의사항이 접수되면 최대한 빨리 답변드릴게요.
-          </Text>
-        </View>
-        <Text style={[styles.infoText, { ...TYPOGRAPHY.caption2, marginTop: 18, textAlign: 'right' }]}>
-          이메일 문의 : <Text style={{ fontWeight: '600' }}>skuri2025@gmail.com</Text>
-        </Text>
+            <V2FormField
+              counterLabel={data.titleCountLabel}
+              label="제목"
+              required
+              style={styles.section}>
+              <TextInput
+                maxLength={100}
+                onChangeText={setTitle}
+                placeholder={data.titlePlaceholder}
+                placeholderTextColor={V2_COLORS.text.muted}
+                style={styles.input}
+                value={title}
+              />
+            </V2FormField>
+
+            <V2FormField
+              counterLabel={data.contentCountLabel}
+              label="문의 내용"
+              required
+              style={styles.section}>
+              <TextInput
+                maxLength={500}
+                multiline
+                onChangeText={setContent}
+                placeholder={data.contentPlaceholder}
+                placeholderTextColor={V2_COLORS.text.muted}
+                style={styles.textArea}
+                textAlignVertical="top"
+                value={content}
+              />
+            </V2FormField>
+
+            <V2FormField
+              label={data.attachmentTitle}
+              optionalLabel="(선택)"
+              style={styles.section}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.88}
+                onPress={handlePressAttachment}
+                style={styles.attachmentBox}>
+                <View style={styles.attachmentIconWrap}>
+                  <Icon
+                    color={V2_COLORS.text.secondary}
+                    name="arrow-up-outline"
+                    size={18}
+                  />
+                </View>
+
+                <Text style={styles.attachmentTitle}>
+                  {data.attachmentHelperLines[0]}
+                </Text>
+                <Text style={styles.attachmentSubtitle}>
+                  {data.attachmentHelperLines[1]}
+                </Text>
+              </TouchableOpacity>
+            </V2FormField>
+
+            <V2InfoBanner
+              backgroundColor={V2_COLORS.brand.primaryTint}
+              iconColor={V2_COLORS.brand.primary}
+              iconName="information-circle-outline"
+              lines={data.guideLines}
+              style={styles.banner}
+              textColor={V2_COLORS.status.success}
+            />
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.9}
+              disabled={submitting}
+              onPress={handleSubmit}
+              style={[
+                styles.submitButton,
+                submitting ? styles.submitButtonDisabled : undefined,
+              ]}>
+              <Text style={styles.submitLabel}>
+                {submitting ? '문의 접수 중...' : data.submitLabel}
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+  content: {
+    paddingHorizontal: V2_SPACING.lg,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    ...TYPOGRAPHY.subtitle2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  typeContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  typeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  typeButtonSelected: {
-    backgroundColor: COLORS.accent.blue + '15',
-    borderColor: COLORS.accent.blue,
-  },
-  typeButtonText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    fontWeight: '500',
-  },
-  typeButtonTextSelected: {
-    color: COLORS.accent.blue,
-    fontWeight: '600',
-  },
-  input: {
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-  },
-  textArea: {
-    height: 120,
-    textAlignVertical: 'top',
-  },
-  characterCount: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.disabled,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  sendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.accent.blue,
-    paddingVertical: 16,
-    borderRadius: 12,
     marginBottom: 20,
   },
-  sendButtonDisabled: {
-    backgroundColor: COLORS.text.disabled,
-  },
-  sendButtonText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.white,
-    fontWeight: '600',
-  },
-  infoContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: COLORS.background.card,
-    padding: 16,
-    borderRadius: 12,
+  input: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border.light,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    height: 47,
+    lineHeight: 20,
+    paddingHorizontal: 17,
+    paddingVertical: 13,
   },
-  infoText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    lineHeight: 18,
-    flex: 1,
+  textArea: {
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
+    borderWidth: 1,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    height: 168,
+    lineHeight: 22.75,
+    paddingHorizontal: 17,
+    paddingVertical: 13,
+  },
+  attachmentBox: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: '#D1D5DB',
+    borderRadius: V2_RADIUS.lg,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    height: 118,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  attachmentIconWrap: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.background.subtle,
+    borderRadius: V2_RADIUS.md,
+    height: 36,
+    justifyContent: 'center',
+    marginBottom: 6,
+    width: 36,
+  },
+  attachmentTitle: {
+    color: V2_COLORS.text.tertiary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 2,
+  },
+  attachmentSubtitle: {
+    color: V2_COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  banner: {
+    marginBottom: 20,
+  },
+  submitButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.brand.primary,
+    borderRadius: V2_RADIUS.lg,
+    height: 52,
+    justifyContent: 'center',
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
+  submitLabel: {
+    color: V2_COLORS.text.inverse,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
   },
 });
