@@ -12,6 +12,19 @@ const avatar = (
   textColor,
 });
 
+const acceptancePendingAvatar = (
+  id: string,
+  label: string,
+  backgroundColor: string,
+  textColor = '#111827',
+) => ({
+  backgroundColor,
+  id,
+  kind: 'label' as const,
+  label,
+  textColor,
+});
+
 export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
   searchPlaceholder: '출발지 검색',
   primaryActionLabel: '새 파티 만들기',
@@ -46,6 +59,22 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
   ],
   parties: [
     {
+      acceptancePendingSeed: {
+        currentMemberCount: 2,
+        departureAt: '2026-03-20T09:00:00+09:00',
+        departureLabel: '안양역',
+        destinationLabel: '성결대학교',
+        estimatedFareLabel: '3,500원',
+        leaderAvatar: acceptancePendingAvatar('acceptance-leader-1', '김', '#F3E8D9'),
+        leaderName: '김성결',
+        maxMemberCount: 4,
+        memberAvatars: [
+          acceptancePendingAvatar('acceptance-member-1-1', '윤', '#FDE68A'),
+          acceptancePendingAvatar('acceptance-member-1-2', '정', '#BFDBFE'),
+        ],
+        partyId: 'taxi-home-party-1',
+        requestId: 'taxi-acceptance-request-1',
+      },
       id: 'taxi-home-party-1',
       departureAt: '2025-09-18T09:00:00+09:00',
       createdAt: '2025-09-18T08:25:00+09:00',
@@ -68,6 +97,22 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       action: {type: 'preview'},
     },
     {
+      acceptancePendingSeed: {
+        currentMemberCount: 3,
+        departureAt: '2026-03-20T10:30:00+09:00',
+        departureLabel: '범계역',
+        destinationLabel: '성결대학교',
+        estimatedFareLabel: '4,000원',
+        leaderAvatar: acceptancePendingAvatar('acceptance-leader-2', '박', '#FBCFE8'),
+        leaderName: '박지은',
+        maxMemberCount: 3,
+        memberAvatars: [
+          acceptancePendingAvatar('acceptance-member-2-1', '유', '#DDD6FE'),
+          acceptancePendingAvatar('acceptance-member-2-2', '한', '#BFDBFE'),
+        ],
+        partyId: 'taxi-home-party-2',
+        requestId: 'taxi-acceptance-request-2',
+      },
       id: 'taxi-home-party-2',
       departureAt: '2025-09-18T10:30:00+09:00',
       createdAt: '2025-09-18T08:20:00+09:00',
@@ -90,6 +135,21 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       action: {type: 'preview'},
     },
     {
+      acceptancePendingSeed: {
+        currentMemberCount: 1,
+        departureAt: '2026-03-20T13:00:00+09:00',
+        departureLabel: '안양역',
+        destinationLabel: '성결대학교',
+        estimatedFareLabel: '3,500원',
+        leaderAvatar: acceptancePendingAvatar('acceptance-leader-3', '강', '#FDE68A'),
+        leaderName: '강태완',
+        maxMemberCount: 4,
+        memberAvatars: [
+          acceptancePendingAvatar('acceptance-member-3-1', '이', '#D1FAE5'),
+        ],
+        partyId: 'taxi-home-party-3',
+        requestId: 'taxi-acceptance-request-3',
+      },
       id: 'taxi-home-party-3',
       departureAt: '2025-09-18T13:00:00+09:00',
       createdAt: '2025-09-18T08:10:00+09:00',
@@ -109,6 +169,22 @@ export const TAXI_HOME_SOURCE_MOCK: TaxiHomeSourceData = {
       action: {type: 'preview'},
     },
     {
+      acceptancePendingSeed: {
+        currentMemberCount: 2,
+        departureAt: '2026-03-20T14:30:00+09:00',
+        departureLabel: '범계역',
+        destinationLabel: '성결대학교',
+        estimatedFareLabel: '4,000원',
+        leaderAvatar: acceptancePendingAvatar('acceptance-leader-4', '윤', '#DBEAFE'),
+        leaderName: '윤서연',
+        maxMemberCount: 4,
+        memberAvatars: [
+          acceptancePendingAvatar('acceptance-member-4-1', '김', '#FDE68A'),
+          acceptancePendingAvatar('acceptance-member-4-2', '이', '#D1FAE5'),
+        ],
+        partyId: 'taxi-home-party-4',
+        requestId: 'taxi-acceptance-request-4',
+      },
       id: 'taxi-home-party-4',
       departureAt: '2025-09-18T14:30:00+09:00',
       createdAt: '2025-09-18T08:00:00+09:00',

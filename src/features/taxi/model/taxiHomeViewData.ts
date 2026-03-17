@@ -1,3 +1,5 @@
+import type {TaxiAcceptancePendingSeed} from './taxiAcceptancePendingViewData';
+
 export type TaxiHomeFilterId = 'all' | 'anyang' | 'beomgye';
 export type TaxiHomeSortId = 'latest' | 'departureSoon';
 
@@ -24,6 +26,7 @@ export interface TaxiHomePartyAction {
 }
 
 export interface TaxiHomePartyCardViewData {
+  acceptancePendingSeed?: TaxiAcceptancePendingSeed;
   id: string;
   departureAt: string;
   createdAt: string;

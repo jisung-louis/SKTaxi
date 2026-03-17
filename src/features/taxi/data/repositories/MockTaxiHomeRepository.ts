@@ -1,4 +1,5 @@
 import type {ITaxiHomeRepository} from './ITaxiHomeRepository';
+import type {TaxiAcceptancePendingSeed} from '../../model/taxiAcceptancePendingViewData';
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomeFilterDefinition,
@@ -12,6 +13,14 @@ const cloneAvatar = (
   avatar: TaxiHomeAvatarViewData,
 ): TaxiHomeAvatarViewData => ({
   ...avatar,
+});
+
+const cloneAcceptancePendingSeed = (
+  seed: TaxiAcceptancePendingSeed,
+): TaxiAcceptancePendingSeed => ({
+  ...seed,
+  leaderAvatar: {...seed.leaderAvatar},
+  memberAvatars: seed.memberAvatars.map(avatar => ({...avatar})),
 });
 
 const cloneFilter = (
@@ -29,6 +38,9 @@ const cloneParty = (
   party: TaxiHomePartyCardViewData,
 ): TaxiHomePartyCardViewData => ({
   ...party,
+  acceptancePendingSeed: party.acceptancePendingSeed
+    ? cloneAcceptancePendingSeed(party.acceptancePendingSeed)
+    : undefined,
   leaderAvatar: cloneAvatar(party.leaderAvatar),
   participantAvatars: party.participantAvatars.map(cloneAvatar),
   filterIds: [...party.filterIds],

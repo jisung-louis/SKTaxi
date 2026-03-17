@@ -1,8 +1,8 @@
-import type { Party } from './types';
+import type {TaxiAcceptancePendingNavigationParams} from './taxiAcceptancePendingViewData';
 
 export type TaxiStackParamList = {
   TaxiMain: undefined;
-  AcceptancePending: { party: Party; requestId: string };
+  AcceptancePending: TaxiAcceptancePendingNavigationParams;
   Recruit: undefined;
   MapSearch: {
     type: 'departure' | 'destination';
