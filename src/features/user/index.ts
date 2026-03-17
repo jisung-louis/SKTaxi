@@ -34,7 +34,11 @@ export type {
   NotificationSettings,
   UseNotificationSettingsResult,
 } from './hooks/useNotificationSettings';
+export {useBookmarksScreenData} from './hooks/useBookmarksScreenData';
 export { useInAppNotifications } from './hooks/useInAppNotifications';
+export {useMyPostsScreenData} from './hooks/useMyPostsScreenData';
+export {useProfileEditScreenData} from './hooks/useProfileEditScreenData';
+export {useTaxiHistoryScreenData} from './hooks/useTaxiHistoryScreenData';
 export { useUserDisplayNames } from './hooks/useUserDisplayNames';
 export type { UseUserDisplayNamesResult } from './hooks/useUserDisplayNames';
 export { useUserBookmarks } from './hooks/useUserBookmarks';
@@ -56,12 +60,29 @@ export type {
   AccountManagementSource,
 } from './model/accountManagementSource';
 export type {
+  ProfileEditDraft,
+  ProfileEditSource,
+} from './model/profileEditSource';
+export type {ProfileEditScreenViewData} from './model/profileEditViewData';
+export type {
   MyPageMenuItemViewData,
   MyPageMenuSectionViewData,
   MyPageProfileViewData,
   MyPageScreenViewData,
   MyPageStatViewData,
 } from './model/myPageViewData';
+export type {
+  BookmarksSource,
+  TaxiHistoryEntrySource,
+  TaxiHistorySource,
+  UserNoticeBookmarkItemSource,
+  UserPostListItemSource,
+} from './model/userActivitySource';
+export type {
+  BookmarksScreenViewData,
+  MyPostsScreenViewData,
+  TaxiHistoryScreenViewData,
+} from './model/userActivityViewData';
 export type {
   NotificationSettingItemViewData,
   NotificationSettingMasterViewData,
@@ -79,13 +100,18 @@ export type {
 export type { LinkedAccount, UserAccountInfo } from '@/shared/types/user';
 
 export { MyScreen } from './screens/MyScreen';
+export { BookmarksScreen } from './screens/BookmarksScreen';
 export { ProfileEditScreen } from './screens/ProfileEditScreen';
 export { AccountModificationScreen } from './screens/AccountModificationScreen';
+export { MyPostsScreen } from './screens/MyPostsScreen';
 export { NotificationScreen } from './screens/NotificationScreen';
 export { NotificationSettingsScreen } from './screens/NotificationSettingsScreen';
+export { TaxiHistoryScreen } from './screens/TaxiHistoryScreen';
 export {MockAccountManagementRepository} from './data/repositories/MockAccountManagementRepository';
 export {MockMyPageRepository} from './data/repositories/MockMyPageRepository';
 export {MockNotificationSettingsScreenRepository} from './data/repositories/MockNotificationSettingsScreenRepository';
+export {MockProfileEditRepository} from './data/repositories/MockProfileEditRepository';
+export {MockUserActivityRepository} from './data/repositories/MockUserActivityRepository';
 
 export {
   completeUserPermissionOnboarding,

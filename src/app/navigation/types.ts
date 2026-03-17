@@ -36,6 +36,13 @@ export type CampusStackParamList = {
   Setting: undefined;
   Profile: undefined;
   ProfileEdit: undefined;
+  MyPosts: undefined;
+  Bookmarks:
+    | {
+        initialTab?: 'community' | 'notice';
+      }
+    | undefined;
+  TaxiHistory: undefined;
   AppNotice: undefined;
   AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;

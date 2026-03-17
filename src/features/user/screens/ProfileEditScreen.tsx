@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,335 +8,309 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import LinearGradient from 'react-native-linear-gradient';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-import { Dropdown } from '@/shared/ui/Dropdown';
-import PageHeader from '@/shared/ui/PageHeader';
-import { COLORS } from '@/shared/constants/colors';
-import { DEPARTMENT_OPTIONS } from '@/shared/constants/departments';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useAuth } from '@/features/auth';
-import { useScreenView } from '@/shared/hooks/useScreenView';
+import {type CampusStackParamList} from '@/app/navigation/types';
+import {
+  V2SelectionDropdown,
+  V2StackHeader,
+  V2StateCard,
+} from '@/shared/design-system/components';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import { useUserProfile } from '../hooks/useUserProfile';
+import {useProfileEditScreenData} from '../hooks/useProfileEditScreenData';
 
 export const ProfileEditScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const { user } = useAuth();
-  const {
-    profile,
-    loading: profileLoading,
-    saveProfileChanges,
-    saving,
-  } = useUserProfile();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
+  const {data, error, loading, reload, saveChanges, saving} =
+    useProfileEditScreenData();
 
-  const [displayName, setDisplayName] = useState('');
-  const [studentId, setStudentId] = useState('');
-  const [department, setDepartment] = useState('');
-  const [previousDepartment, setPreviousDepartment] = useState('');
-  const [fetching, setFetching] = useState(true);
-  const [errors, setErrors] = useState<{
-    name?: string;
-    studentId?: string;
-  }>({});
+  const [displayName, setDisplayName] = React.useState('');
+  const [studentId, setStudentId] = React.useState('');
+  const [department, setDepartment] = React.useState('');
+  const [isDropdownOpen, setDropdownOpen] = React.useState(false);
 
-  useEffect(() => {
-    if (profileLoading) {
-      setFetching(true);
+  React.useEffect(() => {
+    if (!data) {
       return;
     }
 
-    if (profile) {
-      setDisplayName(profile.displayName || user?.displayName || '');
-      setStudentId(profile.studentId || '');
-      const initialDepartment = profile.department || '';
-      setDepartment(initialDepartment);
-      setPreviousDepartment(initialDepartment);
-    }
+    setDisplayName(data.displayName);
+    setStudentId(data.studentId);
+    setDepartment(data.department);
+  }, [data]);
 
-    setFetching(false);
-  }, [profile, profileLoading, user?.displayName]);
+  const closeDropdown = React.useCallback(() => {
+    setDropdownOpen(false);
+  }, []);
 
-  const validate = () => {
-    const nextErrors: { name?: string; studentId?: string } = {};
+  const handleSave = React.useCallback(async () => {
+    const trimmedDisplayName = displayName.trim();
+    const trimmedStudentId = studentId.trim();
 
-    if (!displayName.trim()) {
-      nextErrors.name = '닉네임을 입력해주세요.';
-    } else if (displayName.trim().length > 7) {
-      nextErrors.name = '닉네임은 최대 7글자까지 가능합니다.';
-    }
-
-    const studentIdRegex = /^20\d{6}$/;
-    if (!studentId.trim()) {
-      nextErrors.studentId = '학번을 입력해주세요.';
-    } else if (!studentIdRegex.test(studentId.trim())) {
-      nextErrors.studentId =
-        '학번은 20으로 시작하는 8자리 숫자여야 해요.';
-    }
-
-    setErrors(nextErrors);
-    return nextErrors;
-  };
-
-  const handleSave = async () => {
-    if (!user?.uid) {
-      Alert.alert('오류', '로그인이 필요합니다.');
+    if (!trimmedDisplayName) {
+      Alert.alert('입력 필요', '닉네임을 입력해주세요.');
       return;
     }
 
-    const nextErrors = validate();
-    if (Object.keys(nextErrors).length > 0) {
-      const invalidFields: string[] = [];
-      if (nextErrors.name) {
-        invalidFields.push('닉네임');
-      }
-      if (nextErrors.studentId) {
-        invalidFields.push('학번');
-      }
-
-      Alert.alert('알림', `${invalidFields.join(', ')}을 확인해주세요.`);
+    if (trimmedDisplayName.length > 7) {
+      Alert.alert('입력 확인', '닉네임은 최대 7글자까지 가능합니다.');
       return;
     }
 
-    try {
-      await saveProfileChanges({
-        displayName,
-        studentId,
-        department,
-        previousDepartment,
-      });
-
-      setPreviousDepartment(department.trim());
-
-      Alert.alert('완료', '프로필이 저장되었어요.', [
-        {
-          text: '확인',
-          onPress: () => navigation.goBack(),
-        },
-      ]);
-    } catch (error: any) {
-      const message =
-        error?.message && typeof error.message === 'string'
-          ? error.message
-          : '저장 중 오류가 발생했어요.';
-      Alert.alert('오류', message);
+    if (!/^20\d{6}$/.test(trimmedStudentId)) {
+      Alert.alert('입력 확인', '학번은 20으로 시작하는 8자리 숫자여야 합니다.');
+      return;
     }
-  };
 
-  const onlyDigits = (value: string) => value.replace(/[^0-9]/g, '');
+    if (!department.trim()) {
+      Alert.alert('입력 필요', '학과를 선택해주세요.');
+      return;
+    }
+
+    await saveChanges({
+      department: department.trim(),
+      displayName: trimmedDisplayName,
+      studentId: trimmedStudentId,
+    });
+
+    Alert.alert('저장 완료', '프로필이 저장되었습니다.', [
+      {
+        text: '확인',
+        onPress: () => navigation.goBack(),
+      },
+    ]);
+  }, [department, displayName, navigation, saveChanges, studentId]);
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <SafeAreaView style={styles.container}>
-        <PageHeader
-          onBack={() => navigation.goBack()}
-          title="프로필 편집"
-          borderBottom
-        />
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.contentContainer}
-        >
-          <View style={styles.section}>
-            <View style={styles.avatarRow}>
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {(displayName || user?.email || '?')[0]}
-                </Text>
-              </View>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <V2StackHeader onPressBack={() => navigation.goBack()} title="프로필 수정" />
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        {loading && !data ? (
+          <V2StateCard
+            description="프로필 수정 화면을 준비하고 있습니다."
+            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            title="프로필 수정을 불러오는 중"
+          />
+        ) : null}
+
+        {error && !data ? (
+          <V2StateCard
+            actionLabel="다시 시도"
+            description={error}
+            icon={
+              <Icon
+                color={V2_COLORS.accent.orange}
+                name="alert-circle-outline"
+                size={28}
+              />
+            }
+            onPressAction={() => {
+              reload().catch(() => undefined);
+            }}
+            title="프로필 수정 정보를 불러오지 못했습니다"
+          />
+        ) : null}
+
+        {data ? (
+          <>
+            <View style={styles.avatarSection}>
+              <LinearGradient
+                colors={['#4ADE80', '#22C55E']}
+                end={{x: 1, y: 1}}
+                start={{x: 0, y: 0}}
+                style={styles.avatar}>
+                <Text style={styles.avatarLabel}>{data.avatarLabel}</Text>
+              </LinearGradient>
+
               <TouchableOpacity
-                style={[styles.photoBtn, fetching && styles.disabledButton]}
-                disabled={fetching}
+                accessibilityRole="button"
+                activeOpacity={0.86}
                 onPress={() =>
-                  Alert.alert('준비중', '프로필 사진 변경은 곧 지원됩니다.')
+                  Alert.alert('준비 중', '프로필 사진 변경은 추후 연결 예정입니다.')
                 }
-              >
-                <Text style={styles.photoBtnText}>사진 변경 (준비중)</Text>
+                style={styles.cameraButton}>
+                <Icon color={V2_COLORS.text.inverse} name="camera-outline" size={14} />
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.label}>닉네임</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={fetching ? '불러오는 중...' : '닉네임(최대 7글자)'}
-              placeholderTextColor={COLORS.text.disabled}
-              value={displayName}
-              onChangeText={value => {
-                const next = value.slice(0, 7);
-                setDisplayName(next);
-                if (errors.name) {
-                  setErrors(prev => ({ ...prev, name: '' }));
-                }
-              }}
-              editable={!fetching && !saving}
-            />
-            {errors.name ? (
-              <Text style={styles.errorText}>{errors.name}</Text>
-            ) : null}
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.label}>학과</Text>
-            <Dropdown
-              value={department}
-              options={DEPARTMENT_OPTIONS}
-              onSelect={setDepartment}
-              placeholder="학과를 선택해주세요"
-              modalTitle="학과 선택"
-              disabled={fetching || saving}
-            />
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.label}>학번</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={
-                fetching
-                  ? '불러오는 중...'
-                  : saving
-                    ? '저장 중...'
-                    : '예: 20251234'
-              }
-              placeholderTextColor={COLORS.text.disabled}
-              value={studentId}
-              onChangeText={value => {
-                const only = onlyDigits(value).slice(0, 8);
-                setStudentId(only);
-                if (errors.studentId) {
-                  setErrors(prev => ({ ...prev, studentId: '' }));
-                }
-              }}
-              editable={!fetching && !saving}
-              keyboardType="number-pad"
-            />
-            {errors.studentId ? (
-              <Text style={styles.errorText}>{errors.studentId}</Text>
-            ) : null}
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              (fetching || saving) && styles.saveButtonDisabled,
-            ]}
-            disabled={fetching || saving}
-            onPress={handleSave}
-          >
-            {saving ? (
-              <View style={styles.saveButtonContent}>
-                <ActivityIndicator
-                  size="small"
-                  color={COLORS.text.buttonText}
-                  style={styles.spinner}
+            <View style={styles.formSection}>
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>닉네임</Text>
+                <TextInput
+                  maxLength={7}
+                  onChangeText={setDisplayName}
+                  onFocus={closeDropdown}
+                  placeholder="닉네임 입력"
+                  placeholderTextColor={V2_COLORS.text.muted}
+                  style={styles.input}
+                  value={displayName}
                 />
-                <Text style={styles.saveButtonText}>저장 중...</Text>
               </View>
-            ) : (
-              <Text style={styles.saveButtonText}>저장하기</Text>
-            )}
-          </TouchableOpacity>
-        </ScrollView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+
+              <View style={styles.fieldBlock}>
+                <Text style={styles.fieldLabel}>학번</Text>
+                <TextInput
+                  keyboardType="number-pad"
+                  maxLength={8}
+                  onChangeText={value => {
+                    setStudentId(value.replace(/[^0-9]/g, ''));
+                  }}
+                  onFocus={closeDropdown}
+                  placeholder="예: 20210001"
+                  placeholderTextColor={V2_COLORS.text.muted}
+                  style={styles.input}
+                  value={studentId}
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.fieldBlock,
+                  isDropdownOpen ? styles.dropdownFieldRaised : undefined,
+                ]}>
+                <Text style={styles.fieldLabel}>학과</Text>
+                <V2SelectionDropdown
+                  isOpen={isDropdownOpen}
+                  maxHeight={208}
+                  onPressSelect={value => {
+                    setDepartment(value);
+                    setDropdownOpen(false);
+                  }}
+                  onPressTrigger={() => {
+                    Keyboard.dismiss();
+                    setDropdownOpen(current => !current);
+                  }}
+                  options={data.departmentOptions}
+                  selectedValue={department}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.9}
+              disabled={saving}
+              onPress={handleSave}
+              style={styles.saveButton}>
+              {saving ? (
+                <ActivityIndicator
+                  color={V2_COLORS.text.inverse}
+                  size="small"
+                  style={styles.saveSpinner}
+                />
+              ) : null}
+              <Text style={styles.saveLabel}>
+                {saving ? '저장 중...' : data.saveLabel}
+              </Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    backgroundColor: V2_COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 24,
+  content: {
+    paddingHorizontal: V2_SPACING.lg,
+    paddingTop: 32,
+    paddingBottom: 40,
   },
-  section: {
-    marginBottom: 16,
-  },
-  avatarRow: {
-    flexDirection: 'row',
+  avatarSection: {
     alignItems: 'center',
-    gap: 12,
+    marginBottom: 32,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: COLORS.accent.green,
-    justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 9999,
+    height: 96,
+    justifyContent: 'center',
+    width: 96,
   },
-  avatarText: {
-    color: COLORS.text.buttonText,
+  avatarLabel: {
+    color: V2_COLORS.text.inverse,
+    fontSize: 30,
     fontWeight: '700',
-    fontSize: 22,
+    lineHeight: 36,
   },
-  photoBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: COLORS.background.card,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+  cameraButton: {
+    alignItems: 'center',
+    backgroundColor: V2_COLORS.brand.primary,
+    borderRadius: 9999,
+    bottom: 0,
+    height: 32,
+    justifyContent: 'center',
+    left: '54%',
+    position: 'absolute',
+    width: 32,
   },
-  photoBtnText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
+  formSection: {
+    zIndex: 1,
   },
-  label: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    marginBottom: 6,
+  fieldBlock: {
+    marginBottom: 20,
+  },
+  dropdownFieldRaised: {
+    zIndex: 20,
+  },
+  fieldLabel: {
+    color: V2_COLORS.text.tertiary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
-    padding: 14,
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
+    backgroundColor: V2_COLORS.background.surface,
+    borderColor: V2_COLORS.border.default,
+    borderRadius: V2_RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  errorText: {
-    color: '#FF6B6B',
-    fontSize: 12,
-    marginTop: 6,
+    color: V2_COLORS.text.primary,
+    fontSize: 14,
+    height: 50,
+    lineHeight: 20,
+    paddingHorizontal: 17,
+    paddingVertical: 15,
   },
   saveButton: {
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    marginVertical: 24,
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonContent: {
+    backgroundColor: V2_COLORS.brand.primary,
+    borderRadius: V2_RADIUS.lg,
     flexDirection: 'row',
-    alignItems: 'center',
+    height: 52,
     justifyContent: 'center',
+    marginTop: 32,
   },
-  saveButtonText: {
-    color: COLORS.text.buttonText,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  spinner: {
+  saveSpinner: {
     marginRight: 8,
   },
+  saveLabel: {
+    color: V2_COLORS.text.inverse,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
 });
-
