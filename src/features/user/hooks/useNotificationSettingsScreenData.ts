@@ -91,7 +91,6 @@ const mapScreen = (
   };
 
   return {
-    helperText: source.helperText,
     items: source.items.map(item => mapItem(item, !source.allNotifications)),
     master,
   };

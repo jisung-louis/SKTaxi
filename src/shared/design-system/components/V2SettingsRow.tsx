@@ -82,7 +82,13 @@ export const V2SettingsRow = ({
           {subtitle ? (
             <Text
               numberOfLines={subtitleNumberOfLines}
-              style={[styles.subtitle, disabled ? styles.disabledText : undefined]}>
+              style={[
+                styles.subtitle,
+                disabled ? styles.disabledText : undefined,
+                subtitleNumberOfLines >= 2
+                  ? styles.subtitleOverOneLine
+                  : styles.subtitleOneLine,
+              ]}>
               {subtitle}
             </Text>
           ) : null}
@@ -184,8 +190,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: V2_COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
     marginTop: 2,
   },
   valueLabel: {
@@ -196,5 +200,13 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: V2_COLORS.text.muted,
+  },
+  subtitleOneLine: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  subtitleOverOneLine: {
+    fontSize: 10,
+    lineHeight: 14,
   },
 });

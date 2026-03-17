@@ -94,6 +94,7 @@ export const NotificationSettingsScreen = () => {
                   onToggle={nextValue => toggleItem(item.key, nextValue)}
                   showDivider={index < data.items.length - 1}
                   subtitle={item.subtitle}
+                  subtitleNumberOfLines={2}
                   title={item.title}
                   titleWeight="700"
                   toggleValue={item.value}
@@ -101,7 +102,8 @@ export const NotificationSettingsScreen = () => {
               ))}
             </V2SettingsSection>
 
-            <Text style={styles.footerText}>{data.helperText}</Text>
+            <Text style={styles.footerText}>기기의 알림 설정이 꺼져 있으면 알림을 받을 수 없어요.</Text>
+            <Text style={styles.footerText}>기기 설정에서 알림 권한을 허용해주세요.</Text>
           </>
         ) : null}
       </ScrollView>

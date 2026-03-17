@@ -23,7 +23,6 @@ export interface NotificationSettingItemViewData {
 }
 
 export interface NotificationSettingsScreenViewData {
-  helperText: string;
   items: NotificationSettingItemViewData[];
   master: NotificationSettingMasterViewData;
 }
