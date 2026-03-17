@@ -1,11 +1,13 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -34,6 +36,7 @@ import {
 
 import type {BoardStackParamList} from '../model/navigation';
 import {useBoardDetailData} from '../hooks/useBoardDetailData';
+import {BoardDetailPopupMenu} from '../components/v2/BoardDetailPopupMenu';
 
 type BoardDetailNavigationProp = NativeStackNavigationProp<
   BoardStackParamList,
@@ -52,6 +55,7 @@ export const BoardDetailScreen = () => {
   const {height: keyboardHeight, isVisible: isKeyboardVisible} =
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
+  const [isMenuVisible, setIsMenuVisible] = React.useState(false);
   const {data, error, loading, notFound, reload} = useBoardDetailData(
     route.params?.postId,
   );
@@ -73,6 +77,18 @@ export const BoardDetailScreen = () => {
   const handlePressReturnToList = React.useCallback(() => {
     navigation.navigate('BoardMain');
   }, [navigation]);
+
+  const handlePressReport = React.useCallback(() => {
+    Alert.alert('게시글 신고', '신고 기능은 다음 단계에서 연결할 예정입니다.');
+  }, []);
+
+  const handlePressEdit = React.useCallback(() => {
+    Alert.alert('게시글 수정', '수정 메뉴 연결은 다음 단계에서 진행할 예정입니다.');
+  }, []);
+
+  const handlePressDelete = React.useCallback(() => {
+    Alert.alert('게시글 삭제', '삭제 메뉴 연결은 다음 단계에서 진행할 예정입니다.');
+  }, []);
 
   const categoryBadge = data?.metaBadges[0];
 
@@ -112,6 +128,7 @@ export const BoardDetailScreen = () => {
         ) : data ? (
           <>
             <ScrollView
+              contentInsetAdjustmentBehavior="never"
               contentContainerStyle={[
                 styles.scrollContent,
                 {
@@ -121,6 +138,11 @@ export const BoardDetailScreen = () => {
               ]}
               keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
               keyboardShouldPersistTaps="handled"
+              onScrollBeginDrag={() => {
+                if (isMenuVisible) {
+                  setIsMenuVisible(false);
+                }
+              }}
               showsVerticalScrollIndicator={false}>
               <View style={styles.metaRow}>
                 {categoryBadge ? (
@@ -188,7 +210,35 @@ export const BoardDetailScreen = () => {
           </>
         ) : null}
 
-        <V2DetailBackHeader onPressBack={handlePressBack} />
+        <V2DetailBackHeader
+          onPressBack={handlePressBack}
+          rightAccessory={
+            <TouchableOpacity
+              accessibilityLabel="게시물 메뉴"
+              accessibilityRole="button"
+              activeOpacity={0.82}
+              onPress={() => {
+                setIsMenuVisible(previous => !previous);
+              }}
+              style={styles.menuButton}>
+              <Icon
+                color={V2_COLORS.text.secondary}
+                name="ellipsis-vertical"
+                size={18}
+              />
+            </TouchableOpacity>
+          }
+        />
+        <BoardDetailPopupMenu
+          onClose={() => {
+            setIsMenuVisible(false);
+          }}
+          onPressDelete={handlePressDelete}
+          onPressEdit={handlePressEdit}
+          onPressReport={handlePressReport}
+          top={insets.top + 44}
+          visible={isMenuVisible}
+        />
       </Animated.View>
     </SafeAreaView>
   );
@@ -212,7 +262,7 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: V2_SPACING.sm,
     marginBottom: V2_SPACING.md,
   },
   dateLabel: {
@@ -255,7 +305,7 @@ const styles = StyleSheet.create({
   reactionsRow: {
     flexDirection: 'row',
     gap: V2_SPACING.md,
-    marginTop: V2_SPACING.xxl,
+    marginTop: V2_SPACING.xl,
   },
   commentsDivider: {
     marginBottom: V2_SPACING.lg,
@@ -287,5 +337,11 @@ const styles = StyleSheet.create({
     left: 0,
     position: 'absolute',
     right: 0,
+  },
+  menuButton: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
 });

@@ -7,10 +7,12 @@ import {V2_COLORS, V2_SPACING} from '../tokens';
 
 interface V2DetailBackHeaderProps {
   onPressBack: () => void;
+  rightAccessory?: React.ReactNode;
 }
 
 export const V2DetailBackHeader = ({
   onPressBack,
+  rightAccessory,
 }: V2DetailBackHeaderProps) => {
   const insets = useSafeAreaInsets();
 
@@ -23,14 +25,22 @@ export const V2DetailBackHeader = ({
           paddingTop: insets.top + 12,
         },
       ]}>
-      <TouchableOpacity
-        accessibilityLabel="뒤로 가기"
-        accessibilityRole="button"
-        activeOpacity={0.82}
-        onPress={onPressBack}
-        style={styles.backButton}>
-        <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
-      </TouchableOpacity>
+      <View style={styles.row}>
+        <TouchableOpacity
+          accessibilityLabel="뒤로 가기"
+          accessibilityRole="button"
+          activeOpacity={0.82}
+          onPress={onPressBack}
+          style={styles.backButton}>
+          <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+        </TouchableOpacity>
+
+        {rightAccessory ? (
+          <View style={styles.rightAccessoryWrap}>{rightAccessory}</View>
+        ) : (
+          <View style={styles.rightAccessoryPlaceholder} />
+        )}
+      </View>
     </View>
   );
 };
@@ -51,5 +61,20 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     width: 36,
+  },
+  rightAccessoryPlaceholder: {
+    height: 36,
+    width: 36,
+  },
+  rightAccessoryWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 36,
+    minWidth: 36,
+  },
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
 });
