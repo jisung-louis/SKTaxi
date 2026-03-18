@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-18
+> 최종 수정일: 2026-03-19
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [API 명세](./api-specification.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
 
 ---
@@ -23,30 +23,30 @@
 - 최종 구조 기준 문서는 작성 완료
 - 실행 로드맵 문서는 작성 완료
 - Phase A 공통 transport 기반 구축은 1차 완료
-- auth/member 경로의 Spring concrete repository는 bootstrap core까지 연결 완료
+- auth/member 경로의 Spring concrete repository는 CompleteProfile/guard 정리까지 연결 완료
 - 전역 DI와 feature-local entrypoint의 혼재는 아직 남아 있음
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
 즉, 현재 상태는 다음과 같이 요약할 수 있다.
 
 - 공통 infra는 준비되었고
-- auth/bootstrap과 FCM token 경로는 Spring 기준으로 고정됐지만
-- auth 진입선의 프로필/온보딩 source of truth 정리는 아직 남아 있다.
+- auth/bootstrap, CompleteProfile, FCM token 경로는 Spring 기준으로 고정됐고
+- auth 진입선의 프로필/온보딩 source of truth도 member profile + local adjunct 기준으로 정리됐다.
 
 ---
 
 ## 3. Phase 진행 현황
 
-| Phase | 상태 | 비고 |
-|------|------|------|
-| Phase A. 공통 Transport 구축 | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가 |
-| Phase B. 인증/회원 bootstrap 정리 | 진행 중(후속 정리 필요) | bootstrap + FCM token은 완료, CompleteProfile/guard/source-of-truth 정리 남음 |
-| Phase C. App Notice / Notification Center / Taxi Home | 미시작 | 추천 첫 concrete migration 대상 |
-| Phase D. Notification 정식 이전 | 미시작 | REST + SSE 전환 필요 |
-| Phase E. Taxi Party 정식 이전 | 미시작 | REST + SSE 전환 필요 |
-| Phase F. Chat 정식 이전 | 미시작 | REST + STOMP 전환 필요 |
-| Phase G. 남은 mock 화면 체인 정리 | 미시작 | feature-local 임시 경로 수렴 필요 |
-| Phase H. 정리/수렴 | 미시작 | Firestore direct path와 legacy 분기 제거 |
+| Phase                                                 | 상태           | 비고                                                |
+| ----------------------------------------------------- | -------------- | --------------------------------------------------- |
+| Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가  |
+| Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료 |
+| Phase C. App Notice / Notification Center / Taxi Home | 미시작         | 추천 첫 concrete migration 대상                     |
+| Phase D. Notification 정식 이전                       | 미시작         | REST + SSE 전환 필요                                |
+| Phase E. Taxi Party 정식 이전                         | 미시작         | REST + SSE 전환 필요                                |
+| Phase F. Chat 정식 이전                               | 미시작         | REST + STOMP 전환 필요                              |
+| Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                   |
+| Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거            |
 
 ---
 
@@ -108,6 +108,7 @@
 
 - `src/features/member/data/api/memberApiClient.ts`
 - `src/features/member/data/dto/memberDto.ts`
+- `src/features/member/data/dto/updateMemberProfileDto.ts`
 - `src/features/member/data/mappers/memberMapper.ts`
 - `src/features/member/data/repositories/IMemberRepository.ts`
 - `src/features/member/data/repositories/SpringMemberRepository.ts`
@@ -119,10 +120,13 @@
 - `src/di/repositoryContracts.ts`
 - `src/di/useRepository.ts`
 - `src/features/auth/services/authSessionService.ts`
+- `src/features/auth/services/authLocalAdjunctService.ts`
 - `src/features/auth/hooks/useAuthSession.ts`
 - `src/app/bootstrap/registerPushHandlers.ts`
 - `src/features/auth/services/permissionOnboardingService.ts`
 - `src/features/auth/hooks/usePermissionOnboarding.ts`
+- `src/features/auth/services/profileCompletionService.ts`
+- `src/features/auth/hooks/useCompleteProfile.ts`
 - `src/features/user/data/repositories/IUserRepository.ts`
 - `src/features/user/data/repositories/FirebaseUserRepository.ts`
 
@@ -139,29 +143,31 @@
 - bootstrap 실패 시 half-authenticated 상태로 진행하지 않고 세션을 정리
 - 앱 런타임 토큰 등록/refresh/로그아웃 토큰 해제를 모두 `/v1/members/me/fcm-tokens`로 전환
 - `IUserRepository`의 Firebase FCM token 저장 메서드를 제거해 direct Firebase 저장 경로를 정리
+- `CompleteProfileScreen` 저장 경로를 `PATCH /v1/members/me`로 이전
+- auth state의 핵심 프로필 source of truth를 mock user profile 구독이 아니라 Spring member profile + local adjunct 기준으로 전환
+- `permissionsComplete`를 AsyncStorage 기반 local adjunct로 영속화해 앱 재시작 후에도 유지되게 정리
+- `finalizeGoogleSignIn()` / auth bootstrap 경로에서 `createInitialUserProfile()` / `syncLoginMetadata()` 의존을 제거
+- backend 계약에 닉네임 중복 검사가 없음을 확인하고 CompleteProfile의 frontend pre-check를 제거
 
-### 4.5 Phase B 현재 결과
+### 4.5 Phase B 결과
 
 현재 가능한 것:
 
 - 앱 재시작 시 기존 Firebase 세션이 있으면 Spring member bootstrap을 먼저 수행
 - 신규 로그인 시 login function이 member bootstrap 완료 전에는 성공으로 반환되지 않음
-- hook/screen에 서버 DTO를 직접 노출하지 않고 auth는 repository 경계만 참조
+- `CompleteProfileScreen` 제출값이 `PATCH /v1/members/me`로 저장됨
+- `useAuthSession()`은 mock `userRepository.subscribeToUserProfile()` 없이 auth state를 구성함
+- auth state `user`는 Spring member profile + local adjunct(`permissionsComplete`)를 source of truth로 사용함
+- `PermissionOnboarding` 완료 상태가 user id 기준 local adjunct에 저장되어 앱 재시작 후에도 유지됨
 - FCM token 등록/refresh/삭제가 member repository 경유로 Spring API를 호출함
+- hook/screen에 서버 DTO를 직접 노출하지 않고 auth/member는 repository 경계만 참조함
 
-현재 아직 남은 것:
+Phase B 완료 판단 근거:
 
-- `CompleteProfileScreen` 저장 경로를 `PATCH /v1/members/me`로 이전
-- auth session의 핵심 프로필 source of truth를 mock `userRepository.subscribeToUserProfile()`가 아니라 Spring member profile 기준으로 정리
-- `permissionsComplete`를 mock in-memory profile에만 두지 않고, 재시작 후에도 유지되는 local adjunct 또는 backend 지원 방식으로 정리
-- `finalizeGoogleSignIn()` / auth bootstrap 경로에 남아 있는 `createInitialUserProfile()` / `syncLoginMetadata()` mock 의존을 제거하거나 local adjunct 책임으로 축소
-- 닉네임 중복 정책이 제품 필수 규칙이라면 backend 계약 추가 요청, 아니라면 frontend pre-check 제거
-
-현재 Phase B가 아직 닫히지 않은 이유:
-
-- `useAuthSession()`은 member bootstrap 이후에도 [useAuthSession.ts](/Users/jisung/SKTaxi/src/features/auth/hooks/useAuthSession.ts#L172)에서 mock user profile 구독을 auth state source of truth로 사용한다.
-- `MockUserRepository` 기본 프로필은 [MockUserRepository.ts](/Users/jisung/SKTaxi/src/features/user/data/repositories/MockUserRepository.ts#L79)에서 `studentId: null`, `department: null`, `permissionsComplete: false`로 생성된다.
-- 따라서 현재 구조를 그대로 두면 앱 재시작 후에도 `CompleteProfile` / `PermissionOnboarding` 가드가 mock 기본값에 끌려갈 수 있다.
+- `useAuthSession()`은 [useAuthSession.ts](/Users/jisung/SKTaxi/src/features/auth/hooks/useAuthSession.ts#L177)에서 member bootstrap 후 `GET /v1/members/me` 응답과 local adjunct를 합쳐 auth state를 만든다.
+- `useAuthEntryGuard()`는 [useAuthEntryGuard.ts](/Users/jisung/SKTaxi/src/app/guards/useAuthEntryGuard.ts#L11)에서 이 auth state만 읽고 `CompleteProfile` / `PermissionOnboarding` 진입 여부를 결정한다.
+- `permissionsComplete`는 [authLocalAdjunctService.ts](/Users/jisung/SKTaxi/src/features/auth/services/authLocalAdjunctService.ts#L1)에서 user id 기준 AsyncStorage에 저장되므로 mock in-memory 기본값으로 되돌아가지 않는다.
+- `CompleteProfile` 제출 시 [profileCompletionService.ts](/Users/jisung/SKTaxi/src/features/auth/services/profileCompletionService.ts#L27)에서 member repository의 `updateMyProfile()`만 호출하고, frontend 닉네임 중복 pre-check는 수행하지 않는다.
 
 ---
 
@@ -187,23 +193,19 @@
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Phase B 후속 정리
-   - CompleteProfile Spring 이전
-   - auth state source of truth 정리
-   - permission onboarding persistence 정리
-2. Phase C
+1. Phase C
    - App Notice
    - Notification Center
    - Taxi Home
-3. Phase D 이후
+2. Phase D 이후
    - Notification
    - Taxi Party
    - Chat
 
 이 순서를 권장하는 이유:
 
-- 현재 auth 진입선이 여전히 mock profile 기본값에 의존하므로, 이 구간을 먼저 닫아야 Phase C 이후 feature migration이 안정된다.
-- 그 다음에는 Phase A 기반을 가장 빨리 검증할 수 있는 entrypoint 3종이 가장 빠른 승리 지점이다.
+- auth 진입선의 프로필/온보딩 source of truth가 정리됐으므로, 이제 Phase A/B 기반 위에서 concrete feature migration을 안정적으로 진행할 수 있다.
+- 다음으로는 Phase A 기반을 가장 빨리 검증할 수 있는 entrypoint 3종이 가장 빠른 승리 지점이다.
 - App Notice / Notification Center / Taxi Home을 옮기면서 중앙 DI 수렴 패턴도 같이 확정할 수 있다.
 
 ---
