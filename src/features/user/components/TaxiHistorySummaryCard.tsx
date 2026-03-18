@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 
-import {V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 import type {TaxiHistorySummaryViewData} from '../../model/userActivityViewData';
 
@@ -40,11 +40,11 @@ export const TaxiHistorySummaryCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     minHeight: 118,
   },
   content: {
-    padding: V2_SPACING.xl,
+    padding: SPACING.xl,
   },
   title: {
     color: '#DCFCE7',

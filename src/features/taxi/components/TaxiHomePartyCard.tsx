@@ -23,10 +23,10 @@ import type {
   TaxiHomePartyCardViewData,
 } from '../../model/taxiHomeViewData';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiHomePartyCardProps {
@@ -37,7 +37,7 @@ interface TaxiHomePartyCardProps {
 }
 
 const EXPANDED_BORDER_COLOR = '#86EFAC';
-const DEFAULT_CARD_BORDER_COLOR = V2_COLORS.border.subtle;
+const DEFAULT_CARD_BORDER_COLOR = COLORS.border.subtle;
 
 const renderAvatarLabel = (avatar: TaxiHomeAvatarViewData) => {
   if (!avatar.label) {
@@ -143,7 +143,7 @@ export const TaxiHomePartyCard = ({
             {expandable ? (
               <Animated.View style={chevronAnimatedStyle}>
                 <Icon
-                  color={V2_COLORS.text.muted}
+                  color={COLORS.text.muted}
                   name="chevron-down"
                   size={18}
                 />
@@ -156,7 +156,7 @@ export const TaxiHomePartyCard = ({
           <View style={styles.routeSide}>
             <View style={styles.routeIconStart}>
               <Icon
-                color={V2_COLORS.brand.primaryStrong}
+                color={COLORS.brand.primaryStrong}
                 name="location"
                 size={12}
               />
@@ -167,7 +167,7 @@ export const TaxiHomePartyCard = ({
           </View>
 
           <Icon
-            color={V2_COLORS.border.default}
+            color={COLORS.border.default}
             name="arrow-forward-outline"
             size={14}
           />
@@ -178,7 +178,7 @@ export const TaxiHomePartyCard = ({
             </Text>
             <View style={styles.routeIconEnd}>
               <Icon
-                color={V2_COLORS.accent.blue}
+                color={COLORS.accent.blue}
                 name="business-outline"
                 size={12}
               />
@@ -268,8 +268,8 @@ export const TaxiHomePartyCard = ({
             <Icon
               color={
                 joinActionDisabled
-                  ? V2_COLORS.text.tertiary
-                  : V2_COLORS.text.inverse
+                  ? COLORS.text.tertiary
+                  : COLORS.text.inverse
               }
               name="car-sport"
               size={16}
@@ -296,52 +296,52 @@ export const TaxiHomePartyCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderColor: DEFAULT_CARD_BORDER_COLOR,
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   cardInactive: {
     opacity: 0.5,
   },
   cardMain: {
-    padding: V2_SPACING.lg,
+    padding: SPACING.lg,
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   topRowRight: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   caption: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 2,
   },
   departureTime: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
   },
   statusPill: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     minHeight: 28,
     paddingHorizontal: 12,
   },
   statusPillActive: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
   },
   statusPillInactive: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
   },
   statusLabel: {
     fontSize: 12,
@@ -349,19 +349,19 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   statusLabelActive: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   statusLabelInactive: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
   },
   routeCard: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     minHeight: 44,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 10,
   },
   routeSide: {
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   routeText: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
@@ -382,39 +382,39 @@ const styles = StyleSheet.create({
   },
   routeIconStart: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primarySoft,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primarySoft,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   routeIconEnd: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.accent.blueSoft,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   footer: {
     alignItems: 'center',
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: V2_SPACING.lg,
+    marginTop: SPACING.lg,
     paddingTop: 13,
   },
   footerLeft: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
     minWidth: 0,
   },
   leaderAvatar: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
@@ -425,24 +425,24 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   leaderMeta: {
-    marginLeft: V2_SPACING.sm,
+    marginLeft: SPACING.sm,
     minWidth: 42,
   },
   leaderName: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   leaderRole: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   footerDivider: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     height: 24,
-    marginHorizontal: V2_SPACING.sm,
+    marginHorizontal: SPACING.sm,
     width: 1,
   },
   memberSummary: {
@@ -456,8 +456,8 @@ const styles = StyleSheet.create({
   },
   memberAvatar: {
     alignItems: 'center',
-    borderColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    borderColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     borderWidth: 2,
     height: 24,
     justifyContent: 'center',
@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   memberSummaryLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 16,
     marginLeft: 6,
@@ -482,32 +482,32 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   priceCaption: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 2,
   },
   priceLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   expandedSection: {
-    paddingBottom: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingBottom: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   expandedDivider: {
-    backgroundColor: V2_COLORS.brand.primarySoft,
+    backgroundColor: COLORS.brand.primarySoft,
     height: 1,
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   requestButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 56,
     justifyContent: 'center',
     shadowColor: '#22C55E',
@@ -516,23 +516,23 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   requestButtonDisabled: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     shadowOpacity: 0,
   },
   requestButtonLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 21,
   },
   requestButtonLabelDisabled: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
   },
   requestHelperText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-    paddingTop: V2_SPACING.sm,
+    paddingTop: SPACING.sm,
     textAlign: 'center',
   },
 });

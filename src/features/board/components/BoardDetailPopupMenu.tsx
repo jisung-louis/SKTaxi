@@ -9,10 +9,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface BoardDetailPopupMenuProps {
@@ -52,7 +52,7 @@ export const BoardDetailPopupMenu = ({
           }}
           style={styles.row}>
           <Icon
-            color={V2_COLORS.accent.orange}
+            color={COLORS.accent.orange}
             name="flag-outline"
             size={16}
           />
@@ -69,7 +69,7 @@ export const BoardDetailPopupMenu = ({
             onPressEdit();
           }}
           style={styles.row}>
-          <Icon color={V2_COLORS.accent.blue} name="create-outline" size={16} />
+          <Icon color={COLORS.accent.blue} name="create-outline" size={16} />
           <Text style={styles.rowLabel}>수정</Text>
         </TouchableOpacity>
 
@@ -83,7 +83,7 @@ export const BoardDetailPopupMenu = ({
             onPressDelete();
           }}
           style={styles.row}>
-          <Icon color={V2_COLORS.status.danger} name="trash-outline" size={16} />
+          <Icon color={COLORS.status.danger} name="trash-outline" size={16} />
           <Text style={styles.deleteLabel}>삭제</Text>
         </TouchableOpacity>
       </View>
@@ -93,23 +93,23 @@ export const BoardDetailPopupMenu = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'absolute',
     width: 144,
     zIndex: 30,
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   deleteLabel: {
-    color: V2_COLORS.status.danger,
+    color: COLORS.status.danger,
     fontSize: 14,
     lineHeight: 20,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
     marginHorizontal: 1,
   },
@@ -119,12 +119,12 @@ const styles = StyleSheet.create({
   row: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
     height: 52,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   rowLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 20,
   },

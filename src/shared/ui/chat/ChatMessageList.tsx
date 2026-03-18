@@ -11,10 +11,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -207,13 +207,13 @@ export const ChatMessageList = ({
 const styles = StyleSheet.create({
   avatarCircle: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
   avatarImage: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 36,
     width: 36,
   },
@@ -237,32 +237,32 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flexGrow: 1,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   dateDividerLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   dateDividerLine: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     flex: 1,
     height: 1,
   },
   dateDividerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.md,
-    marginTop: V2_SPACING.sm,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
   },
   incomingBubble: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
     borderTopLeftRadius: 4,
     borderWidth: 1,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   incomingBubbleRow: {
     alignItems: 'flex-end',
@@ -278,25 +278,25 @@ const styles = StyleSheet.create({
   incomingRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   messageText: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     lineHeight: 22,
   },
   messageWrap: {
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   messageWrapCompact: {
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   outgoingBubble: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
     borderTopRightRadius: 4,
   },
   outgoingMessageText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   outgoingMessageWrap: {
     alignItems: 'flex-end',
@@ -311,24 +311,24 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   senderName: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   systemMessageLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     textAlign: 'center',
   },
   systemMessageWrap: {
     alignItems: 'center',
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   timeLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 14,
     marginBottom: 2,

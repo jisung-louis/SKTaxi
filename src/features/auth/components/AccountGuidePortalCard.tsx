@@ -8,10 +8,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface AccountGuidePortalCardProps {
@@ -25,7 +25,7 @@ export const AccountGuidePortalCard = ({
     <View style={styles.card}>
       <View style={styles.infoGroup}>
         <View style={styles.iconWrap}>
-          <Icon color={V2_COLORS.brand.primary} name="globe-outline" size={18} />
+          <Icon color={COLORS.brand.primary} name="globe-outline" size={18} />
         </View>
 
         <View>
@@ -39,7 +39,7 @@ export const AccountGuidePortalCard = ({
         activeOpacity={0.9}
         onPress={onPressPortal}
         style={styles.button}>
-        <Icon color={V2_COLORS.text.inverse} name="open-outline" size={14} />
+        <Icon color={COLORS.text.inverse} name="open-outline" size={14} />
         <Text style={styles.buttonLabel}>포탈 열기</Text>
       </TouchableOpacity>
     </View>
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     minWidth: 102,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     shadowColor: '#4ADE80',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.3,
@@ -64,46 +64,46 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   buttonLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
   card: {
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
   },
   iconWrap: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
     borderRadius: 12,
     height: 40,
     justifyContent: 'center',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
     width: 40,
   },
   infoGroup: {
     alignItems: 'center',
     flexDirection: 'row',
     flexShrink: 1,
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
   },
   subtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,

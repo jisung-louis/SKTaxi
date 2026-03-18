@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS} from '@/shared/design-system/tokens';
 
 import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
 import type {TimetableSupplementItemViewData} from '../../model/timetableDetailViewData';
@@ -69,7 +69,7 @@ export const TimetableSupplementSection = ({
                 </Text>
               </View>
 
-              <Icon color={V2_COLORS.border.default} name="chevron-forward" size={18} />
+              <Icon color={COLORS.border.default} name="chevron-forward" size={18} />
             </TouchableOpacity>
           );
         })}
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   sectionTitle: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -101,15 +101,15 @@ const styles = StyleSheet.create({
   },
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     height: 62,
     paddingHorizontal: 16,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   accentBar: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 38,
     marginRight: 12,
     width: 4,
@@ -124,14 +124,14 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   itemTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   badge: {
     backgroundColor: '#EFF6FF',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     marginLeft: 8,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   metaLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },

@@ -3,7 +3,7 @@ import {StyleSheet, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {V2_COLORS, V2_SPACING} from '../tokens';
+import {COLORS, SPACING} from '../tokens';
 
 interface DetailBackHeaderProps {
   onPressBack: () => void;
@@ -32,7 +32,7 @@ export const DetailBackHeader = ({
           activeOpacity={0.82}
           onPress={onPressBack}
           style={styles.backButton}>
-          <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+          <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
         </TouchableOpacity>
 
         {rightAccessory ? (
@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(249,250,251,0.9)',
     left: 0,
-    paddingBottom: V2_SPACING.sm,
-    paddingHorizontal: V2_SPACING.sm,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     position: 'absolute',
     right: 0,
     top: 0,

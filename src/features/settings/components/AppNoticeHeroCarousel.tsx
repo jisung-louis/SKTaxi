@@ -14,10 +14,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 type AppNoticeHeroCarouselProps = {
@@ -74,7 +74,7 @@ export const AppNoticeHeroCarousel = ({
               styles.leftArrow,
               currentIndex === 0 ? styles.arrowDisabled : null,
             ]}>
-            <Icon color={V2_COLORS.text.primary} name="chevron-back" size={18} />
+            <Icon color={COLORS.text.primary} name="chevron-back" size={18} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -89,7 +89,7 @@ export const AppNoticeHeroCarousel = ({
               currentIndex === images.length - 1 ? styles.arrowDisabled : null,
             ]}>
             <Icon
-              color={V2_COLORS.text.primary}
+              color={COLORS.text.primary}
               name="chevron-forward"
               size={18}
             />
@@ -108,7 +108,7 @@ export const AppNoticeHeroCarousel = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     height: HERO_HEIGHT,
     overflow: 'hidden',
     position: 'relative',
@@ -121,34 +121,34 @@ const styles = StyleSheet.create({
   arrowButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     position: 'absolute',
     top: HERO_HEIGHT / 2 - 18,
     width: 36,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   leftArrow: {
-    left: V2_SPACING.lg,
+    left: SPACING.lg,
   },
   rightArrow: {
-    right: V2_SPACING.lg,
+    right: SPACING.lg,
   },
   arrowDisabled: {
     opacity: 0.35,
   },
   pageIndicator: {
     backgroundColor: 'rgba(17,24,39,0.72)',
-    borderRadius: V2_RADIUS.pill,
-    bottom: V2_SPACING.md,
+    borderRadius: RADIUS.pill,
+    bottom: SPACING.md,
     paddingHorizontal: 10,
     paddingVertical: 5,
     position: 'absolute',
-    right: V2_SPACING.lg,
+    right: SPACING.lg,
   },
   pageIndicatorLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 11,
     fontWeight: '700',
     lineHeight: 16,

@@ -9,7 +9,7 @@ import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
 import {navigateToNoticeDetail} from '@/features/notice';
 import {StackHeader, StateCard} from '@/shared/design-system/components';
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {
@@ -41,7 +41,7 @@ export const BookmarksScreen = () => {
         <View style={styles.stateWrap}>
           <StateCard
             description="북마크를 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="북마크를 불러오는 중"
           />
         </View>
@@ -54,7 +54,7 @@ export const BookmarksScreen = () => {
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -108,7 +108,7 @@ export const BookmarksScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   scroll: {

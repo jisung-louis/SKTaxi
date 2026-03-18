@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { V2_COLORS, V2_RADIUS } from '@/shared/design-system/tokens';
+import { COLORS, RADIUS } from '@/shared/design-system/tokens';
 
 interface DotProps {
   visible?: boolean;
@@ -21,8 +21,8 @@ export const Dot: React.FC<DotProps> = ({ visible = true, size = 'medium', style
 
 const styles = StyleSheet.create({
   dot: {
-    backgroundColor: V2_COLORS.status.danger,
-    borderRadius: V2_RADIUS.sm,
+    backgroundColor: COLORS.status.danger,
+    borderRadius: RADIUS.sm,
   },
   small: {
     width: 8,

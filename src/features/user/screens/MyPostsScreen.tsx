@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
 import {StackHeader, StateCard} from '@/shared/design-system/components';
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {UserPostListItem} from '../components/UserPostListItem';
@@ -45,7 +45,7 @@ export const MyPostsScreen = () => {
         <View style={styles.stateWrap}>
           <StateCard
             description="내가 쓴 글을 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="내가 쓴 글을 불러오는 중"
           />
         </View>
@@ -58,7 +58,7 @@ export const MyPostsScreen = () => {
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -92,7 +92,7 @@ export const MyPostsScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   scroll: {
@@ -102,13 +102,13 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   countBadge: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
     borderRadius: 9999,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   countLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,

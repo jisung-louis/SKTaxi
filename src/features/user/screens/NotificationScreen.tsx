@@ -18,7 +18,7 @@ import {
   StackHeader,
   StateCard,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {
@@ -104,7 +104,7 @@ export const NotificationScreen = () => {
       return (
         <StateCard
           description="도착한 알림을 확인하는 중입니다."
-          icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+          icon={<ActivityIndicator color={COLORS.brand.primary} />}
           title="알림함을 불러오는 중"
         />
       );
@@ -120,7 +120,7 @@ export const NotificationScreen = () => {
           }
           icon={
             <Icon
-              color={V2_COLORS.accent.orange}
+              color={COLORS.accent.orange}
               name="refresh-outline"
               size={26}
             />
@@ -144,7 +144,7 @@ export const NotificationScreen = () => {
       return (
         <StateCard
           description="최근 앱 공지사항을 정리하고 있습니다."
-          icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+          icon={<ActivityIndicator color={COLORS.brand.primary} />}
           title="앱 공지사항을 불러오는 중"
         />
       );
@@ -160,7 +160,7 @@ export const NotificationScreen = () => {
           }
           icon={
             <Icon
-              color={V2_COLORS.accent.orange}
+              color={COLORS.accent.orange}
               name="refresh-outline"
               size={26}
             />
@@ -199,7 +199,7 @@ export const NotificationScreen = () => {
           <RefreshControl
             onRefresh={handleRefresh}
             refreshing={refreshing}
-            tintColor={V2_COLORS.brand.primary}
+            tintColor={COLORS.brand.primary}
           />
         }
         showsVerticalScrollIndicator={false}
@@ -212,24 +212,24 @@ export const NotificationScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   headerActionLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
   },
   headerActionDisabled: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     paddingBottom: 40,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
 });

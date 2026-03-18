@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 interface TabBadgeProps {
@@ -44,10 +44,10 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
           style={[
             styles.badgeText,
             size === 'small'
-              ? { ...V2_TYPOGRAPHY.caption3 }
+              ? { ...TYPOGRAPHY.caption3 }
               : size === 'medium'
-              ? { ...V2_TYPOGRAPHY.caption2 }
-              : { ...V2_TYPOGRAPHY.caption1 },
+              ? { ...TYPOGRAPHY.caption2 }
+              : { ...TYPOGRAPHY.caption1 },
           ]}
         >
           {count > 99 ? '99+' : count.toString()}
@@ -61,15 +61,15 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     right: -8,
-    backgroundColor: V2_COLORS.status.danger,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.status.danger,
+    borderRadius: RADIUS.md,
     minWidth: 18,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderWidth: 2,
-    borderColor: V2_COLORS.background.page,
+    borderColor: COLORS.background.page,
   },
   topLocation: {
     top: -2,
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     bottom: -2,
   },
   badgeText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontWeight: '600',
   },
   small: {

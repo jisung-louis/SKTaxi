@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import {notificationSettingsScreenRepository} from '../data/repositories/notificationSettingsScreenRepository';
 import type {
@@ -74,45 +74,45 @@ const resolveIcon = (iconKey: NotificationSettingIconKey) => {
   switch (iconKey) {
     case 'allNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primaryTint,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
         iconName: 'notifications-outline',
       };
     case 'partyNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.accent.orangeSoft,
-        iconColor: V2_COLORS.accent.orange,
+        iconBackgroundColor: COLORS.accent.orangeSoft,
+        iconColor: COLORS.accent.orange,
         iconName: 'car-outline',
       };
     case 'noticeNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.accent.blueSoft,
-        iconColor: V2_COLORS.accent.blue,
+        iconBackgroundColor: COLORS.accent.blueSoft,
+        iconColor: COLORS.accent.blue,
         iconName: 'megaphone-outline',
       };
     case 'boardLikeNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.accent.pinkSoft,
-        iconColor: V2_COLORS.status.danger,
+        iconBackgroundColor: COLORS.accent.pinkSoft,
+        iconColor: COLORS.status.danger,
         iconName: 'heart-outline',
       };
     case 'boardCommentNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primaryTint,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
         iconName: 'chatbubble-outline',
       };
     case 'systemNotifications':
       return {
-        iconBackgroundColor: V2_COLORS.accent.purpleSoft,
-        iconColor: V2_COLORS.accent.purple,
+        iconBackgroundColor: COLORS.accent.purpleSoft,
+        iconColor: COLORS.accent.purple,
         iconName: 'shield-checkmark-outline',
       };
     case 'marketingNotifications':
     default:
       return {
-        iconBackgroundColor: V2_COLORS.accent.pinkSoft,
-        iconColor: V2_COLORS.accent.pink,
+        iconBackgroundColor: COLORS.accent.pinkSoft,
+        iconColor: COLORS.accent.pink,
         iconName: 'gift-outline',
       };
   }

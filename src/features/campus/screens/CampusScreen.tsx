@@ -12,7 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {StateCard} from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -44,7 +44,7 @@ export const CampusScreen = () => {
 
   const contentContainerStyle = React.useMemo(
     () => ({
-      paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + V2_SPACING.xxl,
+      paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + SPACING.xxl,
     }),
     [insets.bottom],
   );
@@ -68,7 +68,7 @@ export const CampusScreen = () => {
             <View style={styles.section}>
               <StateCard
                 description="캠퍼스 정보를 불러오는 중입니다."
-                icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+                icon={<ActivityIndicator color={COLORS.brand.primary} />}
                 title="Campus 화면 준비 중"
               />
             </View>
@@ -81,7 +81,7 @@ export const CampusScreen = () => {
                 description={error}
                 icon={
                   <Icon
-                    color={V2_COLORS.accent.orange}
+                    color={COLORS.accent.orange}
                     name="refresh-outline"
                     size={26}
                   />
@@ -189,14 +189,14 @@ export const CampusScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   screen: {
     flex: 1,
   },
   section: {
-    marginBottom: V2_SPACING.xxl,
-    paddingHorizontal: V2_SPACING.lg,
+    marginBottom: SPACING.xxl,
+    paddingHorizontal: SPACING.lg,
   },
 });

@@ -3,7 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {NoticeHomeBannerViewData} from '../../model/noticeHomeViewData';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 interface NoticeUnreadBannerProps {
   banner: NoticeHomeBannerViewData;
@@ -30,7 +30,7 @@ export const NoticeUnreadBanner = ({
           ]}>
           <Icon
             color={
-              banner.hasUnread ? V2_COLORS.text.inverse : V2_COLORS.text.muted
+              banner.hasUnread ? COLORS.text.inverse : COLORS.text.muted
             }
             name={banner.hasUnread ? 'notifications' : 'checkmark-done-outline'}
             size={14}
@@ -72,7 +72,7 @@ export const NoticeUnreadBanner = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -80,30 +80,30 @@ const styles = StyleSheet.create({
     padding: 13,
   },
   containerActive: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderColor: V2_COLORS.border.accent,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.border.accent,
   },
   containerInactive: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
   },
   content: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   iconBadge: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   iconBadgeActive: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   iconBadgeInactive: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
   },
   title: {
     fontSize: 14,
@@ -114,28 +114,28 @@ const styles = StyleSheet.create({
     color: '#14532D',
   },
   titleInactive: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
   },
   description: {
     fontSize: 12,
     lineHeight: 16,
   },
   descriptionActive: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   descriptionInactive: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
   },
   actionButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.sm,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.sm,
     height: 28,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   actionLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,

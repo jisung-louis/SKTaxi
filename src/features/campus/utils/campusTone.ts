@@ -1,4 +1,4 @@
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {CampusHighlightTone, CampusNoticeTone} from '../model/campusHome';
 
@@ -6,24 +6,24 @@ export const getNoticeToneColors = (tone: CampusNoticeTone) => {
   switch (tone) {
     case 'blue':
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        textColor: COLORS.accent.orange,
       };
     case 'purple':
       return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
-        textColor: V2_COLORS.accent.purple,
+        backgroundColor: COLORS.accent.purpleSoft,
+        textColor: COLORS.accent.purple,
       };
     case 'brand':
     default:
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
       };
   }
 };
@@ -32,28 +32,28 @@ export const getHighlightToneColors = (tone: CampusHighlightTone) => {
   switch (tone) {
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
-        accentColor: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        textColor: COLORS.accent.orange,
+        accentColor: COLORS.accent.orange,
       };
     case 'pink':
       return {
-        backgroundColor: V2_COLORS.accent.pinkSoft,
-        textColor: V2_COLORS.status.danger,
-        accentColor: V2_COLORS.status.danger,
+        backgroundColor: COLORS.accent.pinkSoft,
+        textColor: COLORS.status.danger,
+        accentColor: COLORS.status.danger,
       };
     case 'brand':
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
-        accentColor: V2_COLORS.brand.primary,
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
+        accentColor: COLORS.brand.primary,
       };
     case 'blue':
     default:
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
-        accentColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
+        accentColor: COLORS.accent.blue,
       };
   }
 };

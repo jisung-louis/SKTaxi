@@ -10,10 +10,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {TaxiHomeSortOptionViewData} from '../../model/taxiHomeViewData';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiHomeSortMenuProps {
@@ -43,7 +43,7 @@ export const TaxiHomeSortMenu = ({
         style={styles.trigger}>
         <Text style={styles.triggerLabel}>{selectedLabel}</Text>
         <Icon
-          color={V2_COLORS.text.secondary}
+          color={COLORS.text.secondary}
           name={open ? 'chevron-up-outline' : 'chevron-down-outline'}
           size={16}
         />
@@ -88,22 +88,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   triggerLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
   menu: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     minWidth: 124,
-    paddingVertical: V2_SPACING.xs,
+    paddingVertical: SPACING.xs,
     position: 'absolute',
     right: 0,
     top: 24,
     zIndex: 20,
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   overlay: {
     bottom: -9999,
@@ -114,19 +114,19 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   menuItem: {
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   menuItemSelected: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
   },
   menuItemLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
   menuItemLabelSelected: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontWeight: '600',
   },
 });

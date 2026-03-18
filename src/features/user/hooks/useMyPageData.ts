@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import {myPageRepository} from '../data/repositories/myPageRepository';
 import type {MyPageSource} from '../model/myPageSource';
@@ -119,34 +119,34 @@ const getToneColors = (tone: MyPageMenuTone) => {
   switch (tone) {
     case 'blue':
       return {
-        iconBackgroundColor: V2_COLORS.accent.blueSoft,
-        iconColor: V2_COLORS.accent.blue,
+        iconBackgroundColor: COLORS.accent.blueSoft,
+        iconColor: COLORS.accent.blue,
       };
     case 'green':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primaryTint,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
       };
     case 'orange':
       return {
-        iconBackgroundColor: V2_COLORS.accent.orangeSoft,
-        iconColor: V2_COLORS.accent.orange,
+        iconBackgroundColor: COLORS.accent.orangeSoft,
+        iconColor: COLORS.accent.orange,
       };
     case 'purple':
       return {
-        iconBackgroundColor: V2_COLORS.accent.purpleSoft,
-        iconColor: V2_COLORS.accent.purple,
+        iconBackgroundColor: COLORS.accent.purpleSoft,
+        iconColor: COLORS.accent.purple,
       };
     case 'pink':
       return {
-        iconBackgroundColor: V2_COLORS.accent.pinkSoft,
-        iconColor: V2_COLORS.accent.pink,
+        iconBackgroundColor: COLORS.accent.pinkSoft,
+        iconColor: COLORS.accent.pink,
       };
     case 'gray':
     default:
       return {
-        iconBackgroundColor: V2_COLORS.background.subtle,
-        iconColor: V2_COLORS.text.secondary,
+        iconBackgroundColor: COLORS.background.subtle,
+        iconColor: COLORS.text.secondary,
       };
   }
 };

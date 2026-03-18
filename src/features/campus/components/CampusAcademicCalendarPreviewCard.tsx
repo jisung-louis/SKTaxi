@@ -2,10 +2,10 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -87,41 +87,41 @@ const EventBadge = ({badge}: {badge: CampusAcademicEventBadgeViewData}) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   separator: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
   },
   row: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
     minHeight: 80,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   dateBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.accent.blueSoft,
+    borderRadius: RADIUS.md,
     height: 48,
     justifyContent: 'center',
     width: 48,
   },
   monthText: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   dayText: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
@@ -141,23 +141,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginRight: V2_SPACING.sm,
+    marginRight: SPACING.sm,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   dateRange: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 16,
   },
   eventBadge: {
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
+    borderRadius: RADIUS.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
   },
   eventBadgeLabel: {

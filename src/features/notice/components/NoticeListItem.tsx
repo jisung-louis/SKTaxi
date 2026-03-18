@@ -3,35 +3,35 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {NoticeHomeNoticeItemViewData} from '../../model/noticeHomeViewData';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
   switch (tone) {
     case 'blue':
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
       };
     case 'purple':
       return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
-        textColor: V2_COLORS.accent.purple,
+        backgroundColor: COLORS.accent.purpleSoft,
+        textColor: COLORS.accent.purple,
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        textColor: COLORS.accent.orange,
       };
     case 'pink':
       return {
-        backgroundColor: V2_COLORS.accent.pinkSoft,
-        textColor: V2_COLORS.accent.pink,
+        backgroundColor: COLORS.accent.pinkSoft,
+        textColor: COLORS.accent.pink,
       };
     case 'gray':
     default:
       return {
-        backgroundColor: V2_COLORS.background.subtle,
-        textColor: V2_COLORS.text.secondary,
+        backgroundColor: COLORS.background.subtle,
+        textColor: COLORS.text.secondary,
       };
   }
 };
@@ -78,7 +78,7 @@ export const NoticeListItem = ({
         </Text>
       </View>
       <Icon
-        color={V2_COLORS.text.muted}
+        color={COLORS.text.muted}
         name="chevron-forward-outline"
         size={16}
       />
@@ -89,20 +89,20 @@ export const NoticeListItem = ({
 const styles = StyleSheet.create({
   row: {
     alignItems: 'flex-start',
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: 12,
     minHeight: 85,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   rowLast: {
     borderBottomWidth: 0,
   },
   dot: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
     height: 8,
     marginTop: 8,
     width: 8,
@@ -116,12 +116,12 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.sm,
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   categoryPill: {
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
+    borderRadius: RADIUS.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   categoryLabel: {
@@ -130,17 +130,17 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
   },
   titleUnread: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontWeight: '700',
   },
 });

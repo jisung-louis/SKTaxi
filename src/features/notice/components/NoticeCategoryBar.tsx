@@ -2,7 +2,7 @@ import React from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 
 import {FilterChips} from '@/shared/design-system/components';
-import {V2_SPACING} from '@/shared/design-system/tokens';
+import {SPACING} from '@/shared/design-system/tokens';
 
 import type {NoticeHomeCategoryChipViewData} from '../../model/noticeHomeViewData';
 
@@ -31,7 +31,7 @@ export const NoticeCategoryBar = ({
 
 const styles = StyleSheet.create({
   content: {
-    paddingRight: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.sm,
+    paddingRight: SPACING.lg,
+    paddingVertical: SPACING.sm,
   },
 });

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS} from '@/shared/design-system/tokens';
 
 import {
   TIMETABLE_COURSE_TONES,
@@ -80,7 +80,7 @@ export const TimetableAddCourseSheet = ({
           activeOpacity={0.84}
           onPress={onClose}
           style={styles.closeButton}>
-          <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+          <Icon color={COLORS.text.secondary} name="close" size={18} />
         </TouchableOpacity>
       </View>
 
@@ -101,14 +101,14 @@ export const TimetableAddCourseSheet = ({
           showsVerticalScrollIndicator={false}>
           <View style={styles.searchField}>
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name="search-outline"
               size={16}
             />
             <BottomSheetTextInput
               onChangeText={onUpdateQuery}
               placeholder={data.search.placeholder}
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               style={styles.searchInput}
               value={data.search.query}
             />
@@ -143,8 +143,8 @@ export const TimetableAddCourseSheet = ({
                   <Icon
                     color={
                       item.alreadyAdded
-                        ? V2_COLORS.text.muted
-                        : V2_COLORS.text.inverse
+                        ? COLORS.text.muted
+                        : COLORS.text.inverse
                     }
                     name={item.alreadyAdded ? 'checkmark' : 'add'}
                     size={18}
@@ -169,7 +169,7 @@ export const TimetableAddCourseSheet = ({
             <BottomSheetTextInput
               onChangeText={value => onSetManualField('name', value)}
               placeholder="강의명을 입력하세요"
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               style={styles.textField}
               value={data.manual.nameValue}
             />
@@ -179,7 +179,7 @@ export const TimetableAddCourseSheet = ({
             <BottomSheetTextInput
               onChangeText={value => onSetManualField('professor', value)}
               placeholder="교수명을 입력하세요"
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               style={styles.textField}
               value={data.manual.professorValue}
             />
@@ -199,7 +199,7 @@ export const TimetableAddCourseSheet = ({
                 <BottomSheetTextInput
                   onChangeText={value => onSetManualField('locationLabel', value)}
                   placeholder="예: 공학관 301"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.textField}
                   value={data.manual.locationValue}
                 />
@@ -385,7 +385,7 @@ const ColorPicker = ({
               ]}>
               {color.selected ? (
                 <Icon
-                  color={V2_COLORS.text.inverse}
+                  color={COLORS.text.inverse}
                   name="checkmark"
                   size={15}
                 />
@@ -464,7 +464,7 @@ const StepperField = ({
         onPress={onDecrease}
         style={styles.stepperButton}>
         <Icon
-          color={canDecrease ? V2_COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
+          color={canDecrease ? COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
           name="remove"
           size={16}
         />
@@ -479,7 +479,7 @@ const StepperField = ({
         onPress={onIncrease}
         style={styles.stepperButton}>
         <Icon
-          color={canIncrease ? V2_COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
+          color={canIncrease ? COLORS.text.muted : TIMETABLE_TODAY_EMPTY_DOT_COLOR}
           name="add"
           size={16}
         />
@@ -497,35 +497,35 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
   },
   closeButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   segmentedControl: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     flexDirection: 'row',
     marginBottom: 16,
     padding: 4,
   },
   segmentButton: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     flex: 1,
     height: 32,
     justifyContent: 'center',
   },
   segmentButtonSelected: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     shadowColor: '#000000',
     shadowOffset: {width: 0, height: 1},
     shadowOpacity: 0.05,
@@ -533,19 +533,19 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   segmentLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
   segmentLabelSelected: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
   },
   colorSection: {
     marginBottom: 12,
   },
   colorLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 8,
@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
   },
   colorButton: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
@@ -566,9 +566,9 @@ const styles = StyleSheet.create({
   },
   searchField: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     flexDirection: 'row',
     height: 42,
@@ -576,7 +576,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   searchInput: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
@@ -588,8 +588,8 @@ const styles = StyleSheet.create({
   },
   catalogCard: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     minHeight: 79,
     padding: 12,
@@ -599,13 +599,13 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   catalogTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   catalogMeta: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
@@ -618,23 +618,23 @@ const styles = StyleSheet.create({
   },
   catalogAction: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   catalogActionEnabled: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   catalogActionDisabled: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
   },
   emptyState: {
     alignItems: 'center',
     paddingVertical: 32,
   },
   emptyLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -643,18 +643,18 @@ const styles = StyleSheet.create({
     rowGap: 16,
   },
   fieldLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
     marginBottom: 6,
   },
   textField: {
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     height: 46,
     lineHeight: 20,
@@ -667,19 +667,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   toggleTrack: {
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     paddingHorizontal: 2,
     width: 44,
   },
   toggleTrackSelected: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   toggleThumb: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     height: 20,
     transform: [{translateX: 0}],
     width: 20,
@@ -693,34 +693,34 @@ const styles = StyleSheet.create({
   },
   creditButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
     flex: 1,
     height: 40,
     justifyContent: 'center',
   },
   creditButtonSelected: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   dayButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
     flex: 1,
     height: 40,
     justifyContent: 'center',
   },
   dayButtonSelected: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   optionLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   optionLabelSelected: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   stepperRow: {
     flexDirection: 'row',
@@ -731,9 +731,9 @@ const styles = StyleSheet.create({
   },
   stepperContainer: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     flexDirection: 'row',
     height: 46,
@@ -742,22 +742,22 @@ const styles = StyleSheet.create({
   },
   stepperButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   stepperValue: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.lg,
     height: 48,
     justifyContent: 'center',
   },
@@ -765,7 +765,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   submitLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,

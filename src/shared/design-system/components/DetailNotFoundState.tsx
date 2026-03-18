@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_SPACING} from '../tokens';
+import {COLORS, SPACING} from '../tokens';
 
 interface DetailNotFoundStateProps {
   actionLabel: string;
@@ -19,7 +19,7 @@ export const DetailNotFoundState = ({
     <View style={styles.container}>
       <View style={styles.iconWrap}>
         <Icon
-          color={V2_COLORS.border.default}
+          color={COLORS.border.default}
           name="document-outline"
           size={42}
         />
@@ -41,18 +41,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
   },
   iconWrap: {
     alignItems: 'center',
     height: 48,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
     position: 'relative',
     width: 50,
   },
   questionMark: {
-    color: V2_COLORS.border.default,
+    color: COLORS.border.default,
     fontSize: 20,
     fontWeight: '700',
     left: 0,
@@ -62,13 +62,13 @@ const styles = StyleSheet.create({
     top: 11,
   },
   title: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   actionLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,

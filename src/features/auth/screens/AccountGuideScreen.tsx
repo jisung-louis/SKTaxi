@@ -17,10 +17,10 @@ import WebView from 'react-native-webview';
 import type {AuthStackParamList} from '@/app/navigation/types';
 import {StackHeader} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   backToLoginButton: {
     alignItems: 'center',
     backgroundColor: '#4ADE80',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     height: 60,
     justifyContent: 'center',
     marginTop: 24,
@@ -165,57 +165,57 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   backToLoginLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 22.5,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   contentContainer: {
     paddingBottom: 40,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   sectionDivider: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     flex: 1,
     height: 1,
-    marginLeft: V2_SPACING.md,
+    marginLeft: SPACING.md,
   },
   sectionHeaderRow: {
     alignItems: 'center',
     flexDirection: 'row',
   },
   sectionSubtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 6,
   },
   sectionTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   stepList: {
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   titleSection: {
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
     marginTop: 24,
   },
   webViewContainer: {
-    ...V2_SHADOWS.card,
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    ...SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     height: 220,
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
     overflow: 'hidden',
   },
 });

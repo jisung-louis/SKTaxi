@@ -10,7 +10,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {StateCard} from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 import {CommunityChatRoomCard} from './CommunityChatRoomCard';
 import type {CommunityChatRoomViewData} from '../model/communityViewData';
@@ -41,7 +41,7 @@ export const CommunityChatSegment = ({
             <View style={styles.stateWrap}>
               <StateCard
                 description="채팅방을 불러오는 중입니다."
-                icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+                icon={<ActivityIndicator color={COLORS.brand.primary} />}
                 title="채팅 준비 중"
               />
             </View>
@@ -51,7 +51,7 @@ export const CommunityChatSegment = ({
                 description="새로운 채팅방이 있으면 여기에 표시됩니다."
                 icon={
                   <Icon
-                    color={V2_COLORS.text.muted}
+                    color={COLORS.text.muted}
                     name="chatbubbles-outline"
                     size={28}
                   />
@@ -65,7 +65,7 @@ export const CommunityChatSegment = ({
           <RefreshControl
             onRefresh={onRefresh}
             refreshing={refreshing}
-            tintColor={V2_COLORS.brand.primary}
+            tintColor={COLORS.brand.primary}
           />
         }
         renderItem={({item}) => (
@@ -82,12 +82,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xxl,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + SPACING.xxl,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   stateWrap: {
     minHeight: 320,
-    paddingTop: V2_SPACING.xl,
+    paddingTop: SPACING.xl,
   },
 });

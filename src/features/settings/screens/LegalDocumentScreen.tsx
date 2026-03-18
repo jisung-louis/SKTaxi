@@ -17,8 +17,8 @@ import {
   StateCard,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {LegalDocumentHeroCard} from 'components/LegalDocumentHeroCard';
@@ -52,7 +52,7 @@ export const LegalDocumentScreen = ({
         {loading && !data ? (
           <StateCard
             description="문서 정보를 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="문서를 불러오는 중"
           />
         ) : null}
@@ -63,7 +63,7 @@ export const LegalDocumentScreen = ({
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -102,24 +102,24 @@ export const LegalDocumentScreen = ({
 const styles = StyleSheet.create({
   content: {
     paddingBottom: 40,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 20,
   },
   footer: {
     marginTop: 24,
   },
   footerLine: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     textAlign: 'center',
   },
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   sectionList: {
-    gap: V2_SPACING.lg,
+    gap: SPACING.lg,
     marginTop: 20,
   },
 });

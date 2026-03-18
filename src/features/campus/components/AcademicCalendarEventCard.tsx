@@ -3,10 +3,10 @@ import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {ACADEMIC_CALENDAR_BADGE_TONE} from '../../model/academicCalendarEventTones';
@@ -57,27 +57,27 @@ export const AcademicCalendarEventCard = ({item}: AcademicCalendarEventCardProps
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
     minHeight: 73,
     paddingHorizontal: 17,
     paddingVertical: 15,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   iconWrap: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
   content: {
     flex: 1,
-    marginLeft: V2_SPACING.md,
-    marginRight: V2_SPACING.sm,
+    marginLeft: SPACING.md,
+    marginRight: SPACING.sm,
   },
   titleRow: {
     alignItems: 'center',
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '600',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   importantBadge: {
     backgroundColor: ACADEMIC_CALENDAR_BADGE_TONE.backgroundColor,
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     marginLeft: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -105,13 +105,13 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   statusBadge: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     minHeight: 24,
     minWidth: 44,

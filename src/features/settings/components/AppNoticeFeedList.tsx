@@ -10,10 +10,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {AppNoticeFeedViewData} from '../../model/appNoticeViewData';
@@ -38,7 +38,7 @@ export const AppNoticeFeedList = ({
         description={APP_NOTICE_EMPTY_DESCRIPTION}
         icon={
           <Icon
-            color={V2_COLORS.border.default}
+            color={COLORS.border.default}
             name="notifications-outline"
             size={28}
           />
@@ -78,7 +78,7 @@ export const AppNoticeFeedList = ({
             <View style={styles.footerRow}>
               <View style={styles.viewCountRow}>
                 <Icon
-                  color={V2_COLORS.text.muted}
+                  color={COLORS.text.muted}
                   name="eye-outline"
                   size={12}
                 />
@@ -86,7 +86,7 @@ export const AppNoticeFeedList = ({
               </View>
 
               <Icon
-                color={V2_COLORS.text.muted}
+                color={COLORS.text.muted}
                 name="chevron-forward-outline"
                 size={16}
               />
@@ -103,19 +103,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   heroImage: {
     height: 144,
     width: '100%',
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },
   metaRow: {
@@ -129,19 +129,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   metaText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 15,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
     marginBottom: 6,
   },
   summary: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 20,
   },
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewCountLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 15,
   },

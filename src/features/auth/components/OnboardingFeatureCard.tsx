@@ -3,10 +3,10 @@ import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface OnboardingFeatureCardProps {
@@ -33,25 +33,25 @@ export const OnboardingFeatureCard = ({
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     gap: 14,
     minHeight: 64,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },
   iconBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderRadius: 12,
     height: 36,
     justifyContent: 'center',
     width: 36,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   label: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     flex: 1,
     fontSize: 14,
     fontWeight: '500',

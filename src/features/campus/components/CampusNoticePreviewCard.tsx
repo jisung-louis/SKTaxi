@@ -3,10 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CampusNoticeItemViewData} from '../../model/campusHome';
@@ -65,7 +65,7 @@ export const CampusNoticePreviewCard = ({
                 </Text>
               </View>
               <Icon
-                color={V2_COLORS.text.muted}
+                color={COLORS.text.muted}
                 name="chevron-forward-outline"
                 size={16}
               />
@@ -80,28 +80,28 @@ export const CampusNoticePreviewCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   separator: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
   },
   row: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
     minHeight: 76,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   dot: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
     height: 8,
     width: 8,
   },
@@ -111,12 +111,12 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.xs,
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   categoryPill: {
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
+    borderRadius: RADIUS.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   categoryLabel: {
@@ -125,12 +125,12 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   date: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,

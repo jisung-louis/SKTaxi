@@ -1,7 +1,7 @@
 import type {ComponentProps} from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {AcademicCalendarEventKind} from './academicCalendarDetailSource';
 
@@ -59,15 +59,15 @@ export const ACADEMIC_CALENDAR_BADGE_TONE = {
 
 export const ACADEMIC_CALENDAR_STATUS_TONES = {
   active: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    textColor: V2_COLORS.brand.primaryStrong,
+    backgroundColor: COLORS.brand.primaryTint,
+    textColor: COLORS.brand.primaryStrong,
   },
   countdown: {
-    backgroundColor: V2_COLORS.background.subtle,
-    textColor: V2_COLORS.text.secondary,
+    backgroundColor: COLORS.background.subtle,
+    textColor: COLORS.text.secondary,
   },
   ended: {
-    backgroundColor: V2_COLORS.background.subtle,
-    textColor: V2_COLORS.text.muted,
+    backgroundColor: COLORS.background.subtle,
+    textColor: COLORS.text.muted,
   },
 } as const;

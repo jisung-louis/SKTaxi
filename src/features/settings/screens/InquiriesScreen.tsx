@@ -20,9 +20,9 @@ import {
   StackHeader,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -97,7 +97,7 @@ export const InquiriesScreen = () => {
             maxLength={data.titleMaxLength}
             onChangeText={setTitle}
             placeholder={data.titlePlaceholder}
-            placeholderTextColor={V2_COLORS.text.muted}
+            placeholderTextColor={COLORS.text.muted}
             style={styles.input}
             value={title}
           />
@@ -113,7 +113,7 @@ export const InquiriesScreen = () => {
             multiline
             onChangeText={setContent}
             placeholder={data.contentPlaceholder}
-            placeholderTextColor={V2_COLORS.text.muted}
+            placeholderTextColor={COLORS.text.muted}
             style={styles.textArea}
             textAlignVertical="top"
             value={content}
@@ -131,7 +131,7 @@ export const InquiriesScreen = () => {
             style={styles.attachmentBox}>
             <View style={styles.attachmentIconWrap}>
               <Icon
-                color={V2_COLORS.text.secondary}
+                color={COLORS.text.secondary}
                 name="arrow-up-outline"
                 size={18}
               />
@@ -147,12 +147,12 @@ export const InquiriesScreen = () => {
         </FormField>
 
         <InfoBanner
-          backgroundColor={V2_COLORS.brand.primaryTint}
-          iconColor={V2_COLORS.brand.primary}
+          backgroundColor={COLORS.brand.primaryTint}
+          iconColor={COLORS.brand.primary}
           iconName="information-circle-outline"
           lines={data.guideLines}
           style={styles.banner}
-          textColor={V2_COLORS.status.success}
+          textColor={COLORS.status.success}
         />
 
         <TouchableOpacity
@@ -175,11 +175,11 @@ export const InquiriesScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: 40,
   },
@@ -187,11 +187,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 47,
     lineHeight: 20,
@@ -199,11 +199,11 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   textArea: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 168,
     lineHeight: 22.75,
@@ -212,9 +212,9 @@ const styles = StyleSheet.create({
   },
   attachmentBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderColor: '#D1D5DB',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     borderStyle: 'dashed',
     borderWidth: 1,
     height: 118,
@@ -223,21 +223,21 @@ const styles = StyleSheet.create({
   },
   attachmentIconWrap: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
     height: 36,
     justifyContent: 'center',
     marginBottom: 6,
     width: 36,
   },
   attachmentTitle: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 2,
   },
   attachmentSubtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -246,8 +246,8 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.lg,
     height: 52,
     justifyContent: 'center',
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   submitLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,

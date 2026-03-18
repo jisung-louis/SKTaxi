@@ -3,10 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -70,7 +70,7 @@ export const CampusTimetablePreviewCard = ({
   if (emptyState || periods.length === 0) {
     return (
       <View style={[styles.card, styles.emptyCard]}>
-        <Icon color={V2_COLORS.accent.orange} name="sunny-outline" size={34} />
+        <Icon color={COLORS.accent.orange} name="sunny-outline" size={34} />
         <Text style={styles.emptyTitle}>
           {emptyState?.title ?? '오늘 시간표가 없습니다'}
         </Text>
@@ -220,12 +220,12 @@ export const CampusTimetablePreviewCard = ({
             setIsExpanded(previous => !previous);
           }}
           style={styles.toggleButton}>
-          <Icon color={V2_COLORS.accent.blue} name="moon-outline" size={16} />
+          <Icon color={COLORS.accent.blue} name="moon-outline" size={16} />
           <Text style={styles.toggleLabel}>
             {isExpanded ? TIMETABLE_COLLAPSE_LABEL : TIMETABLE_EXPAND_LABEL}
           </Text>
           <Icon
-            color={V2_COLORS.accent.blue}
+            color={COLORS.accent.blue}
             name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
             size={16}
           />
@@ -237,35 +237,35 @@ export const CampusTimetablePreviewCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   emptyCard: {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 140,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
   },
   emptyTitle: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
-    marginTop: V2_SPACING.sm,
+    marginTop: SPACING.sm,
   },
   emptyDescription: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
   },
   row: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
     minHeight: TIMETABLE_ROW_HEIGHT,
@@ -274,15 +274,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   emptyRow: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
   },
   sessionRow: {},
   timelineCell: {
     alignItems: 'center',
-    borderColor: V2_COLORS.border.subtle,
+    borderColor: COLORS.border.subtle,
     borderRightWidth: 1,
     justifyContent: 'center',
-    paddingVertical: V2_SPACING.sm,
+    paddingVertical: SPACING.sm,
     width: 64,
   },
   timelineCellSpanned: {
@@ -292,22 +292,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   periodLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
   timeLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 15,
     marginTop: 2,
   },
   currentText: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
   },
   timeLabelBottom: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontSize: 10,
     lineHeight: 15,
   },
@@ -316,16 +316,16 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     gap: 6,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   emptyDot: {
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 4,
     width: 4,
   },
   emptyRowLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.md,
-    paddingHorizontal: V2_SPACING.md,
-    paddingVertical: V2_SPACING.sm,
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
   },
   accentBar: {
     alignSelf: 'stretch',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     marginVertical: 2,
     width: 4,
   },
@@ -350,22 +350,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     marginBottom: 2,
   },
   classTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   metaText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   statusPill: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -376,16 +376,16 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     alignItems: 'center',
-    borderColor: V2_COLORS.border.subtle,
+    borderColor: COLORS.border.subtle,
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: 4,
     justifyContent: 'center',
     minHeight: 44,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   toggleLabel: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,

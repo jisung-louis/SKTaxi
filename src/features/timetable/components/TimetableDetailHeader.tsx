@@ -3,7 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 interface TimetableDetailHeaderProps {
   onPressAdd: () => void;
@@ -23,7 +23,7 @@ export const TimetableDetailHeader = ({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + V2_SPACING.sm}]}>
+    <View style={[styles.container, {paddingTop: insets.top + SPACING.sm}]}>
       <View style={styles.row}>
         <TouchableOpacity
           accessibilityLabel="뒤로가기"
@@ -31,7 +31,7 @@ export const TimetableDetailHeader = ({
           activeOpacity={0.85}
           onPress={onPressBack}
           style={styles.backButton}>
-          <Icon color={V2_COLORS.text.primary} name="chevron-back" size={22} />
+          <Icon color={COLORS.text.primary} name="chevron-back" size={22} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -42,7 +42,7 @@ export const TimetableDetailHeader = ({
           <Text numberOfLines={1} style={styles.semesterLabel}>
             {semesterLabel}
           </Text>
-          <Icon color={V2_COLORS.text.secondary} name="chevron-down" size={18} />
+          <Icon color={COLORS.text.secondary} name="chevron-down" size={18} />
         </TouchableOpacity>
 
         <View style={styles.actions}>
@@ -53,7 +53,7 @@ export const TimetableDetailHeader = ({
             onPress={onPressShare}
             style={styles.actionButton}>
             <Icon
-              color={V2_COLORS.text.secondary}
+              color={COLORS.text.secondary}
               name="share-social-outline"
               size={20}
             />
@@ -65,7 +65,7 @@ export const TimetableDetailHeader = ({
             activeOpacity={0.88}
             onPress={onPressAdd}
             style={styles.addButton}>
-            <Icon color={V2_COLORS.text.inverse} name="add" size={20} />
+            <Icon color={COLORS.text.inverse} name="add" size={20} />
           </TouchableOpacity>
         </View>
       </View>
@@ -75,9 +75,9 @@ export const TimetableDetailHeader = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     paddingBottom: 12,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   row: {
     alignItems: 'center',
@@ -86,8 +86,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
@@ -97,31 +97,31 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
-    marginHorizontal: V2_SPACING.sm,
+    marginHorizontal: SPACING.sm,
   },
   semesterLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 28,
-    marginRight: V2_SPACING.xs,
+    marginRight: SPACING.xs,
   },
   actions: {
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   actionButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
   addButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,

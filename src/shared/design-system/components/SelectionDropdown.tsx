@@ -17,10 +17,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '../tokens';
 
 interface SelectionDropdownProps {
@@ -88,7 +88,7 @@ export const SelectionDropdown = ({
         </Text>
         <Animated.View style={chevronAnimatedStyle}>
           <Icon
-            color={V2_COLORS.text.muted}
+            color={COLORS.text.muted}
             name="chevron-down"
             size={16}
           />
@@ -122,7 +122,7 @@ export const SelectionDropdown = ({
 
                   {isSelected ? (
                     <Icon
-                      color={V2_COLORS.brand.primary}
+                      color={COLORS.brand.primary}
                       name="checkmark"
                       size={16}
                     />
@@ -146,9 +146,9 @@ const styles = StyleSheet.create({
   },
   trigger: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
     height: 50,
@@ -156,43 +156,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 17,
   },
   triggerLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
   },
   triggerPlaceholderLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   dropdown: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     left: 0,
     overflow: 'hidden',
     position: 'absolute',
     right: 0,
     top: 58,
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   option: {
     alignItems: 'center',
     flexDirection: 'row',
     height: 44,
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   optionSelected: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
   },
   optionLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 20,
   },
   optionLabelSelected: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontWeight: '600',
   },
 });

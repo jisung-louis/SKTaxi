@@ -3,7 +3,7 @@ import {BottomSheetScrollView} from '@gorhom/bottom-sheet';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import type {TimetableSemesterOptionViewData} from '../../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
@@ -38,7 +38,7 @@ export const TimetableSemesterSheet = ({
           activeOpacity={0.84}
           onPress={onClose}
           style={styles.closeButton}>
-          <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+          <Icon color={COLORS.text.secondary} name="close" size={18} />
         </TouchableOpacity>
       </View>
 
@@ -67,7 +67,7 @@ export const TimetableSemesterSheet = ({
               </Text>
               {selected ? (
                 <Icon
-                  color={V2_COLORS.brand.primaryStrong}
+                  color={COLORS.brand.primaryStrong}
                   name="checkmark"
                   size={18}
                 />
@@ -89,44 +89,44 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
   },
   closeButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   list: {
     paddingTop: 8,
-    rowGap: V2_SPACING.sm,
+    rowGap: SPACING.sm,
   },
   option: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   optionSelected: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.brand.primaryTint,
+    ...SHADOWS.card,
   },
   optionLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   optionLabelSelected: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontWeight: '700',
   },
 });

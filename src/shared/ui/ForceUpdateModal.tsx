@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 import { openAppStore } from '@/shared/lib/device/openAppStore';
 import type { VersionModalConfig } from '@/shared/types/version';
@@ -44,7 +44,7 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ visible, con
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Icon name={iconName} size={64} color={V2_COLORS.accent.blue} />
+            <Icon name={iconName} size={64} color={COLORS.accent.blue} />
           </View>
 
           <Text style={styles.title}>{title}</Text>
@@ -74,7 +74,7 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ visible, con
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -88,35 +88,35 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    ...V2_TYPOGRAPHY.title2,
-    color: V2_COLORS.text.primary,
+    ...TYPOGRAPHY.title2,
+    color: COLORS.text.primary,
     marginBottom: 16,
     textAlign: 'center',
   },
   message: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.secondary,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
   },
   updateButton: {
-    backgroundColor: V2_COLORS.accent.blue,
+    backgroundColor: COLORS.accent.blue,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     width: '100%',
     alignItems: 'center',
     marginBottom: 16,
   },
   updateButtonText: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.inverse,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.inverse,
     fontWeight: '600',
   },
   note: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.text.tertiary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.tertiary,
     textAlign: 'center',
   },
 });

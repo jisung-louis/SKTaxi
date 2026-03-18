@@ -1,11 +1,11 @@
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 type AuthGradientColors = [string, string];
 
-export const AUTH_BRAND_ACCENT_COLOR = V2_COLORS.brand.primaryAccent;
+export const AUTH_BRAND_ACCENT_COLOR = COLORS.brand.primaryAccent;
 export const AUTH_BRAND_GRADIENT: AuthGradientColors = [
-  V2_COLORS.brand.primaryAccent,
-  V2_COLORS.brand.primary,
+  COLORS.brand.primaryAccent,
+  COLORS.brand.primary,
 ];
 
 export const AUTH_ONBOARDING_STEP_COLORS = {
@@ -15,11 +15,11 @@ export const AUTH_ONBOARDING_STEP_COLORS = {
   },
   complete: {
     buttonColors: AUTH_BRAND_GRADIENT,
-    heroColor: V2_COLORS.brand.primaryAccent,
+    heroColor: COLORS.brand.primaryAccent,
   },
   intro: {
     buttonColors: AUTH_BRAND_GRADIENT,
-    heroColor: V2_COLORS.brand.primaryAccent,
+    heroColor: COLORS.brand.primaryAccent,
   },
   location: {
     buttonColors: ['#FB923C', '#F97316'] as AuthGradientColors,

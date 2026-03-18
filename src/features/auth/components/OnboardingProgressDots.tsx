@@ -8,7 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 interface OnboardingProgressDotsProps {
   activeColor: string;
@@ -16,7 +16,7 @@ interface OnboardingProgressDotsProps {
   total: number;
 }
 
-const FUTURE_COLOR = V2_COLORS.border.default;
+const FUTURE_COLOR = COLORS.border.default;
 const PAST_COLOR = '#D1D5DB';
 
 const ProgressDot = ({

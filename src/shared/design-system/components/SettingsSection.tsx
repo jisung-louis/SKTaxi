@@ -8,10 +8,10 @@ import {
 } from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '../tokens';
 
 interface SettingsSectionProps {
@@ -37,18 +37,18 @@ export const SettingsSection = ({
 
 const styles = StyleSheet.create({
   title: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.6,
     lineHeight: 16,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
     paddingHorizontal: 4,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
 });

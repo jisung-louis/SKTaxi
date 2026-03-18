@@ -27,7 +27,7 @@ import {
   StateCard,
   ToneBadge,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 import {
   useKeyboardInset,
   useScreenEnterAnimation,
@@ -102,7 +102,7 @@ export const BoardDetailScreen = () => {
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {loading ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
-            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+            <ActivityIndicator color={COLORS.brand.primary} size="large" />
           </View>
         ) : notFound ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
@@ -119,7 +119,7 @@ export const BoardDetailScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -165,7 +165,7 @@ export const BoardDetailScreen = () => {
                 <View style={styles.authorRow}>
                   <View style={styles.avatarCircle}>
                     <Icon
-                      color={V2_COLORS.text.muted}
+                      color={COLORS.text.muted}
                       name="person-outline"
                       size={14}
                     />
@@ -227,7 +227,7 @@ export const BoardDetailScreen = () => {
               }}
               style={styles.menuButton}>
               <Icon
-                color={V2_COLORS.text.secondary}
+                color={COLORS.text.secondary}
                 name="ellipsis-vertical"
                 size={18}
               />
@@ -251,7 +251,7 @@ export const BoardDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   screen: {
@@ -259,69 +259,69 @@ const styles = StyleSheet.create({
   },
   centeredState: {
     flex: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   scrollContent: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.md,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 28,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   authorRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.xl,
+    gap: SPACING.sm,
+    marginBottom: SPACING.xl,
   },
   avatarCircle: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
   },
   authorLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     height: 1,
-    marginBottom: V2_SPACING.xl,
+    marginBottom: SPACING.xl,
   },
   reactionsRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
-    marginTop: V2_SPACING.xl,
+    gap: SPACING.md,
+    marginTop: SPACING.xl,
   },
   commentsDivider: {
-    marginBottom: V2_SPACING.lg,
-    marginTop: V2_SPACING.xxl,
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.xxl,
   },
   commentsTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   emptyCommentsWrap: {
     alignItems: 'center',
@@ -330,12 +330,12 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   emptyCommentsLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
   },
   commentsList: {
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: SPACING.md,
   },
   composerAvoidingView: {
     bottom: 0,

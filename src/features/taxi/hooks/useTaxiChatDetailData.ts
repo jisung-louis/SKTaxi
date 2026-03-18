@@ -3,7 +3,7 @@ import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
 import {
-  V2_COLORS,
+  COLORS,
 } from '@/shared/design-system/tokens';
 import type {
   ChatThreadHeaderViewData,
@@ -20,8 +20,8 @@ import {taxiChatRepository} from '../data/repositories/taxiChatRepository';
 const buildHeader = (
   partyChat: TaxiChatSourceData,
 ): ChatThreadHeaderViewData => ({
-  iconBackgroundColor: V2_COLORS.accent.yellowSoft,
-  iconColor: V2_COLORS.accent.yellow,
+  iconBackgroundColor: COLORS.accent.yellowSoft,
+  iconColor: COLORS.accent.yellow,
   iconName: 'car-sport-outline',
   subtitle: `${partyChat.memberCount}명`,
   title: partyChat.title,

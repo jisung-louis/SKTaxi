@@ -3,10 +3,10 @@ import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 type CampusHomeHeaderProps = {
@@ -34,7 +34,7 @@ export const CampusHomeHeader = ({
           onPress={onPressNotification}
           style={styles.button}>
           <Icon
-            color={V2_COLORS.text.secondary}
+            color={COLORS.text.secondary}
             name="notifications-outline"
             size={18}
           />
@@ -46,7 +46,7 @@ export const CampusHomeHeader = ({
           onPress={onPressProfile}
           style={styles.button}>
           <Icon
-            color={V2_COLORS.text.secondary}
+            color={COLORS.text.secondary}
             name="person-outline"
             size={18}
           />
@@ -61,37 +61,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingBottom: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.xxl,
+    paddingBottom: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xxl,
   },
   wordmarkContainer: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.lg,
+    gap: SPACING.lg,
   },
   wordmarkImage: {
-    borderRadius: V2_RADIUS.sm,
+    borderRadius: RADIUS.sm,
     height: 48,
     width: 48,
   },
   wordmark: {
-    color: V2_COLORS.brand.logo,
+    color: COLORS.brand.logo,
     fontSize: 48,
     fontWeight: '700',
     lineHeight: 64,
   },
   rightButtonContainer: {
     flexDirection: 'row',
-    gap: V2_SPACING.lg,
+    gap: SPACING.lg,
   },
   button: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
 });

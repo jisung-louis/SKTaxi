@@ -13,7 +13,7 @@ import {
   SettingsSection,
   StackHeader,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {useAppSettingData} from '../hooks/useAppSettingData';
@@ -84,15 +84,15 @@ export const SettingScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: 40,
   },
   section: {
-    marginBottom: V2_SPACING.xxl,
+    marginBottom: SPACING.xxl,
   },
 });

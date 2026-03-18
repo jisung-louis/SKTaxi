@@ -3,10 +3,10 @@ import {StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiHomeSearchBarProps {
@@ -22,13 +22,13 @@ export const TaxiHomeSearchBar = ({
 }: TaxiHomeSearchBarProps) => {
   return (
     <View style={styles.container}>
-      <Icon color={V2_COLORS.text.muted} name="search-outline" size={18} />
+      <Icon color={COLORS.text.muted} name="search-outline" size={18} />
       <TextInput
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={V2_COLORS.text.muted}
+        placeholderTextColor={COLORS.text.muted}
         returnKeyType="search"
-        selectionColor={V2_COLORS.brand.primary}
+        selectionColor={COLORS.brand.primary}
         style={styles.input}
         value={value}
       />
@@ -37,7 +37,7 @@ export const TaxiHomeSearchBar = ({
           accessibilityRole="button"
           activeOpacity={0.8}
           onPress={() => onChangeText('')}>
-          <Icon color={V2_COLORS.text.muted} name="close-circle" size={18} />
+          <Icon color={COLORS.text.muted} name="close-circle" size={18} />
         </TouchableOpacity>
       ) : null}
     </View>
@@ -47,16 +47,16 @@ export const TaxiHomeSearchBar = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 44,
-    paddingHorizontal: V2_SPACING.lg,
-    ...V2_SHADOWS.raised,
+    paddingHorizontal: SPACING.lg,
+    ...SHADOWS.raised,
   },
   input: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flex: 1,
     fontSize: 14,
     fontWeight: '500',

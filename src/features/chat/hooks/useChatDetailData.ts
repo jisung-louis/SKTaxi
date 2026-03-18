@@ -2,7 +2,7 @@ import React from 'react';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 import type {
   ChatThreadHeaderViewData,
   ChatThreadItemViewData,
@@ -20,8 +20,8 @@ const buildHeader = (
 ): ChatThreadHeaderViewData => {
   if (roomDetail.roomType === 'university') {
     return {
-      iconBackgroundColor: V2_COLORS.brand.primarySoft,
-      iconColor: V2_COLORS.brand.primary,
+      iconBackgroundColor: COLORS.brand.primarySoft,
+      iconColor: COLORS.brand.primary,
       iconName: 'business-outline',
       subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
       title: roomDetail.title,
@@ -30,8 +30,8 @@ const buildHeader = (
 
   if (roomDetail.roomType === 'department') {
     return {
-      iconBackgroundColor: V2_COLORS.accent.blueSoft,
-      iconColor: V2_COLORS.accent.blue,
+      iconBackgroundColor: COLORS.accent.blueSoft,
+      iconColor: COLORS.accent.blue,
       iconName: 'people-outline',
       subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
       title: roomDetail.title,
@@ -40,8 +40,8 @@ const buildHeader = (
 
   if (roomDetail.roomType === 'game') {
     return {
-      iconBackgroundColor: V2_COLORS.accent.orangeSoft,
-      iconColor: V2_COLORS.accent.orange,
+      iconBackgroundColor: COLORS.accent.orangeSoft,
+      iconColor: COLORS.accent.orange,
       iconName: 'game-controller-outline',
       subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
       title: roomDetail.title,
@@ -49,8 +49,8 @@ const buildHeader = (
   }
 
   return {
-    iconBackgroundColor: V2_COLORS.accent.purpleSoft,
-    iconColor: V2_COLORS.accent.purple,
+    iconBackgroundColor: COLORS.accent.purpleSoft,
+    iconColor: COLORS.accent.purple,
     iconName: 'chatbubble-outline',
     subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
     title: roomDetail.title,

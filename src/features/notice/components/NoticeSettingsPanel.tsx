@@ -16,10 +16,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {NOTICE_CATEGORIES, getCategorySettingKey} from '../model/constants';
@@ -68,7 +68,7 @@ export function NoticeSettingsPanel({
         <View style={styles.panelHeader}>
           <Text style={styles.panelTitle}>공지 알림 설정</Text>
           <TouchableOpacity onPress={onClose}>
-            <Icon name="close" size={24} color={V2_COLORS.text.primary} />
+            <Icon name="close" size={24} color={COLORS.text.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -169,42 +169,42 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     width: WINDOW_WIDTH * 0.7,
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderLeftWidth: 1,
-    borderLeftColor: V2_COLORS.border.default,
-    paddingHorizontal: V2_SPACING.lg,
-    ...V2_SHADOWS.raised,
+    borderLeftColor: COLORS.border.default,
+    paddingHorizontal: SPACING.lg,
+    ...SHADOWS.raised,
   },
   panelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: V2_SPACING.md,
+    paddingVertical: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: V2_COLORS.border.default,
+    borderBottomColor: COLORS.border.default,
   },
   panelTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
   },
   panelContent: {
-    paddingVertical: V2_SPACING.md,
+    paddingVertical: SPACING.md,
   },
   panelSection: {},
   masterSection: {
     borderBottomWidth: 1,
-    borderBottomColor: V2_COLORS.border.subtle,
-    marginBottom: V2_SPACING.md,
+    borderBottomColor: COLORS.border.subtle,
+    marginBottom: SPACING.md,
   },
   keywordSection: {
     borderTopWidth: 1,
-    borderTopColor: V2_COLORS.border.subtle,
-    paddingTop: V2_SPACING.md,
+    borderTopColor: COLORS.border.subtle,
+    paddingTop: SPACING.md,
   },
   panelSectionTitle: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
@@ -213,30 +213,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: V2_SPACING.sm,
+    paddingVertical: SPACING.sm,
   },
   itemLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
   },
   itemDisabled: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   toggle: {
     width: 48,
     height: 28,
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    borderColor: V2_COLORS.border.default,
-    backgroundColor: V2_COLORS.background.page,
+    borderColor: COLORS.border.default,
+    backgroundColor: COLORS.background.page,
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
   toggleOn: {
-    backgroundColor: `${V2_COLORS.brand.primary}33`,
-    borderColor: V2_COLORS.brand.primary,
+    backgroundColor: `${COLORS.brand.primary}33`,
+    borderColor: COLORS.brand.primary,
   },
   toggleDisabled: {
     opacity: 0.5,
@@ -245,11 +245,11 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     transform: [{translateX: 0}],
   },
   knobOn: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
     transform: [{translateX: 20}],
   },
 });

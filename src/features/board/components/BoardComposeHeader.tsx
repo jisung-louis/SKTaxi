@@ -4,9 +4,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
-  V2_COLORS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface BoardComposeHeaderProps {
@@ -36,7 +36,7 @@ export const BoardComposeHeader = ({
             activeOpacity={0.82}
             onPress={onPressClose}
             style={styles.iconButton}>
-            <Icon color={V2_COLORS.text.primary} name="close" size={22} />
+            <Icon color={COLORS.text.primary} name="close" size={22} />
           </TouchableOpacity>
         </View>
 
@@ -76,12 +76,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     height: 56,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     position: 'relative',
   },
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
   },
   iconButton: {
@@ -101,16 +101,16 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     borderRadius: 12,
     height: 32,
     justifyContent: 'center',
     minWidth: 58,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   submitButtonEnabled: {
     backgroundColor: '#4ADE80',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   submitLabel: {
     color: '#9CA3AF',
@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   submitLabelEnabled: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,

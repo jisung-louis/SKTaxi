@@ -8,9 +8,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '../tokens';
 import {ToggleSwitch} from './ToggleSwitch';
 
@@ -61,7 +61,7 @@ export const SettingsRow = ({
             styles.iconWrap,
             {
               backgroundColor: iconBackgroundColor,
-              borderRadius: Math.min(iconBoxSize / 3, V2_RADIUS.md),
+              borderRadius: Math.min(iconBoxSize / 3, RADIUS.md),
               height: iconBoxSize,
               width: iconBoxSize,
             },
@@ -97,7 +97,7 @@ export const SettingsRow = ({
 
       {accessoryType === 'chevron' ? (
         <Icon
-          color={disabled ? V2_COLORS.border.default : V2_COLORS.text.muted}
+          color={disabled ? COLORS.border.default : COLORS.text.muted}
           name="chevron-forward"
           size={16}
         />
@@ -155,11 +155,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   divider: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
   },
   disabledRow: {
@@ -169,18 +169,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
   },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
   },
   textGroup: {
     flex: 1,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
@@ -189,17 +189,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   subtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     marginTop: 2,
   },
   valueLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     lineHeight: 20,
-    marginLeft: V2_SPACING.md,
+    marginLeft: SPACING.md,
   },
   disabledText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   subtitleOneLine: {
     fontSize: 12,

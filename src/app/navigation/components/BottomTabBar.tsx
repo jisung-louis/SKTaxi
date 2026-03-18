@@ -10,8 +10,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import { Dot } from '@/shared/ui/Dot';
 import { TabBadge } from '@/shared/ui/TabBadge';
@@ -82,8 +82,8 @@ export const BottomTabBar = ({
           const descriptor = descriptors[route.key];
           const { options } = descriptor;
           const tintColor = focused
-            ? V2_COLORS.brand.primary
-            : V2_COLORS.text.muted;
+            ? COLORS.brand.primary
+            : COLORS.text.muted;
           const label = getTabLabel(
             route.name,
             options.tabBarLabel,
@@ -175,8 +175,8 @@ export const BottomTabBar = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderTopColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.default,
     borderTopWidth: 1,
   },
   row: {
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
     justifyContent: 'center',
-    paddingTop: V2_SPACING.xs,
+    paddingTop: SPACING.xs,
   },
   iconBox: {
     alignItems: 'center',
@@ -209,8 +209,8 @@ const styles = StyleSheet.create({
     right: -6,
   },
   partyBadge: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.brand.primary,
+    borderColor: COLORS.background.surface,
     borderRadius: 10,
     borderWidth: 1,
     padding: 2,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     top: 0,
   },
   partyBadgeText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 8,
     fontWeight: '700',
     lineHeight: 10,

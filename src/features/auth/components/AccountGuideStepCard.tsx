@@ -9,10 +9,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface AccountGuideStepCardProps {
@@ -47,7 +47,7 @@ export const AccountGuideStepCard = ({
 
       {successMessage ? (
         <View style={styles.successBanner}>
-          <Icon color={V2_COLORS.status.success} name="checkmark-outline" size={16} />
+          <Icon color={COLORS.status.success} name="checkmark-outline" size={16} />
           <Text style={styles.successLabel}>{successMessage}</Text>
         </View>
       ) : null}
@@ -57,15 +57,15 @@ export const AccountGuideStepCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    ...V2_SHADOWS.card,
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    ...SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    padding: V2_SPACING.xl,
+    padding: SPACING.xl,
   },
   description: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 19.5,
     marginTop: 4,
@@ -77,14 +77,14 @@ const styles = StyleSheet.create({
   image: {
     borderRadius: 12,
     height: 400,
-    marginTop: V2_SPACING.lg,
+    marginTop: SPACING.lg,
     width: '100%',
     resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: V2_COLORS.border.default,
+    borderColor: COLORS.border.default,
   },
   numberLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -92,33 +92,33 @@ const styles = StyleSheet.create({
   numberWrap: {
     alignItems: 'center',
     backgroundColor: '#4ADE80',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
     width: 28,
   },
   successBanner: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
     borderRadius: 12,
     flexDirection: 'row',
     height: 48,
-    marginTop: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
+    marginTop: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   successLabel: {
-    color: V2_COLORS.status.success,
+    color: COLORS.status.success,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
-    marginLeft: V2_SPACING.sm,
+    marginLeft: SPACING.sm,
   },
   textGroup: {
     flex: 1,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,

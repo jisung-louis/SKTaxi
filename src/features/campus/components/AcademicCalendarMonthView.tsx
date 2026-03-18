@@ -2,9 +2,9 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
+  COLORS,
+  RADIUS,
+  SHADOWS,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -22,15 +22,15 @@ const MONTH_BASE_WEEK_HEIGHT = 52;
 const getBarRadiusStyle = (bar: AcademicCalendarEventBarViewData) => {
   if (bar.roundedStart && bar.roundedEnd) {
     return {
-      borderRadius: V2_RADIUS.pill,
+      borderRadius: RADIUS.pill,
     };
   }
 
   return {
-    borderBottomLeftRadius: bar.roundedStart ? V2_RADIUS.pill : 0,
-    borderBottomRightRadius: bar.roundedEnd ? V2_RADIUS.pill : 0,
-    borderTopLeftRadius: bar.roundedStart ? V2_RADIUS.pill : 0,
-    borderTopRightRadius: bar.roundedEnd ? V2_RADIUS.pill : 0,
+    borderBottomLeftRadius: bar.roundedStart ? RADIUS.pill : 0,
+    borderBottomRightRadius: bar.roundedEnd ? RADIUS.pill : 0,
+    borderTopLeftRadius: bar.roundedStart ? RADIUS.pill : 0,
+    borderTopRightRadius: bar.roundedEnd ? RADIUS.pill : 0,
   };
 };
 
@@ -147,13 +147,13 @@ export const AcademicCalendarMonthView = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   weekdayRow: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
     height: 32,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   weekdayLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   weekDivider: {
-    borderBottomColor: V2_COLORS.background.page,
+    borderBottomColor: COLORS.background.page,
     borderBottomWidth: 1,
   },
   dateRow: {
@@ -185,22 +185,22 @@ const styles = StyleSheet.create({
   },
   dayCircle: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
   },
   dayCircleToday: {
-    backgroundColor: V2_COLORS.brand.logo,
+    backgroundColor: COLORS.brand.logo,
   },
   dayLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   dayLabelToday: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontWeight: '700',
   },
   sundayText: {
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   monthBarLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 8,
     fontWeight: '500',
     lineHeight: 8,

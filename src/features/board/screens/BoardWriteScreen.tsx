@@ -11,7 +11,7 @@ import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {useAuth} from '@/features/auth';
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {BoardComposeForm} from '../components/BoardComposeForm';
@@ -170,7 +170,7 @@ export const BoardWriteScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   formWrap: {

@@ -2,7 +2,7 @@ import React from 'react';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import {taxiAcceptancePendingRepository} from '../data/repositories/taxiAcceptancePendingRepository';
 import type {
@@ -50,7 +50,7 @@ const createLabelAvatar = (
   id,
   kind: 'label',
   label: label.slice(0, 1) || '?',
-  textColor: V2_COLORS.text.primary,
+  textColor: COLORS.text.primary,
 });
 
 const buildSeedFromLegacyParams = (

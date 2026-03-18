@@ -9,7 +9,7 @@ import {
 import {StyleSheet, type StyleProp, type ViewStyle} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 interface TimetableBottomSheetProps {
   children: React.ReactNode;
@@ -95,10 +95,10 @@ export const TimetableBottomSheet = ({
 
 const styles = StyleSheet.create({
   sheet: {
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   background: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
   },
@@ -107,13 +107,13 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   handleIndicator: {
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 4,
     width: 40,
   },
   content: {
     flex: 1,
-    paddingHorizontal: V2_SPACING.xl,
+    paddingHorizontal: SPACING.xl,
   },
 });

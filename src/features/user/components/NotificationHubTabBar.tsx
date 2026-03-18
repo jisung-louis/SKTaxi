@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 export type NotificationHubTabId = 'inbox' | 'appNotice';
 
@@ -65,11 +65,11 @@ const TabButton = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   tab: {
     alignItems: 'center',
@@ -84,17 +84,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   tabLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   tabLabelActive: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
   },
   badge: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.status.danger,
+    backgroundColor: COLORS.status.danger,
     borderRadius: 10,
     height: 20,
     justifyContent: 'center',
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 10,
@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   underlineActive: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
 });

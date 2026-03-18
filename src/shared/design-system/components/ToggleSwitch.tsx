@@ -5,7 +5,7 @@ import {
   View,
 } from 'react-native';
 
-import {V2_COLORS, V2_RADIUS} from '../tokens';
+import {COLORS, RADIUS} from '../tokens';
 
 interface ToggleSwitchProps {
   accessibilityLabel?: string;
@@ -41,22 +41,22 @@ export const ToggleSwitch = ({
 
 const styles = StyleSheet.create({
   track: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 24,
     width: 44,
   },
   trackOn: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   trackOff: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
   },
   trackDisabled: {
     opacity: 0.55,
   },
   thumb: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     height: 20,
     position: 'absolute',
     shadowColor: '#000000',

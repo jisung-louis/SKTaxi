@@ -3,7 +3,7 @@ import {StyleSheet, Text, View, type StyleProp, type ViewStyle} from 'react-nati
 
 import type {ContentDetailBadgeTone} from '@/shared/types/contentDetailViewData';
 
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '../tokens';
+import {COLORS, RADIUS, SPACING} from '../tokens';
 
 interface ToneBadgeProps {
   label: string;
@@ -15,34 +15,34 @@ const getToneStyle = (tone: ContentDetailBadgeTone) => {
   switch (tone) {
     case 'blue':
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
       };
     case 'green':
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        textColor: COLORS.accent.orange,
       };
     case 'pink':
       return {
-        backgroundColor: V2_COLORS.accent.pinkSoft,
-        textColor: V2_COLORS.accent.pink,
+        backgroundColor: COLORS.accent.pinkSoft,
+        textColor: COLORS.accent.pink,
       };
     case 'purple':
       return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
-        textColor: V2_COLORS.accent.purple,
+        backgroundColor: COLORS.accent.purpleSoft,
+        textColor: COLORS.accent.purple,
       };
     case 'gray':
     default:
       return {
-        backgroundColor: V2_COLORS.background.subtle,
-        textColor: V2_COLORS.text.tertiary,
+        backgroundColor: COLORS.background.subtle,
+        textColor: COLORS.text.tertiary,
       };
   }
 };
@@ -65,11 +65,11 @@ export const ToneBadge = ({label, style, tone}: ToneBadgeProps) => {
 const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     minHeight: 24,
     paddingHorizontal: 10,
-    paddingVertical: V2_SPACING.xs,
+    paddingVertical: SPACING.xs,
   },
   label: {
     fontSize: 12,

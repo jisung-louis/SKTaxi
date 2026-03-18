@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 import type {UserPostListItemViewData} from '../../model/userActivityViewData';
 
@@ -43,13 +43,13 @@ export const UserPostListItem = ({
       <View style={styles.statsRow}>
         <View style={styles.leftStats}>
           <View style={styles.statItem}>
-            <Icon color={V2_COLORS.text.muted} name="heart-outline" size={12} />
+            <Icon color={COLORS.text.muted} name="heart-outline" size={12} />
             <Text style={styles.statLabel}>{item.likeCountLabel}</Text>
           </View>
 
           <View style={styles.statItem}>
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name="chatbubble-outline"
               size={12}
             />
@@ -59,7 +59,7 @@ export const UserPostListItem = ({
           {!bookmarkAlignedRight ? (
             <View style={styles.statItem}>
               <Icon
-                color={V2_COLORS.text.muted}
+                color={COLORS.text.muted}
                 name="bookmark-outline"
                 size={12}
               />
@@ -70,7 +70,7 @@ export const UserPostListItem = ({
 
         {bookmarkAlignedRight ? (
           <View style={styles.statItem}>
-            <Icon color={V2_COLORS.brand.primary} name="bookmark" size={12} />
+            <Icon color={COLORS.brand.primary} name="bookmark" size={12} />
             <Text style={styles.bookmarkLabel}>{item.bookmarkCountLabel}</Text>
           </View>
         ) : null}
@@ -81,11 +81,11 @@ export const UserPostListItem = ({
 
 const styles = StyleSheet.create({
   row: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   rowLast: {
     borderBottomWidth: 0,
@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.sm,
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   categoryPill: {
     borderRadius: 9999,
-    paddingHorizontal: V2_SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   categoryLabel: {
@@ -107,22 +107,22 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
     marginBottom: 4,
   },
   excerpt: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     lineHeight: 19.5,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   statsRow: {
     alignItems: 'center',
@@ -131,20 +131,20 @@ const styles = StyleSheet.create({
   },
   leftStats: {
     flexDirection: 'row',
-    gap: V2_SPACING.lg,
+    gap: SPACING.lg,
   },
   statItem: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
+    gap: SPACING.xs,
   },
   statLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   bookmarkLabel: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 12,
     lineHeight: 16,
   },

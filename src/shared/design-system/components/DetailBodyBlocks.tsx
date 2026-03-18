@@ -3,7 +3,7 @@ import {Image, StyleSheet, Text, View} from 'react-native';
 
 import type {ContentDetailBodyBlockViewData} from '@/shared/types/contentDetailViewData';
 
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '../tokens';
+import {COLORS, RADIUS, SPACING} from '../tokens';
 
 interface DetailBodyBlocksProps {
   blocks: ContentDetailBodyBlockViewData[];
@@ -47,16 +47,16 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
 
 const styles = StyleSheet.create({
   paragraph: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 23,
   },
   image: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
     width: '100%',
   },
   blockSpacing: {
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
 });

@@ -1,4 +1,4 @@
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {TimetableCourseToneId} from './timetableDetailViewData';
 
@@ -61,4 +61,4 @@ export const TIMETABLE_COURSE_TONES: Record<
   },
 };
 
-export const TIMETABLE_TODAY_EMPTY_DOT_COLOR = V2_COLORS.border.default;
+export const TIMETABLE_TODAY_EMPTY_DOT_COLOR = COLORS.border.default;

@@ -3,10 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CampusTaxiPartyViewData} from '../../model/campusHome';
@@ -41,7 +41,7 @@ export const CampusTaxiPreviewCards = ({
           <View style={styles.infoRow}>
             <View style={styles.iconBadge}>
               <Icon
-                color={V2_COLORS.brand.primary}
+                color={COLORS.brand.primary}
                 name="bag-handle-outline"
                 size={14}
               />
@@ -54,7 +54,7 @@ export const CampusTaxiPreviewCards = ({
             </Text>
           </View>
           <Icon
-            color={V2_COLORS.text.muted}
+            color={COLORS.text.muted}
             name="chevron-forward-outline"
             size={16}
           />
@@ -66,47 +66,47 @@ export const CampusTaxiPreviewCards = ({
 
 const styles = StyleSheet.create({
   list: {
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     minHeight: 58,
     paddingHorizontal: 17,
     paddingVertical: 15,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   infoRow: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginRight: V2_SPACING.sm,
+    gap: SPACING.sm,
+    marginRight: SPACING.sm,
   },
   iconBadge: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
   },
   routeText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     flex: 1,
     fontSize: 14,
     lineHeight: 20,
   },
   routeTextStrong: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontWeight: '600',
   },
   routeTextMuted: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
 });

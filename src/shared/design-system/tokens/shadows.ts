@@ -1,4 +1,4 @@
-export const V2_SHADOWS = {
+export const SHADOWS = {
   card: {
     shadowColor: '#000000',
     shadowOffset: {width: 0, height: 1},
@@ -22,4 +22,4 @@ export const V2_SHADOWS = {
   },
 } as const;
 
-export type V2ShadowToken = typeof V2_SHADOWS;
+export type ShadowToken = typeof SHADOWS;

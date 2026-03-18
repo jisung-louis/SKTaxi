@@ -10,10 +10,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {ContentDetailAttachmentViewData} from '@/shared/types/contentDetailViewData';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface NoticeDetailAttachmentsProps {
@@ -38,7 +38,7 @@ export const NoticeDetailAttachments = ({
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Icon
-          color={V2_COLORS.text.primary}
+          color={COLORS.text.primary}
           name="attach-outline"
           size={14}
         />
@@ -58,7 +58,7 @@ export const NoticeDetailAttachments = ({
           <View style={styles.attachmentInfo}>
             <View style={styles.fileIconWrap}>
               <Icon
-                color={V2_COLORS.brand.primaryStrong}
+                color={COLORS.brand.primaryStrong}
                 name="document-text-outline"
                 size={16}
               />
@@ -71,7 +71,7 @@ export const NoticeDetailAttachments = ({
           <View style={styles.attachmentMeta}>
             <Text style={styles.fileSize}>{attachment.sizeLabel}</Text>
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name="download-outline"
               size={16}
             />
@@ -84,51 +84,51 @@ export const NoticeDetailAttachments = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   headerTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   attachmentRow: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: V2_SPACING.md,
+    padding: SPACING.md,
   },
   attachmentSpacing: {
-    marginTop: V2_SPACING.sm,
+    marginTop: SPACING.sm,
   },
   attachmentInfo: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginRight: V2_SPACING.sm,
+    gap: SPACING.sm,
+    marginRight: SPACING.sm,
   },
   fileIconWrap: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primarySoft,
-    borderRadius: V2_RADIUS.sm,
+    backgroundColor: COLORS.brand.primarySoft,
+    borderRadius: RADIUS.sm,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   fileName: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     flex: 1,
     fontSize: 12,
     fontWeight: '500',
@@ -137,10 +137,10 @@ const styles = StyleSheet.create({
   attachmentMeta: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   fileSize: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },

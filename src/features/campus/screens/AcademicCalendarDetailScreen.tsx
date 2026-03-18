@@ -8,8 +8,8 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {normalizeDate} from '@/shared/lib/date';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -131,13 +131,13 @@ export const AcademicCalendarDetailScreen = () => {
           ref={scrollViewRef}
           contentContainerStyle={[
             styles.content,
-            {paddingBottom: insets.bottom + V2_SPACING.xxl},
+            {paddingBottom: insets.bottom + SPACING.xxl},
           ]}
           showsVerticalScrollIndicator={false}>
           {loading && !data ? (
             <StateCard
               description="학사일정을 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              icon={<ActivityIndicator color={COLORS.brand.primary} />}
               style={styles.stateCard}
               title="학사일정을 불러오는 중"
             />
@@ -149,7 +149,7 @@ export const AcademicCalendarDetailScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -204,7 +204,7 @@ export const AcademicCalendarDetailScreen = () => {
                   description="선택한 기간에는 등록된 학사일정이 없습니다."
                   icon={
                     <Icon
-                      color={V2_COLORS.text.muted}
+                      color={COLORS.text.muted}
                       name="calendar-outline"
                       size={28}
                     />
@@ -223,41 +223,41 @@ export const AcademicCalendarDetailScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
   },
   stateCard: {
-    marginTop: V2_SPACING.xs,
+    marginTop: SPACING.xs,
   },
   listHeader: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.md,
-    marginTop: V2_SPACING.xl,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.xl,
   },
   listTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   listCount: {
-    color: V2_COLORS.brand.logo,
+    color: COLORS.brand.logo,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
     marginLeft: 14,
   },
   list: {
-    paddingBottom: V2_SPACING.sm,
+    paddingBottom: SPACING.sm,
   },
   cardGap: {
     marginTop: 10,

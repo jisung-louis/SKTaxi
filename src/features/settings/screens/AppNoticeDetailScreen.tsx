@@ -18,10 +18,10 @@ import {
   StateCard,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -52,7 +52,7 @@ export const AppNoticeDetailScreen = () => {
     <View style={styles.stateContainer}>
       <StateCard
         description="앱 공지사항 상세 내용을 준비하고 있습니다."
-        icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+        icon={<ActivityIndicator color={COLORS.brand.primary} />}
         title="앱 공지사항을 불러오는 중"
       />
     </View>
@@ -67,7 +67,7 @@ export const AppNoticeDetailScreen = () => {
         }
         icon={
           <Icon
-            color={V2_COLORS.accent.orange}
+            color={COLORS.accent.orange}
             name="alert-circle-outline"
             size={26}
           />
@@ -113,7 +113,7 @@ export const AppNoticeDetailScreen = () => {
               <View style={styles.authorRow}>
                 <View style={styles.authorIcon}>
                   <Icon
-                    color={V2_COLORS.brand.primaryStrong}
+                    color={COLORS.brand.primaryStrong}
                     name="shield-checkmark"
                     size={14}
                   />
@@ -127,7 +127,7 @@ export const AppNoticeDetailScreen = () => {
 
               <View style={styles.viewCountRow}>
                 <Icon
-                  color={V2_COLORS.text.muted}
+                  color={COLORS.text.muted}
                   name="eye-outline"
                   size={14}
                 />
@@ -153,50 +153,50 @@ export const AppNoticeDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   stateContainer: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   scrollContent: {
     paddingBottom: 40,
   },
   bodyCard: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     minHeight: 320,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xl,
-    ...V2_SHADOWS.card,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xl,
+    ...SHADOWS.card,
   },
   bodyCardWithGallery: {
-    borderTopLeftRadius: V2_RADIUS.lg,
-    borderTopRightRadius: V2_RADIUS.lg,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
     marginTop: -1,
   },
   bodyCardStandalone: {
-    borderRadius: V2_RADIUS.lg,
-    marginHorizontal: V2_SPACING.lg,
-    marginTop: V2_SPACING.lg,
+    borderRadius: RADIUS.lg,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
   },
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.md,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 30,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   metaRow: {
     alignItems: 'center',
-    columnGap: V2_SPACING.sm,
+    columnGap: SPACING.sm,
     flexDirection: 'row',
     flexWrap: 'wrap',
     rowGap: 6,
@@ -208,26 +208,26 @@ const styles = StyleSheet.create({
   },
   authorIcon: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   authorLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 18,
   },
   metaSeparator: {
-    color: V2_COLORS.border.default,
+    color: COLORS.border.default,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 18,
   },
   metaLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 18,
   },
@@ -237,15 +237,15 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
-    marginVertical: V2_SPACING.lg,
+    marginVertical: SPACING.lg,
   },
   paragraphGroup: {
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   bodyText: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 28,
   },

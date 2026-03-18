@@ -3,10 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -51,7 +51,7 @@ export const MyPageMenuSection = ({
             </View>
 
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name="chevron-forward"
               size={16}
             />
@@ -64,48 +64,48 @@ export const MyPageMenuSection = ({
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: V2_SPACING.xxl,
+    marginBottom: SPACING.xxl,
   },
   sectionTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
     paddingHorizontal: 4,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   row: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     minHeight: 72,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
   },
   rowBorder: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
   },
   leftGroup: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   iconWrap: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
   label: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,

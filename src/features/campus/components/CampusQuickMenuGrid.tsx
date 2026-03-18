@@ -3,9 +3,9 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CampusHomeQuickMenuItem} from '../../constants/campusHomePreview';
@@ -46,15 +46,15 @@ export const CampusQuickMenuGrid = ({
 
 const styles = StyleSheet.create({
   section: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 4,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   grid: {
     flexDirection: 'row',
@@ -66,14 +66,14 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     height: 56,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
     width: 56,
   },
   label: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,

@@ -16,7 +16,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {
   StateCard,
 } from '@/shared/design-system/components';
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {BoardComposeForm} from '../components/BoardComposeForm';
@@ -189,7 +189,7 @@ export const BoardEditScreen = () => {
 
         {loading ? (
           <View style={styles.centeredState}>
-            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+            <ActivityIndicator color={COLORS.brand.primary} size="large" />
           </View>
         ) : error || !post ? (
           <View style={styles.centeredState}>
@@ -198,7 +198,7 @@ export const BoardEditScreen = () => {
               description={error ?? '게시글을 찾을 수 없습니다.'}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   container: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   formWrap: {

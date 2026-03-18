@@ -23,9 +23,9 @@ import {
   ToggleSwitch,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -105,7 +105,7 @@ export const AccountModificationScreen = () => {
         {loading ? (
           <StateCard
             description="계좌 관리 정보를 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="계좌 관리 정보를 불러오는 중"
           />
         ) : null}
@@ -116,7 +116,7 @@ export const AccountModificationScreen = () => {
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -131,12 +131,12 @@ export const AccountModificationScreen = () => {
         {!loading && !error ? (
           <>
             <InfoBanner
-              backgroundColor={V2_COLORS.accent.blueSoft}
-              iconColor={V2_COLORS.accent.blue}
+              backgroundColor={COLORS.accent.blueSoft}
+              iconColor={COLORS.accent.blue}
               iconName="information-circle-outline"
               lines={ACCOUNT_MANAGEMENT_INFO_LINES}
               style={styles.banner}
-              textColor={V2_COLORS.accent.blue}
+              textColor={COLORS.accent.blue}
             />
 
             <View style={styles.formSection}>
@@ -163,7 +163,7 @@ export const AccountModificationScreen = () => {
                   onChangeText={setAccountNumber}
                   onFocus={() => setBankDropdownOpen(false)}
                   placeholder="'-' 없이 숫자만 입력"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.input}
                   value={data.accountNumber}
                 />
@@ -174,7 +174,7 @@ export const AccountModificationScreen = () => {
                   onChangeText={setAccountHolder}
                   onFocus={() => setBankDropdownOpen(false)}
                   placeholder="예금주 이름 입력"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.input}
                   value={data.accountHolder}
                 />
@@ -209,8 +209,8 @@ export const AccountModificationScreen = () => {
                 <ActivityIndicator
                   color={
                     data.isSaveEnabled
-                      ? V2_COLORS.text.inverse
-                      : V2_COLORS.text.muted
+                      ? COLORS.text.inverse
+                      : COLORS.text.muted
                   }
                   size="small"
                   style={styles.buttonSpinner}
@@ -233,11 +233,11 @@ export const AccountModificationScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: 40,
   },
@@ -254,11 +254,11 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   input: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 50,
     lineHeight: 20,
@@ -267,9 +267,9 @@ const styles = StyleSheet.create({
   },
   hideNameCard: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -283,37 +283,37 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   hideNameTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   hideNameSubtitle: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
   },
   saveButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     height: 52,
     justifyContent: 'center',
     marginTop: 32,
   },
   saveButtonEnabled: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   saveButtonLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   saveButtonLabelEnabled: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   buttonSpinner: {
     marginRight: 8,

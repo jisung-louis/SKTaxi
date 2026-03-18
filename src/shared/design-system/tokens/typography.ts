@@ -1,6 +1,6 @@
 import type { TextStyle } from 'react-native';
 
-export const V2_TYPOGRAPHY: Record<
+export const TYPOGRAPHY: Record<
   | 'title1'
   | 'title2'
   | 'title3'
@@ -53,4 +53,4 @@ export const V2_TYPOGRAPHY: Record<
   },
 };
 
-export type V2TypographyToken = typeof V2_TYPOGRAPHY;
+export type TypographyToken = typeof TYPOGRAPHY;

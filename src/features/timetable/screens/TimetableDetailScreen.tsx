@@ -21,7 +21,7 @@ import {
   StateCard,
   type SegmentedControlItem,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {TimetableAddCourseSheet} from '../components/TimetableAddCourseSheet';
@@ -142,7 +142,7 @@ export const TimetableDetailScreen = () => {
           {loading && !data ? (
             <StateCard
               description="이번 학기 시간표를 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              icon={<ActivityIndicator color={COLORS.brand.primary} />}
               style={styles.stateCard}
               title="시간표를 불러오는 중"
             />
@@ -154,7 +154,7 @@ export const TimetableDetailScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -173,7 +173,7 @@ export const TimetableDetailScreen = () => {
               description="우측 상단 추가 버튼이나 직접 입력으로 새 수업을 넣어보세요."
               icon={
                 <Icon
-                  color={V2_COLORS.brand.primaryStrong}
+                  color={COLORS.brand.primaryStrong}
                   name="calendar-outline"
                   size={28}
                 />
@@ -277,20 +277,20 @@ export const TimetableDetailScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingBottom: V2_SPACING.xxl,
+    paddingBottom: SPACING.xxl,
     paddingTop: 16,
   },
   headerSurface: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
   },
   toolbar: {
@@ -307,12 +307,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   creditMuted: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   creditStrong: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,

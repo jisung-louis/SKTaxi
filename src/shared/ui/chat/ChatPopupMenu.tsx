@@ -9,10 +9,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface ChatPopupMenuProps {
@@ -73,7 +73,7 @@ export const ChatPopupMenu = ({
           style={styles.toggleRow}>
           <View style={styles.rowLabelGroup}>
             <Icon
-              color={V2_COLORS.text.secondary}
+              color={COLORS.text.secondary}
               name="notifications-outline"
               size={15}
             />
@@ -94,7 +94,7 @@ export const ChatPopupMenu = ({
             }}
             style={styles.actionRow}>
             <Icon
-              color={V2_COLORS.accent.orange}
+              color={COLORS.accent.orange}
               name="flag-outline"
               size={15}
             />
@@ -112,7 +112,7 @@ export const ChatPopupMenu = ({
             onLeave();
           }}
           style={styles.actionRow}>
-          <Icon color={V2_COLORS.status.danger} name="log-out-outline" size={15} />
+          <Icon color={COLORS.status.danger} name="log-out-outline" size={15} />
           <Text style={styles.leaveLabel}>{leaveLabel}</Text>
         </TouchableOpacity>
       </View>
@@ -124,28 +124,28 @@ const styles = StyleSheet.create({
   actionRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 45,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'absolute',
     width: 176,
     zIndex: 20,
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
-    marginHorizontal: V2_SPACING.md,
+    marginHorizontal: SPACING.md,
   },
   leaveLabel: {
-    color: V2_COLORS.status.danger,
+    color: COLORS.status.danger,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -153,25 +153,25 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   rowLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 20,
   },
   rowLabelGroup: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   toggleRow: {
     alignItems: 'center',
     flexDirection: 'row',
     height: 45,
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   toggleThumb: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     height: 16,
     position: 'absolute',
     top: 2,
@@ -184,15 +184,15 @@ const styles = StyleSheet.create({
     left: 18,
   },
   toggleTrack: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 20,
     position: 'relative',
     width: 36,
   },
   toggleTrackDisabled: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
   },
   toggleTrackEnabled: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
 });

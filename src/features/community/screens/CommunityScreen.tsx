@@ -19,7 +19,7 @@ import {
 } from '@/shared/design-system/components';
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {useScreenEnterAnimation} from '@/shared/hooks';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 import {CommunityBoardSearchModal} from '../components/CommunityBoardSearchModal';
 import {CommunityBoardSegment} from '../components/CommunityBoardSegment';
@@ -252,22 +252,22 @@ export const CommunityScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   screen: {
     flex: 1,
   },
   headerSection: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
   },
   segmentSection: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   contentSection: {
     flex: 1,
-    paddingTop: V2_SPACING.xs,
+    paddingTop: SPACING.xs,
   },
   pagerViewport: {
     flex: 1,

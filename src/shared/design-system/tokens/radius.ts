@@ -1,4 +1,4 @@
-export const V2_RADIUS = {
+export const RADIUS = {
   xs: 4,
   sm: 8,
   md: 12,
@@ -6,4 +6,4 @@ export const V2_RADIUS = {
   pill: 9999,
 } as const;
 
-export type V2RadiusToken = typeof V2_RADIUS;
+export type RadiusToken = typeof RADIUS;

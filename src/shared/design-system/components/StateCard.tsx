@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '../tokens';
 
 interface StateCardProps {
   actionLabel?: string;
@@ -47,44 +47,44 @@ export const StateCard = ({
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
-    ...V2_SHADOWS.card,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
+    ...SHADOWS.card,
   },
   icon: {
     alignItems: 'center',
     height: 32,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
     width: 32,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   description: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
   },
   actionButton: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
-    marginTop: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.sm,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.pill,
+    marginTop: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
   },
   actionLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,

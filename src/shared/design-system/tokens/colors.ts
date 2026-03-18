@@ -1,4 +1,4 @@
-export const V2_COLORS = {
+export const COLORS = {
   background: {
     page: '#F9FAFB',
     surface: '#FFFFFF',
@@ -49,4 +49,4 @@ export const V2_COLORS = {
   },
 } as const;
 
-export type V2ColorToken = typeof V2_COLORS;
+export type ColorToken = typeof COLORS;

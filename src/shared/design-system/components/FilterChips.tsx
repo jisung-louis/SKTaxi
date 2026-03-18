@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '../tokens';
 
 export interface FilterChipItem<T extends string = string> {
   id: T;
@@ -62,24 +62,24 @@ export const FilterChips = <T extends string>({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   chip: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   chipSelected: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   chipSubtleInactive: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
   },
   chipSurfaceInactive: {
-    backgroundColor: V2_COLORS.background.surface,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    ...SHADOWS.card,
   },
   label: {
     fontSize: 14,
@@ -87,9 +87,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   labelDefault: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
   },
   labelSelected: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
 });

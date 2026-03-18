@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 interface ForegroundNotificationProps {
@@ -89,7 +89,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
           <Icon
             name="notifications"
             size={24}
-            color={V2_COLORS.brand.primary}
+            color={COLORS.brand.primary}
           />
         </View>
         <View style={styles.content}>
@@ -105,7 +105,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
           onPress={handleDismiss}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Icon name="close" size={20} color={V2_COLORS.text.secondary} />
+          <Icon name="close" size={20} color={COLORS.text.secondary} />
         </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
@@ -121,20 +121,20 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   notification: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.md,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
     borderWidth: 1,
-    borderColor: V2_COLORS.border.default,
+    borderColor: COLORS.border.default,
   },
   iconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: V2_COLORS.brand.primarySoft,
+    backgroundColor: COLORS.brand.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -143,14 +143,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.primary,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.primary,
     fontWeight: '600',
     marginBottom: 4,
   },
   body: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.text.secondary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.secondary,
     lineHeight: 18,
   },
   closeButton: {

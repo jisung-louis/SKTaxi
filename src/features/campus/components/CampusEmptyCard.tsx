@@ -2,10 +2,10 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 type CampusEmptyCardProps = {
@@ -28,24 +28,24 @@ export const CampusEmptyCard = ({
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    paddingHorizontal: V2_SPACING.xl,
-    paddingVertical: V2_SPACING.xxl,
-    ...V2_SHADOWS.card,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
+    ...SHADOWS.card,
   },
   title: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
     textAlign: 'center',
   },
   description: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',

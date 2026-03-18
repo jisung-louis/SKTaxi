@@ -13,9 +13,9 @@ import DraggableFlatList, {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {BoardSelectedImage} from '../model/types';
@@ -57,7 +57,7 @@ export const ImageSelector = ({
 
         {isUploading ? (
           <View style={styles.uploadOverlay}>
-            <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
+            <ActivityIndicator color={COLORS.text.inverse} size="small" />
           </View>
         ) : null}
 
@@ -68,7 +68,7 @@ export const ImageSelector = ({
           disabled={uploading}
           onPress={() => onRemoveImage(item.id)}
           style={styles.removeButton}>
-          <Icon color={V2_COLORS.text.inverse} name="close" size={12} />
+          <Icon color={COLORS.text.inverse} name="close" size={12} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -82,7 +82,7 @@ export const ImageSelector = ({
         disabled={!canAddMore || uploading}
         onPress={onPickImages}
         style={styles.addButton}>
-        <Icon color={V2_COLORS.text.muted} name="add" size={28} />
+        <Icon color={COLORS.text.muted} name="add" size={28} />
         <Text style={styles.addButtonLabel}>추가</Text>
       </TouchableOpacity>
     );
@@ -110,7 +110,7 @@ export const ImageSelector = ({
             disabled={uploading}
             onPress={onPickImages}
             style={styles.addButton}>
-            <Icon color={V2_COLORS.text.muted} name="add" size={28} />
+            <Icon color={COLORS.text.muted} name="add" size={28} />
             <Text style={styles.addButtonLabel}>추가</Text>
           </TouchableOpacity>
         ) : (
@@ -124,40 +124,40 @@ export const ImageSelector = ({
 const styles = StyleSheet.create({
   addButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderStyle: 'dashed',
     borderWidth: 2,
     height: 82,
     justifyContent: 'center',
-    marginRight: V2_SPACING.sm,
+    marginRight: SPACING.sm,
     width: 82,
   },
   addButtonLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-    marginTop: V2_SPACING.xs,
+    marginTop: SPACING.xs,
   },
   footerSpacer: {
-    width: V2_SPACING.sm,
+    width: SPACING.sm,
   },
   imageItem: {
     height: 82,
-    marginRight: V2_SPACING.sm,
+    marginRight: SPACING.sm,
     position: 'relative',
     width: 82,
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: V2_COLORS.border.default,
+    borderColor: COLORS.border.default,
   },
   imageItemActive: {
     opacity: 0.65,
   },
   imagePreview: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
     height: 80,
     width: 80,
   },
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   removeButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(17,24,39,0.82)',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 20,
     justifyContent: 'center',
     position: 'absolute',
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   uploadOverlay: {
     alignItems: 'center',
     backgroundColor: 'rgba(17,24,39,0.32)',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     bottom: 0,
     justifyContent: 'center',
     left: 0,

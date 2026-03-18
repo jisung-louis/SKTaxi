@@ -5,7 +5,7 @@ import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import type {CommunityStackParamList} from '@/app/navigation/types';
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {CommunityChatRoomViewData} from '../model/communityViewData';
 import type {CommunityChatRoomSourceItem} from '../model/communityHomeData';
@@ -25,24 +25,24 @@ const getRoomTone = (type: CommunityChatRoomSourceItem['tone']) => {
   switch (type) {
     case 'university':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primarySoft,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primarySoft,
+        iconColor: COLORS.brand.primary,
       };
     case 'department':
       return {
-        iconBackgroundColor: V2_COLORS.accent.blueSoft,
-        iconColor: V2_COLORS.accent.blue,
+        iconBackgroundColor: COLORS.accent.blueSoft,
+        iconColor: COLORS.accent.blue,
       };
     case 'game':
       return {
-        iconBackgroundColor: V2_COLORS.accent.orangeSoft,
-        iconColor: V2_COLORS.accent.orange,
+        iconBackgroundColor: COLORS.accent.orangeSoft,
+        iconColor: COLORS.accent.orange,
       };
     case 'custom':
     default:
       return {
-        iconBackgroundColor: V2_COLORS.accent.purpleSoft,
-        iconColor: V2_COLORS.accent.purple,
+        iconBackgroundColor: COLORS.accent.purpleSoft,
+        iconColor: COLORS.accent.purple,
       };
   }
 };

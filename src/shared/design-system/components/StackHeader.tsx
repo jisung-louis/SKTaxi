@@ -8,7 +8,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
-import {V2_COLORS, V2_SPACING} from '../tokens';
+import {COLORS, SPACING} from '../tokens';
 
 interface StackHeaderProps {
   onPressBack: () => void;
@@ -32,7 +32,7 @@ export const StackHeader = ({
           activeOpacity={0.82}
           onPress={onPressBack}
           style={styles.backButton}>
-          <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+          <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
         </TouchableOpacity>
 
         <View style={styles.content}>
@@ -48,10 +48,10 @@ export const StackHeader = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   bar: {
     alignItems: 'center',
@@ -68,16 +68,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 36,
     justifyContent: 'center',
-    marginRight: V2_SPACING.sm,
+    marginRight: SPACING.sm,
     width: 36,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
   },
   rightAccessory: {
-    marginLeft: V2_SPACING.md,
+    marginLeft: SPACING.md,
   },
 });

@@ -2,8 +2,8 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
+  COLORS,
+  RADIUS,
 } from '@/shared/design-system/tokens';
 
 interface AuthFeatureChipProps {
@@ -21,14 +21,14 @@ export const AuthFeatureChip = ({label}: AuthFeatureChipProps) => {
 const styles = StyleSheet.create({
   chip: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
   label: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import {legalDocumentRepository} from '../data/repositories/legalDocumentRepository';
 import type {
@@ -24,20 +24,20 @@ const resolveBannerIcon = (iconKey: LegalDocumentBannerIconKey) => {
 
 const resolveBannerBackground = (tone: LegalDocumentBannerTone) => {
   return tone === 'blue'
-    ? V2_COLORS.accent.blueSoft
-    : V2_COLORS.brand.primaryTint;
+    ? COLORS.accent.blueSoft
+    : COLORS.brand.primaryTint;
 };
 
 const resolveBannerTitleColor = (tone: LegalDocumentBannerTone) => {
   return tone === 'blue'
     ? '#1E40AF'
-    : V2_COLORS.brand.primaryStrong;
+    : COLORS.brand.primaryStrong;
 };
 
 const resolveBannerIconColor = (tone: LegalDocumentBannerTone) => {
   return tone === 'blue'
-    ? V2_COLORS.accent.blue
-    : V2_COLORS.brand.primaryStrong;
+    ? COLORS.accent.blue
+    : COLORS.brand.primaryStrong;
 };
 
 const resolveBannerLineColor = (
@@ -48,7 +48,7 @@ const resolveBannerLineColor = (
     return line.tone === 'secondary' ? '#60A5FA' : '#3B82F6';
   }
 
-  return V2_COLORS.status.success;
+  return COLORS.status.success;
 };
 
 const mapScreen = (source: LegalDocumentSource): LegalDocumentScreenViewData => {

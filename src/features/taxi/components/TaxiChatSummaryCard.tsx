@@ -3,9 +3,9 @@ import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {TaxiChatSummaryViewData} from '../../model/taxiChatViewData';
@@ -21,7 +21,7 @@ export const TaxiChatSummaryCard = ({summary}: TaxiChatSummaryCardProps) => {
         <View style={styles.routeSide}>
           <View style={[styles.routeIconWrap, styles.departureIconWrap]}>
             <Icon
-              color={V2_COLORS.background.surface}
+              color={COLORS.background.surface}
               name="location"
               size={12}
             />
@@ -32,7 +32,7 @@ export const TaxiChatSummaryCard = ({summary}: TaxiChatSummaryCardProps) => {
         </View>
 
         <Icon
-          color={V2_COLORS.text.muted}
+          color={COLORS.text.muted}
           name="arrow-forward-outline"
           size={14}
         />
@@ -43,7 +43,7 @@ export const TaxiChatSummaryCard = ({summary}: TaxiChatSummaryCardProps) => {
           </Text>
           <View style={[styles.routeIconWrap, styles.destinationIconWrap]}>
             <Icon
-              color={V2_COLORS.background.surface}
+              color={COLORS.background.surface}
               name="business-outline"
               size={12}
             />
@@ -54,12 +54,12 @@ export const TaxiChatSummaryCard = ({summary}: TaxiChatSummaryCardProps) => {
       <View style={styles.metaRow}>
         <View style={styles.metaGroup}>
           <View style={styles.metaItem}>
-            <Icon color={V2_COLORS.text.secondary} name="time-outline" size={12} />
+            <Icon color={COLORS.text.secondary} name="time-outline" size={12} />
             <Text style={styles.metaLabel}>{summary.departureTimeLabel}</Text>
           </View>
 
           <View style={styles.metaItem}>
-            <Icon color={V2_COLORS.accent.orange} name="people-outline" size={12} />
+            <Icon color={COLORS.accent.orange} name="people-outline" size={12} />
             <Text style={styles.metaLabel}>{summary.memberSummaryLabel}</Text>
           </View>
         </View>
@@ -74,33 +74,33 @@ export const TaxiChatSummaryCard = ({summary}: TaxiChatSummaryCardProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.accent.yellowBorder,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.accent.yellowBorder,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    marginBottom: V2_SPACING.lg,
-    marginTop: V2_SPACING.xs,
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.xs,
     padding: 13,
   },
   departureIconWrap: {
-    backgroundColor: V2_COLORS.accent.yellow,
+    backgroundColor: COLORS.accent.yellow,
   },
   destinationIconWrap: {
-    backgroundColor: V2_COLORS.accent.orange,
+    backgroundColor: COLORS.accent.orange,
   },
   metaGroup: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   metaItem: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
+    gap: SPACING.xs,
   },
   metaLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -111,13 +111,13 @@ const styles = StyleSheet.create({
   },
   routeIconWrap: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 24,
     justifyContent: 'center',
     width: 24,
   },
   routeLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flex: 1,
     fontSize: 14,
     fontWeight: '700',
@@ -126,8 +126,8 @@ const styles = StyleSheet.create({
   routeRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.sm,
+    gap: SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   routeSide: {
     alignItems: 'center',
@@ -139,18 +139,18 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   tagLabel: {
-    color: V2_COLORS.accent.yellowStrong,
+    color: COLORS.accent.yellowStrong,
     fontSize: 10,
     fontWeight: '500',
     lineHeight: 14,
   },
   tagPill: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.yellowSoft,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.accent.yellowSoft,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     minHeight: 18,
-    paddingHorizontal: V2_SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
 });

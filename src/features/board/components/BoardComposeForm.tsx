@@ -10,8 +10,8 @@ import {
 
 import {ToggleSwitch} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {BOARD_CATEGORIES} from '../../model/constants';
@@ -128,7 +128,7 @@ export const BoardComposeForm = ({
           maxLength={TITLE_LIMIT}
           onChangeText={onChangeTitle}
           placeholder={titlePlaceholder}
-          placeholderTextColor={V2_COLORS.text.placeholder}
+          placeholderTextColor={COLORS.text.placeholder}
           style={styles.titleInput}
           value={title}
         />
@@ -143,7 +143,7 @@ export const BoardComposeForm = ({
           multiline
           onChangeText={onChangeContent}
           placeholder={contentPlaceholder}
-          placeholderTextColor={V2_COLORS.text.placeholder}
+          placeholderTextColor={COLORS.text.placeholder}
           style={styles.contentInput}
           textAlignVertical="top"
           value={content}
@@ -191,35 +191,35 @@ export const BoardComposeForm = ({
 const styles = StyleSheet.create({
   categoryChip: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     borderRadius: 12,
     height: 32,
     justifyContent: 'center',
     paddingHorizontal: 14,
   },
   categoryChipLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
   },
   categoryChipLabelSelected: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   categoryChipSelected: {
-    backgroundColor: V2_COLORS.brand.primaryAccent,
+    backgroundColor: COLORS.brand.primaryAccent,
   },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   contentContainer: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     paddingBottom: 32,
   },
   contentInput: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     lineHeight: 23,
     minHeight: 180,
@@ -230,20 +230,20 @@ const styles = StyleSheet.create({
   },
   counterLabel: {
     alignSelf: 'flex-end',
-    color: V2_COLORS.border.default,
+    color: COLORS.border.default,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 4,
   },
   inlineCounterLabel: {
-    color: V2_COLORS.border.default,
+    color: COLORS.border.default,
     fontSize: 12,
     lineHeight: 16,
   },
   section: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingBottom: 13,
     paddingTop: 12,
   },
@@ -254,20 +254,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
   standaloneSectionLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
     marginBottom: 10,
   },
   titleInput: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   toggleDescription: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
@@ -284,11 +284,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   toggleTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,

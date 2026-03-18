@@ -1,4 +1,4 @@
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {
   BookmarksSource,
@@ -20,19 +20,19 @@ const getPostToneStyles = (tone: UserPostListItemSource['categoryTone']) => {
   switch (tone) {
     case 'green':
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        textColor: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        textColor: COLORS.accent.orange,
       };
     case 'blue':
     default:
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
       };
   }
 };
@@ -46,14 +46,14 @@ const getNoticeToneStyles = (tone: UserNoticeBookmarkItemSource['categoryTone'])
       };
     case 'pink':
       return {
-        backgroundColor: V2_COLORS.accent.pinkSoft,
-        textColor: V2_COLORS.accent.pink,
+        backgroundColor: COLORS.accent.pinkSoft,
+        textColor: COLORS.accent.pink,
       };
     case 'blue':
     default:
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        textColor: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        textColor: COLORS.accent.blue,
       };
   }
 };
@@ -69,19 +69,19 @@ const getTaxiPillStyles = (
       };
     case 'purple':
       return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
+        backgroundColor: COLORS.accent.purpleSoft,
         textColor: '#A855F7',
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
+        backgroundColor: COLORS.accent.orangeSoft,
         textColor: '#F97316',
       };
     case 'green':
     default:
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        textColor: V2_COLORS.brand.primaryStrong,
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
       };
   }
 };

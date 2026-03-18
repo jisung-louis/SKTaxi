@@ -18,8 +18,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {useScreenView} from '@/shared/hooks';
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {AuthActionButton} from '../components/AuthActionButton';
@@ -220,7 +220,7 @@ export const PermissionOnboardingScreen = () => {
                     },
                   ]}>
                   <Icon
-                    color={V2_COLORS.text.inverse}
+                    color={COLORS.text.inverse}
                     name={currentViewData.heroIconName}
                     size={36}
                   />
@@ -279,11 +279,11 @@ export const PermissionOnboardingScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   screen: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   progressWrap: {
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   scrollContent: {
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
   },
   heroSection: {
     alignItems: 'center',
@@ -339,14 +339,14 @@ const styles = StyleSheet.create({
   },
   completeInnerCircle: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderRadius: 9999,
     height: 48,
     justifyContent: 'center',
     width: 48,
   },
   kicker: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 30,
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 32,
@@ -380,18 +380,18 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerNote: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 20,
     textAlign: 'center',
   },
   bottomActionWrap: {
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
     paddingTop: 17,
     position: 'absolute',
     right: 0,

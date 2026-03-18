@@ -10,9 +10,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '../tokens';
 
 interface DetailComposerProps {
@@ -88,7 +88,7 @@ export const DetailComposer = ({
             onPress={onPressLeadingAction}
             style={styles.leadingButton}>
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name={leadingIconName}
               size={18}
             />
@@ -100,7 +100,7 @@ export const DetailComposer = ({
             editable={editable}
             onChangeText={handleChangeText}
             placeholder={placeholder}
-            placeholderTextColor={V2_COLORS.text.muted}
+            placeholderTextColor={COLORS.text.muted}
             style={styles.input}
             textAlignVertical="center"
             value={resolvedValue}
@@ -120,7 +120,7 @@ export const DetailComposer = ({
           ]}>
           <Icon
             color={
-              isSendEnabled ? V2_COLORS.text.inverse : V2_COLORS.text.muted
+              isSendEnabled ? COLORS.text.inverse : COLORS.text.muted
             }
             name="paper-plane-outline"
             size={18}
@@ -133,36 +133,36 @@ export const DetailComposer = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderTopColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 13,
   },
   row: {
     alignItems: 'flex-end',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   leadingButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
   inputSurface: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
     flex: 1,
     justifyContent: 'center',
     height: 40,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 10,
   },
   input: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 23,
@@ -170,13 +170,13 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
   sendButtonActive: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
 });

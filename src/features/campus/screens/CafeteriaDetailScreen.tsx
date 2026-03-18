@@ -8,8 +8,8 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -79,13 +79,13 @@ export const CafeteriaDetailScreen = () => {
           ref={scrollViewRef}
           contentContainerStyle={[
             styles.content,
-            {paddingBottom: insets.bottom + V2_SPACING.xxl},
+            {paddingBottom: insets.bottom + SPACING.xxl},
           ]}
           showsVerticalScrollIndicator={false}>
           {loading && !data ? (
             <StateCard
               description="학식 메뉴를 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              icon={<ActivityIndicator color={COLORS.brand.primary} />}
               style={styles.stateCard}
               title="학식 메뉴를 불러오는 중"
             />
@@ -97,7 +97,7 @@ export const CafeteriaDetailScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -132,21 +132,21 @@ export const CafeteriaDetailScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   stateCard: {
-    marginTop: V2_SPACING.xs,
+    marginTop: SPACING.xs,
   },
   list: {
-    gap: V2_SPACING.lg,
+    gap: SPACING.lg,
   },
 });

@@ -7,7 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {StackHeader, StateCard} from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {TaxiHistoryListItem} from '../components/TaxiHistoryListItem';
@@ -34,7 +34,7 @@ export const TaxiHistoryScreen = () => {
         {loading && !data ? (
           <StateCard
             description="택시 이용 내역을 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="택시 이용 내역을 불러오는 중"
           />
         ) : null}
@@ -45,7 +45,7 @@ export const TaxiHistoryScreen = () => {
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -75,11 +75,11 @@ export const TaxiHistoryScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 20,
     paddingBottom: 24,
   },

@@ -24,10 +24,10 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 
@@ -66,12 +66,12 @@ const RecruitMemberChip = ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.background.surface, V2_COLORS.brand.primary],
+      [COLORS.background.surface, COLORS.brand.primary],
     ),
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.border.default, V2_COLORS.brand.primary],
+      [COLORS.border.default, COLORS.brand.primary],
     ),
     transform: [{scale: interpolate(progress.value, [0, 1], [1, 1.02])}],
   }));
@@ -80,7 +80,7 @@ const RecruitMemberChip = ({
     color: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.text.secondary, V2_COLORS.text.inverse],
+      [COLORS.text.secondary, COLORS.text.inverse],
     ),
   }));
 
@@ -166,7 +166,7 @@ export const RecruitScreen = () => {
               onPress={navigation.goBack}
               style={styles.headerButton}>
               <Icon
-                color={V2_COLORS.text.primary}
+                color={COLORS.text.primary}
                 name="arrow-back"
                 size={22}
               />
@@ -264,8 +264,8 @@ export const RecruitScreen = () => {
                 maxLength={DETAIL_MAX_LENGTH}
                 multiline
                 placeholder="파티에 대한 추가 정보를 입력하세요. (예: 짐이 많아요, 여성분만 탑승 가능해요 등)"
-                placeholderTextColor={V2_COLORS.text.muted}
-                selectionColor={V2_COLORS.brand.primary}
+                placeholderTextColor={COLORS.text.muted}
+                selectionColor={COLORS.brand.primary}
                 style={styles.detailInput}
                 textAlignVertical="top"
                 value={detail}
@@ -291,8 +291,8 @@ export const RecruitScreen = () => {
               <Icon
                 color={
                   canSubmit && !isSubmitting
-                    ? V2_COLORS.text.inverse
-                    : V2_COLORS.text.muted
+                    ? COLORS.text.inverse
+                    : COLORS.text.muted
                 }
                 name="car-sport-outline"
                 size={22}
@@ -315,7 +315,7 @@ export const RecruitScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   flex: {
@@ -323,11 +323,11 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   headerButton: {
     alignItems: 'center',
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     width: 36,
   },
   headerTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 26,
@@ -345,37 +345,37 @@ const styles = StyleSheet.create({
     width: 36,
   },
   scrollContent: {
-    gap: V2_SPACING.lg,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.sm,
+    gap: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   memberTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   memberCount: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   memberCaption: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 18,
@@ -383,13 +383,13 @@ const styles = StyleSheet.create({
   memberOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   memberButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     height: 44,
     justifyContent: 'center',
@@ -402,53 +402,53 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   detailInput: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     lineHeight: 22,
     minHeight: 132,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 10,
   },
   detailCounter: {
     alignSelf: 'flex-end',
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
-    marginTop: V2_SPACING.sm,
+    marginTop: SPACING.sm,
   },
   footer: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderTopColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   submitButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 56,
     justifyContent: 'center',
-    ...V2_SHADOWS.floating,
+    ...SHADOWS.floating,
   },
   submitButtonDisabled: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     shadowOpacity: 0,
   },
   submitButtonLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 22,
   },
   submitButtonLabelDisabled: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
 });

@@ -9,10 +9,10 @@ import type {
 import {NoticeListItem} from './NoticeListItem';
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface NoticeHomeListProps {
@@ -47,7 +47,7 @@ export const NoticeHomeList = ({
         <View style={styles.stateContainer}>
           <StateCard
             description="공지사항을 불러오는 중입니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             style={styles.embeddedStateCard}
             title="공지사항 준비 중"
           />
@@ -61,7 +61,7 @@ export const NoticeHomeList = ({
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -79,7 +79,7 @@ export const NoticeHomeList = ({
             description={emptyState.description}
             icon={
               <Icon
-                color={V2_COLORS.text.muted}
+                color={COLORS.text.muted}
                 name="mail-open-outline"
                 size={28}
               />
@@ -102,7 +102,7 @@ export const NoticeHomeList = ({
           ))}
           {loadingMore ? (
             <View style={styles.footer}>
-              <ActivityIndicator color={V2_COLORS.brand.primary} size="small" />
+              <ActivityIndicator color={COLORS.brand.primary} size="small" />
             </View>
           ) : !hasMore ? (
             <View style={styles.footer}>
@@ -119,29 +119,29 @@ export const NoticeHomeList = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     flexGrow: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   stateContainer: {
     minHeight: 260,
-    padding: V2_SPACING.lg,
+    padding: SPACING.lg,
   },
   embeddedStateCard: {
     minHeight: '100%',
   },
   footer: {
     alignItems: 'center',
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
     justifyContent: 'center',
     minHeight: 52,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   footerLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },

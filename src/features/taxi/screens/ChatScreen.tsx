@@ -18,7 +18,7 @@ import {
   DetailComposer,
   StateCard,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {
   ChatHeader,
@@ -91,7 +91,7 @@ export const ChatScreen = () => {
 
         {loading ? (
           <View style={styles.centeredState}>
-            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+            <ActivityIndicator color={COLORS.brand.primary} size="large" />
           </View>
         ) : error ? (
           <View style={styles.centeredState}>
@@ -100,7 +100,7 @@ export const ChatScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -160,14 +160,14 @@ export const ChatScreen = () => {
 const styles = StyleSheet.create({
   centeredState: {
     flex: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   headerPlaceholder: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     minHeight: 56,
   },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   threadContent: {
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: SPACING.md,
   },
   threadWrap: {
     flex: 1,

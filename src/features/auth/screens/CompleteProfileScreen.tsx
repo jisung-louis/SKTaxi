@@ -26,9 +26,9 @@ import type {RootStackParamList} from '@/app/navigation/types';
 import {DEPARTMENT_OPTIONS} from '@/shared/constants/departments';
 import {SelectionDropdown} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
@@ -68,12 +68,12 @@ const ProfileCheckRow = ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.background.surface, AUTH_BRAND_ACCENT_COLOR],
+      [COLORS.background.surface, AUTH_BRAND_ACCENT_COLOR],
     ),
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.border.default, AUTH_BRAND_ACCENT_COLOR],
+      [COLORS.border.default, AUTH_BRAND_ACCENT_COLOR],
     ),
     transform: [
       {
@@ -100,7 +100,7 @@ const ProfileCheckRow = ({
       style={styles.checkRow}>
       <Animated.View style={[styles.checkBox, animatedCheckBoxStyle]}>
         <Animated.View style={animatedCheckIconStyle}>
-          <Icon color={V2_COLORS.text.inverse} name="checkmark" size={14} />
+          <Icon color={COLORS.text.inverse} name="checkmark" size={14} />
         </Animated.View>
       </Animated.View>
 
@@ -194,7 +194,7 @@ export const CompleteProfileScreen = () => {
                 end={{x: 1, y: 1}}
                 start={{x: 0, y: 0}}
                 style={styles.heroBadgeInner}>
-                <Icon color={V2_COLORS.text.inverse} name="person" size={30} />
+                <Icon color={COLORS.text.inverse} name="person" size={30} />
               </LinearGradient>
             </View>
 
@@ -213,7 +213,7 @@ export const CompleteProfileScreen = () => {
                   onChangeText={setDisplayName}
                   onFocus={closeDropdown}
                   placeholder="사용할 닉네임을 입력해요"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.input}
                   value={displayName}
                 />
@@ -256,7 +256,7 @@ export const CompleteProfileScreen = () => {
                 }}
                 onFocus={closeDropdown}
                 placeholder="학번을 입력해요 (예: 20241234)"
-                placeholderTextColor={V2_COLORS.text.muted}
+                placeholderTextColor={COLORS.text.muted}
                 style={styles.input}
                 value={studentId}
               />
@@ -306,15 +306,15 @@ export const CompleteProfileScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   screen: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
     paddingTop: 24,
   },
   heroBadge: {
@@ -333,14 +333,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 30,
     marginBottom: 6,
   },
   subtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 32,
@@ -349,25 +349,25 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   fieldLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
     marginBottom: 8,
   },
   requiredMark: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
   },
   inputWrap: {
     justifyContent: 'center',
     position: 'relative',
   },
   input: {
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 50,
     lineHeight: 20,
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     paddingRight: 64,
   },
   countLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     position: 'absolute',
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
     marginBottom: 24,
     marginTop: 12,
@@ -400,8 +400,8 @@ const styles = StyleSheet.create({
   },
   checkBox: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
     borderRadius: 8,
     borderWidth: 2,
     height: 24,
@@ -409,14 +409,14 @@ const styles = StyleSheet.create({
     width: 24,
   },
   checkLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   checkLinkLabel: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
@@ -424,17 +424,17 @@ const styles = StyleSheet.create({
   },
   footer: {
     backgroundColor: 'rgba(255,255,255,0.95)',
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
     bottom: 0,
     left: 0,
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
     paddingTop: 21,
     position: 'absolute',
     right: 0,
   },
   footerHelper: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 8,

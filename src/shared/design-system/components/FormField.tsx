@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {V2_COLORS, V2_SPACING} from '../tokens';
+import {COLORS, SPACING} from '../tokens';
 
 interface FormFieldProps {
   children: React.ReactNode;
@@ -47,29 +47,29 @@ const styles = StyleSheet.create({
   labelRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   label: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   required: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
     marginLeft: 2,
   },
   optional: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginLeft: 6,
   },
   counterLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 4,

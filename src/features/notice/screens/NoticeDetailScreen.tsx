@@ -25,7 +25,7 @@ import {
   StateCard,
   ToneBadge,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
   useKeyboardInset,
   useScreenEnterAnimation,
@@ -83,7 +83,7 @@ export const NoticeDetailScreen = () => {
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {loading ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
-            <ActivityIndicator color={V2_COLORS.brand.primary} size="large" />
+            <ActivityIndicator color={COLORS.brand.primary} size="large" />
           </View>
         ) : notFound ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
@@ -100,7 +100,7 @@ export const NoticeDetailScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -198,7 +198,7 @@ export const NoticeDetailScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   screen: {
@@ -206,53 +206,53 @@ const styles = StyleSheet.create({
   },
   centeredState: {
     flex: 1,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   scrollContent: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
-    marginBottom: V2_SPACING.md,
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 28,
-    marginBottom: V2_SPACING.xxl,
+    marginBottom: SPACING.xxl,
   },
   divider: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     height: 1,
-    marginBottom: V2_SPACING.xxl,
+    marginBottom: SPACING.xxl,
   },
   attachmentsSection: {
-    marginTop: V2_SPACING.xxl,
+    marginTop: SPACING.xxl,
   },
   reactionsRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
-    marginTop: V2_SPACING.xxl,
+    gap: SPACING.md,
+    marginTop: SPACING.xxl,
   },
   commentsDivider: {
-    marginBottom: V2_SPACING.lg,
-    marginTop: V2_SPACING.xxl,
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.xxl,
   },
   commentsTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   emptyCommentsWrap: {
     alignItems: 'center',
@@ -261,12 +261,12 @@ const styles = StyleSheet.create({
     paddingVertical: 32,
   },
   emptyCommentsLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
   },
   commentsList: {
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: SPACING.md,
   },
   composerAvoidingView: {
     bottom: 0,

@@ -13,9 +13,9 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiAcceptancePendingStatusProps {
@@ -102,7 +102,7 @@ export const TaxiAcceptancePendingStatus = ({
         <View style={styles.loaderTrack} />
         <Animated.View style={[styles.loaderSpinner, rotatingRingStyle]} />
         <View style={styles.loaderCenter}>
-          <Icon color={V2_COLORS.brand.primary} name="car-sport" size={28} />
+          <Icon color={COLORS.brand.primary} name="car-sport" size={28} />
         </View>
       </View>
 
@@ -122,7 +122,7 @@ export const TaxiAcceptancePendingStatus = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: SPACING.md,
   },
   loaderWrap: {
     alignItems: 'center',
@@ -133,48 +133,48 @@ const styles = StyleSheet.create({
   },
   loaderTrack: {
     ...StyleSheet.absoluteFillObject,
-    borderColor: V2_COLORS.brand.primarySoft,
-    borderRadius: V2_RADIUS.pill,
+    borderColor: COLORS.brand.primarySoft,
+    borderRadius: RADIUS.pill,
     borderWidth: 4,
   },
   loaderSpinner: {
     ...StyleSheet.absoluteFillObject,
     borderColor: 'transparent',
-    borderRadius: V2_RADIUS.pill,
-    borderRightColor: V2_COLORS.brand.primary,
-    borderTopColor: V2_COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
+    borderRightColor: COLORS.brand.primary,
+    borderTopColor: COLORS.brand.primary,
     borderWidth: 4,
   },
   loaderCenter: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.pill,
     height: 64,
     justifyContent: 'center',
     width: 64,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 28,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   dotsRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   dot: {
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
     height: 6,
     width: 6,
   },
   description: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',

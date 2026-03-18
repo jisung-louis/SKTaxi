@@ -2,9 +2,9 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {InquiryTypeOptionViewData} from '../../model/inquiryFormViewData';
@@ -44,29 +44,29 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   chip: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
     height: 38,
     justifyContent: 'center',
     paddingHorizontal: 17,
   },
   chipSelected: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.brand.primary,
   },
   chipLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   chipLabelSelected: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
 });

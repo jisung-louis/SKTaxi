@@ -15,7 +15,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import {PageHeader} from '@/shared/design-system/components';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
-import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
 import {NoticeCategoryBar} from '../components/NoticeCategoryBar';
@@ -147,7 +147,7 @@ export const NoticeScreen = () => {
               <RefreshControl
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
-                tintColor={V2_COLORS.brand.primary}
+                tintColor={COLORS.brand.primary}
               />
             }
             scrollEventThrottle={16}
@@ -181,25 +181,25 @@ export const NoticeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
   },
   content: {
     flex: 1,
   },
   headerSection: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
   },
   categorySection: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   listSection: {
     flex: 1,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
   },
   listScrollContent: {
     flexGrow: 1,
-    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xxl,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + SPACING.xxl,
   },
 });

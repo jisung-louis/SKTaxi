@@ -1,29 +1,29 @@
 import type { TextStyle } from 'react-native';
 
-import { V2_COLORS } from '@/shared/design-system/tokens/colors';
+import { COLORS } from '@/shared/design-system/tokens/colors';
 
 export const MINECRAFT_COLORS = {
   background: {
-    primary: V2_COLORS.background.page,
-    secondary: V2_COLORS.background.surface,
-    card: V2_COLORS.background.surface,
-    surface: V2_COLORS.background.subtle,
-    tertiary: V2_COLORS.background.subtle,
+    primary: COLORS.background.page,
+    secondary: COLORS.background.surface,
+    card: COLORS.background.surface,
+    surface: COLORS.background.subtle,
+    tertiary: COLORS.background.subtle,
   },
   text: {
-    primary: V2_COLORS.text.primary,
-    secondary: V2_COLORS.text.secondary,
-    disabled: V2_COLORS.text.muted,
+    primary: COLORS.text.primary,
+    secondary: COLORS.text.secondary,
+    disabled: COLORS.text.muted,
   },
   border: {
-    default: V2_COLORS.border.default,
-    moreDark: V2_COLORS.border.default,
+    default: COLORS.border.default,
+    moreDark: COLORS.border.default,
   },
   accent: {
-    green: V2_COLORS.brand.primary,
-    blue: V2_COLORS.accent.blue,
-    orange: V2_COLORS.accent.orange,
-    red: V2_COLORS.status.danger,
+    green: COLORS.brand.primary,
+    blue: COLORS.accent.blue,
+    orange: COLORS.accent.orange,
+    red: COLORS.status.danger,
   },
 } as const;
 

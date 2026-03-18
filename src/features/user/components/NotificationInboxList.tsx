@@ -4,10 +4,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {
@@ -37,33 +37,33 @@ const getToneStyle = (
   switch (tone) {
     case 'blue':
       return {
-        backgroundColor: V2_COLORS.accent.blueSoft,
-        color: V2_COLORS.accent.blue,
+        backgroundColor: COLORS.accent.blueSoft,
+        color: COLORS.accent.blue,
         opacity,
       };
     case 'orange':
       return {
-        backgroundColor: V2_COLORS.accent.orangeSoft,
-        color: V2_COLORS.accent.orange,
+        backgroundColor: COLORS.accent.orangeSoft,
+        color: COLORS.accent.orange,
         opacity,
       };
     case 'purple':
       return {
-        backgroundColor: V2_COLORS.accent.purpleSoft,
-        color: V2_COLORS.accent.purple,
+        backgroundColor: COLORS.accent.purpleSoft,
+        color: COLORS.accent.purple,
         opacity,
       };
     case 'yellow':
       return {
-        backgroundColor: V2_COLORS.accent.yellowSoft,
-        color: V2_COLORS.accent.yellowStrong,
+        backgroundColor: COLORS.accent.yellowSoft,
+        color: COLORS.accent.yellowStrong,
         opacity,
       };
     case 'green':
     default:
       return {
-        backgroundColor: V2_COLORS.brand.primaryTint,
-        color: V2_COLORS.brand.primaryStrong,
+        backgroundColor: COLORS.brand.primaryTint,
+        color: COLORS.brand.primaryStrong,
         opacity,
       };
   }
@@ -79,7 +79,7 @@ export const NotificationInboxList = ({
         description={NOTIFICATION_INBOX_EMPTY_DESCRIPTION}
         icon={
           <Icon
-            color={V2_COLORS.border.default}
+            color={COLORS.border.default}
             name="notifications-off-outline"
             size={28}
           />
@@ -150,7 +150,7 @@ export const NotificationInboxList = ({
                     {item.contextLabel ? (
                       <View style={styles.contextRow}>
                         <Icon
-                          color={V2_COLORS.text.muted}
+                          color={COLORS.text.muted}
                           name="document-text-outline"
                           size={10}
                         />
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   sectionLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.6,
@@ -195,21 +195,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   row: {
     flexDirection: 'row',
     gap: 12,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 15,
   },
   rowUnread: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
+    backgroundColor: COLORS.brand.primaryTint,
   },
   iconBox: {
     alignItems: 'center',
@@ -235,10 +235,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   titleUnread: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   titleRead: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontWeight: '500',
   },
   titleMeta: {
@@ -247,23 +247,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timeLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 15,
   },
   unreadDot: {
-    backgroundColor: V2_COLORS.status.danger,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.status.danger,
+    borderRadius: RADIUS.pill,
     height: 8,
     width: 8,
   },
   message: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 12,
     lineHeight: 19.5,
   },
   messageRead: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   contextRow: {
     alignItems: 'center',
@@ -272,16 +272,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   contextLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     flex: 1,
     fontSize: 10,
     lineHeight: 15,
   },
   contextLabelRead: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   separator: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
   },
 });

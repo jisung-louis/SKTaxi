@@ -15,11 +15,11 @@ import Animated, {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 type Props = {
@@ -88,7 +88,7 @@ export const JoinRequestModal: React.FC<Props> = ({
 
             <View style={styles.heroIcon}>
               <Icon
-                color={V2_COLORS.brand.primaryStrong}
+                color={COLORS.brand.primaryStrong}
                 name="person-add-outline"
                 size={26}
               />
@@ -115,7 +115,7 @@ export const JoinRequestModal: React.FC<Props> = ({
               }}
               style={styles.secondaryButton}>
               <Icon
-                color={V2_COLORS.text.secondary}
+                color={COLORS.text.secondary}
                 name="close-outline"
                 size={18}
               />
@@ -130,7 +130,7 @@ export const JoinRequestModal: React.FC<Props> = ({
               }}
               style={styles.primaryButton}>
               <Icon
-                color={V2_COLORS.text.inverse}
+                color={COLORS.text.inverse}
                 name="checkmark-outline"
                 size={18}
               />
@@ -146,109 +146,109 @@ export const JoinRequestModal: React.FC<Props> = ({
 const styles = StyleSheet.create({
   actionGroup: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   backdrop: {
     alignItems: 'center',
     backgroundColor: 'rgba(17, 24, 39, 0.44)',
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
   },
   badge: {
     alignSelf: 'center',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderColor: V2_COLORS.border.accent,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.border.accent,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   badgeLabel: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.brand.primaryStrong,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.brand.primaryStrong,
     fontWeight: '700',
   },
   caption: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.text.tertiary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.tertiary,
     textAlign: 'center',
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
     borderRadius: 24,
     borderWidth: 1,
     maxWidth: 360,
-    padding: V2_SPACING.xxl,
+    padding: SPACING.xxl,
     width: '100%',
-    ...V2_SHADOWS.raised,
+    ...SHADOWS.raised,
   },
   description: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.secondary,
-    marginBottom: V2_SPACING.sm,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   divider: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   header: {
     alignItems: 'center',
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   heroIcon: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primarySoft,
+    backgroundColor: COLORS.brand.primarySoft,
     borderRadius: 28,
     height: 56,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
     width: 56,
   },
   primaryButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 52,
     justifyContent: 'center',
   },
   primaryButtonLabel: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.inverse,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.inverse,
     fontWeight: '700',
   },
   requesterName: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontWeight: '700',
   },
   secondaryButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 52,
     justifyContent: 'center',
   },
   secondaryButtonLabel: {
-    ...V2_TYPOGRAPHY.body1,
-    color: V2_COLORS.text.secondary,
+    ...TYPOGRAPHY.body1,
+    color: COLORS.text.secondary,
     fontWeight: '600',
   },
   title: {
-    ...V2_TYPOGRAPHY.title2,
-    color: V2_COLORS.text.primary,
-    marginBottom: V2_SPACING.sm,
+    ...TYPOGRAPHY.title2,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
     textAlign: 'center',
   },
 });

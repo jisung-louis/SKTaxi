@@ -18,10 +18,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 const ITEM_HEIGHT = 40;
@@ -62,7 +62,7 @@ const TaxiCreateWheelLabel = React.memo(
       color: interpolateColor(
         progress.value,
         [0, 1],
-        [V2_COLORS.text.muted, V2_COLORS.brand.primary],
+        [COLORS.text.muted, COLORS.brand.primary],
       ),
       fontSize: interpolate(progress.value, [0, 1], [16, 22]),
       lineHeight: interpolate(progress.value, [0, 1], [24, 28]),
@@ -190,12 +190,12 @@ const TaxiCreateWheelColumn = React.memo(
 
         <View pointerEvents="none" style={styles.selectionWindow} />
         <LinearGradient
-          colors={[V2_COLORS.background.surface, 'rgba(255,255,255,0)']}
+          colors={[COLORS.background.surface, 'rgba(255,255,255,0)']}
           pointerEvents="none"
           style={styles.fadeTop}
         />
         <LinearGradient
-          colors={['rgba(255,255,255,0)', V2_COLORS.background.surface]}
+          colors={['rgba(255,255,255,0)', COLORS.background.surface]}
           pointerEvents="none"
           style={styles.fadeBottom}
         />
@@ -253,19 +253,19 @@ export const TaxiCreateTimePicker = React.memo(({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   pickerRow: {
     alignItems: 'center',
@@ -291,8 +291,8 @@ const styles = StyleSheet.create({
   },
   selectionWindow: {
     backgroundColor: '#F3FBF6',
-    borderColor: V2_COLORS.border.accent,
-    borderRadius: V2_RADIUS.md,
+    borderColor: COLORS.border.accent,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
     height: ITEM_HEIGHT,
     left: 0,
@@ -320,21 +320,21 @@ const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: '700',
     lineHeight: 38,
-    marginHorizontal: V2_SPACING.sm,
+    marginHorizontal: SPACING.sm,
     marginTop: -6,
   },
   summaryPill: {
     alignSelf: 'center',
-    borderRadius: V2_RADIUS.pill,
-    marginTop: V2_SPACING.md,
+    borderRadius: RADIUS.pill,
+    marginTop: SPACING.md,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   summaryPillToday: {
-    backgroundColor: V2_COLORS.brand.primarySoft,
+    backgroundColor: COLORS.brand.primarySoft,
   },
   summaryPillTomorrow: {
-    backgroundColor: V2_COLORS.accent.orangeSoft,
+    backgroundColor: COLORS.accent.orangeSoft,
   },
   summaryLabel: {
     fontSize: 14,
@@ -342,9 +342,9 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   summaryLabelToday: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   summaryLabelTomorrow: {
-    color: V2_COLORS.status.warning,
+    color: COLORS.status.warning,
   },
 });

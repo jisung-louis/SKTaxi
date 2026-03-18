@@ -2,7 +2,7 @@ import React from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'react-native';
 
-import {V2_COLORS, V2_SHADOWS} from '@/shared/design-system/tokens';
+import {COLORS, SHADOWS} from '@/shared/design-system/tokens';
 
 import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
 import type {
@@ -167,7 +167,7 @@ export const TimetableAllViewCard = ({
           style={styles.toggleButton}>
           <Text style={styles.toggleLabel}>{toggleLabel}</Text>
           <Icon
-            color={V2_COLORS.text.secondary}
+            color={COLORS.text.secondary}
             name={collapsed ? 'chevron-down' : 'chevron-up'}
             size={18}
           />
@@ -184,11 +184,11 @@ const styles = StyleSheet.create({
   },
   card: {
     alignSelf: 'center',
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderRadius: CARD_RADIUS,
     overflow: 'hidden',
     position: 'relative',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   headerRow: {
     flexDirection: 'row',
@@ -200,13 +200,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   axisLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 10,
     fontWeight: '500',
     lineHeight: 15,
   },
   dayLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -218,25 +218,25 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   periodIndex: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 15,
   },
   periodTime: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 8,
     lineHeight: 12,
     marginTop: 2,
   },
   gridLineHorizontal: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     height: 1,
     left: 0,
     position: 'absolute',
   },
   gridLineVertical: {
-    backgroundColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.border.subtle,
     position: 'absolute',
     width: 1,
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   blockBase: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderRadius: BLOCK_RADIUS,
   },
   blockTint: {
@@ -272,8 +272,8 @@ const styles = StyleSheet.create({
   },
   toggleButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
     borderWidth: 1,
     borderRadius: 9999,
     flexDirection: 'row',
@@ -283,10 +283,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     zIndex: 1,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   toggleLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,

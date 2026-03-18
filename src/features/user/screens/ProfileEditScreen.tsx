@@ -23,9 +23,9 @@ import {
   StateCard,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -113,7 +113,7 @@ export const ProfileEditScreen = () => {
         {loading && !data ? (
           <StateCard
             description="프로필 수정 화면을 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
             title="프로필 수정을 불러오는 중"
           />
         ) : null}
@@ -124,7 +124,7 @@ export const ProfileEditScreen = () => {
             description={error}
             icon={
               <Icon
-                color={V2_COLORS.accent.orange}
+                color={COLORS.accent.orange}
                 name="alert-circle-outline"
                 size={28}
               />
@@ -154,7 +154,7 @@ export const ProfileEditScreen = () => {
                   Alert.alert('준비 중', '프로필 사진 변경은 추후 연결 예정입니다.')
                 }
                 style={styles.cameraButton}>
-                <Icon color={V2_COLORS.text.inverse} name="camera-outline" size={14} />
+                <Icon color={COLORS.text.inverse} name="camera-outline" size={14} />
               </TouchableOpacity>
             </View>
 
@@ -166,7 +166,7 @@ export const ProfileEditScreen = () => {
                   onChangeText={setDisplayName}
                   onFocus={closeDropdown}
                   placeholder="닉네임 입력"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.input}
                   value={displayName}
                 />
@@ -182,7 +182,7 @@ export const ProfileEditScreen = () => {
                   }}
                   onFocus={closeDropdown}
                   placeholder="예: 20210001"
-                  placeholderTextColor={V2_COLORS.text.muted}
+                  placeholderTextColor={COLORS.text.muted}
                   style={styles.input}
                   value={studentId}
                 />
@@ -219,7 +219,7 @@ export const ProfileEditScreen = () => {
               style={styles.saveButton}>
               {saving ? (
                 <ActivityIndicator
-                  color={V2_COLORS.text.inverse}
+                  color={COLORS.text.inverse}
                   size="small"
                   style={styles.saveSpinner}
                 />
@@ -237,11 +237,11 @@ export const ProfileEditScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingTop: 32,
     paddingBottom: 40,
   },
@@ -257,14 +257,14 @@ const styles = StyleSheet.create({
     width: 96,
   },
   avatarLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 30,
     fontWeight: '700',
     lineHeight: 36,
   },
   cameraButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
     borderRadius: 9999,
     bottom: 0,
     height: 32,
@@ -283,18 +283,18 @@ const styles = StyleSheet.create({
     zIndex: 20,
   },
   fieldLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 50,
     lineHeight: 20,
@@ -303,8 +303,8 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
     height: 52,
     justifyContent: 'center',
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   saveLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,

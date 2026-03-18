@@ -3,7 +3,7 @@ import {BottomSheetView} from '@gorhom/bottom-sheet';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
 import type {TimetableCourseDetailViewData} from '../../model/timetableDetailViewData';
@@ -13,26 +13,26 @@ const DETAIL_SNAP_POINTS = ['63%'];
 
 const ROW_ICON_STYLES = {
   credits: {
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    iconColor: V2_COLORS.accent.blue,
+    backgroundColor: COLORS.accent.blueSoft,
+    iconColor: COLORS.accent.blue,
   },
   location: {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    iconColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primaryTint,
+    iconColor: COLORS.brand.primary,
   },
   professor: {
-    backgroundColor: V2_COLORS.accent.purpleSoft,
-    iconColor: V2_COLORS.accent.purple,
+    backgroundColor: COLORS.accent.purpleSoft,
+    iconColor: COLORS.accent.purple,
   },
   time: {
-    backgroundColor: V2_COLORS.accent.orangeSoft,
-    iconColor: V2_COLORS.accent.orange,
+    backgroundColor: COLORS.accent.orangeSoft,
+    iconColor: COLORS.accent.orange,
   },
 } as const;
 
 const DEFAULT_ROW_ICON_STYLE = {
-  backgroundColor: V2_COLORS.background.subtle,
-  iconColor: V2_COLORS.text.secondary,
+  backgroundColor: COLORS.background.subtle,
+  iconColor: COLORS.text.secondary,
 } as const;
 
 interface TimetableCourseDetailSheetProps {
@@ -75,7 +75,7 @@ export const TimetableCourseDetailSheet = ({
             activeOpacity={0.84}
             onPress={onClose}
             style={styles.closeButton}>
-            <Icon color={V2_COLORS.text.secondary} name="close" size={18} />
+            <Icon color={COLORS.text.secondary} name="close" size={18} />
           </TouchableOpacity>
         </View>
 
@@ -113,7 +113,7 @@ export const TimetableCourseDetailSheet = ({
           onPress={onDelete}
           style={styles.deleteButton}>
           <Icon
-            color={V2_COLORS.status.danger}
+            color={COLORS.status.danger}
             name="trash-outline"
             size={16}
           />
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   titleDot: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 12,
     marginRight: 12,
     width: 12,
@@ -150,31 +150,31 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
   },
   codeLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   closeButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   rows: {
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
   },
   row: {
     alignItems: 'center',
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
     minHeight: 62,
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   iconBox: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     height: 32,
     justifyContent: 'center',
     marginRight: 12,
@@ -192,13 +192,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rowLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 15,
     marginBottom: 2,
   },
   rowValue: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
@@ -206,12 +206,12 @@ const styles = StyleSheet.create({
   deleteButton: {
     alignItems: 'center',
     backgroundColor: '#FEF2F2',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 52,
     justifyContent: 'center',
-    marginTop: V2_SPACING.xl,
+    marginTop: SPACING.xl,
   },
   deleteLabel: {
     color: '#EF4444',

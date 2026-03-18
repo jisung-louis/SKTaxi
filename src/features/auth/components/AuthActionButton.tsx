@@ -10,10 +10,10 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface AuthActionButtonProps {
@@ -44,7 +44,7 @@ export const AuthActionButton = ({
         style={[
           styles.buttonOuter,
           isDisabled ? styles.disabledButton : styles.gradientButton,
-          {shadowColor: colors?.[0] || V2_COLORS.brand.primary},
+          {shadowColor: colors?.[0] || COLORS.brand.primary},
         ]}>
         <View style={styles.buttonInner}>
           {!isDisabled && colors ? (
@@ -59,7 +59,7 @@ export const AuthActionButton = ({
 
           {loading ? (
             <ActivityIndicator
-              color={isDisabled ? V2_COLORS.text.muted : V2_COLORS.text.inverse}
+              color={isDisabled ? COLORS.text.muted : COLORS.text.inverse}
               size="small"
             />
           ) : (
@@ -78,32 +78,32 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonOuter: {
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     width: '100%',
   },
   buttonInner: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     height: 52,
     justifyContent: 'center',
     overflow: 'hidden',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     width: '100%',
   },
   gradientButton: {
-    ...V2_SHADOWS.floating,
+    ...SHADOWS.floating,
   },
   disabledButton: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
   },
   enabledLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   disabledLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,

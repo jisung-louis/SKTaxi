@@ -3,10 +3,10 @@ import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {TaxiHistoryEntryViewData} from '../../model/userActivityViewData';
@@ -42,7 +42,7 @@ export const TaxiHistoryListItem = ({item}: TaxiHistoryListItemProps) => {
         <View style={styles.startDot} />
         <Text style={styles.routeLabel}>{item.departureLabel}</Text>
         <Icon
-          color={V2_COLORS.text.muted}
+          color={COLORS.text.muted}
           name="arrow-forward-outline"
           size={14}
         />
@@ -52,7 +52,7 @@ export const TaxiHistoryListItem = ({item}: TaxiHistoryListItemProps) => {
 
       <View style={styles.footerRow}>
         <View style={styles.passengerRow}>
-          <Icon color={V2_COLORS.text.muted} name="people-outline" size={13} />
+          <Icon color={COLORS.text.muted} name="people-outline" size={13} />
           <Text style={styles.passengerLabel}>{item.passengerCountLabel}</Text>
         </View>
 
@@ -73,11 +73,11 @@ export const TaxiHistoryListItem = ({item}: TaxiHistoryListItemProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     minHeight: 147,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   headerRow: {
     alignItems: 'center',
@@ -87,11 +87,11 @@ const styles = StyleSheet.create({
   },
   badgesRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   badge: {
     borderRadius: 9999,
-    paddingHorizontal: V2_SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   badgeLabel: {
@@ -100,14 +100,14 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   dateLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   routeRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     marginBottom: 12,
   },
   startDot: {
@@ -123,14 +123,14 @@ const styles = StyleSheet.create({
     width: 8,
   },
   routeLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   footerRow: {
     alignItems: 'center',
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -139,10 +139,10 @@ const styles = StyleSheet.create({
   passengerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
+    gap: SPACING.xs,
   },
   passengerLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -150,18 +150,18 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   paymentTitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 2,
   },
   paymentLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   paymentLabelMuted: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
 });

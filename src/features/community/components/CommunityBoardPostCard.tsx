@@ -3,10 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CommunityBoardPostViewData} from '../model/communityViewData';
@@ -61,7 +61,7 @@ export const CommunityBoardPostCard = ({
           <View style={styles.statItem}>
             <Icon
               color={
-                item.bookmarkCount > 0 ? V2_COLORS.status.success : '#6B7280'
+                item.bookmarkCount > 0 ? COLORS.status.success : '#6B7280'
               }
               name="bookmark-outline"
               size={12}
@@ -82,24 +82,24 @@ export const CommunityBoardPostCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
-    marginBottom: V2_SPACING.md,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    marginBottom: SPACING.md,
     minHeight: 136,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   headerRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   categoryPill: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.xs,
-    paddingHorizontal: V2_SPACING.sm,
-    paddingVertical: V2_SPACING.xs,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.xs,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
   },
   categoryLabel: {
     color: '#6B7280',
@@ -113,17 +113,17 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   excerpt: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   footerRow: {
     alignItems: 'center',
@@ -137,12 +137,12 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
   },
   statItem: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
+    gap: SPACING.xs,
   },
   statLabel: {
     color: '#6B7280',
@@ -153,6 +153,6 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   bookmarkLabelActive: {
-    color: V2_COLORS.status.success,
+    color: COLORS.status.success,
   },
 });

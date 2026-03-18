@@ -4,10 +4,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CampusCafeteriaRecommendedMenuViewData} from '../../model/campusHome';
@@ -49,7 +49,7 @@ export const CampusCafeteriaPreviewCarousel = ({
               start={{x: 0, y: 0}}
               style={styles.iconBox}>
               <Icon
-                color={V2_COLORS.text.inverse}
+                color={COLORS.text.inverse}
                 name="restaurant-outline"
                 size={28}
               />
@@ -69,7 +69,7 @@ export const CampusCafeteriaPreviewCarousel = ({
 
               <View style={styles.likeRow}>
                 <Icon
-                  color={V2_COLORS.text.muted}
+                  color={COLORS.text.muted}
                   name="thumbs-up-outline"
                   size={12}
                 />
@@ -87,30 +87,30 @@ export const CampusCafeteriaPreviewCarousel = ({
 
 const styles = StyleSheet.create({
   list: {
-    marginHorizontal: -V2_SPACING.lg,
+    marginHorizontal: -SPACING.lg,
   },
   listContent: {
-    columnGap: V2_SPACING.md,
-    paddingBottom: V2_SPACING.sm,
-    paddingHorizontal: V2_SPACING.lg,
+    columnGap: SPACING.md,
+    paddingBottom: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
   },
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     minHeight: 125,
     width: 280,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   cardContent: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
-    padding: V2_SPACING.lg,
+    gap: SPACING.md,
+    padding: SPACING.lg,
   },
   iconBox: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.md,
+    borderRadius: RADIUS.md,
     height: 64,
     justifyContent: 'center',
     width: 64,
@@ -120,39 +120,39 @@ const styles = StyleSheet.create({
   },
   categoryPill: {
     alignSelf: 'flex-start',
-    backgroundColor: V2_COLORS.accent.orangeSoft,
-    borderRadius: V2_RADIUS.pill,
-    marginBottom: V2_SPACING.xs,
-    paddingHorizontal: V2_SPACING.sm,
+    backgroundColor: COLORS.accent.orangeSoft,
+    borderRadius: RADIUS.pill,
+    marginBottom: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   categoryLabel: {
-    color: V2_COLORS.accent.orange,
+    color: COLORS.accent.orange,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   price: {
-    color: V2_COLORS.accent.orange,
+    color: COLORS.accent.orange,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   likeRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
+    gap: SPACING.xs,
   },
   likeCount: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,

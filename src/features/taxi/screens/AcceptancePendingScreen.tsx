@@ -18,10 +18,10 @@ import {
   StateCard,
 } from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 
@@ -94,7 +94,7 @@ export const AcceptancePendingScreen = () => {
           <View style={styles.stateWrap}>
             <StateCard
               description="동승 요청 대기 화면을 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              icon={<ActivityIndicator color={COLORS.brand.primary} />}
               title="수락 대기 화면 로딩 중"
             />
           </View>
@@ -107,7 +107,7 @@ export const AcceptancePendingScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="refresh-outline"
                   size={24}
                 />
@@ -122,13 +122,13 @@ export const AcceptancePendingScreen = () => {
 
         {!loading && !error && data ? (
           <ScrollView
-            contentContainerStyle={[styles.content, {paddingBottom: insets.bottom + V2_SPACING.lg}]}
+            contentContainerStyle={[styles.content, {paddingBottom: insets.bottom + SPACING.lg}]}
             showsVerticalScrollIndicator={false}>
             <View
               style={[
                 styles.mainSection,
                 {
-                  paddingTop: Math.max(WINDOW_HEIGHT * 0.18, insets.top + V2_SPACING.lg),
+                  paddingTop: Math.max(WINDOW_HEIGHT * 0.18, insets.top + SPACING.lg),
                 },
               ]}>
               <TaxiAcceptancePendingStatus
@@ -142,7 +142,7 @@ export const AcceptancePendingScreen = () => {
                 onPress={handleCancelRequest}
                 style={styles.cancelButton}>
                 <Icon
-                  color={V2_COLORS.text.strong}
+                  color={COLORS.text.strong}
                   name="close-circle-outline"
                   size={18}
                 />
@@ -155,7 +155,7 @@ export const AcceptancePendingScreen = () => {
             <View
               style={[
                 {
-                  paddingBottom: Math.max(insets.bottom, V2_SPACING.lg) + 48,
+                  paddingBottom: Math.max(insets.bottom, SPACING.lg) + 48,
                 },
               ]}>
               <TaxiAcceptancePendingInfoCard
@@ -174,7 +174,7 @@ export const AcceptancePendingScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   screen: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   stateWrap: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   content: {
     justifyContent: 'space-between',
@@ -195,26 +195,26 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.gray,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.gray,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     height: 60,
     justifyContent: 'center',
-    ...V2_SHADOWS.card,
-    marginVertical: V2_SPACING.xxl,
+    ...SHADOWS.card,
+    marginVertical: SPACING.xxl,
   },
   cancelButtonLabel: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 21,
   },
   cancelHint: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-    paddingTop: V2_SPACING.sm,
+    paddingTop: SPACING.sm,
     textAlign: 'center',
   },
 });

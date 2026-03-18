@@ -14,7 +14,7 @@ import {
   FilterChips,
   type FilterChipItem,
 } from '@/shared/design-system/components';
-import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CommunityBoardSearchFilters} from '../model/communityHomeData';
 
@@ -121,7 +121,7 @@ export const CommunityBoardSearchModal = ({
             <TextInput
               onChangeText={setSearchText}
               placeholder="제목, 내용으로 검색"
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               style={styles.searchInput}
               value={searchText}
             />
@@ -182,95 +182,95 @@ export const CommunityBoardSearchModal = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    borderBottomColor: V2_COLORS.border.default,
+    borderBottomColor: COLORS.border.default,
     borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   headerSideLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 15,
     lineHeight: 22,
   },
   headerTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
   },
   headerActionLabel: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontSize: 15,
     lineHeight: 22,
   },
   content: {
-    padding: V2_SPACING.lg,
+    padding: SPACING.lg,
   },
   section: {
-    marginBottom: V2_SPACING.xxl,
+    marginBottom: SPACING.xxl,
   },
   sectionTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 22,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   searchInput: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     lineHeight: 22,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },
   horizontalContent: {
-    paddingRight: V2_SPACING.lg,
+    paddingRight: SPACING.lg,
   },
   sortGrid: {
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   sortOption: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.md,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   sortOptionSelected: {
-    backgroundColor: V2_COLORS.accent.blueSoft,
+    backgroundColor: COLORS.accent.blueSoft,
   },
   sortLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     lineHeight: 22,
   },
   sortLabelSelected: {
-    color: V2_COLORS.accent.blue,
+    color: COLORS.accent.blue,
     fontWeight: '700',
   },
   footer: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   applyButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     justifyContent: 'center',
     minHeight: 54,
   },
   applyButtonLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,

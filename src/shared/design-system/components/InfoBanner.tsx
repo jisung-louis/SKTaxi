@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_RADIUS, V2_SPACING} from '../tokens';
+import {RADIUS, SPACING} from '../tokens';
 
 interface InfoBannerProps {
   backgroundColor: string;
@@ -46,9 +46,9 @@ export const InfoBanner = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: V2_RADIUS.lg,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },
   icon: {

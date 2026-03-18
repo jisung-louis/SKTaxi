@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 export type BookmarksTabKey = 'community' | 'notice';
 
@@ -65,8 +65,8 @@ export const BookmarksTabBar = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.subtle,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
     height: 47,
@@ -83,21 +83,21 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   tabActive: {
-    borderBottomColor: V2_COLORS.brand.primary,
+    borderBottomColor: COLORS.brand.primary,
     paddingBottom: 14,
   },
   tabLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   tabLabelActive: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
   countBadge: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
     borderRadius: 9999,
     justifyContent: 'center',
     minWidth: 20,
@@ -105,15 +105,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   countBadgeActive: {
-    backgroundColor: V2_COLORS.brand.primarySoft,
+    backgroundColor: COLORS.brand.primarySoft,
   },
   countLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,
   },
   countLabelActive: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
   },
 });

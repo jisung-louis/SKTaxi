@@ -18,10 +18,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiCreateLocationSectionProps {
@@ -71,12 +71,12 @@ const TaxiCreateLocationChip = ({
       const baseBackgroundColor = interpolateColor(
         selectedProgress.value,
         [0, 1],
-        [V2_COLORS.background.surface, V2_COLORS.brand.primary],
+        [COLORS.background.surface, COLORS.brand.primary],
       );
       const baseBorderColor = interpolateColor(
         selectedProgress.value,
         [0, 1],
-        [V2_COLORS.border.default, V2_COLORS.brand.primary],
+        [COLORS.border.default, COLORS.brand.primary],
       );
       const baseScale = interpolate(selectedProgress.value, [0, 1], [1, 1.02]);
 
@@ -84,12 +84,12 @@ const TaxiCreateLocationChip = ({
         backgroundColor: interpolateColor(
           disabledProgress.value,
           [0, 1],
-          [baseBackgroundColor, V2_COLORS.background.subtle],
+          [baseBackgroundColor, COLORS.background.subtle],
         ),
         borderColor: interpolateColor(
           disabledProgress.value,
           [0, 1],
-          [baseBorderColor, V2_COLORS.border.subtle],
+          [baseBorderColor, COLORS.border.subtle],
         ),
         transform: [
           {
@@ -105,7 +105,7 @@ const TaxiCreateLocationChip = ({
     const baseTextColor = interpolateColor(
       selectedProgress.value,
       [0, 1],
-      [V2_COLORS.text.secondary, V2_COLORS.text.inverse],
+      [COLORS.text.secondary, COLORS.text.inverse],
     );
 
     return {
@@ -180,8 +180,8 @@ export const TaxiCreateLocationSection = ({
             autoCapitalize="none"
             autoCorrect={false}
             placeholder={customPlaceholder}
-            placeholderTextColor={V2_COLORS.text.muted}
-            selectionColor={V2_COLORS.brand.primary}
+            placeholderTextColor={COLORS.text.muted}
+            selectionColor={COLORS.brand.primary}
             style={styles.input}
             value={customValue}
             onChangeText={onChangeCustomValue}
@@ -194,28 +194,28 @@ export const TaxiCreateLocationSection = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
-    padding: V2_SPACING.lg,
-    ...V2_SHADOWS.card,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 24,
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   chip: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
     justifyContent: 'center',
     minHeight: 36,
@@ -228,19 +228,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   inputShell: {
-    marginTop: V2_SPACING.md,
+    marginTop: SPACING.md,
   },
   input: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
     minHeight: 48,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 12,
   },
 });

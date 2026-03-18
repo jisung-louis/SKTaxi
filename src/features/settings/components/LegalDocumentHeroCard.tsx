@@ -3,9 +3,9 @@ import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_RADIUS,
-  V2_SPACING,
-  V2_SHADOWS,
+  RADIUS,
+  SPACING,
+  SHADOWS,
 } from '@/shared/design-system/tokens';
 
 import type {LegalDocumentBannerViewData} from '../../model/legalDocumentViewData';
@@ -42,10 +42,10 @@ export const LegalDocumentHeroCard = ({
 
 const styles = StyleSheet.create({
   container: {
-    ...V2_SHADOWS.card,
-    borderRadius: V2_RADIUS.lg,
+    ...SHADOWS.card,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 12,
   },
   content: {

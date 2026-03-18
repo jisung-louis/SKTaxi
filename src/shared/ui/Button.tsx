@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
@@ -65,8 +65,8 @@ const Button = ({
         <ActivityIndicator
           color={
             variant === 'primary'
-              ? V2_COLORS.text.inverse
-              : V2_COLORS.brand.primary
+              ? COLORS.text.inverse
+              : COLORS.brand.primary
           }
           size="small"
         />
@@ -79,23 +79,23 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: V2_RADIUS.sm,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Variants
   primary: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   secondary: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderWidth: 1,
-    borderColor: V2_COLORS.border.default,
+    borderColor: COLORS.border.default,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: V2_COLORS.brand.primary,
+    borderColor: COLORS.brand.primary,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -115,20 +115,20 @@ const styles = StyleSheet.create({
   },
   // Text styles
   text: {
-    ...V2_TYPOGRAPHY.body1,
+    ...TYPOGRAPHY.body1,
     fontWeight: '600',
   },
   primaryText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
   },
   secondaryText: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
   },
   outlineText: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
   },
   ghostText: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
   },
   smallText: {
     fontSize: 14,

@@ -20,10 +20,10 @@ import {type CampusStackParamList} from '@/app/navigation/types';
 import {useAuth, useAuthLoginProvider} from '@/features/auth';
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -209,13 +209,13 @@ export const MyScreen = () => {
             activeOpacity={0.82}
             onPress={() => navigation.goBack()}
             style={styles.backButton}>
-            <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+            <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
           </TouchableOpacity>
 
           {loading && !data ? (
             <StateCard
               description="마이페이지를 준비하고 있습니다."
-              icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+              icon={<ActivityIndicator color={COLORS.brand.primary} />}
               style={styles.stateCard}
               title="마이페이지를 불러오는 중"
             />
@@ -227,7 +227,7 @@ export const MyScreen = () => {
               description={error}
               icon={
                 <Icon
-                  color={V2_COLORS.accent.orange}
+                  color={COLORS.accent.orange}
                   name="alert-circle-outline"
                   size={28}
                 />
@@ -298,7 +298,7 @@ export const MyScreen = () => {
                       : undefined,
                   ]}>
                   {signingOut ? (
-                    <ActivityIndicator color={V2_COLORS.status.danger} />
+                    <ActivityIndicator color={COLORS.status.danger} />
                   ) : (
                     <Text style={styles.logoutLabel}>로그아웃</Text>
                   )}
@@ -313,7 +313,7 @@ export const MyScreen = () => {
                   {withdrawing ? (
                     <View style={styles.withdrawLoadingRow}>
                       <ActivityIndicator
-                        color={V2_COLORS.status.danger}
+                        color={COLORS.status.danger}
                         size="small"
                       />
                       <Text style={styles.withdrawLabel}>처리 중...</Text>
@@ -354,7 +354,7 @@ export const MyScreen = () => {
             editable={!withdrawing}
             onChangeText={setPassword}
             placeholder="비밀번호"
-            placeholderTextColor={V2_COLORS.text.muted}
+            placeholderTextColor={COLORS.text.muted}
             secureTextEntry
             style={styles.passwordInput}
             value={password}
@@ -378,7 +378,7 @@ export const MyScreen = () => {
                 withdrawing ? styles.disabledButton : undefined,
               ]}>
               {withdrawing ? (
-                <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
+                <ActivityIndicator color={COLORS.text.inverse} size="small" />
               ) : (
                 <Text style={styles.modalConfirmLabel}>확인</Text>
               )}
@@ -392,41 +392,41 @@ export const MyScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     flex: 1,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   backButton: {
     alignItems: 'center',
     height: 36,
     justifyContent: 'center',
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
     width: 36,
   },
   stateCard: {
-    marginTop: V2_SPACING.xs,
+    marginTop: SPACING.xs,
   },
   profileSection: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.lg,
-    marginBottom: V2_SPACING.xxl,
+    gap: SPACING.lg,
+    marginBottom: SPACING.xxl,
   },
   avatar: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 80,
     justifyContent: 'center',
     width: 80,
   },
   avatarLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 24,
     fontWeight: '700',
     lineHeight: 32,
@@ -435,61 +435,61 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   displayName: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 28,
     marginBottom: 4,
   },
   subtitle: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
   editButton: {
     alignSelf: 'flex-start',
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    borderRadius: V2_RADIUS.sm,
-    paddingHorizontal: V2_SPACING.md,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.md,
     paddingVertical: 6,
   },
   editButtonLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.md,
-    marginBottom: V2_SPACING.xxl,
+    gap: SPACING.md,
+    marginBottom: SPACING.xxl,
   },
   logoutSection: {
-    marginTop: V2_SPACING.sm,
+    marginTop: SPACING.sm,
   },
   logoutButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     height: 53,
     justifyContent: 'center',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   logoutLabel: {
-    color: V2_COLORS.status.danger,
+    color: COLORS.status.danger,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 21,
   },
   withdrawButton: {
     alignSelf: 'flex-end',
-    marginTop: V2_SPACING.sm,
+    marginTop: SPACING.sm,
     paddingHorizontal: 4,
     paddingVertical: 2,
   },
   withdrawLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     textDecorationLine: 'underline',
@@ -503,66 +503,66 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   modalCard: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
-    padding: V2_SPACING.xl,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.xl,
   },
   modalTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
-    marginBottom: V2_SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   modalDescription: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   passwordInput: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderColor: V2_COLORS.border.default,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 48,
     lineHeight: 20,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   modalButtonRow: {
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     justifyContent: 'flex-end',
-    marginTop: V2_SPACING.lg,
+    marginTop: SPACING.lg,
   },
   modalCancelButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
     height: 40,
     justifyContent: 'center',
     minWidth: 72,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   modalCancelLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   modalConfirmButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     height: 40,
     justifyContent: 'center',
     minWidth: 72,
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   modalConfirmLabel: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,

@@ -8,7 +8,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '../tokens';
 
 export interface SegmentedControlItem<T extends string = string> {
   id: T;
@@ -40,7 +40,7 @@ export const SegmentedControl = <T extends string>({
     variant === 'surface' ? styles.containerSurface : styles.containerBrand;
 
   return (
-    <View style={[styles.containerBase, containerStyle, style, {borderRadius: isRounded ? V2_RADIUS.pill : V2_RADIUS.lg}]}>
+    <View style={[styles.containerBase, containerStyle, style, {borderRadius: isRounded ? RADIUS.pill : RADIUS.lg}]}>
       {items.map(item => {
         const selected = item.id === selectedId;
         const segmentSelectedStyle =
@@ -58,7 +58,7 @@ export const SegmentedControl = <T extends string>({
             accessibilityRole="button"
             activeOpacity={0.88}
             onPress={() => onSelect(item.id)}
-            style={[styles.segment, selected ? segmentSelectedStyle : null, isFullWidth ? {flex: 1} : null, isRounded ? {borderRadius: V2_RADIUS.pill} : {borderRadius: V2_RADIUS.md}, {height: height}]}>
+            style={[styles.segment, selected ? segmentSelectedStyle : null, isFullWidth ? {flex: 1} : null, isRounded ? {borderRadius: RADIUS.pill} : {borderRadius: RADIUS.md}, {height: height}]}>
             <Text
               style={[
                 styles.label,
@@ -76,28 +76,28 @@ export const SegmentedControl = <T extends string>({
 const styles = StyleSheet.create({
   containerBase: {
     flexDirection: 'row',
-    gap: V2_SPACING.xs,
-    padding: V2_SPACING.xs,
+    gap: SPACING.xs,
+    padding: SPACING.xs,
   },
   containerBrand: {
-    backgroundColor: V2_COLORS.background.surface,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    ...SHADOWS.card,
   },
   containerSurface: {
-    backgroundColor: V2_COLORS.background.subtle,
+    backgroundColor: COLORS.background.subtle,
   },
   segment: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: V2_SPACING.md,
+    paddingHorizontal: SPACING.md,
   },
   segmentSelectedBrand: {
-    backgroundColor: V2_COLORS.brand.primary,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.brand.primary,
+    ...SHADOWS.card,
   },
   segmentSelectedSurface: {
-    backgroundColor: V2_COLORS.background.surface,
-    ...V2_SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    ...SHADOWS.card,
   },
   label: {
     fontSize: 14,
@@ -106,15 +106,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   labelDefault: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
   },
   labelSelectedBrand: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     textShadowColor: 'rgba(0, 0, 0, 0.05)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 2,
   },
   labelSelectedSurface: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
   },
 });

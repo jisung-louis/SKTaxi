@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import {cafeteriaDetailRepository} from '../data/repositories/cafeteriaDetailRepository';
 import type {
@@ -15,14 +15,14 @@ const formatPriceLabel = (price: number) => `${price.toLocaleString('ko-KR')}원
 const getBadgeToneColors = (tone: CafeteriaMenuBadgeTone) => {
   if (tone === 'blue') {
     return {
-      backgroundColor: V2_COLORS.accent.blueSoft,
-      textColor: V2_COLORS.accent.blue,
+      backgroundColor: COLORS.accent.blueSoft,
+      textColor: COLORS.accent.blue,
     };
   }
 
   return {
-    backgroundColor: V2_COLORS.brand.primaryTint,
-    textColor: V2_COLORS.brand.primaryStrong,
+    backgroundColor: COLORS.brand.primaryTint,
+    textColor: COLORS.brand.primaryStrong,
   };
 };
 

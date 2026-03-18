@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
-  V2_COLORS,
-  V2_SPACING,
+  COLORS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface CafeteriaDetailHeaderProps {
@@ -31,7 +31,7 @@ export const CafeteriaDetailHeader = ({
               onPress={onPressBack}
               style={styles.backButton}>
               <Icon
-                color={V2_COLORS.text.primary}
+                color={COLORS.text.primary}
                 name="arrow-back"
                 size={22}
               />
@@ -49,11 +49,11 @@ export const CafeteriaDetailHeader = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
   },
   topBar: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.default,
     borderBottomWidth: 1,
   },
   row: {
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 56,
     justifyContent: 'space-between',
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   leftGroup: {
     alignItems: 'center',
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     width: 32,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,

@@ -13,10 +13,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {StateCard} from '@/shared/design-system/components';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import {CommunityBoardPostCard} from './CommunityBoardPostCard';
@@ -72,7 +72,7 @@ export const CommunityBoardSegment = ({
             <View style={styles.stateWrap}>
               <StateCard
                 description="게시글을 불러오는 중입니다."
-                icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
+                icon={<ActivityIndicator color={COLORS.brand.primary} />}
                 title="게시판 준비 중"
               />
             </View>
@@ -83,7 +83,7 @@ export const CommunityBoardSegment = ({
                 description={error}
                 icon={
                   <Icon
-                    color={V2_COLORS.accent.orange}
+                    color={COLORS.accent.orange}
                     name="alert-circle-outline"
                     size={28}
                   />
@@ -98,7 +98,7 @@ export const CommunityBoardSegment = ({
                 description="첫 번째 게시글을 작성해보세요."
                 icon={
                   <Icon
-                    color={V2_COLORS.text.muted}
+                    color={COLORS.text.muted}
                     name="document-text-outline"
                     size={28}
                   />
@@ -111,7 +111,7 @@ export const CommunityBoardSegment = ({
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.footer}>
-              <ActivityIndicator color={V2_COLORS.brand.primary} size="small" />
+              <ActivityIndicator color={COLORS.brand.primary} size="small" />
             </View>
           ) : items.length > 0 && !hasMore ? (
             <View style={styles.footer}>
@@ -128,7 +128,7 @@ export const CommunityBoardSegment = ({
                 </Text>
                 <TouchableOpacity activeOpacity={0.8} onPress={onClearSearch}>
                   <Icon
-                    color={V2_COLORS.text.secondary}
+                    color={COLORS.text.secondary}
                     name="close-outline"
                     size={18}
                   />
@@ -143,7 +143,7 @@ export const CommunityBoardSegment = ({
           <RefreshControl
             onRefresh={onRefresh}
             refreshing={refreshing}
-            tintColor={V2_COLORS.brand.primary}
+            tintColor={COLORS.brand.primary}
           />
         }
         renderItem={({item}) => (
@@ -158,7 +158,7 @@ export const CommunityBoardSegment = ({
         activeOpacity={0.9}
         onPress={onPressWrite}
         style={styles.writeButton}>
-        <Icon color={V2_COLORS.text.inverse} name="create-outline" size={24} />
+        <Icon color={COLORS.text.inverse} name="create-outline" size={24} />
       </TouchableOpacity>
     </View>
   );
@@ -170,31 +170,31 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: BOTTOM_TAB_BAR_HEIGHT + 88,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   headerContent: {
   },
   searchSummaryCard: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: V2_SPACING.md,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
-    ...V2_SHADOWS.card,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    ...SHADOWS.card,
   },
   searchSummaryLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     flex: 1,
     fontSize: 13,
     lineHeight: 20,
   },
   stateWrap: {
     minHeight: 320,
-    paddingTop: V2_SPACING.xl,
+    paddingTop: SPACING.xl,
   },
   footer: {
     alignItems: 'center',
@@ -202,20 +202,20 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   footerLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
   },
   writeButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.pill,
-    bottom: BOTTOM_TAB_BAR_HEIGHT + V2_SPACING.xl,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
+    bottom: BOTTOM_TAB_BAR_HEIGHT + SPACING.xl,
     height: 56,
     justifyContent: 'center',
     position: 'absolute',
-    right: V2_SPACING.lg,
+    right: SPACING.lg,
     width: 56,
-    ...V2_SHADOWS.floating,
+    ...SHADOWS.floating,
   },
 });

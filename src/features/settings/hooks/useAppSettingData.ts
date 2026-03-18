@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {V2_COLORS} from '@/shared/design-system/tokens';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {
   AppSettingActionKey,
@@ -111,33 +111,33 @@ const resolveRowIcon = (iconKey: AppSettingIconKey) => {
   switch (iconKey) {
     case 'darkMode':
       return {
-        iconBackgroundColor: V2_COLORS.background.subtle,
-        iconColor: V2_COLORS.text.secondary,
+        iconBackgroundColor: COLORS.background.subtle,
+        iconColor: COLORS.text.secondary,
         iconName: 'moon-outline',
       };
     case 'termsOfUse':
       return {
-        iconBackgroundColor: V2_COLORS.accent.blueSoft,
-        iconColor: V2_COLORS.accent.blue,
+        iconBackgroundColor: COLORS.accent.blueSoft,
+        iconColor: COLORS.accent.blue,
         iconName: 'document-text-outline',
       };
     case 'privacyPolicy':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primaryTint,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
         iconName: 'shield-checkmark-outline',
       };
     case 'appName':
       return {
-        iconBackgroundColor: V2_COLORS.brand.primaryTint,
-        iconColor: V2_COLORS.brand.primary,
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
         iconName: 'phone-portrait-outline',
       };
     case 'appVersion':
     default:
       return {
-        iconBackgroundColor: V2_COLORS.background.subtle,
-        iconColor: V2_COLORS.text.secondary,
+        iconBackgroundColor: COLORS.background.subtle,
+        iconColor: COLORS.text.secondary,
         iconName: 'code-slash-outline',
       };
   }

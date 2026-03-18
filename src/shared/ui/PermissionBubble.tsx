@@ -11,10 +11,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_TYPOGRAPHY,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 type PermissionBubbleProps = {
@@ -78,7 +78,7 @@ export const PermissionBubble = ({
           style={styles.closeBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Icon name="close" size={16} color={V2_COLORS.text.inverse} />
+          <Icon name="close" size={16} color={COLORS.text.inverse} />
         </TouchableOpacity>
         <Text style={styles.title}>알림 허용이 꺼져있어요</Text>
         <Text style={styles.desc}>
@@ -103,42 +103,42 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: WINDOW_WIDTH * 0.6,
-    backgroundColor: V2_COLORS.brand.primary,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    ...V2_SHADOWS.floating,
+    ...SHADOWS.floating,
   },
   closeBtn: {
     position: 'absolute',
     top: 8,
     right: 8,
     padding: 4,
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   title: {
-    ...V2_TYPOGRAPHY.body2,
-    color: V2_COLORS.text.inverse,
+    ...TYPOGRAPHY.body2,
+    color: COLORS.text.inverse,
     fontWeight: 'bold',
     marginRight: 20,
     marginBottom: 6,
   },
   desc: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.text.inverse,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.inverse,
     opacity: 0.95,
     marginBottom: 10,
   },
   cta: {
     alignSelf: 'flex-start',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.sm,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.sm,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   ctaText: {
-    ...V2_TYPOGRAPHY.caption1,
-    color: V2_COLORS.text.primary,
+    ...TYPOGRAPHY.caption1,
+    color: COLORS.text.primary,
     fontWeight: 'bold',
   },
   tail: {
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: V2_COLORS.brand.primary,
+    borderTopColor: COLORS.brand.primary,
   },
 });
 

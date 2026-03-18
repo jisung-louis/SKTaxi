@@ -4,10 +4,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {
   SegmentedControl,
@@ -58,7 +58,7 @@ export const AcademicCalendarDetailHeader = ({
             activeOpacity={0.82}
             onPress={onPressBack}
             style={styles.backButton}>
-            <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+            <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
           </TouchableOpacity>
 
           <Text style={styles.screenTitle}>학사일정</Text>
@@ -84,7 +84,7 @@ export const AcademicCalendarDetailHeader = ({
             onPress={onMovePrev}
             style={styles.periodButton}>
             <Icon
-              color={V2_COLORS.text.secondary}
+              color={COLORS.text.secondary}
               name="chevron-back"
               size={18}
             />
@@ -104,7 +104,7 @@ export const AcademicCalendarDetailHeader = ({
             onPress={onMoveNext}
             style={styles.periodButton}>
             <Icon
-              color={V2_COLORS.text.secondary}
+              color={COLORS.text.secondary}
               name="chevron-forward"
               size={18}
             />
@@ -117,11 +117,11 @@ export const AcademicCalendarDetailHeader = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
   },
   topBar: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderBottomColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderBottomColor: COLORS.border.default,
     borderBottomWidth: 1,
   },
   topBarRow: {
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     height: 56,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   backButton: {
     alignItems: 'center',
@@ -138,45 +138,45 @@ const styles = StyleSheet.create({
     width: 32,
   },
   screenTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
   },
   content: {
-    paddingHorizontal: V2_SPACING.lg,
-    paddingTop: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.lg,
   },
   segmentedControl: {
-    marginBottom: V2_SPACING.lg,
+    marginBottom: SPACING.lg,
   },
   periodRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingBottom: V2_SPACING.md,
+    paddingBottom: SPACING.md,
   },
   periodButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   periodLabelWrap: {
     alignItems: 'center',
     flex: 1,
   },
   periodLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
   },
   periodSubLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,

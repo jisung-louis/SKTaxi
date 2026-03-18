@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import {
   TIMETABLE_COURSE_TONES,
@@ -73,7 +73,7 @@ export const TimetableTodayViewCard = ({
                 <View
                   style={[
                     styles.courseAccent,
-                    {backgroundColor: tone?.accent ?? V2_COLORS.brand.primary},
+                    {backgroundColor: tone?.accent ?? COLORS.brand.primary},
                   ]}
                 />
                 <Text numberOfLines={1} style={styles.courseTitle}>
@@ -101,7 +101,7 @@ export const TimetableTodayViewCard = ({
           style={styles.toggleButton}>
           <Text style={styles.toggleLabel}>{toggleLabel}</Text>
           <Icon
-            color={V2_COLORS.text.secondary}
+            color={COLORS.text.secondary}
             name={collapsed ? 'chevron-down' : 'chevron-up'}
             size={18}
           />
@@ -113,25 +113,25 @@ export const TimetableTodayViewCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     borderRadius: 28,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
-    ...V2_SHADOWS.card,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    ...SHADOWS.card,
   },
   row: {
     alignItems: 'stretch',
     flexDirection: 'row',
-    marginBottom: V2_SPACING.md,
+    marginBottom: SPACING.md,
   },
   timeColumn: {
     alignItems: 'center',
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
     width: 58,
-    backgroundColor: V2_COLORS.background.subtle,
-    borderRadius: V2_RADIUS.lg,
-    paddingHorizontal: V2_SPACING.sm,
-    paddingVertical: V2_SPACING.sm,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
   },
   timeSlot: {
     alignItems: 'center',
@@ -139,14 +139,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   periodLabel: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 13,
     fontWeight: '800',
     lineHeight: 18,
     marginBottom: 2,
   },
   timeLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 14,
   },
@@ -156,64 +156,64 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     minHeight: TODAY_ROW_HEIGHT,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 10,
   },
   courseAccent: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 4,
     marginBottom: 6,
     width: 24,
   },
   courseTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 20,
     marginBottom: 2,
   },
   courseMeta: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 11,
     lineHeight: 16,
   },
   emptyCard: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
+    backgroundColor: COLORS.background.page,
     borderRadius: 16,
     flex: 1,
     flexDirection: 'row',
     minHeight: TODAY_ROW_HEIGHT,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
   },
   emptyDot: {
     backgroundColor: TIMETABLE_TODAY_EMPTY_DOT_COLOR,
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 8,
-    marginRight: V2_SPACING.md,
+    marginRight: SPACING.md,
     width: 8,
   },
   emptyLabel: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
   },
   toggleButton: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.pill,
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: V2_SPACING.xs,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    marginTop: SPACING.xs,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   toggleLabel: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
-    marginRight: V2_SPACING.xs,
+    marginRight: SPACING.xs,
   },
 });

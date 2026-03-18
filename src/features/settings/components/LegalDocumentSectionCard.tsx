@@ -2,10 +2,10 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
-  V2_SHADOWS,
+  COLORS,
+  RADIUS,
+  SPACING,
+  SHADOWS,
 } from '@/shared/design-system/tokens';
 
 import type {LegalDocumentSectionViewData} from '../../model/legalDocumentViewData';
@@ -34,13 +34,13 @@ export const LegalDocumentSectionCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    ...V2_SHADOWS.card,
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
-    padding: V2_SPACING.lg,
+    ...SHADOWS.card,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
   },
   paragraph: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 12,
     lineHeight: 19.5,
   },
@@ -48,10 +48,10 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: V2_SPACING.sm,
+    marginBottom: SPACING.sm,
   },
 });

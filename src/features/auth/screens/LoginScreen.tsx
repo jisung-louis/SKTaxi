@@ -21,10 +21,10 @@ import type {
   RootStackParamList,
 } from '@/app/navigation/types';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
@@ -142,7 +142,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
               colors={[
                 'rgba(255,255,255,0)',
                 'rgba(255,255,255,0.96)',
-                V2_COLORS.background.surface,
+                COLORS.background.surface,
               ]}
               locations={[0, 0.55, 1]}
               style={styles.heroGradient}
@@ -153,7 +153,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
         <View style={styles.contentSection}>
           <View style={styles.brandRow}>
             <View style={styles.brandIconBox}>
-              <Icon color={V2_COLORS.text.inverse} name="car-sport" size={22} />
+              <Icon color={COLORS.text.inverse} name="car-sport" size={22} />
             </View>
 
             <View>
@@ -186,9 +186,9 @@ export const LoginScreen = (_props: LoginScreenProps) => {
                 loading ? styles.buttonDisabled : undefined,
               ]}>
               {loading ? (
-                <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
+                <ActivityIndicator color={COLORS.text.inverse} size="small" />
               ) : (
-                <Icon color={V2_COLORS.text.inverse} name="logo-google" size={20} />
+                <Icon color={COLORS.text.inverse} name="logo-google" size={20} />
               )}
               <Text style={styles.googleButtonText}>
                 {loading ? '로그인 중...' : '성결대 이메일로 로그인하기'}
@@ -215,7 +215,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
           onPress={() => setAdminVisible(true)}
           style={styles.adminFab}>
           <Icon
-            color={V2_COLORS.text.inverse}
+            color={COLORS.text.inverse}
             name="shield-checkmark"
             size={16}
           />
@@ -248,7 +248,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
               keyboardType="email-address"
               onChangeText={setAdminEmail}
               placeholder="이메일"
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               style={styles.input}
               value={adminEmail}
             />
@@ -257,7 +257,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
               editable={!adminLoading}
               onChangeText={setAdminPassword}
               placeholder="비밀번호"
-              placeholderTextColor={V2_COLORS.text.muted}
+              placeholderTextColor={COLORS.text.muted}
               secureTextEntry
               style={styles.input}
               value={adminPassword}
@@ -284,7 +284,7 @@ export const LoginScreen = (_props: LoginScreenProps) => {
                   adminLoading ? styles.buttonDisabled : undefined,
                 ]}>
                 {adminLoading ? (
-                  <ActivityIndicator color={V2_COLORS.text.inverse} size="small" />
+                  <ActivityIndicator color={COLORS.text.inverse} size="small" />
                 ) : (
                   <Text style={styles.modalConfirmText}>로그인</Text>
                 )}
@@ -312,10 +312,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     position: 'absolute',
     right: 16,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   adminFabText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
@@ -338,16 +338,16 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,255,255,0.86)',
     borderColor: 'rgba(255,255,255,0.72)',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
     height: 43,
     justifyContent: 'center',
-    marginLeft: V2_SPACING.xl,
+    marginLeft: SPACING.xl,
     paddingHorizontal: 17,
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   brandPillText: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 16,
     fontStyle: 'italic',
     fontWeight: '700',
@@ -359,13 +359,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   brandSubtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   brandTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 24,
     fontWeight: '800',
     lineHeight: 30,
@@ -374,16 +374,16 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   container: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
   },
   contentSection: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
     flex: 1,
-    paddingHorizontal: V2_SPACING.xxl,
+    paddingHorizontal: SPACING.xxl,
   },
   copyAccentLine: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   copyLine: {
-    color: V2_COLORS.text.strong,
+    color: COLORS.text.strong,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
@@ -401,18 +401,18 @@ const styles = StyleSheet.create({
     marginTop: 48,
   },
   featureChipGroup: {
-    columnGap: V2_SPACING.sm,
+    columnGap: SPACING.sm,
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginTop: 24,
-    rowGap: V2_SPACING.sm,
+    rowGap: SPACING.sm,
   },
   googleButton: {
     alignItems: 'center',
     backgroundColor: AUTH_BRAND_ACCENT_COLOR,
     borderRadius: 16,
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
     height: 56,
     justifyContent: 'center',
     shadowColor: AUTH_BRAND_ACCENT_COLOR,
@@ -421,26 +421,26 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
   },
   googleButtonText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 22.5,
   },
   guideLink: {
     alignItems: 'center',
-    marginTop: V2_SPACING.md,
+    marginTop: SPACING.md,
   },
   guideLinkText: {
-    color: V2_COLORS.brand.primary,
+    color: COLORS.brand.primary,
     fontSize: 14,
     lineHeight: 20,
     textDecorationLine: 'underline',
   },
   helperText: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-    marginTop: V2_SPACING.md,
+    marginTop: SPACING.md,
     textAlign: 'center',
   },
   heroGradient: {
@@ -458,11 +458,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   input: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
     borderRadius: 10,
     borderWidth: 1,
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     height: 40,
     lineHeight: 16,
@@ -481,34 +481,34 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalCancel: {
-    backgroundColor: V2_COLORS.background.subtle,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.subtle,
+    borderColor: COLORS.border.default,
     borderWidth: 1,
   },
   modalCancelText: {
-    color: V2_COLORS.text.secondary,
+    color: COLORS.text.secondary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   modalCard: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
   },
   modalConfirm: {
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
   },
   modalConfirmText: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   modalTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 26,

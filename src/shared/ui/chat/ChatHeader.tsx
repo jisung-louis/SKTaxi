@@ -4,9 +4,9 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {ChatThreadHeaderViewData} from './types';
@@ -32,7 +32,7 @@ export const ChatHeader = ({
         activeOpacity={0.82}
         onPress={onPressBack}
         style={styles.iconButton}>
-        <Icon color={V2_COLORS.text.primary} name="arrow-back" size={22} />
+        <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -60,7 +60,7 @@ export const ChatHeader = ({
         activeOpacity={0.82}
         onPress={onPressMenu}
         style={styles.iconButton}>
-        <Icon color={V2_COLORS.text.secondary} name="ellipsis-vertical" size={18} />
+        <Icon color={COLORS.text.secondary} name="ellipsis-vertical" size={18} />
       </TouchableOpacity>
     </View>
   );
@@ -70,16 +70,16 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.94)',
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     flexDirection: 'row',
-    paddingHorizontal: V2_SPACING.sm,
+    paddingHorizontal: SPACING.sm,
   },
   content: {
     alignItems: 'center',
     flex: 1,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     paddingHorizontal: 4,
   },
   iconButton: {
@@ -90,18 +90,18 @@ const styles = StyleSheet.create({
   },
   roomIconWrap: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     height: 32,
     justifyContent: 'center',
     width: 32,
   },
   subtitle: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 15,
   },
   title: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 18,

@@ -2,10 +2,10 @@ import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 import type {CafeteriaCategorySectionViewData} from '../../model/cafeteriaDetailViewData';
@@ -68,37 +68,37 @@ export const CafeteriaCategoryCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     overflow: 'hidden',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   header: {
-    backgroundColor: V2_COLORS.brand.logo,
+    backgroundColor: COLORS.brand.logo,
     justifyContent: 'center',
     minHeight: 44,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   headerTitle: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   body: {
-    backgroundColor: V2_COLORS.background.surface,
+    backgroundColor: COLORS.background.surface,
   },
   itemRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
     minHeight: 58,
-    paddingHorizontal: V2_SPACING.lg,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: 10,
   },
   itemRowBorder: {
-    borderTopColor: V2_COLORS.border.subtle,
+    borderTopColor: COLORS.border.subtle,
     borderTopWidth: 1,
   },
   itemMain: {
@@ -113,14 +113,14 @@ const styles = StyleSheet.create({
     rowGap: 6,
   },
   itemTitle: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 20,
   },
   badge: {
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   priceLabel: {
-    color: V2_COLORS.brand.primaryStrong,
+    color: COLORS.brand.primaryStrong,
     fontSize: 12,
     fontWeight: '600',
     lineHeight: 16,

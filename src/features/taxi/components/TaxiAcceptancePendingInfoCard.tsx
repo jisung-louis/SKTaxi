@@ -7,10 +7,10 @@ import type {
   TaxiAcceptancePendingInfoRowViewData,
 } from '../../model/taxiAcceptancePendingViewData';
 import {
-  V2_COLORS,
-  V2_RADIUS,
-  V2_SHADOWS,
-  V2_SPACING,
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface TaxiAcceptancePendingInfoCardProps {
@@ -104,7 +104,7 @@ const InfoRow = ({
         <View style={styles.infoIconWrap}>
           {hasIcon ? (
             <Icon
-              color={V2_COLORS.text.muted}
+              color={COLORS.text.muted}
               name={row.iconName}
               size={18}
             />
@@ -143,7 +143,7 @@ export const TaxiAcceptancePendingInfoCard = ({
     <View style={styles.card}>
       <View style={styles.header}>
         <Icon
-          color={V2_COLORS.text.inverse}
+          color={COLORS.text.inverse}
           name="information-circle-outline"
           size={16}
         />
@@ -155,7 +155,7 @@ export const TaxiAcceptancePendingInfoCard = ({
           <View style={styles.routeRail}>
             <View style={styles.routeIconStart}>
               <Icon
-                color={V2_COLORS.brand.primaryStrong}
+                color={COLORS.brand.primaryStrong}
                 name="location"
                 size={12}
               />
@@ -163,7 +163,7 @@ export const TaxiAcceptancePendingInfoCard = ({
             <View style={styles.routeLine} />
             <View style={styles.routeIconEnd}>
               <Icon
-                color={V2_COLORS.accent.blue}
+                color={COLORS.accent.blue}
                 name="business-outline"
                 size={12}
               />
@@ -199,39 +199,39 @@ export const TaxiAcceptancePendingInfoCard = ({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: V2_COLORS.background.surface,
-    borderColor: V2_COLORS.border.subtle,
-    borderRadius: V2_RADIUS.lg,
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     overflow: 'hidden',
     width: '100%',
-    ...V2_SHADOWS.card,
+    ...SHADOWS.card,
   },
   header: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primary,
+    backgroundColor: COLORS.brand.primary,
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     minHeight: 48,
-    paddingHorizontal: V2_SPACING.lg,
-    paddingVertical: V2_SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   headerTitle: {
-    color: V2_COLORS.text.inverse,
+    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   body: {
-    padding: V2_SPACING.lg,
+    padding: SPACING.lg,
   },
   routeCard: {
-    backgroundColor: V2_COLORS.background.page,
-    borderRadius: V2_RADIUS.md,
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.md,
     flexDirection: 'row',
-    gap: V2_SPACING.md,
+    gap: SPACING.md,
     minHeight: 102,
-    padding: V2_SPACING.md,
+    padding: SPACING.md,
   },
   routeRail: {
     alignItems: 'center',
@@ -241,22 +241,22 @@ const styles = StyleSheet.create({
   },
   routeIconStart: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.brand.primarySoft,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.brand.primarySoft,
+    borderRadius: RADIUS.pill,
     height: 20,
     justifyContent: 'center',
     width: 20,
   },
   routeLine: {
-    backgroundColor: V2_COLORS.border.default,
+    backgroundColor: COLORS.border.default,
     flex: 1,
     marginVertical: 4,
     width: 1,
   },
   routeIconEnd: {
     alignItems: 'center',
-    backgroundColor: V2_COLORS.accent.blueSoft,
-    borderRadius: V2_RADIUS.pill,
+    backgroundColor: COLORS.accent.blueSoft,
+    borderRadius: RADIUS.pill,
     height: 20,
     justifyContent: 'center',
     width: 20,
@@ -270,19 +270,19 @@ const styles = StyleSheet.create({
     minHeight: 36,
   },
   routeCaption: {
-    color: V2_COLORS.text.muted,
+    color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
     marginBottom: 1,
   },
   routeValue: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
   infoRows: {
-    paddingTop: V2_SPACING.sm,
+    paddingTop: SPACING.sm,
   },
   infoRow: {
     alignItems: 'center',
@@ -293,13 +293,13 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   infoRowDivider: {
-    borderBottomColor: V2_COLORS.border.subtle,
+    borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
   },
   infoRowLeft: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
     minWidth: 92,
   },
   infoIconWrap: {
@@ -309,12 +309,12 @@ const styles = StyleSheet.create({
     width: 28,
   },
   infoLabel: {
-    color: V2_COLORS.text.tertiary,
+    color: COLORS.text.tertiary,
     fontSize: 14,
     lineHeight: 20,
   },
   infoValue: {
-    color: V2_COLORS.text.primary,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
@@ -322,16 +322,16 @@ const styles = StyleSheet.create({
   infoRowRightInline: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: V2_SPACING.sm,
+    gap: SPACING.sm,
   },
   avatarCircle: {
     alignItems: 'center',
-    borderRadius: V2_RADIUS.pill,
+    borderRadius: RADIUS.pill,
     justifyContent: 'center',
     overflow: 'hidden',
   },
   avatarBorder: {
-    borderColor: V2_COLORS.background.surface,
+    borderColor: COLORS.background.surface,
     borderWidth: 2,
   },
   avatarImage: {

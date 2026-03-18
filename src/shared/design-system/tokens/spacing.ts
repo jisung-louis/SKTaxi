@@ -1,4 +1,4 @@
-export const V2_SPACING = {
+export const SPACING = {
   xs: 4,
   sm: 8,
   md: 12,
@@ -7,4 +7,4 @@ export const V2_SPACING = {
   xxl: 24,
 } as const;
 
-export type V2SpacingToken = typeof V2_SPACING;
+export type SpacingToken = typeof SPACING;
