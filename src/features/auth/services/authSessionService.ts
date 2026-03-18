@@ -1,9 +1,11 @@
 import { Platform } from 'react-native';
 
 import { getCurrentAppVersion } from '@/features/settings';
-import type { IMemberRepository } from '@/features/member';
 import {
-  clearUserFcmTokens,
+  removeMemberFcmToken,
+  type IMemberRepository,
+} from '@/features/member';
+import {
   createInitialUserProfile,
   DEFAULT_USER_DISPLAY_NAME,
   syncUserLoginMetadata,
@@ -111,16 +113,15 @@ export const finalizeGoogleSignIn = async ({
 
 export const removeAuthSessionFcmToken = async (
   authRepository: IAuthRepository,
-  userRepository: IUserRepository,
+  memberRepository: IMemberRepository,
 ) => {
   const currentUser = authRepository.getCurrentUser();
   if (!currentUser) {
     return;
   }
 
-  await clearUserFcmTokens({
-    userId: currentUser.uid,
-    userRepository,
+  await removeMemberFcmToken({
+    memberRepository,
   });
 };
 

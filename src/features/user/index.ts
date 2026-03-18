@@ -126,8 +126,3 @@ export {
   updateUserNotificationSettings,
   withdrawCurrentUser,
 } from './services/userProfileService';
-export {
-  clearUserFcmTokens,
-  saveUserFcmToken,
-  subscribeUserFcmTokenRefresh,
-} from './services/fcmTokenService';

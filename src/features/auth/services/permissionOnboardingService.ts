@@ -1,8 +1,11 @@
 import {
   completeUserPermissionOnboarding,
-  saveUserFcmToken,
 } from '@/features/user';
 import type { IUserRepository } from '@/features/user';
+import {
+  saveMemberFcmToken,
+  type IMemberRepository,
+} from '@/features/member';
 
 const COMPLETION_DELAY_MS = 1000;
 
@@ -14,17 +17,18 @@ const delay = (ms: number) =>
 export const completePermissionOnboarding = async ({
   completeOnboarding,
   userId,
+  memberRepository,
   userRepository,
 }: {
   completeOnboarding: () => void;
   userId?: string;
+  memberRepository: IMemberRepository;
   userRepository: IUserRepository;
 }) => {
   try {
     if (userId) {
-      await saveUserFcmToken({
-        userId,
-        userRepository,
+      await saveMemberFcmToken({
+        memberRepository,
       });
     }
     await delay(COMPLETION_DELAY_MS);

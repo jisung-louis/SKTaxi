@@ -25,12 +25,6 @@ export interface IUserRepository {
     profile: Omit<UserProfile, 'id'>,
   ): Promise<void>;
 
-  saveFcmToken(userId: string, token: string): Promise<void>;
-
-  removeFcmToken(userId: string, token: string): Promise<void>;
-
-  clearFcmTokens(userId: string): Promise<void>;
-
   getUserBookmarks(userId: string): Promise<string[]>;
 
   addBookmark(userId: string, postId: string): Promise<void>;
