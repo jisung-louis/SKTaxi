@@ -1,5 +1,3 @@
-export { TermsOfUseContent } from './components/TermsOfUseContent';
-
 export {
   FirebaseAppConfigRepository,
   FirestoreAppConfigRepository,

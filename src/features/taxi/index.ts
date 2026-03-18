@@ -1,9 +1,5 @@
 export {
   JoinRequestModal,
-  PartyList,
-  TaxiHomeSection,
-  TaxiPermissionPrompt,
-  TaxiTimeRemaining,
 } from './components';
 
 export { FirebasePartyRepository } from './data/repositories/FirebasePartyRepository';

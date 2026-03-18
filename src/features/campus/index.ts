@@ -1,8 +1,3 @@
-export { AcademicCalendarSection } from './components/AcademicCalendarSection';
-export { CafeteriaSection } from './components/CafeteriaSection';
-export { MonthCalendar } from './components/MonthCalendar';
-export { WeekCalendar } from './components/WeekCalendar';
-
 export {
   FirebaseAcademicRepository,
   FirestoreAcademicRepository,

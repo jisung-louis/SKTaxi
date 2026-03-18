@@ -1,4 +1,3 @@
-export { NotificationSettingItem } from './components/NotificationSettingItem';
 export {MyPageMenuSection} from './components/v2/MyPageMenuSection';
 export {MyPageStatCard} from './components/v2/MyPageStatCard';
 

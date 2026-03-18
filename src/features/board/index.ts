@@ -1,6 +1,5 @@
 export {
   ImageSelector,
-  ImageViewer,
 } from './components';
 
 export {
