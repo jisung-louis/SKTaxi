@@ -1,4 +1,4 @@
-import type {InquiryFormSource, InquiryFormTypeKey} from '../../model/inquiryFormSource';
+import type {InquiryFormTypeKey} from '../../model/inquiryFormSource';
 
 export interface SubmitInquiryFormPayload {
   content: string;
@@ -7,6 +7,5 @@ export interface SubmitInquiryFormPayload {
 }
 
 export interface IInquiryFormRepository {
-  getInquiryForm(): Promise<InquiryFormSource>;
   submitInquiryForm(payload: SubmitInquiryFormPayload): Promise<{id: string}>;
 }

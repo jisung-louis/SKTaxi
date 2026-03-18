@@ -51,9 +51,7 @@ export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocument
 export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
 export type {
-  InquiryFormSource,
   InquiryFormTypeKey,
-  InquiryTypeOptionSource,
 } from './model/inquiryFormSource';
 export type {
   InquiryFormScreenViewData,

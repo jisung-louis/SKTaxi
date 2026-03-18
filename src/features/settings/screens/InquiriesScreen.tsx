@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -19,7 +18,6 @@ import {
   V2FormField,
   V2InfoBanner,
   V2StackHeader,
-  V2StateCard,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -41,9 +39,6 @@ export const InquiriesScreen = () => {
   const {
     content,
     data,
-    error,
-    loading,
-    reload,
     reset,
     selectType,
     setContent,
@@ -75,7 +70,7 @@ export const InquiriesScreen = () => {
   }, [navigation, reset, submit]);
 
   const handlePressAttachment = React.useCallback(() => {
-    Alert.alert('파일 첨부', 'mock 파일 첨부는 추후 연결 예정입니다.');
+    Alert.alert('파일 첨부', '파일 첨부는 추후 연결 예정입니다.');
   }, []);
 
   return (
@@ -86,123 +81,93 @@ export const InquiriesScreen = () => {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        {loading && !data ? (
-          <V2StateCard
-            description="문의하기 화면을 준비하고 있습니다."
-            icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
-            title="문의하기를 불러오는 중"
+        <V2FormField label="문의 유형" required style={styles.section}>
+          <InquiryTypeChips
+            items={data.typeOptions}
+            onPressItem={selectType}
           />
-        ) : null}
+        </V2FormField>
 
-        {error && !data ? (
-          <V2StateCard
-            actionLabel="다시 시도"
-            description={error}
-            icon={
+        <V2FormField
+          counterLabel={data.titleCountLabel}
+          label="제목"
+          required
+          style={styles.section}>
+          <TextInput
+            maxLength={data.titleMaxLength}
+            onChangeText={setTitle}
+            placeholder={data.titlePlaceholder}
+            placeholderTextColor={V2_COLORS.text.muted}
+            style={styles.input}
+            value={title}
+          />
+        </V2FormField>
+
+        <V2FormField
+          counterLabel={data.contentCountLabel}
+          label="문의 내용"
+          required
+          style={styles.section}>
+          <TextInput
+            maxLength={data.contentMaxLength}
+            multiline
+            onChangeText={setContent}
+            placeholder={data.contentPlaceholder}
+            placeholderTextColor={V2_COLORS.text.muted}
+            style={styles.textArea}
+            textAlignVertical="top"
+            value={content}
+          />
+        </V2FormField>
+
+        <V2FormField
+          label={data.attachmentTitle}
+          optionalLabel="(선택)"
+          style={styles.section}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.88}
+            onPress={handlePressAttachment}
+            style={styles.attachmentBox}>
+            <View style={styles.attachmentIconWrap}>
               <Icon
-                color={V2_COLORS.accent.orange}
-                name="alert-circle-outline"
-                size={28}
+                color={V2_COLORS.text.secondary}
+                name="arrow-up-outline"
+                size={18}
               />
-            }
-            onPressAction={() => {
-              reload().catch(() => undefined);
-            }}
-            title="문의하기를 불러오지 못했습니다"
-          />
-        ) : null}
+            </View>
 
-        {data ? (
-          <>
-            <V2FormField label="문의 유형" required style={styles.section}>
-              <InquiryTypeChips
-                items={data.typeOptions}
-                onPressItem={selectType}
-              />
-            </V2FormField>
+            <Text style={styles.attachmentTitle}>
+              {data.attachmentHelperLines[0]}
+            </Text>
+            <Text style={styles.attachmentSubtitle}>
+              {data.attachmentHelperLines[1]}
+            </Text>
+          </TouchableOpacity>
+        </V2FormField>
 
-            <V2FormField
-              counterLabel={data.titleCountLabel}
-              label="제목"
-              required
-              style={styles.section}>
-              <TextInput
-                maxLength={100}
-                onChangeText={setTitle}
-                placeholder={data.titlePlaceholder}
-                placeholderTextColor={V2_COLORS.text.muted}
-                style={styles.input}
-                value={title}
-              />
-            </V2FormField>
+        <V2InfoBanner
+          backgroundColor={V2_COLORS.brand.primaryTint}
+          iconColor={V2_COLORS.brand.primary}
+          iconName="information-circle-outline"
+          lines={data.guideLines}
+          style={styles.banner}
+          textColor={V2_COLORS.status.success}
+        />
 
-            <V2FormField
-              counterLabel={data.contentCountLabel}
-              label="문의 내용"
-              required
-              style={styles.section}>
-              <TextInput
-                maxLength={500}
-                multiline
-                onChangeText={setContent}
-                placeholder={data.contentPlaceholder}
-                placeholderTextColor={V2_COLORS.text.muted}
-                style={styles.textArea}
-                textAlignVertical="top"
-                value={content}
-              />
-            </V2FormField>
-
-            <V2FormField
-              label={data.attachmentTitle}
-              optionalLabel="(선택)"
-              style={styles.section}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.88}
-                onPress={handlePressAttachment}
-                style={styles.attachmentBox}>
-                <View style={styles.attachmentIconWrap}>
-                  <Icon
-                    color={V2_COLORS.text.secondary}
-                    name="arrow-up-outline"
-                    size={18}
-                  />
-                </View>
-
-                <Text style={styles.attachmentTitle}>
-                  {data.attachmentHelperLines[0]}
-                </Text>
-                <Text style={styles.attachmentSubtitle}>
-                  {data.attachmentHelperLines[1]}
-                </Text>
-              </TouchableOpacity>
-            </V2FormField>
-
-            <V2InfoBanner
-              backgroundColor={V2_COLORS.brand.primaryTint}
-              iconColor={V2_COLORS.brand.primary}
-              iconName="information-circle-outline"
-              lines={data.guideLines}
-              style={styles.banner}
-              textColor={V2_COLORS.status.success}
-            />
-
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.9}
-              disabled={submitting}
-              onPress={handleSubmit}
-              style={[
-                styles.submitButton,
-                submitting ? styles.submitButtonDisabled : undefined,
-              ]}>
-              <Text style={styles.submitLabel}>
-                {submitting ? '문의 접수 중...' : data.submitLabel}
-              </Text>
-            </TouchableOpacity>
-          </>
-        ) : null}
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.9}
+          disabled={submitting}
+          onPress={handleSubmit}
+          style={[
+            styles.submitButton,
+            submitting ? styles.submitButtonDisabled : undefined,
+          ]}>
+          <Text style={styles.submitLabel}>
+            {submitting ? '문의 접수 중...' : data.submitLabel}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

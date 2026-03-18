@@ -1,7 +1,16 @@
 import React from 'react';
 
+import {
+  INQUIRY_FORM_ATTACHMENT,
+  INQUIRY_FORM_CONTENT_MAX_LENGTH,
+  INQUIRY_FORM_GUIDE_LINES,
+  INQUIRY_FORM_PLACEHOLDERS,
+  INQUIRY_FORM_SUBMIT_LABEL,
+  INQUIRY_FORM_TITLE_MAX_LENGTH,
+  INQUIRY_FORM_TYPE_OPTIONS,
+} from '../constants/inquiryForm';
 import {inquiryFormRepository} from '../data/repositories/inquiryFormRepository';
-import type {InquiryFormTypeKey, InquiryFormSource} from '../model/inquiryFormSource';
+import type {InquiryFormTypeKey} from '../model/inquiryFormSource';
 import type {InquiryFormScreenViewData} from '../model/inquiryFormViewData';
 
 const resolveInitialType = (type?: string): InquiryFormTypeKey | null => {
@@ -21,25 +30,25 @@ const resolveInitialType = (type?: string): InquiryFormTypeKey | null => {
 const mapViewData = ({
   content,
   selectedType,
-  source,
   title,
 }: {
   content: string;
   selectedType: InquiryFormTypeKey | null;
-  source: InquiryFormSource;
   title: string;
 }): InquiryFormScreenViewData => {
   return {
-    attachmentHelperLines: source.attachmentHelperLines,
-    attachmentTitle: source.attachmentTitle,
-    contentCountLabel: `${content.length}/${source.contentMaxLength}`,
-    contentPlaceholder: source.contentPlaceholder,
-    guideLines: source.guideLines,
+    attachmentHelperLines: INQUIRY_FORM_ATTACHMENT.helperLines,
+    attachmentTitle: INQUIRY_FORM_ATTACHMENT.title,
+    contentCountLabel: `${content.length}/${INQUIRY_FORM_CONTENT_MAX_LENGTH}`,
+    contentMaxLength: INQUIRY_FORM_CONTENT_MAX_LENGTH,
+    contentPlaceholder: INQUIRY_FORM_PLACEHOLDERS.content,
+    guideLines: INQUIRY_FORM_GUIDE_LINES,
     selectedTypeId: selectedType,
-    submitLabel: source.submitLabel,
-    titleCountLabel: `${title.length}/${source.titleMaxLength}`,
-    titlePlaceholder: source.titlePlaceholder,
-    typeOptions: source.typeOptions.map(option => ({
+    submitLabel: INQUIRY_FORM_SUBMIT_LABEL,
+    titleCountLabel: `${title.length}/${INQUIRY_FORM_TITLE_MAX_LENGTH}`,
+    titleMaxLength: INQUIRY_FORM_TITLE_MAX_LENGTH,
+    titlePlaceholder: INQUIRY_FORM_PLACEHOLDERS.title,
+    typeOptions: INQUIRY_FORM_TYPE_OPTIONS.map(option => ({
       id: option.id,
       isSelected: option.id === selectedType,
       label: option.label,
@@ -49,37 +58,15 @@ const mapViewData = ({
 
 export const useInquiryFormData = (initialType?: string) => {
   const [content, setContent] = React.useState('');
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
   const [selectedType, setSelectedType] = React.useState<InquiryFormTypeKey | null>(
     resolveInitialType(initialType),
   );
-  const [source, setSource] = React.useState<InquiryFormSource | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [title, setTitle] = React.useState('');
-
-  const load = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const nextSource = await inquiryFormRepository.getInquiryForm();
-      setSource(nextSource);
-    } catch (caughtError) {
-      console.error('문의 폼 데이터를 불러오지 못했습니다.', caughtError);
-      setError('문의하기 화면을 불러오지 못했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
   React.useEffect(() => {
     setSelectedType(resolveInitialType(initialType));
   }, [initialType]);
-
-  React.useEffect(() => {
-    load().catch(() => undefined);
-  }, [load]);
 
   const submit = React.useCallback(async () => {
     if (!selectedType) {
@@ -95,7 +82,6 @@ export const useInquiryFormData = (initialType?: string) => {
     }
 
     setSubmitting(true);
-    setError(null);
 
     try {
       await inquiryFormRepository.submitInquiryForm({
@@ -105,7 +91,6 @@ export const useInquiryFormData = (initialType?: string) => {
       });
     } catch (caughtError) {
       console.error('문의 제출에 실패했습니다.', caughtError);
-      setError('문의 접수에 실패했습니다.');
       throw new Error('문의 접수에 실패했습니다.');
     } finally {
       setSubmitting(false);
@@ -120,12 +105,7 @@ export const useInquiryFormData = (initialType?: string) => {
 
   return {
     content,
-    data: source
-      ? mapViewData({content, selectedType, source, title})
-      : null,
-    error,
-    loading,
-    reload: load,
+    data: mapViewData({content, selectedType, title}),
     reset,
     selectType: setSelectedType,
     setContent,
