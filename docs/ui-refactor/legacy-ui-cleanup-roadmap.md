@@ -112,6 +112,7 @@
 완료 커밋:
 - `3a4e921` `refactor: 공용 UI 디자인 토큰을 v2로 이관`
 - `56b41d9` `refactor: 레거시 색상 헬퍼 정리`
+- `d0f885c` `refactor: 레거시 토큰 파일과 orphan 파일 제거`
 
 목표:
 - `src/shared/constants/colors.ts` import 0
@@ -128,10 +129,14 @@
 - dead helper `getChatRoomColor`, `getBoardCategoryColor` 제거
 - `JoinRequestModal` 을 v2 UI 및 v2 토큰 기반으로 개편
 - `toNoticeDetailWebViewUrl` 은 future reference 용 util로 유지
-- `src/features`, `src/shared` 범위에서 legacy `colors`, `typography` import 0 달성
+- `src` 런타임 코드 기준 legacy `colors`, `typography` import 0 달성
+- `src/shared/constants/colors.ts`, `src/shared/constants/typography.ts` 실제 파일 제거
+- exact import가 0인 orphan 파일 `useTaxiBottomSheet`, `usePartySelection`, `useTaxiChatSession`, `CommunityBoardFeaturedCard`, `PageHeader`, `app/bootstrap/index.ts`, `app/navigation/index.ts` 제거
 
 이번 배치 대상:
 - `taxi`: `JoinRequestModal` v2 UI 개편
+- `shared/constants`: legacy 토큰 파일 제거
+- strong orphan hook/component/barrel 파일 제거
 
 이번 배치 제외:
 - 없음
