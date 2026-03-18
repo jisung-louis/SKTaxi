@@ -33,7 +33,7 @@
 | 소스 | 분석 항목 |
 |------|----------|
 | `docs/firestore-data-structure.md` | Firestore 컬렉션 구조 (6개 섹션, 20+ 컬렉션) |
-| `functions/src/index.ts` | Cloud Functions 트리거 (15+ 함수) |
+| `firebase-cloud-functions/src/index.ts` | Cloud Functions 트리거 (15+ 함수) |
 | `src/hooks/` | Firestore 구독 훅 (50+ 훅) |
 | `src/contexts/` | 전역 상태 관리 (AuthContext, JoinRequestContext 등) |
 | `src/types/` | TypeScript 타입 정의 |

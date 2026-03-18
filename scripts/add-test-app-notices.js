@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../functions/serviceAccountKey.json');
+const serviceAccount = require('../firebase-cloud-functions/serviceAccountKey.json');
 
 // Firebase Admin 초기화
 admin.initializeApp({

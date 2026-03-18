@@ -40,7 +40,7 @@
 스크립트를 실행하기 전에 다음 파일이 있는지 확인하세요:
 
 ```
-functions/serviceAccountKey.json
+firebase-cloud-functions/serviceAccountKey.json
 ```
 
 이 파일이 없으면 스크립트가 작동하지 않습니다. Firebase 콘솔에서 서비스 계정 키를 다운로드해야 합니다.
@@ -401,7 +401,7 @@ node scripts/manage-app-version.js get
 ### Q6: 에러가 발생했어요. 어떻게 해야 하나요?
 
 1. **serviceAccountKey.json 파일 확인**
-   - `functions/serviceAccountKey.json` 파일이 있는지 확인
+   - `firebase-cloud-functions/serviceAccountKey.json` 파일이 있는지 확인
    - 파일이 없으면 Firebase 콘솔에서 다운로드
 
 2. **Node.js 버전 확인**

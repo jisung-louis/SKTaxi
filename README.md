@@ -128,7 +128,7 @@ src/
 ├── shared/           공용 상수, 훅, lib, UI, 테스트 유틸
 └── types/            TypeScript 타입 정의
 
-functions/            Firebase Cloud Functions (Node 22, TypeScript)
+firebase-cloud-functions/            Firebase Cloud Functions (Node 22, TypeScript)
 scripts/              Firestore/Storage 데이터 관리용 Node CLI
 docs/                 명세서, 가이드, 법적 문서
 android/ | ios/       플랫폼별 네이티브 프로젝트
@@ -292,7 +292,7 @@ yarn test               # Jest 테스트
 
 ### Cloud Functions
 ```bash
-cd functions && npm install && npm run build
+cd firebase-cloud-functions && npm install && npm run build
 firebase deploy --only functions
 ```
 
