@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
-import type {TimetableSemesterOptionViewData} from '../../model/timetableDetailViewData';
+import type {TimetableSemesterOptionViewData} from '../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
 
 const SEMESTER_SNAP_POINTS = ['42%'];

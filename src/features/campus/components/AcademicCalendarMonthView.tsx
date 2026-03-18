@@ -10,7 +10,7 @@ import {
 import type {
   AcademicCalendarEventBarViewData,
   AcademicCalendarMonthWeekViewData,
-} from '../../model/academicCalendarDetailViewData';
+} from '../model/academicCalendarDetailViewData';
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 const CALENDAR_HORIZONTAL_PADDING = 16;

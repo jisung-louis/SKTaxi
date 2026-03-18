@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import type {
   TaxiAcceptancePendingAvatarViewData,
   TaxiAcceptancePendingInfoRowViewData,
-} from '../../model/taxiAcceptancePendingViewData';
+} from '../model/taxiAcceptancePendingViewData';
 import {
   COLORS,
   RADIUS,

@@ -8,7 +8,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {MyPageStatViewData} from '../../model/myPageViewData';
+import type {MyPageStatViewData} from '../model/myPageViewData';
 
 interface MyPageStatCardProps {
   item: MyPageStatViewData;

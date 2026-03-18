@@ -12,7 +12,7 @@ import {
 import type {
   MyPageMenuItemViewData,
   MyPageMenuSectionViewData,
-} from '../../model/myPageViewData';
+} from '../model/myPageViewData';
 
 interface MyPageMenuSectionProps {
   onPressItem: (item: MyPageMenuItemViewData) => void;

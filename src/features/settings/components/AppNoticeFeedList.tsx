@@ -16,7 +16,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {AppNoticeFeedViewData} from '../../model/appNoticeViewData';
+import type {AppNoticeFeedViewData} from '../model/appNoticeViewData';
 import {AppNoticeBadge} from './AppNoticeBadge';
 
 type AppNoticeFeedListProps = {

@@ -9,8 +9,8 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import {ACADEMIC_CALENDAR_BADGE_TONE} from '../../model/academicCalendarEventTones';
-import type {AcademicCalendarListItemViewData} from '../../model/academicCalendarDetailViewData';
+import {ACADEMIC_CALENDAR_BADGE_TONE} from '../model/academicCalendarEventTones';
+import type {AcademicCalendarListItemViewData} from '../model/academicCalendarDetailViewData';
 
 interface AcademicCalendarEventCardProps {
   item: AcademicCalendarListItemViewData;

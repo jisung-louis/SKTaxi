@@ -4,7 +4,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 import {RADIUS, SPACING} from '@/shared/design-system/tokens';
 
-import type {TaxiHistorySummaryViewData} from '../../model/userActivityViewData';
+import type {TaxiHistorySummaryViewData} from '../model/userActivityViewData';
 
 interface TaxiHistorySummaryCardProps {
   item: TaxiHistorySummaryViewData;

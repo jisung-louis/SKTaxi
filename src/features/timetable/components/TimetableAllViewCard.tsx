@@ -4,12 +4,12 @@ import {StyleSheet, Text, TouchableOpacity, View, useWindowDimensions} from 'rea
 
 import {COLORS, SHADOWS} from '@/shared/design-system/tokens';
 
-import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
+import {TIMETABLE_COURSE_TONES} from '../model/timetableCourseTones';
 import type {
   TimetableDayColumnViewData,
   TimetableGridBlockViewData,
   TimetablePeriodViewData,
-} from '../../model/timetableDetailViewData';
+} from '../model/timetableDetailViewData';
 
 interface TimetableAllViewCardProps {
   blocks: TimetableGridBlockViewData[];

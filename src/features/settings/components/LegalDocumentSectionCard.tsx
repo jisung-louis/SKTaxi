@@ -8,7 +8,7 @@ import {
   SHADOWS,
 } from '@/shared/design-system/tokens';
 
-import type {LegalDocumentSectionViewData} from '../../model/legalDocumentViewData';
+import type {LegalDocumentSectionViewData} from '../model/legalDocumentViewData';
 
 interface LegalDocumentSectionCardProps {
   section: LegalDocumentSectionViewData;

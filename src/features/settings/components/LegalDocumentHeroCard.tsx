@@ -8,7 +8,7 @@ import {
   SHADOWS,
 } from '@/shared/design-system/tokens';
 
-import type {LegalDocumentBannerViewData} from '../../model/legalDocumentViewData';
+import type {LegalDocumentBannerViewData} from '../model/legalDocumentViewData';
 
 interface LegalDocumentHeroCardProps {
   banner: LegalDocumentBannerViewData;

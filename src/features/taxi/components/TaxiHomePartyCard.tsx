@@ -21,7 +21,7 @@ import Animated, {
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomePartyCardViewData,
-} from '../../model/taxiHomeViewData';
+} from '../model/taxiHomeViewData';
 import {
   COLORS,
   RADIUS,

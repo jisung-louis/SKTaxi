@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import type {NoticeHomeBannerViewData} from '../../model/noticeHomeViewData';
+import type {NoticeHomeBannerViewData} from '../model/noticeHomeViewData';
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 interface NoticeUnreadBannerProps {

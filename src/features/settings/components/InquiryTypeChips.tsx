@@ -7,7 +7,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {InquiryTypeOptionViewData} from '../../model/inquiryFormViewData';
+import type {InquiryTypeOptionViewData} from '../model/inquiryFormViewData';
 
 interface InquiryTypeChipsProps {
   items: InquiryTypeOptionViewData[];

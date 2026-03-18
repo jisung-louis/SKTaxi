@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import type {
   NoticeHomeEmptyStateViewData,
   NoticeHomeNoticeItemViewData,
-} from '../../model/noticeHomeViewData';
+} from '../model/noticeHomeViewData';
 import {NoticeListItem} from './NoticeListItem';
 import {StateCard} from '@/shared/design-system/components';
 import {

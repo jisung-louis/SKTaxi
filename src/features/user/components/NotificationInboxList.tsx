@@ -13,7 +13,7 @@ import {
 import type {
   NotificationInboxItemViewData,
   NotificationInboxViewData,
-} from '../../model/notificationCenterViewData';
+} from '../model/notificationCenterViewData';
 
 type NotificationInboxListProps = {
   data: NotificationInboxViewData;

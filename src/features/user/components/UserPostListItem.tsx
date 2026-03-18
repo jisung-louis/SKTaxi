@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
-import type {UserPostListItemViewData} from '../../model/userActivityViewData';
+import type {UserPostListItemViewData} from '../model/userActivityViewData';
 
 interface UserPostListItemProps {
   bookmarkAlignedRight?: boolean;

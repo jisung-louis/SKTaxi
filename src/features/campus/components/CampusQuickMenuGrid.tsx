@@ -8,7 +8,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {CampusHomeQuickMenuItem} from '../../constants/campusHomePreview';
+import type {CampusHomeQuickMenuItem} from '../constants/campusHomePreview';
 
 type CampusQuickMenuGridProps = {
   items: readonly CampusHomeQuickMenuItem[];

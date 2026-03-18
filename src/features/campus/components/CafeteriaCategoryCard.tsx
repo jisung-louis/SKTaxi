@@ -8,7 +8,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {CafeteriaCategorySectionViewData} from '../../model/cafeteriaDetailViewData';
+import type {CafeteriaCategorySectionViewData} from '../model/cafeteriaDetailViewData';
 import {CafeteriaReactionChip} from './CafeteriaReactionChip';
 
 interface CafeteriaCategoryCardProps {

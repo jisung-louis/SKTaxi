@@ -11,8 +11,8 @@ import {
 import type {
   CampusAcademicEventBadgeViewData,
   CampusAcademicEventViewData,
-} from '../../model/campusHome';
-import {getHighlightToneColors} from '../../utils/campusTone';
+} from '../model/campusHome';
+import {getHighlightToneColors} from '../utils/campusTone';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusAcademicCalendarPreviewCardProps = {

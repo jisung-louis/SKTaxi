@@ -16,12 +16,12 @@ import {COLORS, RADIUS} from '@/shared/design-system/tokens';
 import {
   TIMETABLE_COURSE_TONES,
   TIMETABLE_TODAY_EMPTY_DOT_COLOR,
-} from '../../model/timetableCourseTones';
+} from '../model/timetableCourseTones';
 import type {
   TimetableAddCourseSheetViewData,
   TimetableCourseToneId,
   TimetableManualDayOptionViewData,
-} from '../../model/timetableDetailViewData';
+} from '../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
 
 const SEARCH_SNAP_POINTS = ['88%'];

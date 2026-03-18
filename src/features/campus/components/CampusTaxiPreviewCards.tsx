@@ -9,7 +9,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {CampusTaxiPartyViewData} from '../../model/campusHome';
+import type {CampusTaxiPartyViewData} from '../model/campusHome';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusTaxiPreviewCardsProps = {

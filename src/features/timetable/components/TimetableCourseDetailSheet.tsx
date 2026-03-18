@@ -5,8 +5,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
-import {TIMETABLE_COURSE_TONES} from '../../model/timetableCourseTones';
-import type {TimetableCourseDetailViewData} from '../../model/timetableDetailViewData';
+import {TIMETABLE_COURSE_TONES} from '../model/timetableCourseTones';
+import type {TimetableCourseDetailViewData} from '../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
 
 const DETAIL_SNAP_POINTS = ['63%'];

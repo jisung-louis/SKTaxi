@@ -14,7 +14,7 @@ import {
   type SegmentedControlItem,
 } from '@/shared/design-system/components';
 
-import type {AcademicCalendarDetailViewMode} from '../../model/academicCalendarDetailViewData';
+import type {AcademicCalendarDetailViewMode} from '../model/academicCalendarDetailViewData';
 
 const MODE_ITEMS: SegmentedControlItem<AcademicCalendarDetailViewMode>[] = [
   {id: 'month', label: '월간'},

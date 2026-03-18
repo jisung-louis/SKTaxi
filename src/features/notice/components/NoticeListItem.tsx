@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import type {NoticeHomeNoticeItemViewData} from '../../model/noticeHomeViewData';
+import type {NoticeHomeNoticeItemViewData} from '../model/noticeHomeViewData';
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {

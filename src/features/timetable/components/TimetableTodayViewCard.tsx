@@ -7,8 +7,8 @@ import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 import {
   TIMETABLE_COURSE_TONES,
   TIMETABLE_TODAY_EMPTY_DOT_COLOR,
-} from '../../model/timetableCourseTones';
-import type {TimetableTodayRowViewData} from '../../model/timetableDetailViewData';
+} from '../model/timetableCourseTones';
+import type {TimetableTodayRowViewData} from '../model/timetableDetailViewData';
 
 const TODAY_ROW_HEIGHT = 60;
 const TODAY_ROW_GAP = 8;

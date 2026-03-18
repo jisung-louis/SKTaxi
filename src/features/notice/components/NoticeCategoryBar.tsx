@@ -4,7 +4,7 @@ import {ScrollView, StyleSheet} from 'react-native';
 import {FilterChips} from '@/shared/design-system/components';
 import {SPACING} from '@/shared/design-system/tokens';
 
-import type {NoticeHomeCategoryChipViewData} from '../../model/noticeHomeViewData';
+import type {NoticeHomeCategoryChipViewData} from '../model/noticeHomeViewData';
 
 interface NoticeCategoryBarProps {
   categories: NoticeHomeCategoryChipViewData[];

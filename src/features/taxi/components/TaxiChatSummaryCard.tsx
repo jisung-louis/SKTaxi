@@ -8,7 +8,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {TaxiChatSummaryViewData} from '../../model/taxiChatViewData';
+import type {TaxiChatSummaryViewData} from '../model/taxiChatViewData';
 
 interface TaxiChatSummaryCardProps {
   summary: TaxiChatSummaryViewData

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type {TaxiHomeFilterChipViewData} from '../../model/taxiHomeViewData';
+import type {TaxiHomeFilterChipViewData} from '../model/taxiHomeViewData';
 import {
   FilterChips,
   type FilterChipItem,

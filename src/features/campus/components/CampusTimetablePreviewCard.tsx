@@ -13,12 +13,12 @@ import type {
   CampusTimetableEmptyStateViewData,
   CampusTimetablePeriodViewData,
   CampusTimetableSessionViewData,
-} from '../../model/campusHome';
-import {getHighlightToneColors} from '../../utils/campusTone';
+} from '../model/campusHome';
+import {getHighlightToneColors} from '../utils/campusTone';
 import {
   buildVisibleTimetableRows,
   TIMETABLE_ROW_HEIGHT,
-} from '../../utils/campusTimetablePreview';
+} from '../utils/campusTimetablePreview';
 
 const TIMETABLE_EXPAND_LABEL = '야간수업 펼치기';
 const TIMETABLE_COLLAPSE_LABEL = '야간수업 접기';

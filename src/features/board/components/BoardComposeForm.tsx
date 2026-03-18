@@ -14,8 +14,8 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import {BOARD_CATEGORIES} from '../../model/constants';
-import type {BoardPostCategoryId, BoardSelectedImage} from '../../model/types';
+import {BOARD_CATEGORIES} from '../model/constants';
+import type {BoardPostCategoryId, BoardSelectedImage} from '../model/types';
 import {ImageSelector} from '../ImageSelector';
 
 const TITLE_LIMIT = 100;

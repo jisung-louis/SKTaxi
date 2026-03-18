@@ -3,7 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
-import type {AppNoticeBadgeViewData} from '../../model/appNoticeViewData';
+import type {AppNoticeBadgeViewData} from '../model/appNoticeViewData';
 
 type AppNoticeBadgeProps = {
   badge: AppNoticeBadgeViewData;

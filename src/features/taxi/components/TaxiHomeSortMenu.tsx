@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import type {TaxiHomeSortOptionViewData} from '../../model/taxiHomeViewData';
+import type {TaxiHomeSortOptionViewData} from '../model/taxiHomeViewData';
 import {
   COLORS,
   RADIUS,

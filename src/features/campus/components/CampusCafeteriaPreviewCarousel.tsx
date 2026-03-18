@@ -10,7 +10,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {CampusCafeteriaRecommendedMenuViewData} from '../../model/campusHome';
+import type {CampusCafeteriaRecommendedMenuViewData} from '../model/campusHome';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusCafeteriaPreviewCarouselProps = {

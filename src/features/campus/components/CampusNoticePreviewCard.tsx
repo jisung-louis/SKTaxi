@@ -9,8 +9,8 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {CampusNoticeItemViewData} from '../../model/campusHome';
-import {getNoticeToneColors} from '../../utils/campusTone';
+import type {CampusNoticeItemViewData} from '../model/campusHome';
+import {getNoticeToneColors} from '../utils/campusTone';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusNoticePreviewCardProps = {

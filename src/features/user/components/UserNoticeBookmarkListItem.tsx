@@ -3,7 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
-import type {UserNoticeBookmarkItemViewData} from '../../model/userActivityViewData';
+import type {UserNoticeBookmarkItemViewData} from '../model/userActivityViewData';
 
 interface UserNoticeBookmarkListItemProps {
   isLast: boolean;

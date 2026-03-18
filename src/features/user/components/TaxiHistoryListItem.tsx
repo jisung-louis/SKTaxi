@@ -9,7 +9,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import type {TaxiHistoryEntryViewData} from '../../model/userActivityViewData';
+import type {TaxiHistoryEntryViewData} from '../model/userActivityViewData';
 
 interface TaxiHistoryListItemProps {
   item: TaxiHistoryEntryViewData;

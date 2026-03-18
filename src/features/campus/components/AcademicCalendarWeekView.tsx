@@ -10,7 +10,7 @@ import {
 import type {
   AcademicCalendarDayCellViewData,
   AcademicCalendarEventBarViewData,
-} from '../../model/academicCalendarDetailViewData';
+} from '../model/academicCalendarDetailViewData';
 
 const CALENDAR_HORIZONTAL_PADDING = 16;
 const WEEK_BAR_HEIGHT = 12;
