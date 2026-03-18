@@ -1,15 +1,13 @@
 import {useCallback, useState} from 'react';
 
 import {useMemberRepository} from '@/di';
-import {useUserRepository} from '@/features/user';
 
 import {completePermissionOnboarding} from '../services/permissionOnboardingService';
 import {useAuth} from './useAuth';
 
 export const usePermissionOnboarding = () => {
-  const {user} = useAuth();
+  const {refreshCurrentUser, user} = useAuth();
   const memberRepository = useMemberRepository();
-  const userRepository = useUserRepository();
   const [completing, setCompleting] = useState(false);
 
   const finalizeOnboarding = useCallback(
@@ -18,15 +16,15 @@ export const usePermissionOnboarding = () => {
         setCompleting(true);
         await completePermissionOnboarding({
           completeOnboarding,
+          refreshCurrentUser,
           userId: user?.uid,
           memberRepository,
-          userRepository,
         });
       } finally {
         setCompleting(false);
       }
     },
-    [memberRepository, user?.uid, userRepository],
+    [memberRepository, refreshCurrentUser, user?.uid],
   );
 
   return {

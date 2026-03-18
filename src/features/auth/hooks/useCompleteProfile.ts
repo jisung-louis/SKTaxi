@@ -1,17 +1,17 @@
-import { useCallback, useState } from 'react';
+import {useCallback, useState} from 'react';
 
-import { useUserRepository } from '@/features/user';
+import {useMemberRepository} from '@/di';
 
-import { CompleteProfileFormValues } from '../model/types';
+import {CompleteProfileFormValues} from '../model/types';
 import {
   saveCompleteProfile,
   validateCompleteProfileForm,
 } from '../services/profileCompletionService';
-import { useAuth } from './useAuth';
+import {useAuth} from './useAuth';
 
 export const useCompleteProfile = () => {
-  const { user } = useAuth();
-  const userRepository = useUserRepository();
+  const {refreshCurrentUser, user} = useAuth();
+  const memberRepository = useMemberRepository();
   const [loading, setLoading] = useState(false);
 
   const submitProfile = useCallback(
@@ -23,16 +23,17 @@ export const useCompleteProfile = () => {
 
       try {
         setLoading(true);
-        await saveCompleteProfile({
+        const memberProfile = await saveCompleteProfile({
+          memberRepository,
           user,
-          userRepository,
           values,
         });
+        await refreshCurrentUser(memberProfile);
       } finally {
         setLoading(false);
       }
     },
-    [user, userRepository],
+    [memberRepository, refreshCurrentUser, user],
   );
 
   return {

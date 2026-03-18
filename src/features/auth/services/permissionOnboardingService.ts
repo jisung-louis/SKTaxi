@@ -1,11 +1,5 @@
-import {
-  completeUserPermissionOnboarding,
-} from '@/features/user';
-import type { IUserRepository } from '@/features/user';
-import {
-  saveMemberFcmToken,
-  type IMemberRepository,
-} from '@/features/member';
+import {saveMemberFcmToken, type IMemberRepository} from '@/features/member';
+import {saveAuthLocalAdjunct} from './authLocalAdjunctService';
 
 const COMPLETION_DELAY_MS = 1000;
 
@@ -16,29 +10,32 @@ const delay = (ms: number) =>
 
 export const completePermissionOnboarding = async ({
   completeOnboarding,
+  refreshCurrentUser,
   userId,
   memberRepository,
-  userRepository,
 }: {
   completeOnboarding: () => void;
+  refreshCurrentUser: () => Promise<void>;
   userId?: string;
   memberRepository: IMemberRepository;
-  userRepository: IUserRepository;
 }) => {
   try {
     if (userId) {
-      await saveMemberFcmToken({
-        memberRepository,
-      });
-    }
-    await delay(COMPLETION_DELAY_MS);
+      try {
+        await saveMemberFcmToken({
+          memberRepository,
+        });
+      } catch (error) {
+        console.warn('권한 온보딩 중 FCM 토큰 저장 실패:', error);
+      }
 
-    if (userId) {
-      await completeUserPermissionOnboarding({
-        userId,
-        userRepository,
+      await saveAuthLocalAdjunct(userId, {
+        permissionsComplete: true,
       });
+      await refreshCurrentUser();
     }
+
+    await delay(COMPLETION_DELAY_MS);
   } catch (error) {
     console.warn('권한 온보딩 완료 처리 실패:', error);
     await delay(COMPLETION_DELAY_MS);

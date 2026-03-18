@@ -1,8 +1,8 @@
-import { saveCompletedUserProfile } from '@/features/user';
-import type { IUserRepository } from '@/features/user';
-import type { User } from '@/shared/types/user';
+import {type IMemberRepository} from '@/features/member';
+import {setUserProperties} from '@/shared/lib/analytics';
+import type {User} from '@/shared/types/user';
 
-import { CompleteProfileFormValues } from '../model/types';
+import {CompleteProfileFormValues} from '../model/types';
 
 export const validateCompleteProfileForm = (
   values: CompleteProfileFormValues,
@@ -28,16 +28,32 @@ export const validateCompleteProfileForm = (
 
 export const saveCompleteProfile = async ({
   user,
-  userRepository,
+  memberRepository,
   values,
 }: {
   user: User | null;
-  userRepository: IUserRepository;
+  memberRepository: IMemberRepository;
   values: CompleteProfileFormValues;
 }) => {
-  await saveCompletedUserProfile({
-    user,
-    userRepository,
-    values,
+  if (!user?.uid) {
+    throw new Error('로그인이 필요합니다. 다시 로그인해 주세요.');
+  }
+
+  const displayName = values.displayName.trim();
+  const studentId = values.studentId.trim();
+  const department = values.department.trim();
+
+  const memberProfile = await memberRepository.updateMyProfile({
+    nickname: displayName,
+    studentId,
+    department,
+    photoUrl: user.photoURL ?? undefined,
   });
+
+  await setUserProperties({
+    display_name: displayName,
+    department,
+  });
+
+  return memberProfile;
 };
