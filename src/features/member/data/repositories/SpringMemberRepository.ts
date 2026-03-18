@@ -1,11 +1,10 @@
-import { MemberApiClient, memberApiClient } from '../api/memberApiClient';
-import { mapMemberResponseDto } from '../mappers/memberMapper';
-import { IMemberRepository } from './IMemberRepository';
+import {MemberApiClient, memberApiClient} from '../api/memberApiClient';
+import {mapMemberResponseDto} from '../mappers/memberMapper';
+import type {UpdateMemberProfileInput} from '../../model/types';
+import {IMemberRepository} from './IMemberRepository';
 
 export class SpringMemberRepository implements IMemberRepository {
-  constructor(
-    private readonly apiClient: MemberApiClient = memberApiClient,
-  ) {}
+  constructor(private readonly apiClient: MemberApiClient = memberApiClient) {}
 
   async ensureMember() {
     const response = await this.apiClient.createMember();
@@ -14,6 +13,11 @@ export class SpringMemberRepository implements IMemberRepository {
 
   async getMyMemberProfile() {
     const response = await this.apiClient.getMyMemberProfile();
+    return mapMemberResponseDto(response.data);
+  }
+
+  async updateMyProfile(profile: UpdateMemberProfileInput) {
+    const response = await this.apiClient.updateMyProfile(profile);
     return mapMemberResponseDto(response.data);
   }
 

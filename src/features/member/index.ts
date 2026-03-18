@@ -1,5 +1,5 @@
-export { SpringMemberRepository } from './data/repositories/SpringMemberRepository';
-export type { IMemberRepository } from './data/repositories/IMemberRepository';
+export {SpringMemberRepository} from './data/repositories/SpringMemberRepository';
+export type {IMemberRepository} from './data/repositories/IMemberRepository';
 export {
   removeMemberFcmToken,
   saveMemberFcmToken,
@@ -9,4 +9,5 @@ export type {
   MemberFcmTokenPlatform,
   MemberNotificationSetting,
   MemberProfile,
+  UpdateMemberProfileInput,
 } from './model/types';

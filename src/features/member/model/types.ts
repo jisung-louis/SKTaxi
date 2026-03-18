@@ -1,6 +1,13 @@
-import type { UserAccountInfo } from '@/shared/types/user';
+import type {UserAccountInfo} from '@/shared/types/user';
 
 export type MemberFcmTokenPlatform = 'ios' | 'android';
+
+export interface UpdateMemberProfileInput {
+  nickname?: string;
+  studentId?: string | null;
+  department?: string | null;
+  photoUrl?: string | null;
+}
 
 export interface MemberNotificationSetting {
   allNotifications: boolean;
