@@ -29,6 +29,7 @@ import {
 import {useScreenView} from '@/shared/hooks';
 
 import {AuthFeatureChip} from '../components/v2/AuthFeatureChip';
+import {AUTH_BRAND_ACCENT_COLOR} from '../constants/authPalette';
 import {useAuth} from '../hooks/useAuth';
 
 const FEATURE_CHIPS = [
@@ -138,7 +139,11 @@ export const LoginScreen = (_props: LoginScreenProps) => {
             </View>
 
             <LinearGradient
-              colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.96)', '#FFFFFF']}
+              colors={[
+                'rgba(255,255,255,0)',
+                'rgba(255,255,255,0.96)',
+                V2_COLORS.background.surface,
+              ]}
               locations={[0, 0.55, 1]}
               style={styles.heroGradient}
             />
@@ -317,12 +322,12 @@ const styles = StyleSheet.create({
   },
   brandIconBox: {
     alignItems: 'center',
-    backgroundColor: '#4ADE80',
+    backgroundColor: AUTH_BRAND_ACCENT_COLOR,
     borderRadius: 16,
     height: 48,
     justifyContent: 'center',
     marginRight: 12,
-    shadowColor: '#4ADE80',
+    shadowColor: AUTH_BRAND_ACCENT_COLOR,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -404,13 +409,13 @@ const styles = StyleSheet.create({
   },
   googleButton: {
     alignItems: 'center',
-    backgroundColor: '#4ADE80',
+    backgroundColor: AUTH_BRAND_ACCENT_COLOR,
     borderRadius: 16,
     flexDirection: 'row',
     gap: V2_SPACING.md,
     height: 56,
     justifyContent: 'center',
-    shadowColor: '#4ADE80',
+    shadowColor: AUTH_BRAND_ACCENT_COLOR,
     shadowOffset: {width: 0, height: 8},
     shadowOpacity: 0.24,
     shadowRadius: 14,

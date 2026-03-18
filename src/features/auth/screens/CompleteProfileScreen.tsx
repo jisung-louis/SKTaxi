@@ -33,6 +33,10 @@ import {
 import {useScreenView} from '@/shared/hooks';
 
 import {AuthActionButton} from '../components/v2/AuthActionButton';
+import {
+  AUTH_BRAND_ACCENT_COLOR,
+  AUTH_BRAND_GRADIENT,
+} from '../constants/authPalette';
 import {useCompleteProfile} from '../hooks/useCompleteProfile';
 
 const NICKNAME_MAX_LENGTH = 7;
@@ -64,12 +68,12 @@ const ProfileCheckRow = ({
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [V2_COLORS.background.surface, '#4ADE80'],
+      [V2_COLORS.background.surface, AUTH_BRAND_ACCENT_COLOR],
     ),
     borderColor: interpolateColor(
       progress.value,
       [0, 1],
-      ['#D1D5DB', '#4ADE80'],
+      [V2_COLORS.border.default, AUTH_BRAND_ACCENT_COLOR],
     ),
     transform: [
       {
@@ -186,7 +190,7 @@ export const CompleteProfileScreen = () => {
             showsVerticalScrollIndicator={false}>
             <View style={styles.heroBadge}>
               <LinearGradient
-                colors={['#4ADE80', '#22C55E']}
+                colors={AUTH_BRAND_GRADIENT}
                 end={{x: 1, y: 1}}
                 start={{x: 0, y: 0}}
                 style={styles.heroBadgeInner}>
@@ -279,7 +283,7 @@ export const CompleteProfileScreen = () => {
           <View
             style={styles.footer}>
             <AuthActionButton
-              colors={['#4ADE80', '#22C55E']}
+              colors={AUTH_BRAND_GRADIENT}
               disabled={!isReady}
               label={loading ? '저장 중...' : '프로필 설정 완료'}
               loading={loading}
@@ -322,7 +326,7 @@ const styles = StyleSheet.create({
     height: 64,
     justifyContent: 'center',
     width: 64,
-    shadowColor: '#4ADE80',
+    shadowColor: AUTH_BRAND_ACCENT_COLOR,
     shadowOffset: {width: 0, height: 10},
     shadowOpacity: 0.3,
     shadowRadius: 18,
@@ -397,16 +401,12 @@ const styles = StyleSheet.create({
   checkBox: {
     alignItems: 'center',
     backgroundColor: V2_COLORS.background.surface,
-    borderColor: '#D1D5DB',
+    borderColor: V2_COLORS.border.default,
     borderRadius: 8,
     borderWidth: 2,
     height: 24,
     justifyContent: 'center',
     width: 24,
-  },
-  checkBoxChecked: {
-    backgroundColor: '#4ADE80',
-    borderColor: '#4ADE80',
   },
   checkLabel: {
     color: V2_COLORS.text.strong,
