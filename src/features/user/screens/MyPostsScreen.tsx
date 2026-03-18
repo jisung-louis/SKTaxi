@@ -17,7 +17,7 @@ import {V2StackHeader, V2StateCard} from '@/shared/design-system/components';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {UserPostListItem} from '../components/v2/UserPostListItem';
+import {UserPostListItem} from '../components/UserPostListItem';
 import {useMyPostsScreenData} from '../hooks/useMyPostsScreenData';
 
 export const MyPostsScreen = () => {

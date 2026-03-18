@@ -1,5 +1,5 @@
-export {MyPageMenuSection} from './components/v2/MyPageMenuSection';
-export {MyPageStatCard} from './components/v2/MyPageStatCard';
+export {MyPageMenuSection} from './components/MyPageMenuSection';
+export {MyPageStatCard} from './components/MyPageStatCard';
 
 export { FirebaseUserRepository } from './data/repositories/FirebaseUserRepository';
 export type {IMyPageRepository} from './data/repositories/IMyPageRepository';

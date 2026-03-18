@@ -27,8 +27,8 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {MyPageMenuSection} from '../components/v2/MyPageMenuSection';
-import {MyPageStatCard} from '../components/v2/MyPageStatCard';
+import {MyPageMenuSection} from '../components/MyPageMenuSection';
+import {MyPageStatCard} from '../components/MyPageStatCard';
 import {useMyPageData} from '../hooks/useMyPageData';
 import type {MyPageMenuItemViewData} from '../model/myPageViewData';
 import {withdrawCurrentUser} from '../services/userProfileService';

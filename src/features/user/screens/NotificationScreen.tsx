@@ -26,8 +26,8 @@ import {
   useAppNoticeFeedData,
 } from '@/features/settings';
 
-import {NotificationHubTabBar} from '../components/v2/NotificationHubTabBar';
-import {NotificationInboxList} from '../components/v2/NotificationInboxList';
+import {NotificationHubTabBar} from '../components/NotificationHubTabBar';
+import {NotificationInboxList} from '../components/NotificationInboxList';
 import {useNotificationCenterData} from '../hooks/useNotificationCenterData';
 import type {NotificationInboxItemViewData} from '../model/notificationCenterViewData';
 

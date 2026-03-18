@@ -10,8 +10,8 @@ import {V2StackHeader, V2StateCard} from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {TaxiHistoryListItem} from '../components/v2/TaxiHistoryListItem';
-import {TaxiHistorySummaryCard} from '../components/v2/TaxiHistorySummaryCard';
+import {TaxiHistoryListItem} from '../components/TaxiHistoryListItem';
+import {TaxiHistorySummaryCard} from '../components/TaxiHistorySummaryCard';
 import {useTaxiHistoryScreenData} from '../hooks/useTaxiHistoryScreenData';
 
 export const TaxiHistoryScreen = () => {

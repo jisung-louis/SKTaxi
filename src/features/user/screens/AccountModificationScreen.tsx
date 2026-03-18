@@ -29,7 +29,7 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {AccountBankDropdown} from '../components/v2/AccountBankDropdown';
+import {AccountBankDropdown} from '../components/AccountBankDropdown';
 import {useAccountManagementData} from '../hooks/useAccountManagementData';
 
 const ACCOUNT_MANAGEMENT_BANK_NAMES: string[] = [

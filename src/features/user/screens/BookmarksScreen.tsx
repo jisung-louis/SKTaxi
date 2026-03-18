@@ -15,9 +15,9 @@ import {useScreenView} from '@/shared/hooks/useScreenView';
 import {
   BookmarksTabBar,
   type BookmarksTabKey,
-} from '../components/v2/BookmarksTabBar';
-import {UserNoticeBookmarkListItem} from '../components/v2/UserNoticeBookmarkListItem';
-import {UserPostListItem} from '../components/v2/UserPostListItem';
+} from '../components/BookmarksTabBar';
+import {UserNoticeBookmarkListItem} from '../components/UserNoticeBookmarkListItem';
+import {UserPostListItem} from '../components/UserPostListItem';
 import {useBookmarksScreenData} from '../hooks/useBookmarksScreenData';
 
 type BookmarksRouteProp = RouteProp<CampusStackParamList, 'Bookmarks'>;
