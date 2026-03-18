@@ -37,10 +37,6 @@ export type {
 export {useAppSettingData} from './hooks/useAppSettingData';
 export {useLegalDocumentData} from './hooks/useLegalDocumentData';
 export {useInquiryFormData} from './hooks/useInquiryFormData';
-export { useAppNotice } from './hooks/useAppNotice';
-export type { UseAppNoticeResult } from './hooks/useAppNotice';
-export { useAppNotices } from './hooks/useAppNotices';
-export type { UseAppNoticesResult } from './hooks/useAppNotices';
 export { useSubmitInquiry } from './hooks/useSubmitInquiry';
 export type {
   InquiryData,
@@ -48,7 +44,6 @@ export type {
 } from './hooks/useSubmitInquiry';
 
 export { AppNoticeDetailScreen } from './screens/AppNoticeDetailScreen';
-export { AppNoticeScreen } from './screens/AppNoticeScreen';
 export { InquiriesScreen } from './screens/InquiriesScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';

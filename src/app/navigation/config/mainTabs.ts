@@ -20,7 +20,6 @@ export const HIDDEN_BOTTOM_TAB_SCREENS: Record<
     'MyPosts',
     'Bookmarks',
     'TaxiHistory',
-    'AppNotice',
     'AppNoticeDetail',
     'AccountModification',
     'NotificationSettings',

@@ -43,7 +43,6 @@ export type CampusStackParamList = {
       }
     | undefined;
   TaxiHistory: undefined;
-  AppNotice: undefined;
   AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;
   NotificationSettings: undefined;
