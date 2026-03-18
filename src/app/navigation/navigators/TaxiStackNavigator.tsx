@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   AcceptancePendingScreen,
   ChatScreen,
-  MapSearchScreen,
   RecruitScreen,
   TaxiScreen,
   type TaxiStackParamList,
@@ -22,7 +21,6 @@ export const TaxiStackNavigator = () => {
       />
       <TaxiStack.Screen name="Chat" component={ChatScreen} />
       <TaxiStack.Screen name="Recruit" component={RecruitScreen} />
-      <TaxiStack.Screen name="MapSearch" component={MapSearchScreen} />
     </TaxiStack.Navigator>
   );
 };

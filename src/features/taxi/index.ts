@@ -56,7 +56,6 @@ export {
 
 export { AcceptancePendingScreen } from './screens/AcceptancePendingScreen';
 export { ChatScreen } from './screens/ChatScreen';
-export { MapSearchScreen } from './screens/MapSearchScreen';
 export { RecruitScreen } from './screens/RecruitScreen';
 export { TaxiScreen } from './screens/TaxiScreen';
 

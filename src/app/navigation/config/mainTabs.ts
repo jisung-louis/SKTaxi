@@ -11,7 +11,7 @@ export const HIDDEN_BOTTOM_TAB_SCREENS: Record<
   keyof MainTabParamList,
   string[]
 > = {
-  TaxiTab: ['Recruit', 'MapSearch', 'Chat'],
+  TaxiTab: ['Recruit', 'Chat'],
   CampusTab: [
     'Notification',
     'Setting',
