@@ -123,21 +123,19 @@
 - `shared/ui`, `shared/design-system` 범위에서 legacy `colors`, `typography` import 0 달성
 - dead component `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`, `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`, `ImageViewer`, `TermsOfUseContent`, `NotificationSettingItem` 제거
 - dead route `ChatList` 와 관련 screen/components/hook 제거
-- dead route `NoticeDetailWebView` 와 관련 screen/url helper 제거
+- dead route `NoticeDetailWebView` 와 관련 screen 제거
+- dead helper `getChatRoomColor`, `getBoardCategoryColor` 제거
+- `toNoticeDetailWebViewUrl` 은 future reference 용 util로 유지
 
 이번 배치 대상:
-- `NoticeStackNavigator` 에 남아 있던 dead `NoticeDetailWebView` route 제거
-- `notice`: `NoticeDetailWebViewScreen`, `toNoticeSubviewUrl`
+- `chat`: `getChatRoomColor`
+- `board`: `getBoardCategoryColor`
 
 이번 배치 제외:
-- `chat`: `chatRoomService`
 - `taxi`: `JoinRequestModal`
-- `board`: `selectors`
 
 남은 주요 사용처:
-- `chat`: `chatRoomService`
 - `taxi`: `JoinRequestModal`
-- `board`: `selectors`
 
 ## 현재 live로 판단한 예외
 
