@@ -11,6 +11,7 @@ import {
   FirebaseBoardRepository,
 } from '@/features/board';
 import { FirebaseChatRepository } from '@/features/chat';
+import { SpringMemberRepository } from '@/features/member';
 import { FirebaseNoticeRepository } from '@/features/notice';
 import {
   FirebaseAppNoticeRepository,
@@ -65,6 +66,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       storageRepository: new FirestoreStorageRepository(),
       timetableRepository: new FirebaseTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),
+      memberRepository: new SpringMemberRepository(),
       notificationActionRepository: new FirebaseNotificationActionRepository(),
     };
 

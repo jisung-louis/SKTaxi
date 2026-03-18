@@ -13,6 +13,7 @@ import type {
   IChatRepository,
   ICourseRepository,
   IInquiryRepository,
+  IMemberRepository,
   INotificationActionRepository,
   INotificationRepository,
   INoticeRepository,
@@ -144,6 +145,14 @@ export function useTimetableRepository(): ITimetableRepository {
 export function useAuthRepository(): IAuthRepository {
   const { authRepository } = useRepositories();
   return authRepository;
+}
+
+/**
+ * Member Repository 접근 훅
+ */
+export function useMemberRepository(): IMemberRepository {
+  const { memberRepository } = useRepositories();
+  return memberRepository;
 }
 
 /**

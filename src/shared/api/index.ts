@@ -10,6 +10,7 @@ export type {
   ApiQueryValue,
   ApiRuntimeConfig,
 } from './apiConfig';
+export type { ApiSuccessResponse } from './apiResponse';
 export {
   clearAuthTokenResolver,
   getAuthToken,
@@ -24,4 +25,3 @@ export type {
 export { mapApiError } from './apiErrorMapper';
 export { HttpClient, httpClient } from './httpClient';
 export type { ApiRequestConfig } from './httpClient';
-
