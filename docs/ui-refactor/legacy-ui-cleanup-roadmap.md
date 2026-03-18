@@ -95,13 +95,17 @@
 
 ### Phase 7. product 확인 후 제거할 route
 
-재확인 대상:
-- `src/features/taxi/screens/MapSearchScreen.tsx`
-- `src/features/minecraft/components/MinecraftSection.tsx`
-- `src/features/minecraft/screens/MinecraftDetailScreen.tsx`
-- `src/features/minecraft/screens/MinecraftMapDetailScreen.tsx`
+완료 커밋:
+- `8f32b34` `refactor: 택시 맵 검색 레거시 진입 제거`
+- `338f75d` `refactor: 마인크래프트 화면 디자인 토큰 v2 이관`
 
-이 단계는 기술적으로는 고아에 가깝지만, product 관점에서 기능을 완전히 접는지 확인 후 진행한다.
+정리 내용:
+- caller 없이 route 등록만 남아 있던 `MapSearchScreen` 과 관련 type/export/navigation 등록 제거
+- `MinecraftDetail`, `MinecraftMapDetail`, `MinecraftSection` 은 추후 UI 레퍼런스 용도로 유지
+- `Minecraft` 도메인 화면 3개에서 `shared/constants/colors`, `shared/constants/typography` 의존성을 제거하고 v2 기반 도메인 토큰 파일로 이관
+
+비고:
+- `Minecraft*` route는 product 요청으로 임시 유지한다.
 
 ### Phase 8. 레거시 토큰 종결
 
