@@ -122,23 +122,20 @@
 - `shared/design-system/tokens/typography.ts` 추가
 - `shared/ui`, `shared/design-system` 범위에서 legacy `colors`, `typography` import 0 달성
 - dead component `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`, `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`, `ImageViewer`, `TermsOfUseContent`, `NotificationSettingItem` 제거
+- dead route `ChatList` 와 관련 screen/components/hook 제거
 
 이번 배치 대상:
-- 확정 dead component 제거
-- `campus`: `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`
-- `taxi`: `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`
-- `board`: `ImageViewer`
-- `settings`: `TermsOfUseContent`
-- `user`: `NotificationSettingItem`
+- `CommunityStackNavigator` 에 남아 있던 dead `ChatList` route 제거
+- `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `useChatListPresenter`
 
 이번 배치 제외:
-- `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `chatRoomService`
+- `chat`: `chatRoomService`
 - `notice`: `NoticeDetailWebViewScreen`
 - `taxi`: `JoinRequestModal`
 - `board`: `selectors`
 
 남은 주요 사용처:
-- `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `chatRoomService`
+- `chat`: `chatRoomService`
 - `notice`: `NoticeDetailWebViewScreen`
 - `taxi`: `JoinRequestModal`
 - `board`: `selectors`
