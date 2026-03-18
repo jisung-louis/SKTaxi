@@ -36,17 +36,17 @@ const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
   }
 };
 
-interface NoticeListItemV2Props {
+interface NoticeListItemProps {
   isLast: boolean;
   item: NoticeHomeNoticeItemViewData;
   onPress: (noticeId: string) => void;
 }
 
-export const NoticeListItemV2 = ({
+export const NoticeListItem = ({
   isLast,
   item,
   onPress,
-}: NoticeListItemV2Props) => {
+}: NoticeListItemProps) => {
   const toneStyles = getToneStyles(item.categoryTone);
 
   return (

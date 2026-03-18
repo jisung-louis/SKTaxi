@@ -6,7 +6,7 @@ import type {
   NoticeHomeEmptyStateViewData,
   NoticeHomeNoticeItemViewData,
 } from '../../model/noticeHomeViewData';
-import {NoticeListItemV2} from './NoticeListItemV2';
+import {NoticeListItem} from './NoticeListItem';
 import {V2StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -93,7 +93,7 @@ export const NoticeHomeList = ({
       {!showLoadingState && !error && items.length > 0 ? (
         <>
           {items.map((item, index) => (
-            <NoticeListItemV2
+            <NoticeListItem
               key={item.id}
               isLast={index === items.length - 1 && !hasFooter}
               item={item}

@@ -6,15 +6,15 @@ import {V2_SPACING} from '@/shared/design-system/tokens';
 
 import type {NoticeHomeCategoryChipViewData} from '../../model/noticeHomeViewData';
 
-interface NoticeCategoryBarV2Props {
+interface NoticeCategoryBarProps {
   categories: NoticeHomeCategoryChipViewData[];
   onSelectCategory: (categoryId: NoticeHomeCategoryChipViewData['id']) => void;
 }
 
-export const NoticeCategoryBarV2 = ({
+export const NoticeCategoryBar = ({
   categories,
   onSelectCategory,
-}: NoticeCategoryBarV2Props) => {
+}: NoticeCategoryBarProps) => {
   return (
     <ScrollView
       horizontal

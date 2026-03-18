@@ -18,7 +18,7 @@ import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
 import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
-import {NoticeCategoryBarV2} from '../components/NoticeCategoryBarV2';
+import {NoticeCategoryBar} from '../components/NoticeCategoryBar';
 import {NoticeHomeList} from '../components/NoticeHomeList';
 import {NoticeUnreadBanner} from '../components/NoticeUnreadBanner';
 import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
@@ -133,7 +133,7 @@ export const NoticeScreen = () => {
         </View>
 
         <View style={styles.categorySection}>
-          <NoticeCategoryBarV2
+          <NoticeCategoryBar
             categories={data.categoryChips}
             onSelectCategory={selectCategory}
           />
