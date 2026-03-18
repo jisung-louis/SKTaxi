@@ -57,9 +57,7 @@ export const CampusScreen = () => {
           showsVerticalScrollIndicator={false}>
           <CampusHomeHeader
             onPressNotification={() =>
-            {
-              // TODO : 알림 버튼 누르면 알림 화면으로 이동
-            }
+              campusEntryNavigation.openCampusScreen('Notification')
             }
             onPressProfile={() =>
               campusEntryNavigation.openCampusScreen('Profile')
