@@ -1,3 +1,6 @@
+// 공지 알림 설정 UI
+// TODO : V2 UI 변경 (현재는 레거시 UI 사용중 (토글 등도 shared 컴포넌트가 아니라 여기서 직접 구현하고 있음))
+
 import React from 'react';
 import {
   View,

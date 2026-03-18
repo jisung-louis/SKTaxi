@@ -1,8 +1,8 @@
 import type {AppNoticeRecord} from '../model/appNoticeSource';
 
-const updateHero = require('../assets/app-notice-update-hero.png');
-const policyHero = require('../assets/app-notice-policy-hero.png');
-const eventHero = require('../assets/app-notice-event-hero.png');
+const updateHero = require('./assets/app-notice-update-hero.png');
+const policyHero = require('./assets/app-notice-policy-hero.png');
+const eventHero = require('./assets/app-notice-event-hero.png');
 
 export const APP_NOTICE_RECORDS_MOCK: AppNoticeRecord[] = [
   {

@@ -129,10 +129,10 @@ const styles = StyleSheet.create({
     borderRadius: V2_RADIUS.lg,
     borderStyle: 'dashed',
     borderWidth: 2,
-    height: 80,
+    height: 82,
     justifyContent: 'center',
     marginRight: V2_SPACING.sm,
-    width: 80,
+    width: 82,
   },
   addButtonLabel: {
     color: V2_COLORS.text.muted,
@@ -144,10 +144,13 @@ const styles = StyleSheet.create({
     width: V2_SPACING.sm,
   },
   imageItem: {
-    height: 80,
+    height: 82,
     marginRight: V2_SPACING.sm,
     position: 'relative',
-    width: 80,
+    width: 82,
+    borderRadius: V2_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: V2_COLORS.border.default,
   },
   imageItemActive: {
     opacity: 0.65,
