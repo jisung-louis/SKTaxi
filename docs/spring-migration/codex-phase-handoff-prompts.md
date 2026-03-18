@@ -1,7 +1,7 @@
 # Codex Phase Handoff Prompts
 
 > 최종 수정일: 2026-03-18
-> 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md)
+> 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [API 명세](./api-specification.md)
 
 ---
 
@@ -16,6 +16,11 @@
 - 작업 중 합의된 아키텍처를 임의로 바꾸지 않는다.
 - phase는 작업 단위로 보고, 커밋은 그 안에서 목적별 작은 단위로 분리한다.
 - 작업 완료 후 상태 문서를 갱신한다.
+- 실제 API 호출 구현 전에는 아래 순서로 계약을 확인한다.
+  1. 로컬 백엔드 `/v3/api-docs`
+  2. 백엔드 코드 `/Users/jisung/skuri-backend`
+  3. `docs/spring-migration/api-specification.md`
+- 충돌 시 우선순위는 `/v3/api-docs` > 백엔드 코드 > markdown 명세다.
 
 ---
 
@@ -28,6 +33,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 중요 규칙:
 - 전역 DI가 최종 목표지만, 앱 전체를 먼저 전면 리팩터링하지는 마.
@@ -43,6 +49,7 @@
 - 런타임 코드와 문서 변경은 가능하면 별도 커밋으로 나눠.
 - 커밋 메시지는 Conventional Commits를 사용하고, 타입은 영어, 나머지 메시지는 한국어로 써.
 - 변경 후 docs/spring-migration/frontend-migration-status.md를 갱신해.
+- 실제 API를 붙일 때는 먼저 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 코드를 확인해.
 
 작업 후에는 아래 형식으로 보고해.
 1. 이번 스레드에서 처리한 phase/범위
@@ -63,6 +70,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - 로그인 직후 Spring 보호 API bootstrap 흐름을 안정화
@@ -73,6 +81,7 @@
   4. GET /v1/members/me
 - 필요하면 공통 transport를 재사용해 Member API client / Spring repository를 추가
 - 기존 Auth 흐름과 충돌 없이 연결
+- 실제 endpoint/DTO는 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인
 
 중요 규칙:
 - 앱 전체 DI 전면 리팩터링은 하지 마.
@@ -104,6 +113,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - App Notice screen
@@ -118,6 +128,7 @@
 - touched hook에서 direct mock import를 제거해.
 - 새 공통 transport(shared/api, shared/realtime)를 재사용해.
 - 커밋은 App Notice / Notification Center / Taxi Home 또는 문서/리팩터링 성격에 맞게 분리해.
+- 실제 endpoint/DTO/enum은 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인해.
 
 우선순위:
 1. App Notice
@@ -147,6 +158,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
 - /Users/jisung/SKTaxi/docs/spring-migration/rn-notification-migration-reference.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - Notification 도메인을 Firestore에서 Spring REST + SSE로 이전
@@ -158,6 +170,7 @@
 - push payload 해석은 canonical enum 기준으로 맞춰.
 - direct mock/Firebase import가 남아 있으면 같이 제거해.
 - 커밋은 기능/리팩터링/문서를 가능한 분리해.
+- 실제 endpoint/event payload는 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인해.
 
 검증:
 - unread count 동기화 방식
@@ -177,6 +190,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - Taxi Party 도메인을 Spring REST + SSE로 이전
@@ -189,6 +203,7 @@
 - touched taxi feature는 중앙 DI 기준으로 수렴시켜.
 - Taxi Home과 Party 도메인 read model이 섞이면 Query/Assembler로 분리해.
 - 커밋은 리뷰 가능한 작은 단위로 나누고, 도메인이 섞이면 분리해.
+- 실제 endpoint/DTO/event는 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인해.
 
 검증:
 - 어떤 클라이언트 로직이 서버 판단으로 이동했는지
@@ -208,6 +223,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - Chat 도메인을 Spring REST + STOMP로 이전
@@ -220,6 +236,7 @@
 - chat detail/community unread 등 복잡한 화면 조합은 필요 시 Query/Facade로 분리해.
 - touched feature는 중앙 DI 기준으로 수렴시켜.
 - 커밋은 transport 연결, repository 구현, 화면 연결, 문서를 가능하면 분리해.
+- 실제 STOMP destination/message DTO는 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인해.
 
 검증:
 - CONNECT header 인증 방식
@@ -239,6 +256,7 @@
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
 - /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
 
 이번 스레드 목표:
 - 남아 있는 mock 화면 체인 정리

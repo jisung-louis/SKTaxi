@@ -1,6 +1,6 @@
 # Spring 백엔드 API 명세
 
-> 최종 수정일: 2026-03-10
+> 최종 수정일: 2026-03-18
 > 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
@@ -27,7 +27,7 @@
 ### 1.1 Base URL
 
 ```
-Production: (도메인 미정)
+Production: https://api.skuri.kr/v1
 Development: http://localhost:8080/v1
 ```
 
@@ -35,6 +35,12 @@ Development: http://localhost:8080/v1
 
 - 런타임 API 계약의 최종 기준은 `/v3/api-docs`입니다.
 - 본 문서(`docs/api-specification.md`)는 사람이 읽는 설명 문서이며, 코드 변경 PR에서 `/v3/api-docs`와 함께 동기화합니다.
+- React Native 프론트 구현 시 계약 확인 우선순위는 아래와 같습니다.
+  1. 로컬 백엔드가 떠 있으면 `http://localhost:8080/v3/api-docs`
+  2. 백엔드 구현 코드 (`/Users/jisung/skuri-backend`)
+  3. 본 문서 (`docs/spring-migration/api-specification.md`)
+- 위 3개가 충돌하면 우선순위는 `/v3/api-docs` > 백엔드 코드 > 본 문서입니다.
+- 프론트 에이전트는 실제 API 호출 구현 전에 반드시 위 3개 중 하나 이상을 기준으로 endpoint, request/response DTO, enum, 인증 요구 여부를 확인합니다.
 
 ### 1.2 인증
 
