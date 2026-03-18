@@ -15,7 +15,7 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 
-interface V2ChatPopupMenuProps {
+interface ChatPopupMenuProps {
   canReport?: boolean
   leaveLabel: string
   notificationEnabled: boolean
@@ -45,7 +45,7 @@ const TogglePill = ({enabled}: {enabled: boolean}) => {
   );
 };
 
-export const V2ChatPopupMenu = ({
+export const ChatPopupMenu = ({
   canReport = false,
   leaveLabel,
   notificationEnabled,
@@ -56,7 +56,7 @@ export const V2ChatPopupMenu = ({
   right = 12,
   top = 64,
   visible,
-}: V2ChatPopupMenuProps) => {
+}: ChatPopupMenuProps) => {
   if (!visible) {
     return null;
   }

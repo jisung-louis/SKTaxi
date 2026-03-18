@@ -23,7 +23,7 @@ import type {
   ChatThreadMessageViewData,
 } from './types';
 
-interface V2ChatMessageListProps {
+interface ChatMessageListProps {
   contentContainerStyle?: StyleProp<ViewStyle>
   headerContent?: React.ReactNode
   items: ChatThreadItemViewData[]
@@ -94,11 +94,11 @@ const isSameGroup = (
   );
 };
 
-export const V2ChatMessageList = ({
+export const ChatMessageList = ({
   contentContainerStyle,
   headerContent,
   items,
-}: V2ChatMessageListProps) => {
+}: ChatMessageListProps) => {
   const scrollViewRef = React.useRef<ScrollView>(null);
 
   React.useEffect(() => {

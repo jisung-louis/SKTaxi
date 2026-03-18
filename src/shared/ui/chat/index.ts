@@ -1,6 +1,6 @@
-export {V2ChatHeader} from './V2ChatHeader';
-export {V2ChatMessageList} from './V2ChatMessageList';
-export {V2ChatPopupMenu} from './V2ChatPopupMenu';
+export {ChatHeader} from './ChatHeader';
+export {ChatMessageList} from './ChatMessageList';
+export {ChatPopupMenu} from './ChatPopupMenu';
 export type {
   ChatAvatarViewData,
   ChatThreadHeaderViewData,

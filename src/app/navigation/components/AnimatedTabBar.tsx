@@ -6,7 +6,7 @@ import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { HIDDEN_BOTTOM_TAB_SCREENS } from '@/app/navigation/config/mainTabs';
 import { type MainTabParamList } from '@/app/navigation/types';
 
-import { V2BottomTabBar } from './V2BottomTabBar';
+import { BottomTabBar } from './BottomTabBar';
 
 export type AnimatedTabBarProps = BottomTabBarProps & {
   hasCommunityUnread: boolean;
@@ -75,7 +75,7 @@ export const AnimatedTabBar = ({
         },
       ]}
     >
-      <V2BottomTabBar
+      <BottomTabBar
         {...tabBarProps}
         hasCommunityUnread={hasCommunityUnread}
         hasTaxiParty={hasTaxiParty}

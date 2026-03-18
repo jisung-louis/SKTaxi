@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { type BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { type BottomTabBarProps as NavigationBottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -37,7 +37,7 @@ const TAB_ICON_NAMES = {
   },
 } as const;
 
-type V2BottomTabBarProps = BottomTabBarProps & {
+type BottomTabBarComponentProps = NavigationBottomTabBarProps & {
   hasCommunityUnread?: boolean;
   hasTaxiParty?: boolean;
   taxiJoinRequestCount?: number;
@@ -45,7 +45,7 @@ type V2BottomTabBarProps = BottomTabBarProps & {
 
 const getTabLabel = (
   routeName: string,
-  tabBarLabel: BottomTabBarProps['descriptors'][string]['options']['tabBarLabel'],
+  tabBarLabel: NavigationBottomTabBarProps['descriptors'][string]['options']['tabBarLabel'],
   title?: string,
 ) => {
   if (typeof tabBarLabel === 'string') {
@@ -59,14 +59,14 @@ const getTabLabel = (
   return routeName;
 };
 
-export const V2BottomTabBar = ({
+export const BottomTabBar = ({
   descriptors,
   hasCommunityUnread = false,
   hasTaxiParty = false,
   navigation,
   state,
   taxiJoinRequestCount = 0,
-}: V2BottomTabBarProps) => {
+}: BottomTabBarComponentProps) => {
   const insets = useSafeAreaInsets();
 
   return (

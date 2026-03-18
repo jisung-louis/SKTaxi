@@ -21,9 +21,9 @@ import {
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {
-  V2ChatHeader,
-  V2ChatMessageList,
-  V2ChatPopupMenu,
+  ChatHeader,
+  ChatMessageList,
+  ChatPopupMenu,
 } from '@/shared/ui/chat';
 
 import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
@@ -80,7 +80,7 @@ export const ChatScreen = () => {
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {data ? (
-          <V2ChatHeader
+          <ChatHeader
             header={data.header}
             onPressBack={handlePressBack}
             onPressMenu={() => setMenuVisible(previousValue => !previousValue)}
@@ -114,7 +114,7 @@ export const ChatScreen = () => {
         ) : data ? (
           <>
             <View style={styles.threadWrap}>
-              <V2ChatMessageList
+              <ChatMessageList
                 contentContainerStyle={styles.threadContent}
                 headerContent={<TaxiChatSummaryCard summary={data.summary} />}
                 items={data.items}
@@ -141,7 +141,7 @@ export const ChatScreen = () => {
         ) : null}
 
         {data ? (
-          <V2ChatPopupMenu
+          <ChatPopupMenu
             leaveLabel={data.menu.leaveLabel}
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}

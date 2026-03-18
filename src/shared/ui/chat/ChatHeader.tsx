@@ -11,17 +11,17 @@ import {
 
 import type {ChatThreadHeaderViewData} from './types';
 
-interface V2ChatHeaderProps {
+interface ChatHeaderProps {
   header: ChatThreadHeaderViewData
   onPressBack: () => void
   onPressMenu?: () => void
 }
 
-export const V2ChatHeader = ({
+export const ChatHeader = ({
   header,
   onPressBack,
   onPressMenu,
-}: V2ChatHeaderProps) => {
+}: ChatHeaderProps) => {
   const insets = useSafeAreaInsets();
 
   return (
