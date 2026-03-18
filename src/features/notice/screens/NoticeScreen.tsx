@@ -18,9 +18,9 @@ import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
 import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
-import {NoticeCategoryBarV2} from '../components/v2/NoticeCategoryBarV2';
-import {NoticeHomeList} from '../components/v2/NoticeHomeList';
-import {NoticeUnreadBanner} from '../components/v2/NoticeUnreadBanner';
+import {NoticeCategoryBarV2} from '../components/NoticeCategoryBarV2';
+import {NoticeHomeList} from '../components/NoticeHomeList';
+import {NoticeUnreadBanner} from '../components/NoticeUnreadBanner';
 import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
 import type {NoticeStackParamList} from '../model/navigation';
 

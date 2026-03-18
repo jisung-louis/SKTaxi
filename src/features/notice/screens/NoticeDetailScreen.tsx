@@ -32,7 +32,7 @@ import {
   useScreenView,
 } from '@/shared/hooks';
 
-import {NoticeDetailAttachments} from '../components/v2/NoticeDetailAttachments';
+import {NoticeDetailAttachments} from '../components/NoticeDetailAttachments';
 import {useNoticeDetailData} from '../hooks/useNoticeDetailData';
 import type {NoticeStackParamList} from '../model/navigation';
 
