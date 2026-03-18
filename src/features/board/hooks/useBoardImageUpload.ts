@@ -33,8 +33,8 @@ export const useBoardImageUpload = ({
         return;
       }
 
-      const nextImages = (response.assets || [])
-        .map((asset) => {
+      const nextImages: BoardSelectedImage[] = (response.assets ?? [])
+        .map<BoardSelectedImage | null>((asset) => {
           const fileSize = asset.fileSize || 0;
           const fileSizeMB = fileSize / (1024 * 1024);
 
@@ -54,7 +54,7 @@ export const useBoardImageUpload = ({
             progress: 0,
           };
         })
-        .filter((image): image is BoardSelectedImage => Boolean(image));
+        .filter((image): image is BoardSelectedImage => image !== null);
 
       setSelectedImages((prev) => [...prev, ...nextImages]);
     },

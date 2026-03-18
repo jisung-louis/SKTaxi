@@ -66,7 +66,9 @@ export class FirebaseBoardRepository implements IBoardRepository {
     q = query(q, orderBy(this.getSortField(filters.sortBy), 'desc'), limit(postLimit));
 
     const snapshot = await getDocs(q);
-    const posts = snapshot.docs.map((docSnap) => this.mapDocToPost(docSnap));
+    const posts = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+      this.mapDocToPost(docSnap),
+    );
 
     return {
       data: posts,
@@ -102,7 +104,9 @@ export class FirebaseBoardRepository implements IBoardRepository {
     );
 
     const snapshot = await getDocs(q);
-    const posts = snapshot.docs.map((docSnap) => this.mapDocToPost(docSnap));
+    const posts = snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+      this.mapDocToPost(docSnap),
+    );
 
     return {
       data: posts,
@@ -130,7 +134,11 @@ export class FirebaseBoardRepository implements IBoardRepository {
     return onSnapshot(
       q,
       (snapshot) => {
-        callbacks.onData(snapshot.docs.map((docSnap) => this.mapDocToPost(docSnap)));
+        callbacks.onData(
+          snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+            this.mapDocToPost(docSnap),
+          ),
+        );
       },
       (error) => callbacks.onError(error as Error),
     );
@@ -240,7 +248,11 @@ export class FirebaseBoardRepository implements IBoardRepository {
       orderBy('createdAt', 'asc'),
     );
     const snapshot = await getDocs(q);
-    return this.buildCommentTree(snapshot.docs.map((docSnap) => this.mapDocToComment(docSnap)));
+    return this.buildCommentTree(
+      snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+        this.mapDocToComment(docSnap),
+      ),
+    );
   }
 
   subscribeToComments(
@@ -257,7 +269,11 @@ export class FirebaseBoardRepository implements IBoardRepository {
       q,
       (snapshot) => {
         callbacks.onData(
-          this.buildCommentTree(snapshot.docs.map((docSnap) => this.mapDocToComment(docSnap))),
+          this.buildCommentTree(
+            snapshot.docs.map((docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+              this.mapDocToComment(docSnap),
+            ),
+          ),
         );
       },
       (error) => callbacks.onError(error as Error),
