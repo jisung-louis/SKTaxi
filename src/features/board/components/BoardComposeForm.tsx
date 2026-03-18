@@ -16,7 +16,7 @@ import {
 
 import {BOARD_CATEGORIES} from '../model/constants';
 import type {BoardPostCategoryId, BoardSelectedImage} from '../model/types';
-import {ImageSelector} from '../ImageSelector';
+import {ImageSelector} from './ImageSelector';
 
 const TITLE_LIMIT = 100;
 const CONTENT_LIMIT = 3000;
