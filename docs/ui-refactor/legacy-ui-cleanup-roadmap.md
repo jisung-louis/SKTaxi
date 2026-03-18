@@ -31,44 +31,29 @@
 - `settings/index.ts` 의 dead export 제거
 - `useAppNotice.ts`, `useAppNotices.ts` 제거
 
-## 진행 예정 단계
-
 ### Phase 2. 게시판 레거시 메인 제거
 
-대상:
-- `src/features/board/screens/BoardScreen.tsx`
-- `src/features/board/components/BoardCommentList.tsx`
-- `src/features/board/components/BoardHeader.tsx`
-- `src/features/board/components/BoardSearch.tsx`
-- `src/features/board/components/PostCard.tsx`
-- `src/features/board/hooks/useBoardComments.ts`
-- `src/features/board/services/boardCommentService.ts`
-- `src/shared/ui/ErrorMessage.tsx`
-- `src/shared/ui/LoadingSpinner.tsx`
-- `src/shared/ui/comments/UniversalCommentList.tsx`
-- `src/shared/ui/comments/index.ts`
-- `src/shared/ui/comments/types.ts`
+완료 커밋:
+- `6cc1127` `refactor: 게시판 레거시 메인 화면 제거`
 
-같이 수정할 파일:
-- `src/features/board/components/index.ts`
-- `src/features/board/hooks/index.ts`
-- `src/features/board/index.ts`
-- `src/features/board/services/boardNavigationService.ts`
-
-주의:
-- `BoardMain` route 자체는 live다.
-- `BoardMain` 의 실제 컴포넌트는 `CommunityScreen` 이므로 건드리지 않는다.
+정리 내용:
+- `BoardScreen` 과 old 메인용 카드/헤더/검색 컴포넌트 제거
+- old 댓글 리스트 훅과 댓글 스레드 변환 서비스 제거
+- 게시판 old 메인에서만 쓰던 `shared/ui` 에러/로딩/댓글 리스트 제거
+- `board/index.ts`, `board/hooks/index.ts`, `board/components/index.ts` export 정리
+- dead `navigateToBoardSearch` 제거
 
 ### Phase 3. 공지 레거시 목록과 HTML 렌더링 제거
 
-대상:
-- `src/features/notice/components/NoticeCategoryBar.tsx`
-- `src/features/notice/components/NoticeHtmlContent.tsx`
-- `src/features/notice/components/NoticeImageViewer.tsx`
-- `src/features/notice/components/NoticeItem.tsx`
-- `src/features/notice/components/NoticeList.tsx`
-- `src/features/notice/components/UnreadNoticeBanner.tsx`
-- `src/features/notice/components/html/*`
+완료 커밋:
+- `1fab958` `refactor: 공지 레거시 목록과 html 렌더링 제거`
+
+정리 내용:
+- old 공지 카테고리 바, 카드 리스트, HTML 렌더링 서브트리 제거
+- `NoticeSettingsPanel` 은 live 이므로 유지
+- `notice/index.ts`, `notice/components/index.ts` export 정리
+
+## 진행 예정 단계
 
 ### Phase 4. 시간표 레거시 편집 흐름 제거
 
@@ -141,4 +126,3 @@
 2. 수정 파일 기준 `eslint` 실행
 3. 전체 `tsc --noEmit` 결과에서 이번 단계 관련 파일명만 필터링해 신규 오류 확인
 4. 관련 navigator 진입 경로 수동 점검
-
