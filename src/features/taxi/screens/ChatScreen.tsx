@@ -26,7 +26,7 @@ import {
   V2ChatPopupMenu,
 } from '@/shared/ui/chat';
 
-import {TaxiChatSummaryCard} from '../components/v2/TaxiChatSummaryCard';
+import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
 import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
 import type {TaxiStackParamList} from '../model/navigation';
 

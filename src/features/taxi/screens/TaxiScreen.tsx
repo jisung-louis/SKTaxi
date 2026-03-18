@@ -25,10 +25,10 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 
-import {TaxiHomeFilterChips} from '../components/v2/TaxiHomeFilterChips';
-import {TaxiHomePartyCard} from '../components/v2/TaxiHomePartyCard';
-import {TaxiHomeSearchBar} from '../components/v2/TaxiHomeSearchBar';
-import {TaxiHomeSortMenu} from '../components/v2/TaxiHomeSortMenu';
+import {TaxiHomeFilterChips} from '../components/TaxiHomeFilterChips';
+import {TaxiHomePartyCard} from '../components/TaxiHomePartyCard';
+import {TaxiHomeSearchBar} from '../components/TaxiHomeSearchBar';
+import {TaxiHomeSortMenu} from '../components/TaxiHomeSortMenu';
 import {useTaxiHomeData} from '../hooks/useTaxiHomeData';
 import {useTaxiLocation} from '../hooks/useTaxiLocation';
 import {DEPARTURE_LOCATION, DEPARTURE_OPTIONS} from '../model/constants';

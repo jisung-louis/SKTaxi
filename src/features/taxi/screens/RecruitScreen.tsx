@@ -31,9 +31,9 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 
-import {TaxiCreateLocationSection} from '../components/v2/TaxiCreateLocationSection';
-import {TaxiCreateTagSection} from '../components/v2/TaxiCreateTagSection';
-import {TaxiCreateTimePicker} from '../components/v2/TaxiCreateTimePicker';
+import {TaxiCreateLocationSection} from '../components/TaxiCreateLocationSection';
+import {TaxiCreateTagSection} from '../components/TaxiCreateTagSection';
+import {TaxiCreateTimePicker} from '../components/TaxiCreateTimePicker';
 import {useTaxiRecruitForm} from '../hooks/useTaxiRecruitForm';
 import type {TaxiStackParamList} from '../model/navigation';
 

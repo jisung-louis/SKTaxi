@@ -25,8 +25,8 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 
-import {TaxiAcceptancePendingInfoCard} from '../components/v2/TaxiAcceptancePendingInfoCard';
-import {TaxiAcceptancePendingStatus} from '../components/v2/TaxiAcceptancePendingStatus';
+import {TaxiAcceptancePendingInfoCard} from '../components/TaxiAcceptancePendingInfoCard';
+import {TaxiAcceptancePendingStatus} from '../components/TaxiAcceptancePendingStatus';
 import {useTaxiAcceptancePendingData} from '../hooks/useTaxiAcceptancePendingData';
 
 import type {TaxiStackParamList} from '../model/navigation';
