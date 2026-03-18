@@ -1,8 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  TextStyle,
+  TouchableOpacity,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  V2_COLORS,
+  V2_TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 interface PageHeaderProps {
   onBack: () => void;
@@ -28,22 +38,98 @@ interface PageHeaderProps {
   borderBottom?: boolean;
 }
 
-const PageHeader = ({ onBack, title, padding = 10, style, secondIcon, secondIconSize=28, secondIconPress, thirdIcon, thirdIconSize=28, thirdIconPress, titleStyle, backIconSize=36, subTitle, subTitleStyle, subTitleNumberOfLines=1, rightButton=false, rightButtonIcon='ellipsis-vertical', rightButtons, onRightButtonPress, onRightButtonsPress, borderBottom=false }: PageHeaderProps) => {
+const PageHeader = ({
+  onBack,
+  title,
+  padding = 10,
+  style,
+  secondIcon,
+  secondIconSize = 28,
+  secondIconPress,
+  thirdIcon,
+  thirdIconSize = 28,
+  thirdIconPress,
+  titleStyle,
+  backIconSize = 36,
+  subTitle,
+  subTitleStyle,
+  subTitleNumberOfLines = 1,
+  rightButton = false,
+  rightButtonIcon = 'ellipsis-vertical',
+  rightButtons,
+  onRightButtonPress,
+  onRightButtonsPress,
+  borderBottom = false,
+}: PageHeaderProps) => {
   return (
-    <View style={[styles.container, {paddingHorizontal: padding}, style, borderBottom && styles.borderBottom]}>
-      <Icon name="chevron-back" size={backIconSize} color={COLORS.text.primary} onPress={onBack} />
-      {secondIcon && <Icon name={secondIcon} size={secondIconSize} color={COLORS.text.primary} onPress={secondIconPress} style={{ marginLeft: 8 }} />}
-      {thirdIcon && <Icon name={thirdIcon} size={thirdIconSize} color={COLORS.text.primary} onPress={thirdIconPress} style={{ marginLeft: 8 }} />}
+    <View
+      style={[
+        styles.container,
+        {paddingHorizontal: padding},
+        style,
+        borderBottom && styles.borderBottom,
+      ]}>
+      <Icon
+        name="chevron-back"
+        size={backIconSize}
+        color={V2_COLORS.text.primary}
+        onPress={onBack}
+      />
+      {secondIcon && (
+        <Icon
+          name={secondIcon}
+          size={secondIconSize}
+          color={V2_COLORS.text.primary}
+          onPress={secondIconPress}
+          style={styles.iconSpacing}
+        />
+      )}
+      {thirdIcon && (
+        <Icon
+          name={thirdIcon}
+          size={thirdIconSize}
+          color={V2_COLORS.text.primary}
+          onPress={thirdIconPress}
+          style={styles.iconSpacing}
+        />
+      )}
       <View style={styles.titleContainer}>
-        {title && <Text style={[styles.title, titleStyle]} numberOfLines={1}>{title}</Text>}
-        {subTitle && <Text style={[styles.subTitle, subTitleStyle]} numberOfLines={subTitleNumberOfLines}>{subTitle}</Text>}
+        {title && (
+          <Text style={[styles.title, titleStyle]} numberOfLines={1}>
+            {title}
+          </Text>
+        )}
+        {subTitle && (
+          <Text
+            style={[styles.subTitle, subTitleStyle]}
+            numberOfLines={subTitleNumberOfLines}>
+            {subTitle}
+          </Text>
+        )}
       </View>
-      {rightButton && <Icon name={rightButtonIcon} size={28} color={COLORS.text.primary} style={{ marginRight: 5 }} onPress={onRightButtonPress} />}
-      {rightButtons && rightButtons.map((button, index) => (
-        <TouchableOpacity style={{ marginRight: index === rightButtons.length - 1 ? 10 : 20 }} key={index} onPress={() => onRightButtonsPress?.(index as number)}>
-          {button}
-        </TouchableOpacity>
-      ))}
+      {rightButton && (
+        <Icon
+          name={rightButtonIcon}
+          size={28}
+          color={V2_COLORS.text.primary}
+          style={styles.rightButtonIcon}
+          onPress={onRightButtonPress}
+        />
+      )}
+      {rightButtons &&
+        rightButtons.map((button, index) => (
+          <TouchableOpacity
+            style={[
+              styles.rightButtonWrapper,
+              index === rightButtons.length - 1
+                ? styles.lastRightButtonWrapper
+                : styles.middleRightButtonWrapper,
+            ]}
+            key={index}
+            onPress={() => onRightButtonsPress?.(index as number)}>
+            {button}
+          </TouchableOpacity>
+        ))}
     </View>
   );
 };
@@ -59,17 +145,30 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     gap: 2,
   },
+  iconSpacing: {
+    marginLeft: 8,
+  },
   title: {
-    ...TYPOGRAPHY.title1,
-    color: COLORS.text.primary,
+    ...V2_TYPOGRAPHY.title1,
+    color: V2_COLORS.text.primary,
   },
   subTitle: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
+    ...V2_TYPOGRAPHY.caption1,
+    color: V2_COLORS.text.secondary,
   },
   borderBottom: {
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
+    borderBottomColor: V2_COLORS.border.default,
+  },
+  rightButtonIcon: {
+    marginRight: 5,
+  },
+  rightButtonWrapper: {},
+  middleRightButtonWrapper: {
+    marginRight: 20,
+  },
+  lastRightButtonWrapper: {
+    marginRight: 10,
   },
 });
 

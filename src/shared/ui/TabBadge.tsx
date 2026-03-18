@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 interface TabBadgeProps {
   count: number;
@@ -30,7 +33,7 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
     <View
       style={[
         styles.badge,
-        location === 'top' ? { top: -2 } : { bottom: -2 },
+        location === 'top' ? styles.topLocation : styles.bottomLocation,
         size === 'small' ? styles.small : size === 'medium' ? styles.medium : styles.large,
         isDot && styles.dot,
         style,
@@ -41,10 +44,10 @@ export const TabBadge: React.FC<TabBadgeProps> = ({
           style={[
             styles.badgeText,
             size === 'small'
-              ? { ...TYPOGRAPHY.caption3 }
+              ? { ...V2_TYPOGRAPHY.caption3 }
               : size === 'medium'
-              ? { ...TYPOGRAPHY.caption2 }
-              : { ...TYPOGRAPHY.caption1 },
+              ? { ...V2_TYPOGRAPHY.caption2 }
+              : { ...V2_TYPOGRAPHY.caption1 },
           ]}
         >
           {count > 99 ? '99+' : count.toString()}
@@ -58,18 +61,24 @@ const styles = StyleSheet.create({
   badge: {
     position: 'absolute',
     right: -8,
-    backgroundColor: COLORS.accent.red,
-    borderRadius: 10,
+    backgroundColor: V2_COLORS.status.danger,
+    borderRadius: V2_RADIUS.md,
     minWidth: 18,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderWidth: 2,
-    borderColor: COLORS.background.primary,
+    borderColor: V2_COLORS.background.page,
+  },
+  topLocation: {
+    top: -2,
+  },
+  bottomLocation: {
+    bottom: -2,
   },
   badgeText: {
-    color: 'white',
+    color: V2_COLORS.text.inverse,
     fontWeight: '600',
   },
   small: {

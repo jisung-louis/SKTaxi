@@ -7,7 +7,11 @@ import {
   TextStyle,
   ActivityIndicator,
 } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -59,7 +63,11 @@ const Button = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? COLORS.background.primary : COLORS.accent.green}
+          color={
+            variant === 'primary'
+              ? V2_COLORS.text.inverse
+              : V2_COLORS.brand.primary
+          }
           size="small"
         />
       ) : (
@@ -71,21 +79,23 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: V2_RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Variants
   primary: {
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: V2_COLORS.brand.primary,
   },
   secondary: {
-    backgroundColor: COLORS.background.card,
+    backgroundColor: V2_COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: V2_COLORS.border.default,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: COLORS.accent.green,
+    borderColor: V2_COLORS.brand.primary,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -105,19 +115,20 @@ const styles = StyleSheet.create({
   },
   // Text styles
   text: {
+    ...V2_TYPOGRAPHY.body1,
     fontWeight: '600',
   },
   primaryText: {
-    color: COLORS.background.primary,
+    color: V2_COLORS.text.inverse,
   },
   secondaryText: {
-    color: COLORS.accent.green,
+    color: V2_COLORS.brand.primary,
   },
   outlineText: {
-    color: COLORS.accent.green,
+    color: V2_COLORS.brand.primary,
   },
   ghostText: {
-    color: COLORS.accent.green,
+    color: V2_COLORS.brand.primary,
   },
   smallText: {
     fontSize: 14,
@@ -137,4 +148,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Button; 
+export default Button;

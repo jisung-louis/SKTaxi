@@ -3,8 +3,11 @@ import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  V2_COLORS,
+  V2_RADIUS,
+  V2_TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 import { openAppStore } from '@/shared/lib/device/openAppStore';
 import type { VersionModalConfig } from '@/shared/types/version';
 
@@ -41,7 +44,7 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ visible, con
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <View style={styles.iconContainer}>
-            <Icon name={iconName} size={64} color={COLORS.accent.blue} />
+            <Icon name={iconName} size={64} color={V2_COLORS.accent.blue} />
           </View>
 
           <Text style={styles.title}>{title}</Text>
@@ -71,7 +74,7 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ visible, con
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: V2_COLORS.background.page,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -85,35 +88,35 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    ...TYPOGRAPHY.title2,
-    color: COLORS.text.primary,
+    ...V2_TYPOGRAPHY.title2,
+    color: V2_COLORS.text.primary,
     marginBottom: 16,
     textAlign: 'center',
   },
   message: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
+    ...V2_TYPOGRAPHY.body1,
+    color: V2_COLORS.text.secondary,
     textAlign: 'center',
     marginBottom: 32,
     lineHeight: 24,
   },
   updateButton: {
-    backgroundColor: COLORS.accent.blue,
+    backgroundColor: V2_COLORS.accent.blue,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: V2_RADIUS.md,
     width: '100%',
     alignItems: 'center',
     marginBottom: 16,
   },
   updateButtonText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.buttonText,
+    ...V2_TYPOGRAPHY.body1,
+    color: V2_COLORS.text.inverse,
     fontWeight: '600',
   },
   note: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.tertiary,
+    ...V2_TYPOGRAPHY.caption1,
+    color: V2_COLORS.text.tertiary,
     textAlign: 'center',
   },
 });
