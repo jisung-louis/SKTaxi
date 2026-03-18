@@ -22,7 +22,7 @@ export const CampusHomeHeader = ({
     <View style={styles.container}>
       <View style={styles.wordmarkContainer}>
         <Image
-          source={require('../../../../../assets/icons/skuri_icon.png')}
+          source={require('../../../../assets/icons/skuri_icon.png')}
           style={styles.wordmarkImage}
         />
         <Text style={styles.wordmark}>SKURI</Text>
