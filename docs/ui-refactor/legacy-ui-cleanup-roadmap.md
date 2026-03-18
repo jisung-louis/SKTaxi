@@ -68,6 +68,15 @@
 
 ### Phase 5. 택시 레거시 채팅 구성 제거
 
+완료 커밋:
+- `a4bce61` `refactor: 택시 레거시 채팅 구성 제거`
+
+정리 내용:
+- old 택시 채팅 입력/메뉴/메시지 리스트/정산/사이드메뉴 서브트리 제거
+- dead `useTaxiScreenPresenter`, `useChatScreenPresenter` 제거
+- 마지막 사용처가 사라지는 `shared/ui/Surface.tsx` 제거
+- `taxi/index.ts` 의 dead export 정리
+
 대상:
 - `src/features/taxi/components/chat/*`
 - `src/features/taxi/hooks/useChatScreenPresenter.ts`
