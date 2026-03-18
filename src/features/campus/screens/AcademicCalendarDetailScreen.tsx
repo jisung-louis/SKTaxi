@@ -14,10 +14,10 @@ import {
 import {normalizeDate} from '@/shared/lib/date';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {AcademicCalendarDetailHeader} from '../components/v2/AcademicCalendarDetailHeader';
-import {AcademicCalendarEventCard} from '../components/v2/AcademicCalendarEventCard';
-import {AcademicCalendarMonthView} from '../components/v2/AcademicCalendarMonthView';
-import {AcademicCalendarWeekView} from '../components/v2/AcademicCalendarWeekView';
+import {AcademicCalendarDetailHeader} from '../components/AcademicCalendarDetailHeader';
+import {AcademicCalendarEventCard} from '../components/AcademicCalendarEventCard';
+import {AcademicCalendarMonthView} from '../components/AcademicCalendarMonthView';
+import {AcademicCalendarWeekView} from '../components/AcademicCalendarWeekView';
 import {useAcademicCalendarDetailData} from '../hooks/useAcademicCalendarDetailData';
 
 type AcademicCalendarDetailRouteProp = RouteProp<

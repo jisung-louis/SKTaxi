@@ -16,14 +16,14 @@ import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {CampusAcademicCalendarPreviewCard} from '../components/v2/CampusAcademicCalendarPreviewCard';
-import {CampusCafeteriaPreviewCarousel} from '../components/v2/CampusCafeteriaPreviewCarousel';
-import {CampusHomeHeader} from '../components/v2/CampusHomeHeader';
-import {CampusNoticePreviewCard} from '../components/v2/CampusNoticePreviewCard';
-import {CampusQuickMenuGrid} from '../components/v2/CampusQuickMenuGrid';
-import {CampusSectionHeader} from '../components/v2/CampusSectionHeader';
-import {CampusTaxiPreviewCards} from '../components/v2/CampusTaxiPreviewCards';
-import {CampusTimetablePreviewCard} from '../components/v2/CampusTimetablePreviewCard';
+import {CampusAcademicCalendarPreviewCard} from '../components/CampusAcademicCalendarPreviewCard';
+import {CampusCafeteriaPreviewCarousel} from '../components/CampusCafeteriaPreviewCarousel';
+import {CampusHomeHeader} from '../components/CampusHomeHeader';
+import {CampusNoticePreviewCard} from '../components/CampusNoticePreviewCard';
+import {CampusQuickMenuGrid} from '../components/CampusQuickMenuGrid';
+import {CampusSectionHeader} from '../components/CampusSectionHeader';
+import {CampusTaxiPreviewCards} from '../components/CampusTaxiPreviewCards';
+import {CampusTimetablePreviewCard} from '../components/CampusTimetablePreviewCard';
 import {
   CAMPUS_HOME_ACTION_LABELS,
   CAMPUS_HOME_QUICK_MENU_ITEMS,

@@ -13,8 +13,8 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {CafeteriaCategoryCard} from '../components/v2/CafeteriaCategoryCard';
-import {CafeteriaDetailHeader} from '../components/v2/CafeteriaDetailHeader';
+import {CafeteriaCategoryCard} from '../components/CafeteriaCategoryCard';
+import {CafeteriaDetailHeader} from '../components/CafeteriaDetailHeader';
 import {useCafeteriaDetailData} from '../hooks/useCafeteriaDetailData';
 
 type CafeteriaDetailRouteProp = RouteProp<CampusStackParamList, 'CafeteriaDetail'>;
