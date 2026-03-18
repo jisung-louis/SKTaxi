@@ -24,13 +24,13 @@ import {
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {TimetableAddCourseSheet} from '../components/v2/TimetableAddCourseSheet';
-import {TimetableAllViewCard} from '../components/v2/TimetableAllViewCard';
-import {TimetableCourseDetailSheet} from '../components/v2/TimetableCourseDetailSheet';
-import {TimetableDetailHeader} from '../components/v2/TimetableDetailHeader';
-import {TimetableSemesterSheet} from '../components/v2/TimetableSemesterSheet';
-import {TimetableSupplementSection} from '../components/v2/TimetableSupplementSection';
-import {TimetableTodayViewCard} from '../components/v2/TimetableTodayViewCard';
+import {TimetableAddCourseSheet} from '../components/TimetableAddCourseSheet';
+import {TimetableAllViewCard} from '../components/TimetableAllViewCard';
+import {TimetableCourseDetailSheet} from '../components/TimetableCourseDetailSheet';
+import {TimetableDetailHeader} from '../components/TimetableDetailHeader';
+import {TimetableSemesterSheet} from '../components/TimetableSemesterSheet';
+import {TimetableSupplementSection} from '../components/TimetableSupplementSection';
+import {TimetableTodayViewCard} from '../components/TimetableTodayViewCard';
 import {useTimetableDetailData} from '../hooks/useTimetableDetailData';
 import type {TimetableDetailViewMode} from '../model/timetableDetailViewData';
 
