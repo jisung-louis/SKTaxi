@@ -128,7 +128,7 @@ export const BoardComposeForm = ({
           maxLength={TITLE_LIMIT}
           onChangeText={onChangeTitle}
           placeholder={titlePlaceholder}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor={V2_COLORS.border.default}
           style={styles.titleInput}
           value={title}
         />
@@ -143,7 +143,7 @@ export const BoardComposeForm = ({
           multiline
           onChangeText={onChangeContent}
           placeholder={contentPlaceholder}
-          placeholderTextColor="#D1D5DB"
+          placeholderTextColor={V2_COLORS.border.default}
           style={styles.contentInput}
           textAlignVertical="top"
           value={content}
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     color: V2_COLORS.text.inverse,
   },
   categoryChipSelected: {
-    backgroundColor: '#4ADE80',
+    backgroundColor: V2_COLORS.brand.primaryAccent,
   },
   categoryRow: {
     flexDirection: 'row',
@@ -230,13 +230,13 @@ const styles = StyleSheet.create({
   },
   counterLabel: {
     alignSelf: 'flex-end',
-    color: '#D1D5DB',
+    color: V2_COLORS.border.default,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 4,
   },
   inlineCounterLabel: {
-    color: '#D1D5DB',
+    color: V2_COLORS.border.default,
     fontSize: 12,
     lineHeight: 16,
   },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     paddingTop: V2_SPACING.lg,
   },
   toggleTitle: {
-    color: '#1F2937',
+    color: V2_COLORS.text.primary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,

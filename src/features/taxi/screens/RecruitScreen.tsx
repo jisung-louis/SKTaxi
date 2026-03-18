@@ -292,7 +292,7 @@ export const RecruitScreen = () => {
                 color={
                   canSubmit && !isSubmitting
                     ? V2_COLORS.text.inverse
-                    : '#98A2B3'
+                    : V2_COLORS.text.muted
                 }
                 name="car-sport-outline"
                 size={22}
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     ...V2_SHADOWS.floating,
   },
   submitButtonDisabled: {
-    backgroundColor: '#F2F4F7',
+    backgroundColor: V2_COLORS.background.subtle,
     shadowOpacity: 0,
   },
   submitButtonLabel: {
@@ -449,6 +449,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   submitButtonLabelDisabled: {
-    color: '#98A2B3',
+    color: V2_COLORS.text.muted,
   },
 });
