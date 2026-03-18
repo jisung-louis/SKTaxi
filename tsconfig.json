@@ -2,6 +2,7 @@
   "extends": "@react-native/typescript-config/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
+    "moduleSuffixes": [".local", ""],
     "paths": {
       "@/app/*": ["src/app/*"],
       "@/shared/*": ["src/shared/*"],

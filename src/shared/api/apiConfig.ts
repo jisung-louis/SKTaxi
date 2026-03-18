@@ -1,3 +1,5 @@
+import { API_BASE_URL } from './apiBaseUrl';
+
 export interface ApiRuntimeConfig {
   restBaseUrl: string;
   wsEndpointPath: string;
@@ -18,7 +20,7 @@ export type ApiQueryValue =
 export type ApiQueryParams = Record<string, ApiQueryValue>;
 
 const DEFAULT_API_RUNTIME_CONFIG: ApiRuntimeConfig = {
-  restBaseUrl: 'https://api.skuri.kr',
+  restBaseUrl: API_BASE_URL,
   wsEndpointPath: '/ws',
   httpTimeoutMs: 15000,
   sseReconnectDelayMs: 3000,
@@ -112,4 +114,3 @@ export const buildWebSocketUrl = (
 
   return httpUrl;
 };
-
