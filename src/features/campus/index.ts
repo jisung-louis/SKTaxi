@@ -84,3 +84,4 @@ export type {
 
 export { AcademicCalendarDetailScreen } from './screens/AcademicCalendarDetailScreen';
 export { CafeteriaDetailScreen } from './screens/CafeteriaDetailScreen';
+export { CampusScreen } from './screens/CampusScreen';

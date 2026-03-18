@@ -5,8 +5,8 @@ import { type CampusStackParamList } from '@/app/navigation/types';
 import {
   AcademicCalendarDetailScreen,
   CafeteriaDetailScreen,
+  CampusScreen,
 } from '@/features/campus';
-import { CampusScreen } from '@/features/campus/screens/CampusScreen';
 import {
   MinecraftDetailScreen,
   MinecraftMapDetailScreen,

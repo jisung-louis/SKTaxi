@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
-import {V2StateCard} from '@/shared/design-system/components/V2StateCard';
+import {V2StateCard} from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
