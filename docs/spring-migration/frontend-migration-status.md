@@ -252,12 +252,9 @@ Phase B 완료 판단 근거:
 
 `npx tsc --noEmit`는 현재 프로젝트의 기존 선행 오류들 때문에 전체 성공하지 않는다.
 
-이번 작업과 직접 무관한 기존 오류 영역:
+현재 확인된 기존 선행 오류 영역:
 
-- `firebase-cloud-functions/*`
-- 일부 `board/*`
-- 일부 `taxi/testing/*`
-- 일부 `user/model/*`
+- `firebase-cloud-functions/src/index.ts`
 
 따라서 다음 작업자는 다음 원칙으로 검증한다.
 
@@ -283,4 +280,5 @@ Phase B 완료 판단 근거:
 - 아키텍처 기준 수립 완료
 - 실행 로드맵 수립 완료
 - Phase A 1차 완료
-- 다음 작업은 Phase B 또는 Phase C부터 시작
+- Phase B 후속 정리 완료
+- 다음 작업은 Phase C부터 시작
