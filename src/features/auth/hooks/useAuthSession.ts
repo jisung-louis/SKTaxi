@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useRepository } from '@/di';
+import { registerAuthTokenResolver } from '@/shared/api';
 import { useUserRepository } from '@/features/user';
 
 import { AuthContextValue, AuthState } from '../model/types';
@@ -23,6 +24,12 @@ export const useAuthSession = (): AuthContextValue => {
     user: null,
     loading: true,
   });
+
+  useEffect(() => {
+    return registerAuthTokenResolver(({ forceRefresh } = {}) =>
+      authRepository.refreshToken(forceRefresh),
+    );
+  }, [authRepository]);
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | undefined;
