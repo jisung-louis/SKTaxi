@@ -109,8 +109,9 @@
 
 ### Phase 8. 레거시 토큰 종결
 
-진행 중 커밋:
+완료 커밋:
 - `3a4e921` `refactor: 공용 UI 디자인 토큰을 v2로 이관`
+- `56b41d9` `refactor: 레거시 색상 헬퍼 정리`
 
 목표:
 - `src/shared/constants/colors.ts` import 0
@@ -125,17 +126,18 @@
 - dead route `ChatList` 와 관련 screen/components/hook 제거
 - dead route `NoticeDetailWebView` 와 관련 screen 제거
 - dead helper `getChatRoomColor`, `getBoardCategoryColor` 제거
+- `JoinRequestModal` 을 v2 UI 및 v2 토큰 기반으로 개편
 - `toNoticeDetailWebViewUrl` 은 future reference 용 util로 유지
+- `src/features`, `src/shared` 범위에서 legacy `colors`, `typography` import 0 달성
 
 이번 배치 대상:
-- `chat`: `getChatRoomColor`
-- `board`: `getBoardCategoryColor`
+- `taxi`: `JoinRequestModal` v2 UI 개편
 
 이번 배치 제외:
-- `taxi`: `JoinRequestModal`
+- 없음
 
 남은 주요 사용처:
-- `taxi`: `JoinRequestModal`
+- 없음
 
 ## 현재 live로 판단한 예외
 
