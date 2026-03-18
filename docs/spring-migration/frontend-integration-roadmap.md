@@ -256,7 +256,8 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - `memberRepository`를 전역 DI에 등록했다.
 - `useAuthSession()`에서 auth user 감지 시 `POST /v1/members` → `GET /v1/members/me`를 먼저 수행한다.
 - `signInWithGoogle()` / `signInWithEmailAndPassword()`는 auth session bootstrap 완료까지 대기한다.
-- FCM token 등록/삭제의 Spring 이전은 아직 남아 있다.
+- 앱 런타임 토큰 등록/refresh/로그아웃 토큰 해제를 `/v1/members/me/fcm-tokens`로 이전했다.
+- 기존 `IUserRepository` 기반 Firebase FCM token 저장 경로는 제거했다.
 
 완료 기준:
 
@@ -480,7 +481,7 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - [x] 보호 API가 Firebase ID Token Bearer 인증으로 동작한다.
 - [x] `POST /v1/members` bootstrap이 앱 시작 흐름에 포함된다.
 - [x] `GET /v1/members/me` bootstrap이 앱 시작 흐름에 포함된다.
-- [ ] FCM token 등록/삭제가 Spring API를 사용한다.
+- [x] FCM token 등록/삭제가 Spring API를 사용한다.
 - [ ] Notification inbox가 Spring REST + SSE로 동작한다.
 - [ ] Taxi home/party/join-request가 Spring REST + SSE로 동작한다.
 - [ ] Chat이 REST + STOMP로 동작한다.

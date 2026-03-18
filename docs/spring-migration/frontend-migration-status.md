@@ -23,14 +23,14 @@
 - 최종 구조 기준 문서는 작성 완료
 - 실행 로드맵 문서는 작성 완료
 - Phase A 공통 transport 기반 구축은 1차 완료
-- auth/member 경로의 Spring concrete repository는 1차 연결 완료
+- auth/member 경로의 Spring concrete repository는 연결 완료
 - 전역 DI와 feature-local entrypoint의 혼재는 아직 남아 있음
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
 즉, 현재 상태는 다음과 같이 요약할 수 있다.
 
 - 공통 infra는 준비되었고
-- auth bootstrap은 Spring 기준으로 고정되기 시작했고
+- auth/bootstrap과 FCM token 경로는 Spring 기준으로 고정됐고
 - 이제부터는 남은 feature별 Spring 연결과 중앙화 수렴을 함께 진행하면 된다.
 
 ---
@@ -40,7 +40,7 @@
 | Phase | 상태 | 비고 |
 |------|------|------|
 | Phase A. 공통 Transport 구축 | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가 |
-| Phase B. 인증/회원 bootstrap 정리 | 진행 중(bootstrap 1차 완료) | `POST /v1/members` / `GET /v1/members/me` auth bootstrap 연결 완료, FCM token Spring 이전 남음 |
+| Phase B. 인증/회원 bootstrap 정리 | 완료 | auth bootstrap + FCM token Spring API 이전 완료 |
 | Phase C. App Notice / Notification Center / Taxi Home | 미시작 | 추천 첫 concrete migration 대상 |
 | Phase D. Notification 정식 이전 | 미시작 | REST + SSE 전환 필요 |
 | Phase E. Taxi Party 정식 이전 | 미시작 | REST + SSE 전환 필요 |
@@ -101,7 +101,6 @@
 - concrete Spring repository 구현
 - 실제 SSE 클라이언트 구현체 선택 및 연결
 - 실제 STOMP 라이브러리 연결
-- FCM token 등록/삭제의 Spring API 이전
 
 ### 4.4 Phase B 구현
 
@@ -113,6 +112,7 @@
 - `src/features/member/data/repositories/IMemberRepository.ts`
 - `src/features/member/data/repositories/SpringMemberRepository.ts`
 - `src/features/member/model/types.ts`
+- `src/features/member/services/memberFcmTokenService.ts`
 - `src/features/member/index.ts`
 - `src/di/RepositoryContext.ts`
 - `src/di/RepositoryProvider.tsx`
@@ -120,6 +120,11 @@
 - `src/di/useRepository.ts`
 - `src/features/auth/services/authSessionService.ts`
 - `src/features/auth/hooks/useAuthSession.ts`
+- `src/app/bootstrap/registerPushHandlers.ts`
+- `src/features/auth/services/permissionOnboardingService.ts`
+- `src/features/auth/hooks/usePermissionOnboarding.ts`
+- `src/features/user/data/repositories/IUserRepository.ts`
+- `src/features/user/data/repositories/FirebaseUserRepository.ts`
 
 핵심 변경:
 
@@ -132,6 +137,8 @@
   4. `GET /v1/members/me`
 - `signInWithGoogle()` / `signInWithEmailAndPassword()`는 auth session 준비가 끝날 때까지 대기
 - bootstrap 실패 시 half-authenticated 상태로 진행하지 않고 세션을 정리
+- 앱 런타임 토큰 등록/refresh/로그아웃 토큰 해제를 모두 `/v1/members/me/fcm-tokens`로 전환
+- `IUserRepository`의 Firebase FCM token 저장 메서드를 제거해 direct Firebase 저장 경로를 정리
 
 ### 4.5 Phase B 현재 결과
 
@@ -140,11 +147,10 @@
 - 앱 재시작 시 기존 Firebase 세션이 있으면 Spring member bootstrap을 먼저 수행
 - 신규 로그인 시 login function이 member bootstrap 완료 전에는 성공으로 반환되지 않음
 - hook/screen에 서버 DTO를 직접 노출하지 않고 auth는 repository 경계만 참조
+- FCM token 등록/refresh/삭제가 member repository 경유로 Spring API를 호출함
 
 현재 아직 남은 것:
 
-- `POST /v1/members/me/fcm-tokens`
-- `DELETE /v1/members/me/fcm-tokens`
 - Phase C concrete feature migration 시작
 
 ---
@@ -171,13 +177,11 @@
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Phase B
-   - FCM token 등록/삭제를 Spring API로 이전
-2. Phase C
+1. Phase C
    - App Notice
    - Notification Center
    - Taxi Home
-3. Phase D 이후
+2. Phase D 이후
    - Notification
    - Taxi Party
    - Chat
