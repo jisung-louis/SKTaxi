@@ -52,3 +52,47 @@ export const buildNoticePushForegroundNotification = (data: {
     type: 'notice_notification',
   };
 };
+
+/**
+ * 공지사항 목록 조회 페이지 URL에서 공지사항 상세 웹뷰 URL로 변환하기 위한 매핑 정보
+ */
+const bbsToSubviewMap: Record<string, string> = {
+  '97': '342',
+  '96': '343',
+  '116': '901',
+  '95': '344',
+  '94': '345',
+  '93': '346',
+  '90': '347',
+  '89': '348',
+  '87': '349',
+  '86': '350',
+  '84': '351',
+  '83': '352',
+  '82': '353',
+  '80': '354',
+};
+
+/**
+ * 공지사항 목록 조회 페이지 URL에서 공지사항 상세 웹뷰 URL로 변환
+ * @param link 공지사항 상세 웹뷰 URL
+ * @returns 공지사항 상세 웹뷰 URL
+ */
+export const toNoticeDetailWebViewUrl = (link: string) => {
+  const match = link.match(/bbs\/skukr\/(\d+)\/(\d+)\/artclView\.do/);
+  if (!match) {
+    return link;
+  }
+
+  const [, bbsId, articleId] = match;
+  const subviewId = bbsToSubviewMap[bbsId];
+  if (!subviewId) {
+    return link;
+  }
+
+  const rawPath = `/bbs/skukr/${bbsId}/${articleId}/artclView.do?isViewMine=false&bbsClSeq=&srchWrd=&page=1&password=`;
+  const encodedPath = encodeURIComponent(rawPath);
+  const fullEncoded = btoa(`fnct1|@@|${encodedPath}`);
+
+  return `https://www.sungkyul.ac.kr/skukr/${subviewId}/subview.do?enc=${fullEncoded}`;
+};
