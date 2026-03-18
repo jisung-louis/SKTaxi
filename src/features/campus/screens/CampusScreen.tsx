@@ -11,7 +11,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -66,7 +66,7 @@ export const CampusScreen = () => {
 
           {loading && !data ? (
             <View style={styles.section}>
-              <V2StateCard
+              <StateCard
                 description="캠퍼스 정보를 불러오는 중입니다."
                 icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
                 title="Campus 화면 준비 중"
@@ -76,7 +76,7 @@ export const CampusScreen = () => {
 
           {error && !data ? (
             <View style={styles.section}>
-              <V2StateCard
+              <StateCard
                 actionLabel="다시 시도"
                 description={error}
                 icon={

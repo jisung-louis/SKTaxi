@@ -14,8 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  V2PageHeader,
-  V2SegmentedControl,
+  PageHeader,
+  SegmentedControl,
 } from '@/shared/design-system/components';
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {useScreenEnterAnimation} from '@/shared/hooks';
@@ -181,7 +181,7 @@ export const CommunityScreen = () => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         <View style={styles.headerSection}>
-          <V2PageHeader
+          <PageHeader
             actionAccessibilityLabel="커뮤니티 검색"
             onPressAction={handlePressHeaderAction}
             subtitle="학우들과 소통하고 정보를 나눠요"
@@ -190,7 +190,7 @@ export const CommunityScreen = () => {
         </View>
 
         <View style={styles.segmentSection}>
-          <V2SegmentedControl
+          <SegmentedControl
             items={SEGMENTS}
             onSelect={setSelectedSegment}
             selectedId={selectedSegment}

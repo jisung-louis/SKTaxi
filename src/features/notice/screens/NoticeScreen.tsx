@@ -12,7 +12,7 @@ import {useIsFocused, useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
-import {V2PageHeader} from '@/shared/design-system/components';
+import {PageHeader} from '@/shared/design-system/components';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
@@ -118,7 +118,7 @@ export const NoticeScreen = () => {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.content, screenAnimatedStyle]}>
         <View style={styles.headerSection}>
-          <V2PageHeader
+          <PageHeader
             actionAccessibilityLabel="공지 알림 설정 열기"
             onPressAction={() => setPanelVisible(true)}
             subtitle={data.subtitle}

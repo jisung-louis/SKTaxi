@@ -6,7 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import type {CampusStackParamList} from '@/app/navigation/types';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_SPACING,
@@ -135,7 +135,7 @@ export const AcademicCalendarDetailScreen = () => {
           ]}
           showsVerticalScrollIndicator={false}>
           {loading && !data ? (
-            <V2StateCard
+            <StateCard
               description="학사일정을 준비하고 있습니다."
               icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
               style={styles.stateCard}
@@ -144,7 +144,7 @@ export const AcademicCalendarDetailScreen = () => {
           ) : null}
 
           {error && !data ? (
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={
@@ -200,7 +200,7 @@ export const AcademicCalendarDetailScreen = () => {
                   ))}
                 </View>
               ) : (
-                <V2StateCard
+                <StateCard
                   description="선택한 기간에는 등록된 학사일정이 없습니다."
                   icon={
                     <Icon

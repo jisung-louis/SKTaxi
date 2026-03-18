@@ -9,7 +9,7 @@ import {
 
 import {V2_COLORS, V2_SPACING} from '../tokens';
 
-interface V2FormFieldProps {
+interface FormFieldProps {
   children: React.ReactNode;
   counterLabel?: string;
   label: string;
@@ -18,14 +18,14 @@ interface V2FormFieldProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const V2FormField = ({
+export const FormField = ({
   children,
   counterLabel,
   label,
   optionalLabel,
   required = false,
   style,
-}: V2FormFieldProps) => {
+}: FormFieldProps) => {
   return (
     <View style={style}>
       <View style={styles.labelRow}>

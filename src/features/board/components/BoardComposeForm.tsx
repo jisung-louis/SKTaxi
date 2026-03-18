@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 
-import {V2ToggleSwitch} from '@/shared/design-system/components';
+import {ToggleSwitch} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_SPACING,
@@ -178,7 +178,7 @@ export const BoardComposeForm = ({
           </Text>
         </View>
 
-        <V2ToggleSwitch
+        <ToggleSwitch
           accessibilityLabel="익명으로 올리기"
           onValueChange={onToggleAnonymous}
           value={isAnonymous}

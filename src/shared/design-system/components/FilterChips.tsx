@@ -10,25 +10,25 @@ import {
 
 import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
 
-export interface V2FilterChipItem<T extends string = string> {
+export interface FilterChipItem<T extends string = string> {
   id: T;
   label: string;
   selected: boolean;
 }
 
-interface V2FilterChipsProps<T extends string = string> {
+interface FilterChipsProps<T extends string = string> {
   inactiveVariant?: 'subtle' | 'surface';
-  items: V2FilterChipItem<T>[];
+  items: FilterChipItem<T>[];
   onPressItem: (itemId: T) => void;
   style?: StyleProp<ViewStyle>;
 }
 
-export const V2FilterChips = <T extends string>({
+export const FilterChips = <T extends string>({
   inactiveVariant = 'subtle',
   items,
   onPressItem,
   style,
-}: V2FilterChipsProps<T>) => {
+}: FilterChipsProps<T>) => {
   const inactiveStyle =
     inactiveVariant === 'surface'
       ? styles.chipSurfaceInactive

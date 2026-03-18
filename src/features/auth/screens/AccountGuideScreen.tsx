@@ -15,7 +15,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import WebView from 'react-native-webview';
 
 import type {AuthStackParamList} from '@/app/navigation/types';
-import {V2StackHeader} from '@/shared/design-system/components';
+import {StackHeader} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -88,7 +88,7 @@ export const AccountGuideScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.container}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title="성결대 이메일 발급 안내"
       />

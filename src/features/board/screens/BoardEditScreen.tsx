@@ -14,7 +14,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {
-  V2StateCard,
+  StateCard,
 } from '@/shared/design-system/components';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -193,7 +193,7 @@ export const BoardEditScreen = () => {
           </View>
         ) : error || !post ? (
           <View style={styles.centeredState}>
-            <V2StateCard
+            <StateCard
               actionLabel="뒤로 가기"
               description={error ?? '게시글을 찾을 수 없습니다.'}
               icon={

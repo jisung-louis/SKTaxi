@@ -18,7 +18,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {useAuth, useAuthLoginProvider} from '@/features/auth';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -213,7 +213,7 @@ export const MyScreen = () => {
           </TouchableOpacity>
 
           {loading && !data ? (
-            <V2StateCard
+            <StateCard
               description="마이페이지를 준비하고 있습니다."
               icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
               style={styles.stateCard}
@@ -222,7 +222,7 @@ export const MyScreen = () => {
           ) : null}
 
           {error && !data ? (
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={

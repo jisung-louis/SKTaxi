@@ -6,7 +6,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
-import {V2StackHeader, V2StateCard} from '@/shared/design-system/components';
+import {StackHeader, StateCard} from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -23,7 +23,7 @@ export const TaxiHistoryScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title="택시 이용 내역"
       />
@@ -32,7 +32,7 @@ export const TaxiHistoryScreen = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
         {loading && !data ? (
-          <V2StateCard
+          <StateCard
             description="택시 이용 내역을 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="택시 이용 내역을 불러오는 중"
@@ -40,7 +40,7 @@ export const TaxiHistoryScreen = () => {
         ) : null}
 
         {error && !data ? (
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={

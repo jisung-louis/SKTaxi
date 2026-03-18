@@ -12,10 +12,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2SettingsRow,
-  V2SettingsSection,
-  V2StackHeader,
-  V2StateCard,
+  SettingsRow,
+  SettingsSection,
+  StackHeader,
+  StateCard,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -31,7 +31,7 @@ export const NotificationSettingsScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title="알림 설정"
       />
@@ -39,7 +39,7 @@ export const NotificationSettingsScreen = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}>
         {loading && !data ? (
-          <V2StateCard
+          <StateCard
             description="알림 설정을 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="알림 설정을 불러오는 중"
@@ -47,7 +47,7 @@ export const NotificationSettingsScreen = () => {
         ) : null}
 
         {error && !data ? (
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={
@@ -66,8 +66,8 @@ export const NotificationSettingsScreen = () => {
 
         {data ? (
           <>
-            <V2SettingsSection style={styles.masterSection}>
-              <V2SettingsRow
+            <SettingsSection style={styles.masterSection}>
+              <SettingsRow
                 accessoryType="toggle"
                 iconBackgroundColor={data.master.iconBackgroundColor}
                 iconColor={data.master.iconColor}
@@ -79,11 +79,11 @@ export const NotificationSettingsScreen = () => {
                 titleWeight="700"
                 toggleValue={data.master.value}
               />
-            </V2SettingsSection>
+            </SettingsSection>
 
-            <V2SettingsSection style={styles.detailSection} title="세부 알림 설정">
+            <SettingsSection style={styles.detailSection} title="세부 알림 설정">
               {data.items.map((item, index) => (
-                <V2SettingsRow
+                <SettingsRow
                   key={item.key}
                   accessoryType="toggle"
                   disabled={item.disabled}
@@ -100,7 +100,7 @@ export const NotificationSettingsScreen = () => {
                   toggleValue={item.value}
                 />
               ))}
-            </V2SettingsSection>
+            </SettingsSection>
 
             <Text style={styles.footerText}>기기의 알림 설정이 꺼져 있으면 알림을 받을 수 없어요.</Text>
             <Text style={styles.footerText}>기기 설정에서 알림 권한을 허용해주세요.</Text>

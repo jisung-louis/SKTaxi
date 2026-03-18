@@ -8,7 +8,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
 import {navigateToNoticeDetail} from '@/features/notice';
-import {V2StackHeader, V2StateCard} from '@/shared/design-system/components';
+import {StackHeader, StateCard} from '@/shared/design-system/components';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -35,11 +35,11 @@ export const BookmarksScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader onPressBack={() => navigation.goBack()} title="북마크" />
+      <StackHeader onPressBack={() => navigation.goBack()} title="북마크" />
 
       {loading && !data ? (
         <View style={styles.stateWrap}>
-          <V2StateCard
+          <StateCard
             description="북마크를 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="북마크를 불러오는 중"
@@ -49,7 +49,7 @@ export const BookmarksScreen = () => {
 
       {error && !data ? (
         <View style={styles.stateWrap}>
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={

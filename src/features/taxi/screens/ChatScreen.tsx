@@ -15,8 +15,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
 import {
-  V2DetailComposer,
-  V2StateCard,
+  DetailComposer,
+  StateCard,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
@@ -95,7 +95,7 @@ export const ChatScreen = () => {
           </View>
         ) : error ? (
           <View style={styles.centeredState}>
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={
@@ -124,7 +124,7 @@ export const ChatScreen = () => {
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               keyboardVerticalOffset={0}>
-              <V2DetailComposer
+              <DetailComposer
                 leadingActionAccessibilityLabel="첨부 메뉴"
                 leadingIconName="add-outline"
                 onChangeText={setComposerValue}

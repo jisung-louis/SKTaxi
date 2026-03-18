@@ -23,7 +23,7 @@ import {
   V2_SPACING,
 } from '../tokens';
 
-interface V2SelectionDropdownProps {
+interface SelectionDropdownProps {
   isOpen: boolean;
   maxHeight?: number;
   onPressSelect: (value: string) => void;
@@ -34,7 +34,7 @@ interface V2SelectionDropdownProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const V2SelectionDropdown = ({
+export const SelectionDropdown = ({
   isOpen,
   maxHeight = 208,
   onPressSelect,
@@ -43,7 +43,7 @@ export const V2SelectionDropdown = ({
   placeholder = '',
   selectedValue,
   style,
-}: V2SelectionDropdownProps) => {
+}: SelectionDropdownProps) => {
   const triggerLabel = selectedValue || placeholder;
   const progress = useSharedValue(isOpen ? 1 : 0);
   const dropdownHeight = Math.min(options.length * 44, maxHeight);

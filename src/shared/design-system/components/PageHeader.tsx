@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
 
-interface V2PageHeaderProps {
+interface PageHeaderProps {
   actionAccessibilityLabel?: string;
   actionIconName?: string;
   actionIconSize?: number;
@@ -13,14 +13,14 @@ interface V2PageHeaderProps {
   title: string;
 }
 
-export const V2PageHeader = ({
+export const PageHeader = ({
   actionAccessibilityLabel = '열기',
   actionIconName = 'search-outline',
   actionIconSize = 22,
   onPressAction,
   subtitle,
   title,
-}: V2PageHeaderProps) => {
+}: PageHeaderProps) => {
   return (
     <View style={styles.container}>
       <View>

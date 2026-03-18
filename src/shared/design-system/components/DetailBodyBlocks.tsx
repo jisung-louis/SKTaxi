@@ -5,11 +5,11 @@ import type {ContentDetailBodyBlockViewData} from '@/shared/types/contentDetailV
 
 import {V2_COLORS, V2_RADIUS, V2_SPACING} from '../tokens';
 
-interface V2DetailBodyBlocksProps {
+interface DetailBodyBlocksProps {
   blocks: ContentDetailBodyBlockViewData[];
 }
 
-export const V2DetailBodyBlocks = ({blocks}: V2DetailBodyBlocksProps) => {
+export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
   return (
     <View>
       {blocks.map((block, index) => {

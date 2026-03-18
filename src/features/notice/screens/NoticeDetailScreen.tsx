@@ -16,14 +16,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
 import {
-  V2DetailBackHeader,
-  V2DetailBodyBlocks,
-  V2DetailCommentCard,
-  V2DetailComposer,
-  V2DetailNotFoundState,
-  V2DetailReactionChip,
-  V2StateCard,
-  V2ToneBadge,
+  DetailBackHeader,
+  DetailBodyBlocks,
+  DetailCommentCard,
+  DetailComposer,
+  DetailNotFoundState,
+  DetailReactionChip,
+  StateCard,
+  ToneBadge,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {
@@ -87,7 +87,7 @@ export const NoticeDetailScreen = () => {
           </View>
         ) : notFound ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
-            <V2DetailNotFoundState
+            <DetailNotFoundState
               actionLabel="목록으로 돌아가기"
               onPressAction={handlePressReturnToList}
               title="공지사항을 찾을 수 없어요"
@@ -95,7 +95,7 @@ export const NoticeDetailScreen = () => {
           </View>
         ) : error ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={
@@ -126,14 +126,14 @@ export const NoticeDetailScreen = () => {
               showsVerticalScrollIndicator={false}>
               <View style={styles.metaRow}>
                 {primaryBadge ? (
-                  <V2ToneBadge
+                  <ToneBadge
                     label={primaryBadge.label}
                     tone={primaryBadge.tone}
                   />
                 ) : null}
                 <Text style={styles.dateLabel}>{data.dateLabel}</Text>
                 {secondaryBadges.map(badge => (
-                  <V2ToneBadge
+                  <ToneBadge
                     key={badge.id}
                     label={badge.label}
                     tone={badge.tone}
@@ -144,7 +144,7 @@ export const NoticeDetailScreen = () => {
               <Text style={styles.title}>{data.title}</Text>
               <View style={styles.divider} />
 
-              <V2DetailBodyBlocks blocks={data.bodyBlocks} />
+              <DetailBodyBlocks blocks={data.bodyBlocks} />
 
               {data.attachments && data.attachments.length > 0 ? (
                 <View style={styles.attachmentsSection}>
@@ -154,7 +154,7 @@ export const NoticeDetailScreen = () => {
 
               <View style={styles.reactionsRow}>
                 {data.reactions.map(reaction => (
-                  <V2DetailReactionChip
+                  <DetailReactionChip
                     count={reaction.count}
                     iconName={reaction.iconName}
                     key={reaction.id}
@@ -174,7 +174,7 @@ export const NoticeDetailScreen = () => {
               ) : (
                 <View style={styles.commentsList}>
                   {data.comments.map(comment => (
-                    <V2DetailCommentCard comment={comment} key={comment.id} />
+                    <DetailCommentCard comment={comment} key={comment.id} />
                   ))}
                 </View>
               )}
@@ -185,12 +185,12 @@ export const NoticeDetailScreen = () => {
               keyboardVerticalOffset={0}
               pointerEvents="box-none"
               style={styles.composerAvoidingView}>
-              <V2DetailComposer placeholder={data.commentInputPlaceholder} />
+              <DetailComposer placeholder={data.commentInputPlaceholder} />
             </KeyboardAvoidingView>
           </>
         ) : null}
 
-        <V2DetailBackHeader onPressBack={handlePressBack} />
+        <DetailBackHeader onPressBack={handlePressBack} />
       </Animated.View>
     </SafeAreaView>
   );

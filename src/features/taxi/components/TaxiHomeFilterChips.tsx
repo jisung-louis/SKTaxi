@@ -2,8 +2,8 @@ import React from 'react';
 
 import type {TaxiHomeFilterChipViewData} from '../../model/taxiHomeViewData';
 import {
-  V2FilterChips,
-  type V2FilterChipItem,
+  FilterChips,
+  type FilterChipItem,
 } from '@/shared/design-system/components';
 
 interface TaxiHomeFilterChipsProps {
@@ -15,12 +15,12 @@ export const TaxiHomeFilterChips = ({
   filters,
   onPressFilter,
 }: TaxiHomeFilterChipsProps) => {
-  const items: V2FilterChipItem<TaxiHomeFilterChipViewData['id']>[] =
+  const items: FilterChipItem<TaxiHomeFilterChipViewData['id']>[] =
     filters.map(filter => ({
       id: filter.id,
       label: filter.label,
       selected: filter.selected,
     }));
 
-  return <V2FilterChips items={items} onPressItem={onPressFilter} />;
+  return <FilterChips items={items} onPressItem={onPressFilter} />;
 };

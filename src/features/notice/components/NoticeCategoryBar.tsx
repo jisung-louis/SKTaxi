@@ -1,7 +1,7 @@
 import React from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 
-import {V2FilterChips} from '@/shared/design-system/components';
+import {FilterChips} from '@/shared/design-system/components';
 import {V2_SPACING} from '@/shared/design-system/tokens';
 
 import type {NoticeHomeCategoryChipViewData} from '../../model/noticeHomeViewData';
@@ -20,7 +20,7 @@ export const NoticeCategoryBar = ({
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.content}>
-      <V2FilterChips
+      <FilterChips
         inactiveVariant="surface"
         items={categories}
         onPressItem={onSelectCategory}

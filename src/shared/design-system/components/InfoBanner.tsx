@@ -10,7 +10,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {V2_RADIUS, V2_SPACING} from '../tokens';
 
-interface V2InfoBannerProps {
+interface InfoBannerProps {
   backgroundColor: string;
   iconColor: string;
   iconName: string;
@@ -19,14 +19,14 @@ interface V2InfoBannerProps {
   textColor: string;
 }
 
-export const V2InfoBanner = ({
+export const InfoBanner = ({
   backgroundColor,
   iconColor,
   iconName,
   lines,
   style,
   textColor,
-}: V2InfoBannerProps) => {
+}: InfoBannerProps) => {
   return (
     <View style={[styles.container, {backgroundColor}, style]}>
       <Icon color={iconColor} name={iconName} size={16} style={styles.icon} />

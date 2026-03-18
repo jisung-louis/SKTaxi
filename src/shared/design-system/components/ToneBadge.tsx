@@ -5,7 +5,7 @@ import type {ContentDetailBadgeTone} from '@/shared/types/contentDetailViewData'
 
 import {V2_COLORS, V2_RADIUS, V2_SPACING} from '../tokens';
 
-interface V2ToneBadgeProps {
+interface ToneBadgeProps {
   label: string;
   style?: StyleProp<ViewStyle>;
   tone: ContentDetailBadgeTone;
@@ -47,7 +47,7 @@ const getToneStyle = (tone: ContentDetailBadgeTone) => {
   }
 };
 
-export const V2ToneBadge = ({label, style, tone}: V2ToneBadgeProps) => {
+export const ToneBadge = ({label, style, tone}: ToneBadgeProps) => {
   const toneStyle = getToneStyle(tone);
 
   return (

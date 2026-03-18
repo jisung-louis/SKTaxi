@@ -15,8 +15,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {handleStoredNotificationNavigation} from '@/app/navigation/services/notificationNavigation';
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2StackHeader,
-  V2StateCard,
+  StackHeader,
+  StateCard,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -102,7 +102,7 @@ export const NotificationScreen = () => {
   const renderInboxContent = () => {
     if (notificationCenter.loading && !notificationCenter.data) {
       return (
-        <V2StateCard
+        <StateCard
           description="도착한 알림을 확인하는 중입니다."
           icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
           title="알림함을 불러오는 중"
@@ -112,7 +112,7 @@ export const NotificationScreen = () => {
 
     if (notificationCenter.error || !notificationCenter.data) {
       return (
-        <V2StateCard
+        <StateCard
           actionLabel="다시 시도"
           description={
             notificationCenter.error ??
@@ -142,7 +142,7 @@ export const NotificationScreen = () => {
   const renderAppNoticeContent = () => {
     if (appNoticeFeed.loading && !appNoticeFeed.data) {
       return (
-        <V2StateCard
+        <StateCard
           description="최근 앱 공지사항을 정리하고 있습니다."
           icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
           title="앱 공지사항을 불러오는 중"
@@ -152,7 +152,7 @@ export const NotificationScreen = () => {
 
     if (appNoticeFeed.error || !appNoticeFeed.data) {
       return (
-        <V2StateCard
+        <StateCard
           actionLabel="다시 시도"
           description={
             appNoticeFeed.error ??
@@ -181,7 +181,7 @@ export const NotificationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         rightAccessory={headerRightAccessory}
         title="알림"

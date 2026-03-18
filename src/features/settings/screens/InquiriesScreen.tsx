@@ -15,9 +15,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2FormField,
-  V2InfoBanner,
-  V2StackHeader,
+  FormField,
+  InfoBanner,
+  StackHeader,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -75,20 +75,20 @@ export const InquiriesScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader onPressBack={() => navigation.goBack()} title="문의하기" />
+      <StackHeader onPressBack={() => navigation.goBack()} title="문의하기" />
 
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <V2FormField label="문의 유형" required style={styles.section}>
+        <FormField label="문의 유형" required style={styles.section}>
           <InquiryTypeChips
             items={data.typeOptions}
             onPressItem={selectType}
           />
-        </V2FormField>
+        </FormField>
 
-        <V2FormField
+        <FormField
           counterLabel={data.titleCountLabel}
           label="제목"
           required
@@ -101,9 +101,9 @@ export const InquiriesScreen = () => {
             style={styles.input}
             value={title}
           />
-        </V2FormField>
+        </FormField>
 
-        <V2FormField
+        <FormField
           counterLabel={data.contentCountLabel}
           label="문의 내용"
           required
@@ -118,9 +118,9 @@ export const InquiriesScreen = () => {
             textAlignVertical="top"
             value={content}
           />
-        </V2FormField>
+        </FormField>
 
-        <V2FormField
+        <FormField
           label={data.attachmentTitle}
           optionalLabel="(선택)"
           style={styles.section}>
@@ -144,9 +144,9 @@ export const InquiriesScreen = () => {
               {data.attachmentHelperLines[1]}
             </Text>
           </TouchableOpacity>
-        </V2FormField>
+        </FormField>
 
-        <V2InfoBanner
+        <InfoBanner
           backgroundColor={V2_COLORS.brand.primaryTint}
           iconColor={V2_COLORS.brand.primary}
           iconName="information-circle-outline"

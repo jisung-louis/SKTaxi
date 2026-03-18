@@ -4,17 +4,17 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {V2_COLORS, V2_SPACING} from '../tokens';
 
-interface V2DetailNotFoundStateProps {
+interface DetailNotFoundStateProps {
   actionLabel: string;
   onPressAction: () => void;
   title: string;
 }
 
-export const V2DetailNotFoundState = ({
+export const DetailNotFoundState = ({
   actionLabel,
   onPressAction,
   title,
-}: V2DetailNotFoundStateProps) => {
+}: DetailNotFoundStateProps) => {
   return (
     <View style={styles.container}>
       <View style={styles.iconWrap}>

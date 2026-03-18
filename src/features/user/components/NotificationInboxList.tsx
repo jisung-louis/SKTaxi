@@ -2,7 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -75,7 +75,7 @@ export const NotificationInboxList = ({
 }: NotificationInboxListProps) => {
   if (data.sections.length === 0) {
     return (
-      <V2StateCard
+      <StateCard
         description={NOTIFICATION_INBOX_EMPTY_DESCRIPTION}
         icon={
           <Icon

@@ -14,8 +14,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2StackHeader,
-  V2StateCard,
+  StackHeader,
+  StateCard,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -50,7 +50,7 @@ export const AppNoticeDetailScreen = () => {
 
   const renderLoadingState = () => (
     <View style={styles.stateContainer}>
-      <V2StateCard
+      <StateCard
         description="앱 공지사항 상세 내용을 준비하고 있습니다."
         icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
         title="앱 공지사항을 불러오는 중"
@@ -60,7 +60,7 @@ export const AppNoticeDetailScreen = () => {
 
   const renderErrorState = () => (
     <View style={styles.stateContainer}>
-      <V2StateCard
+      <StateCard
         actionLabel="다시 시도"
         description={
           error ?? '앱 공지사항을 찾지 못했습니다. 잠시 후 다시 시도해주세요.'
@@ -80,7 +80,7 @@ export const AppNoticeDetailScreen = () => {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title="앱 공지사항"
       />

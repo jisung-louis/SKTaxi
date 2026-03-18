@@ -9,7 +9,7 @@ import {
 
 import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
 
-interface V2StateCardProps {
+interface StateCardProps {
   actionLabel?: string;
   description: string;
   icon: React.ReactNode;
@@ -18,14 +18,14 @@ interface V2StateCardProps {
   title: string;
 }
 
-export const V2StateCard = ({
+export const StateCard = ({
   actionLabel,
   description,
   icon,
   onPressAction,
   style,
   title,
-}: V2StateCardProps) => {
+}: StateCardProps) => {
   return (
     <View style={[styles.card, style]}>
       <View style={styles.icon}>{icon}</View>

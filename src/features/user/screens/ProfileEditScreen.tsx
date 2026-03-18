@@ -18,9 +18,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2SelectionDropdown,
-  V2StackHeader,
-  V2StateCard,
+  SelectionDropdown,
+  StackHeader,
+  StateCard,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -101,7 +101,7 @@ export const ProfileEditScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title={PROFILE_EDIT_SCREEN_TITLE}
       />
@@ -111,7 +111,7 @@ export const ProfileEditScreen = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         {loading && !data ? (
-          <V2StateCard
+          <StateCard
             description="프로필 수정 화면을 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="프로필 수정을 불러오는 중"
@@ -119,7 +119,7 @@ export const ProfileEditScreen = () => {
         ) : null}
 
         {error && !data ? (
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={
@@ -194,7 +194,7 @@ export const ProfileEditScreen = () => {
                   isDropdownOpen ? styles.dropdownFieldRaised : undefined,
                 ]}>
                 <Text style={styles.fieldLabel}>학과</Text>
-                <V2SelectionDropdown
+                <SelectionDropdown
                   isOpen={isDropdownOpen}
                   maxHeight={208}
                   onPressSelect={value => {

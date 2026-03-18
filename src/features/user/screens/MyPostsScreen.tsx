@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
-import {V2StackHeader, V2StateCard} from '@/shared/design-system/components';
+import {StackHeader, StateCard} from '@/shared/design-system/components';
 import {V2_COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
@@ -29,7 +29,7 @@ export const MyPostsScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         rightAccessory={
           data ? (
@@ -43,7 +43,7 @@ export const MyPostsScreen = () => {
 
       {loading && !data ? (
         <View style={styles.stateWrap}>
-          <V2StateCard
+          <StateCard
             description="내가 쓴 글을 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="내가 쓴 글을 불러오는 중"
@@ -53,7 +53,7 @@ export const MyPostsScreen = () => {
 
       {error && !data ? (
         <View style={styles.stateWrap}>
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={

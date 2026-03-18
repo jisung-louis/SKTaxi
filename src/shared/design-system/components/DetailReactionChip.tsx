@@ -4,15 +4,15 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
 
-interface V2DetailReactionChipProps {
+interface DetailReactionChipProps {
   count: number;
   iconName: string;
 }
 
-export const V2DetailReactionChip = ({
+export const DetailReactionChip = ({
   count,
   iconName,
-}: V2DetailReactionChipProps) => {
+}: DetailReactionChipProps) => {
   return (
     <View style={styles.container}>
       <Icon color={V2_COLORS.text.tertiary} name={iconName} size={14} />

@@ -11,8 +11,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {
-  V2FilterChips,
-  type V2FilterChipItem,
+  FilterChips,
+  type FilterChipItem,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_RADIUS, V2_SPACING} from '@/shared/design-system/tokens';
 
@@ -67,14 +67,14 @@ export const CommunityBoardSearchModal = ({
     setSortBy(currentFilters.sortBy);
   }, [currentFilters, visible]);
 
-  const categoryItems: V2FilterChipItem<CategoryFilterValue>[] =
+  const categoryItems: FilterChipItem<CategoryFilterValue>[] =
     CATEGORY_OPTIONS.map(option => ({
       id: option.id,
       label: option.label,
       selected: option.id === selectedCategory,
     }));
 
-  const sortItems: V2FilterChipItem<CommunityBoardSearchFilters['sortBy']>[] =
+  const sortItems: FilterChipItem<CommunityBoardSearchFilters['sortBy']>[] =
     SORT_OPTIONS.map(option => ({
       id: option.id,
       label: option.label,
@@ -133,7 +133,7 @@ export const CommunityBoardSearchModal = ({
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalContent}>
-              <V2FilterChips
+              <FilterChips
                 inactiveVariant="surface"
                 items={categoryItems}
                 onPressItem={setSelectedCategory}

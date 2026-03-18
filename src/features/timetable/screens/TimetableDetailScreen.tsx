@@ -17,9 +17,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2SegmentedControl,
-  V2StateCard,
-  type V2SegmentedControlItem,
+  SegmentedControl,
+  StateCard,
+  type SegmentedControlItem,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -34,7 +34,7 @@ import {TimetableTodayViewCard} from '../components/TimetableTodayViewCard';
 import {useTimetableDetailData} from '../hooks/useTimetableDetailData';
 import type {TimetableDetailViewMode} from '../model/timetableDetailViewData';
 
-const MODE_ITEMS: V2SegmentedControlItem<TimetableDetailViewMode>[] = [
+const MODE_ITEMS: SegmentedControlItem<TimetableDetailViewMode>[] = [
   {id: 'today', label: '오늘 시간표'},
   {id: 'all', label: '전체 시간표'},
 ];
@@ -113,7 +113,7 @@ export const TimetableDetailScreen = () => {
           />
 
           <View style={styles.toolbar}>
-            <V2SegmentedControl
+            <SegmentedControl
               items={MODE_ITEMS}
               onSelect={selectMode}
               selectedId={activeMode}
@@ -140,7 +140,7 @@ export const TimetableDetailScreen = () => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}>
           {loading && !data ? (
-            <V2StateCard
+            <StateCard
               description="이번 학기 시간표를 준비하고 있습니다."
               icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
               style={styles.stateCard}
@@ -149,7 +149,7 @@ export const TimetableDetailScreen = () => {
           ) : null}
 
           {error && !data ? (
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={
@@ -168,7 +168,7 @@ export const TimetableDetailScreen = () => {
           ) : null}
 
           {data && !hasAnyCourse ? (
-            <V2StateCard
+            <StateCard
               actionLabel="수업 추가"
               description="우측 상단 추가 버튼이나 직접 입력으로 새 수업을 넣어보세요."
               icon={

@@ -11,7 +11,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -70,7 +70,7 @@ export const CommunityBoardSegment = ({
         ListEmptyComponent={
           showInitialLoading ? (
             <View style={styles.stateWrap}>
-              <V2StateCard
+              <StateCard
                 description="게시글을 불러오는 중입니다."
                 icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
                 title="게시판 준비 중"
@@ -78,7 +78,7 @@ export const CommunityBoardSegment = ({
             </View>
           ) : error ? (
             <View style={styles.stateWrap}>
-              <V2StateCard
+              <StateCard
                 actionLabel="새로고침"
                 description={error}
                 icon={
@@ -94,7 +94,7 @@ export const CommunityBoardSegment = ({
             </View>
           ) : (
             <View style={styles.stateWrap}>
-              <V2StateCard
+              <StateCard
                 description="첫 번째 게시글을 작성해보세요."
                 icon={
                   <Icon

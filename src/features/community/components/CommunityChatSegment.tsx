@@ -9,7 +9,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 
 import {CommunityChatRoomCard} from './CommunityChatRoomCard';
@@ -39,7 +39,7 @@ export const CommunityChatSegment = ({
         ListEmptyComponent={
           loading ? (
             <View style={styles.stateWrap}>
-              <V2StateCard
+              <StateCard
                 description="채팅방을 불러오는 중입니다."
                 icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
                 title="채팅 준비 중"
@@ -47,7 +47,7 @@ export const CommunityChatSegment = ({
             </View>
           ) : (
             <View style={styles.stateWrap}>
-              <V2StateCard
+              <StateCard
                 description="새로운 채팅방이 있으면 여기에 표시됩니다."
                 icon={
                   <Icon

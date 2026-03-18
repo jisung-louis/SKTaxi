@@ -7,7 +7,7 @@ import type {
   NoticeHomeNoticeItemViewData,
 } from '../../model/noticeHomeViewData';
 import {NoticeListItem} from './NoticeListItem';
-import {V2StateCard} from '@/shared/design-system/components';
+import {StateCard} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -45,7 +45,7 @@ export const NoticeHomeList = ({
     <View style={styles.card}>
       {showLoadingState ? (
         <View style={styles.stateContainer}>
-          <V2StateCard
+          <StateCard
             description="공지사항을 불러오는 중입니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             style={styles.embeddedStateCard}
@@ -56,7 +56,7 @@ export const NoticeHomeList = ({
 
       {!showLoadingState && error ? (
         <View style={styles.stateContainer}>
-          <V2StateCard
+          <StateCard
             actionLabel="새로고침"
             description={error}
             icon={
@@ -75,7 +75,7 @@ export const NoticeHomeList = ({
 
       {!showLoadingState && !error && items.length === 0 ? (
         <View style={styles.stateContainer}>
-          <V2StateCard
+          <StateCard
             description={emptyState.description}
             icon={
               <Icon

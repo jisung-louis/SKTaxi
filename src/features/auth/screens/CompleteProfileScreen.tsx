@@ -24,7 +24,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {RootStackParamList} from '@/app/navigation/types';
 import {DEPARTMENT_OPTIONS} from '@/shared/constants/departments';
-import {V2SelectionDropdown} from '@/shared/design-system/components';
+import {SelectionDropdown} from '@/shared/design-system/components';
 import {
   V2_COLORS,
   V2_RADIUS,
@@ -227,7 +227,7 @@ export const CompleteProfileScreen = () => {
               <Text style={styles.fieldLabel}>
                 학과 <Text style={styles.requiredMark}>*</Text>
               </Text>
-              <V2SelectionDropdown
+              <SelectionDropdown
                 isOpen={isDropdownOpen}
                 onPressSelect={value => {
                   setDepartment(value);

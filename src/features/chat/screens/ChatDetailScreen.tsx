@@ -16,9 +16,9 @@ import Animated from 'react-native-reanimated';
 
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {
-  V2DetailComposer,
-  V2DetailNotFoundState,
-  V2StateCard,
+  DetailComposer,
+  DetailNotFoundState,
+  StateCard,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
@@ -102,7 +102,7 @@ export const ChatDetailScreen = () => {
           </View>
         ) : notFound ? (
           <View style={styles.centeredState}>
-            <V2DetailNotFoundState
+            <DetailNotFoundState
               actionLabel="목록으로 돌아가기"
               onPressAction={handlePressBack}
               title="채팅방을 찾을 수 없어요"
@@ -110,7 +110,7 @@ export const ChatDetailScreen = () => {
           </View>
         ) : error ? (
           <View style={styles.centeredState}>
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={
@@ -138,7 +138,7 @@ export const ChatDetailScreen = () => {
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               keyboardVerticalOffset={0}>
-              <V2DetailComposer
+              <DetailComposer
                 leadingActionAccessibilityLabel="첨부 메뉴"
                 leadingIconName="add-outline"
                 onChangeText={setComposerValue}

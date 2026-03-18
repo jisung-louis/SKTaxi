@@ -10,13 +10,13 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 import {
-  V2SegmentedControl,
-  type V2SegmentedControlItem,
+  SegmentedControl,
+  type SegmentedControlItem,
 } from '@/shared/design-system/components';
 
 import type {AcademicCalendarDetailViewMode} from '../../model/academicCalendarDetailViewData';
 
-const MODE_ITEMS: V2SegmentedControlItem<AcademicCalendarDetailViewMode>[] = [
+const MODE_ITEMS: SegmentedControlItem<AcademicCalendarDetailViewMode>[] = [
   {id: 'month', label: '월간'},
   {id: 'week', label: '주간'},
 ];
@@ -66,7 +66,7 @@ export const AcademicCalendarDetailHeader = ({
       </View>
 
       <View style={styles.content}>
-        <V2SegmentedControl
+        <SegmentedControl
           height={40}
           isRounded={true}
           items={MODE_ITEMS}

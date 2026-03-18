@@ -13,8 +13,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2StackHeader,
-  V2StateCard,
+  StackHeader,
+  StateCard,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -41,7 +41,7 @@ export const LegalDocumentScreen = ({
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title={data?.title ?? fallbackTitle}
       />
@@ -50,7 +50,7 @@ export const LegalDocumentScreen = ({
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
         {loading && !data ? (
-          <V2StateCard
+          <StateCard
             description="문서 정보를 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="문서를 불러오는 중"
@@ -58,7 +58,7 @@ export const LegalDocumentScreen = ({
         ) : null}
 
         {error && !data ? (
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={

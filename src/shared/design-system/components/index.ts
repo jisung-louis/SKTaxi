@@ -1,22 +1,22 @@
-export {V2DetailBackHeader} from './V2DetailBackHeader';
-export {V2DetailBodyBlocks} from './V2DetailBodyBlocks';
-export {V2DetailCommentCard} from './V2DetailCommentCard';
-export {V2DetailComposer} from './V2DetailComposer';
-export {V2DetailNotFoundState} from './V2DetailNotFoundState';
-export {V2DetailReactionChip} from './V2DetailReactionChip';
-export {V2FilterChips} from './V2FilterChips';
-export type {V2FilterChipItem} from './V2FilterChips';
-export {V2FormField} from './V2FormField';
-export {V2InfoBanner} from './V2InfoBanner';
-export {V2PageHeader} from './V2PageHeader';
-export {V2SelectionDropdown} from './V2SelectionDropdown';
-export {V2SettingsRow} from './V2SettingsRow';
-export {V2SettingsSection} from './V2SettingsSection';
+export {DetailBackHeader} from './DetailBackHeader';
+export {DetailBodyBlocks} from './DetailBodyBlocks';
+export {DetailCommentCard} from './DetailCommentCard';
+export {DetailComposer} from './DetailComposer';
+export {DetailNotFoundState} from './DetailNotFoundState';
+export {DetailReactionChip} from './DetailReactionChip';
+export {FilterChips} from './FilterChips';
+export type {FilterChipItem} from './FilterChips';
+export {FormField} from './FormField';
+export {InfoBanner} from './InfoBanner';
+export {PageHeader} from './PageHeader';
+export {SelectionDropdown} from './SelectionDropdown';
+export {SettingsRow} from './SettingsRow';
+export {SettingsSection} from './SettingsSection';
 export {
-  V2SegmentedControl,
-  type V2SegmentedControlItem,
-} from './V2SegmentedControl';
-export {V2StackHeader} from './V2StackHeader';
-export {V2StateCard} from './V2StateCard';
-export {V2ToggleSwitch} from './V2ToggleSwitch';
-export {V2ToneBadge} from './V2ToneBadge';
+  SegmentedControl,
+  type SegmentedControlItem,
+} from './SegmentedControl';
+export {StackHeader} from './StackHeader';
+export {StateCard} from './StateCard';
+export {ToggleSwitch} from './ToggleSwitch';
+export {ToneBadge} from './ToneBadge';

@@ -8,7 +8,6 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useKeyboardInset} from '@/shared/hooks';
 
 import {
   V2_COLORS,
@@ -16,7 +15,7 @@ import {
   V2_SPACING,
 } from '../tokens';
 
-interface V2DetailComposerProps {
+interface DetailComposerProps {
   editable?: boolean;
   leadingActionAccessibilityLabel?: string;
   leadingIconName?: string;
@@ -30,7 +29,7 @@ interface V2DetailComposerProps {
   value?: string;
 }
 
-export const V2DetailComposer = ({
+export const DetailComposer = ({
   editable = true,
   leadingActionAccessibilityLabel = '첨부',
   leadingIconName,
@@ -42,7 +41,7 @@ export const V2DetailComposer = ({
   sendEnabled,
   textInputProps,
   value,
-}: V2DetailComposerProps) => {
+}: DetailComposerProps) => {
   const insets = useSafeAreaInsets();
   const [internalValue, setInternalValue] = React.useState('');
   const resolvedValue = value ?? internalValue;

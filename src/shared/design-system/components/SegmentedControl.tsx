@@ -10,13 +10,13 @@ import {
 
 import {V2_COLORS, V2_RADIUS, V2_SHADOWS, V2_SPACING} from '../tokens';
 
-export interface V2SegmentedControlItem<T extends string = string> {
+export interface SegmentedControlItem<T extends string = string> {
   id: T;
   label: string;
 }
 
-interface V2SegmentedControlProps<T extends string = string> {
-  items: ReadonlyArray<V2SegmentedControlItem<T>>;
+interface SegmentedControlProps<T extends string = string> {
+  items: ReadonlyArray<SegmentedControlItem<T>>;
   onSelect: (itemId: T) => void;
   selectedId: T;
   style?: StyleProp<ViewStyle>;
@@ -26,7 +26,7 @@ interface V2SegmentedControlProps<T extends string = string> {
   height?: number;
 }
 
-export const V2SegmentedControl = <T extends string>({
+export const SegmentedControl = <T extends string>({
   items,
   onSelect,
   selectedId,
@@ -35,7 +35,7 @@ export const V2SegmentedControl = <T extends string>({
   isFullWidth = true,
   isRounded = false,
   height = 40,
-}: V2SegmentedControlProps<T>) => {
+}: SegmentedControlProps<T>) => {
   const containerStyle =
     variant === 'surface' ? styles.containerSurface : styles.containerBrand;
 

@@ -7,19 +7,19 @@ import {
 
 import {V2_COLORS, V2_RADIUS} from '../tokens';
 
-interface V2ToggleSwitchProps {
+interface ToggleSwitchProps {
   accessibilityLabel?: string;
   disabled?: boolean;
   onValueChange?: (nextValue: boolean) => void;
   value: boolean;
 }
 
-export const V2ToggleSwitch = ({
+export const ToggleSwitch = ({
   accessibilityLabel,
   disabled = false,
   onValueChange,
   value,
-}: V2ToggleSwitchProps) => {
+}: ToggleSwitchProps) => {
   return (
     <TouchableOpacity
       accessibilityLabel={accessibilityLabel}

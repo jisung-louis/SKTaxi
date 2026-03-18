@@ -11,13 +11,13 @@ import {
   V2_SPACING,
 } from '../tokens';
 
-interface V2DetailCommentCardProps {
+interface DetailCommentCardProps {
   comment: ContentDetailCommentViewData;
 }
 
-export const V2DetailCommentCard = ({
+export const DetailCommentCard = ({
   comment,
-}: V2DetailCommentCardProps) => {
+}: DetailCommentCardProps) => {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>

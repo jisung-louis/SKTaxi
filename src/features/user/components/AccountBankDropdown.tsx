@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, View} from 'react-native';
 
-import {V2SelectionDropdown} from '@/shared/design-system/components';
+import {SelectionDropdown} from '@/shared/design-system/components';
 
 interface AccountBankDropdownProps {
   bankNames: string[];
@@ -20,7 +20,7 @@ export const AccountBankDropdown = ({
 }: AccountBankDropdownProps) => {
   return (
     <View style={styles.wrapper}>
-      <V2SelectionDropdown
+      <SelectionDropdown
         isOpen={isOpen}
         onPressSelect={onPressSelect}
         onPressTrigger={onPressTrigger}

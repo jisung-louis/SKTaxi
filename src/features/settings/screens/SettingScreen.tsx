@@ -9,9 +9,9 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2SettingsRow,
-  V2SettingsSection,
-  V2StackHeader,
+  SettingsRow,
+  SettingsSection,
+  StackHeader,
 } from '@/shared/design-system/components';
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -42,7 +42,7 @@ export const SettingScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader
+      <StackHeader
         onPressBack={() => navigation.goBack()}
         title="앱 설정"
       />
@@ -51,9 +51,9 @@ export const SettingScreen = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
         {data.sections.map(section => (
-          <V2SettingsSection key={section.id} style={styles.section} title={section.title}>
+          <SettingsSection key={section.id} style={styles.section} title={section.title}>
             {section.items.map((item, index) => (
-              <V2SettingsRow
+              <SettingsRow
                 key={item.id}
                 accessoryType={item.accessoryType}
                 disabled={item.disabled}
@@ -75,7 +75,7 @@ export const SettingScreen = () => {
                 valueLabel={item.valueLabel}
               />
             ))}
-          </V2SettingsSection>
+          </SettingsSection>
         ))}
       </ScrollView>
     </SafeAreaView>

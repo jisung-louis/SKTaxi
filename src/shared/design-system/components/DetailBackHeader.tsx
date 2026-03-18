@@ -5,15 +5,15 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {V2_COLORS, V2_SPACING} from '../tokens';
 
-interface V2DetailBackHeaderProps {
+interface DetailBackHeaderProps {
   onPressBack: () => void;
   rightAccessory?: React.ReactNode;
 }
 
-export const V2DetailBackHeader = ({
+export const DetailBackHeader = ({
   onPressBack,
   rightAccessory,
-}: V2DetailBackHeaderProps) => {
+}: DetailBackHeaderProps) => {
   const insets = useSafeAreaInsets();
 
   return (

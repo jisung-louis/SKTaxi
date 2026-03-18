@@ -10,17 +10,17 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {V2_COLORS, V2_SPACING} from '../tokens';
 
-interface V2StackHeaderProps {
+interface StackHeaderProps {
   onPressBack: () => void;
   rightAccessory?: React.ReactNode;
   title: string;
 }
 
-export const V2StackHeader = ({
+export const StackHeader = ({
   onPressBack,
   rightAccessory,
   title,
-}: V2StackHeaderProps) => {
+}: StackHeaderProps) => {
   const insets = useSafeAreaInsets();
 
   return (

@@ -15,7 +15,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
 import {
-  V2StateCard,
+  StateCard,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -92,7 +92,7 @@ export const AcceptancePendingScreen = () => {
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         {loading && !data ? (
           <View style={styles.stateWrap}>
-            <V2StateCard
+            <StateCard
               description="동승 요청 대기 화면을 준비하고 있습니다."
               icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
               title="수락 대기 화면 로딩 중"
@@ -102,7 +102,7 @@ export const AcceptancePendingScreen = () => {
 
         {!loading && error ? (
           <View style={styles.stateWrap}>
-            <V2StateCard
+            <StateCard
               actionLabel="다시 시도"
               description={error}
               icon={

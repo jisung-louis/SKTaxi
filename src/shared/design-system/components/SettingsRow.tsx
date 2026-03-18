@@ -12,9 +12,9 @@ import {
   V2_RADIUS,
   V2_SPACING,
 } from '../tokens';
-import {V2ToggleSwitch} from './V2ToggleSwitch';
+import {ToggleSwitch} from './ToggleSwitch';
 
-interface V2SettingsRowProps {
+interface SettingsRowProps {
   accessibilityLabel?: string;
   accessoryType: 'chevron' | 'toggle' | 'value';
   disabled?: boolean;
@@ -34,7 +34,7 @@ interface V2SettingsRowProps {
   valueLabel?: string;
 }
 
-export const V2SettingsRow = ({
+export const SettingsRow = ({
   accessibilityLabel,
   accessoryType,
   disabled = false,
@@ -52,7 +52,7 @@ export const V2SettingsRow = ({
   titleWeight = '500',
   toggleValue = false,
   valueLabel,
-}: V2SettingsRowProps) => {
+}: SettingsRowProps) => {
   const content = (
     <>
       <View style={styles.leftGroup}>
@@ -108,7 +108,7 @@ export const V2SettingsRow = ({
       ) : null}
 
       {accessoryType === 'toggle' ? (
-        <V2ToggleSwitch
+        <ToggleSwitch
           accessibilityLabel={accessibilityLabel ?? title}
           disabled={disabled}
           onValueChange={onToggle}

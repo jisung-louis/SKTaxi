@@ -14,19 +14,19 @@ import {
   V2_SPACING,
 } from '../tokens';
 
-interface V2SettingsSectionProps {
+interface SettingsSectionProps {
   cardStyle?: StyleProp<ViewStyle>;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   title?: string;
 }
 
-export const V2SettingsSection = ({
+export const SettingsSection = ({
   cardStyle,
   children,
   style,
   title,
-}: V2SettingsSectionProps) => {
+}: SettingsSectionProps) => {
   return (
     <View style={style}>
       {title ? <Text style={styles.title}>{title}</Text> : null}

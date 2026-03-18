@@ -16,11 +16,11 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  V2FormField,
-  V2InfoBanner,
-  V2StackHeader,
-  V2StateCard,
-  V2ToggleSwitch,
+  FormField,
+  InfoBanner,
+  StackHeader,
+  StateCard,
+  ToggleSwitch,
 } from '@/shared/design-system/components';
 import {
   V2_COLORS,
@@ -96,14 +96,14 @@ export const AccountModificationScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader onPressBack={() => navigation.goBack()} title="계좌 관리" />
+      <StackHeader onPressBack={() => navigation.goBack()} title="계좌 관리" />
 
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         {loading ? (
-          <V2StateCard
+          <StateCard
             description="계좌 관리 정보를 준비하고 있습니다."
             icon={<ActivityIndicator color={V2_COLORS.brand.primary} />}
             title="계좌 관리 정보를 불러오는 중"
@@ -111,7 +111,7 @@ export const AccountModificationScreen = () => {
         ) : null}
 
         {!loading && error ? (
-          <V2StateCard
+          <StateCard
             actionLabel="다시 시도"
             description={error}
             icon={
@@ -130,7 +130,7 @@ export const AccountModificationScreen = () => {
 
         {!loading && !error ? (
           <>
-            <V2InfoBanner
+            <InfoBanner
               backgroundColor={V2_COLORS.accent.blueSoft}
               iconColor={V2_COLORS.accent.blue}
               iconName="information-circle-outline"
@@ -140,7 +140,7 @@ export const AccountModificationScreen = () => {
             />
 
             <View style={styles.formSection}>
-              <V2FormField
+              <FormField
                 label="은행명"
                 style={[
                   styles.fieldBlock,
@@ -155,9 +155,9 @@ export const AccountModificationScreen = () => {
                   }
                   selectedBankName={data.selectedBankName}
                 />
-              </V2FormField>
+              </FormField>
 
-              <V2FormField label="계좌번호" style={styles.fieldBlock}>
+              <FormField label="계좌번호" style={styles.fieldBlock}>
                 <TextInput
                   keyboardType="number-pad"
                   onChangeText={setAccountNumber}
@@ -167,9 +167,9 @@ export const AccountModificationScreen = () => {
                   style={styles.input}
                   value={data.accountNumber}
                 />
-              </V2FormField>
+              </FormField>
 
-              <V2FormField label="예금주명" style={styles.fieldBlock}>
+              <FormField label="예금주명" style={styles.fieldBlock}>
                 <TextInput
                   onChangeText={setAccountHolder}
                   onFocus={() => setBankDropdownOpen(false)}
@@ -178,7 +178,7 @@ export const AccountModificationScreen = () => {
                   style={styles.input}
                   value={data.accountHolder}
                 />
-              </V2FormField>
+              </FormField>
             </View>
 
             <View style={styles.hideNameCard}>
@@ -189,7 +189,7 @@ export const AccountModificationScreen = () => {
                 </Text>
               </View>
 
-              <V2ToggleSwitch
+              <ToggleSwitch
                 accessibilityLabel="이름 일부만 공개"
                 onValueChange={setHideName}
                 value={data.hideName}
