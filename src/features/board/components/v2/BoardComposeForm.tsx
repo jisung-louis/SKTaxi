@@ -128,7 +128,7 @@ export const BoardComposeForm = ({
           maxLength={TITLE_LIMIT}
           onChangeText={onChangeTitle}
           placeholder={titlePlaceholder}
-          placeholderTextColor={V2_COLORS.border.default}
+          placeholderTextColor={V2_COLORS.text.placeholder}
           style={styles.titleInput}
           value={title}
         />
@@ -143,7 +143,7 @@ export const BoardComposeForm = ({
           multiline
           onChangeText={onChangeContent}
           placeholder={contentPlaceholder}
-          placeholderTextColor={V2_COLORS.border.default}
+          placeholderTextColor={V2_COLORS.text.placeholder}
           style={styles.contentInput}
           textAlignVertical="top"
           value={content}

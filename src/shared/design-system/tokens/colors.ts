@@ -11,6 +11,7 @@ export const V2_COLORS = {
     secondary: '#4B5563',
     tertiary: '#6B7280',
     muted: '#9CA3AF',
+    placeholder: '#D1D5DB',
     inverse: '#FFFFFF',
   },
   border: {
