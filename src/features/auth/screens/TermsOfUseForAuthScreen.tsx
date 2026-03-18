@@ -1,7 +1,7 @@
 import React from 'react';
 
+import {LegalDocumentScreen} from '@/features/settings';
 import {useScreenView} from '@/shared/hooks/useScreenView';
-import {LegalDocumentScreen} from '@/features/settings/screens/LegalDocumentScreen';
 
 export const TermsOfUseForAuthScreen = () => {
   useScreenView();

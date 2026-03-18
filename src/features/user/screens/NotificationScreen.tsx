@@ -21,8 +21,10 @@ import {
 import {V2_COLORS, V2_SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {AppNoticeFeedList} from '@/features/settings/components/v2/AppNoticeFeedList';
-import {useAppNoticeFeedData} from '@/features/settings/hooks/useAppNoticeFeedData';
+import {
+  AppNoticeFeedList,
+  useAppNoticeFeedData,
+} from '@/features/settings';
 
 import {NotificationHubTabBar} from '../components/v2/NotificationHubTabBar';
 import {NotificationInboxList} from '../components/v2/NotificationInboxList';

@@ -32,6 +32,7 @@ export type {
 } from './data/repositories/IInquiryRepository';
 
 export {useAppSettingData} from './hooks/useAppSettingData';
+export {useAppNoticeFeedData} from './hooks/useAppNoticeFeedData';
 export {useLegalDocumentData} from './hooks/useLegalDocumentData';
 export {useInquiryFormData} from './hooks/useInquiryFormData';
 export { useSubmitInquiry } from './hooks/useSubmitInquiry';
@@ -42,9 +43,11 @@ export type {
 
 export { AppNoticeDetailScreen } from './screens/AppNoticeDetailScreen';
 export { InquiriesScreen } from './screens/InquiriesScreen';
+export { LegalDocumentScreen } from './screens/LegalDocumentScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
+export { AppNoticeFeedList } from './components/v2/AppNoticeFeedList';
 export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
 export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
