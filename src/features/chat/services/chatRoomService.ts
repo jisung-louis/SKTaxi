@@ -5,7 +5,6 @@ import type {
   ChatRoomNotificationPayload,
 } from '../model/types';
 
-import { COLORS } from '@/shared/constants/colors';
 import type { IUserRepository } from '@/features/user';
 
 import { sendMinecraftChatMessage } from '../data/minecraftChatBridge';
@@ -56,20 +55,6 @@ export const getChatRoomIcon = (type: ChatRoom['type']) => {
       return 'chatbubbles-outline';
     default:
       return 'chatbubble-outline';
-  }
-};
-
-export const getChatRoomColor = (type: ChatRoom['type']) => {
-  switch (type) {
-    case 'university':
-      return COLORS.accent.blue;
-    case 'department':
-      return COLORS.accent.green;
-    case 'game':
-      return COLORS.accent.orange;
-    case 'custom':
-    default:
-      return COLORS.accent.red;
   }
 };
 

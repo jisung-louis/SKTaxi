@@ -50,7 +50,6 @@ export type { BoardStackParamList } from './model/navigation';
 export { BOARD_CATEGORIES, POST_CATEGORY_LABELS, SORT_OPTIONS } from './model/constants';
 export {
   formatBoardUpdatedTime,
-  getBoardCategoryColor,
   isBoardPostEdited,
 } from './model/selectors';
 

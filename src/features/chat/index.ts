@@ -50,7 +50,6 @@ export { ChatDetailScreen } from './screens/ChatDetailScreen';
 export {
   buildChatRoomForegroundNotification,
   formatTimeAgo,
-  getChatRoomColor,
   getChatRoomDisplayName,
   getChatRoomIcon,
   resolveChatRoomForegroundNotification,
