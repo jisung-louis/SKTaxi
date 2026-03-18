@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 
 import { getCurrentAppVersion } from '@/features/settings';
+import type { IMemberRepository } from '@/features/member';
 import {
   clearUserFcmTokens,
   createInitialUserProfile,
@@ -60,6 +61,18 @@ export const syncLoginMetadata = async (
     userId: uid,
     userRepository,
   }).catch(() => {});
+};
+
+export const bootstrapAuthenticatedMember = async ({
+  authRepository,
+  memberRepository,
+}: {
+  authRepository: IAuthRepository;
+  memberRepository: IMemberRepository;
+}) => {
+  await authRepository.refreshToken();
+  await memberRepository.ensureMember();
+  return memberRepository.getMyMemberProfile();
 };
 
 const assertAllowedDomain = async (
@@ -141,6 +154,10 @@ export const mapAuthActionError = (error: any) => {
 
 export const mapEmailPasswordSignInError = (error: any) => {
   const firebaseCode = error?.context?.firebaseCode || error?.code;
+  const fallbackMessage =
+    typeof error?.message === 'string' && error.message.trim()
+      ? error.message
+      : '로그인에 실패했습니다.';
 
   const errorMap: Record<string, string> = {
     'auth/wrong-password': '비밀번호가 올바르지 않습니다.',
@@ -153,5 +170,5 @@ export const mapEmailPasswordSignInError = (error: any) => {
     'auth/network-request-failed': '네트워크 연결을 확인해주세요.',
   };
 
-  return new Error(errorMap[firebaseCode] || '로그인에 실패했습니다.');
+  return new Error(errorMap[firebaseCode] || fallbackMessage);
 };
