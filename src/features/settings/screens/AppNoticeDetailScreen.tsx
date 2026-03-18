@@ -25,8 +25,8 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {AppNoticeBadge} from 'components/AppNoticeBadge';
-import {AppNoticeHeroCarousel} from 'components/AppNoticeHeroCarousel';
+import {AppNoticeBadge} from '../components/AppNoticeBadge';
+import {AppNoticeHeroCarousel} from '../components/AppNoticeHeroCarousel';
 import {useAppNoticeDetailData} from '../hooks/useAppNoticeDetailData';
 
 type AppNoticeDetailNavigationProp = NativeStackNavigationProp<

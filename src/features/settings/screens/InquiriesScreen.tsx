@@ -26,7 +26,7 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {InquiryTypeChips} from 'components/InquiryTypeChips';
+import {InquiryTypeChips} from '../components/InquiryTypeChips';
 import {useInquiryFormData} from '../hooks/useInquiryFormData';
 
 type InquiriesRouteProp = RouteProp<CampusStackParamList, 'Inquiries'>;

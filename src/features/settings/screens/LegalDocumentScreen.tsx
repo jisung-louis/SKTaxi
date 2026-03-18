@@ -21,8 +21,8 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import {LegalDocumentHeroCard} from 'components/LegalDocumentHeroCard';
-import {LegalDocumentSectionCard} from 'components/LegalDocumentSectionCard';
+import {LegalDocumentHeroCard} from '../components/LegalDocumentHeroCard';
+import {LegalDocumentSectionCard} from '../components/LegalDocumentSectionCard';
 import {useLegalDocumentData} from '../hooks/useLegalDocumentData';
 import type {LegalDocumentKey} from '../model/legalDocumentSource';
 
