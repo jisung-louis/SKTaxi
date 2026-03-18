@@ -1,5 +1,7 @@
 import type { UserAccountInfo } from '@/shared/types/user';
 
+export type MemberFcmTokenPlatform = 'ios' | 'android';
+
 export interface MemberNotificationSetting {
   allNotifications: boolean;
   partyNotifications: boolean;

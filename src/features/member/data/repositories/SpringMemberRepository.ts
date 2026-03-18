@@ -16,4 +16,17 @@ export class SpringMemberRepository implements IMemberRepository {
     const response = await this.apiClient.getMyMemberProfile();
     return mapMemberResponseDto(response.data);
   }
+
+  async registerFcmToken(token: string, platform: 'ios' | 'android') {
+    await this.apiClient.registerFcmToken({
+      token,
+      platform,
+    });
+  }
+
+  async deleteFcmToken(token: string) {
+    await this.apiClient.deleteFcmToken({
+      token,
+    });
+  }
 }
