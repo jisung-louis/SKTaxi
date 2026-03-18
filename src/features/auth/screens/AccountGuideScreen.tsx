@@ -24,8 +24,8 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
-import {AccountGuidePortalCard} from '../components/v2/AccountGuidePortalCard';
-import {AccountGuideStepCard} from '../components/v2/AccountGuideStepCard';
+import {AccountGuidePortalCard} from '../components/AccountGuidePortalCard';
+import {AccountGuideStepCard} from '../components/AccountGuideStepCard';
 
 const PORTAL_URL =
   'https://www.sungkyul.ac.kr/portalLogin/skukr/portalLoginForm.do';

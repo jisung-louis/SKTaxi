@@ -22,9 +22,9 @@ import {
   V2_SPACING,
 } from '@/shared/design-system/tokens';
 
-import {AuthActionButton} from '../components/v2/AuthActionButton';
-import {OnboardingFeatureCard} from '../components/v2/OnboardingFeatureCard';
-import {OnboardingProgressDots} from '../components/v2/OnboardingProgressDots';
+import {AuthActionButton} from '../components/AuthActionButton';
+import {OnboardingFeatureCard} from '../components/OnboardingFeatureCard';
+import {OnboardingProgressDots} from '../components/OnboardingProgressDots';
 import {usePermissionOnboarding} from '../hooks/usePermissionOnboarding';
 import {usePermissionOnboardingStatus} from '../hooks/usePermissionOnboardingStatus';
 import {PermissionOnboardingStep} from '../model/types';

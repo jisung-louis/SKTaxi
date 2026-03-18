@@ -32,7 +32,7 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
-import {AuthActionButton} from '../components/v2/AuthActionButton';
+import {AuthActionButton} from '../components/AuthActionButton';
 import {
   AUTH_BRAND_ACCENT_COLOR,
   AUTH_BRAND_GRADIENT,

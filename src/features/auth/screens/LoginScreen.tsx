@@ -28,7 +28,7 @@ import {
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
 
-import {AuthFeatureChip} from '../components/v2/AuthFeatureChip';
+import {AuthFeatureChip} from '../components/AuthFeatureChip';
 import {AUTH_BRAND_ACCENT_COLOR} from '../constants/authPalette';
 import {useAuth} from '../hooks/useAuth';
 
