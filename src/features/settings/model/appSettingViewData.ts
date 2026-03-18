@@ -1,7 +1,9 @@
-import type {
-  AppSettingActionKey,
-  AppSettingScreenSource,
-} from './appSettingSource';
+export type AppSettingActionKey =
+  | 'darkMode'
+  | 'termsOfUse'
+  | 'privacyPolicy'
+  | 'appName'
+  | 'appVersion';
 
 export type AppSettingRowAccessory = 'toggle' | 'chevron' | 'value';
 
@@ -28,5 +30,3 @@ export interface AppSettingSectionViewData {
 export interface AppSettingScreenViewData {
   sections: AppSettingSectionViewData[];
 }
-
-export type AppSettingScreenViewSource = AppSettingScreenSource;

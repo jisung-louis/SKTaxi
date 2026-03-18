@@ -2,15 +2,16 @@ import React from 'react';
 
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
-import {appSettingRepository} from '../data/repositories/appSettingRepository';
-import type {
-  AppSettingIconKey,
-  AppSettingScreenSource,
-} from '../model/appSettingSource';
+import {
+  buildAppSettingSections,
+  type AppSettingIconKey,
+  type AppSettingSectionConfig,
+} from '../constants/appSetting';
 import type {
   AppSettingRowViewData,
   AppSettingScreenViewData,
 } from '../model/appSettingViewData';
+import {getCurrentAppVersion} from '../services/appVersionService';
 
 const resolveRowIcon = (iconKey: AppSettingIconKey) => {
   switch (iconKey) {
@@ -49,7 +50,7 @@ const resolveRowIcon = (iconKey: AppSettingIconKey) => {
 };
 
 const mapRow = (
-  item: AppSettingScreenSource['sections'][number]['items'][number],
+  item: AppSettingSectionConfig['items'][number],
 ): AppSettingRowViewData => {
   const icon = resolveRowIcon(item.iconKey);
 
@@ -71,9 +72,11 @@ const mapRow = (
   };
 };
 
-const mapScreen = (source: AppSettingScreenSource): AppSettingScreenViewData => {
+const mapScreen = (
+  sections: AppSettingSectionConfig[],
+): AppSettingScreenViewData => {
   return {
-    sections: source.sections.map(section => ({
+    sections: sections.map(section => ({
       id: section.id,
       items: section.items.map(mapRow),
       title: section.title,
@@ -82,33 +85,9 @@ const mapScreen = (source: AppSettingScreenSource): AppSettingScreenViewData => 
 };
 
 export const useAppSettingData = () => {
-  const [data, setData] = React.useState<AppSettingScreenViewData | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
-
-  const load = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const source = await appSettingRepository.getAppSettings();
-      setData(mapScreen(source));
-    } catch (caughtError) {
-      console.error('앱 설정 데이터를 불러오지 못했습니다.', caughtError);
-      setError('앱 설정 정보를 불러오지 못했습니다.');
-    } finally {
-      setLoading(false);
-    }
+  const data = React.useMemo<AppSettingScreenViewData>(() => {
+    return mapScreen(buildAppSettingSections(getCurrentAppVersion()));
   }, []);
 
-  React.useEffect(() => {
-    load().catch(() => undefined);
-  }, [load]);
-
-  return {
-    data,
-    error,
-    loading,
-    reload: load,
-  };
+  return {data};
 };

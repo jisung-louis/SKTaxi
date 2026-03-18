@@ -19,7 +19,6 @@ export type {
   IAppConfigRepository,
   VersionModalConfig,
 } from './data/repositories/IAppConfigRepository';
-export type {IAppSettingRepository} from './data/repositories/IAppSettingRepository';
 export type {ILegalDocumentRepository} from './data/repositories/ILegalDocumentRepository';
 export type {
   IInquiryFormRepository,
@@ -46,7 +45,6 @@ export { InquiriesScreen } from './screens/InquiriesScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
-export {MockAppSettingRepository} from './data/repositories/MockAppSettingRepository';
 export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
 export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
