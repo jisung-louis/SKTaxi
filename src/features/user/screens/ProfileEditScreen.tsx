@@ -31,6 +31,9 @@ import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {useProfileEditScreenData} from '../hooks/useProfileEditScreenData';
 
+const PROFILE_EDIT_SCREEN_TITLE = '프로필 수정';
+const PROFILE_EDIT_SAVE_LABEL = '저장하기';
+
 export const ProfileEditScreen = () => {
   useScreenView();
 
@@ -98,7 +101,10 @@ export const ProfileEditScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <V2StackHeader onPressBack={() => navigation.goBack()} title="프로필 수정" />
+      <V2StackHeader
+        onPressBack={() => navigation.goBack()}
+        title={PROFILE_EDIT_SCREEN_TITLE}
+      />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -219,7 +225,7 @@ export const ProfileEditScreen = () => {
                 />
               ) : null}
               <Text style={styles.saveLabel}>
-                {saving ? '저장 중...' : data.saveLabel}
+                {saving ? '저장 중...' : PROFILE_EDIT_SAVE_LABEL}
               </Text>
             </TouchableOpacity>
           </>

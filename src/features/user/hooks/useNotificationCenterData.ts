@@ -4,6 +4,7 @@ import type {INotificationCenterRepository} from '../data/repositories/INotifica
 import {MockNotificationCenterRepository} from '../data/repositories/MockNotificationCenterRepository';
 import type {
   NotificationInboxItemViewData,
+  NotificationInboxSectionViewData,
   NotificationInboxViewData,
 } from '../model/notificationCenterViewData';
 
@@ -21,13 +22,12 @@ const buildViewData = (
 ): NotificationInboxViewData => {
   const unreadItems = items.filter(item => !item.isRead);
   const readItems = items.filter(item => item.isRead);
-  const sections = [];
+  const sections: NotificationInboxSectionViewData[] = [];
 
   if (unreadItems.length > 0) {
     sections.push({
       id: 'unread',
       items: unreadItems,
-      title: '새 알림',
     });
   }
 
@@ -35,13 +35,10 @@ const buildViewData = (
     sections.push({
       id: 'read',
       items: readItems,
-      title: '이전 알림',
     });
   }
 
   return {
-    emptyDescription: '새로운 소식이 도착하면 이곳에서 바로 확인할 수 있어요.',
-    emptyTitle: '알림이 없습니다',
     sections,
     unreadCount: unreadItems.length,
   };

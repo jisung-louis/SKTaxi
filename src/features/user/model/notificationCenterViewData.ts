@@ -14,14 +14,11 @@ export interface NotificationInboxItemViewData {
 }
 
 export interface NotificationInboxSectionViewData {
-  id: string;
+  id: 'read' | 'unread';
   items: NotificationInboxItemViewData[];
-  title: string;
 }
 
 export interface NotificationInboxViewData {
-  emptyDescription: string;
-  emptyTitle: string;
   sections: NotificationInboxSectionViewData[];
   unreadCount: number;
 }

@@ -24,6 +24,10 @@ type AppNoticeFeedListProps = {
   onPressItem: (noticeId: string) => void;
 };
 
+const APP_NOTICE_EMPTY_TITLE = '앱 공지사항이 없습니다';
+const APP_NOTICE_EMPTY_DESCRIPTION =
+  '등록된 앱 공지사항이 생기면 여기에서 확인할 수 있어요.';
+
 export const AppNoticeFeedList = ({
   data,
   onPressItem,
@@ -31,7 +35,7 @@ export const AppNoticeFeedList = ({
   if (data.items.length === 0) {
     return (
       <V2StateCard
-        description={data.emptyDescription}
+        description={APP_NOTICE_EMPTY_DESCRIPTION}
         icon={
           <Icon
             color={V2_COLORS.border.default}
@@ -39,7 +43,7 @@ export const AppNoticeFeedList = ({
             size={28}
           />
         }
-        title={data.emptyTitle}
+        title={APP_NOTICE_EMPTY_TITLE}
       />
     );
   }

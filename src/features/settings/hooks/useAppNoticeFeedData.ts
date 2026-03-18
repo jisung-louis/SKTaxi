@@ -50,8 +50,6 @@ export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
     try {
       const records = await repositoryRef.current.getNotices();
       setData({
-        emptyDescription: '등록된 앱 공지사항이 생기면 여기에서 확인할 수 있어요.',
-        emptyTitle: '앱 공지사항이 없습니다',
         items: records.map(record => ({
           badges: buildBadges(record.important),
           id: record.id,

@@ -2,15 +2,118 @@ import React from 'react';
 
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
-import {
-  MY_PAGE_MENU_SECTIONS,
-  MY_PAGE_PROFILE_EDIT_LABEL,
-  MY_PAGE_STAT_CONFIGS,
-  type MyPageMenuTone,
-} from '../constants/myPage';
 import {myPageRepository} from '../data/repositories/myPageRepository';
 import type {MyPageSource} from '../model/myPageSource';
+import type {
+  MyPageMenuActionKey,
+  MyPageStatKey,
+} from '../model/myPageSource';
 import type {MyPageScreenViewData} from '../model/myPageViewData';
+
+type MyPageMenuTone = 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'gray';
+
+interface MyPageMenuItemConfig {
+  actionKey: MyPageMenuActionKey;
+  iconName: string;
+  id: string;
+  label: string;
+  tone: MyPageMenuTone;
+}
+
+interface MyPageMenuSectionConfig {
+  id: string;
+  items: MyPageMenuItemConfig[];
+  title: string;
+}
+
+interface MyPageStatConfig {
+  actionKey: MyPageStatKey;
+  id: string;
+  label: string;
+}
+
+const MY_PAGE_PROFILE_EDIT_LABEL = '프로필 수정';
+const MY_PAGE_MENU_SECTIONS: MyPageMenuSectionConfig[] = [
+  {
+    id: 'activity',
+    title: '내 활동',
+    items: [
+      {
+        actionKey: 'myPosts',
+        iconName: 'document-text-outline',
+        id: 'my-posts',
+        label: '내가 쓴 글',
+        tone: 'blue',
+      },
+      {
+        actionKey: 'bookmarks',
+        iconName: 'bookmark-outline',
+        id: 'bookmarks',
+        label: '북마크',
+        tone: 'green',
+      },
+      {
+        actionKey: 'taxiHistory',
+        iconName: 'car-outline',
+        id: 'taxi-history',
+        label: '택시 이용 내역',
+        tone: 'orange',
+      },
+    ],
+  },
+  {
+    id: 'settings',
+    title: '설정',
+    items: [
+      {
+        actionKey: 'notificationSettings',
+        iconName: 'notifications-outline',
+        id: 'notification-settings',
+        label: '알림 설정',
+        tone: 'purple',
+      },
+      {
+        actionKey: 'accountManagement',
+        iconName: 'card-outline',
+        id: 'account-management',
+        label: '계좌 관리',
+        tone: 'pink',
+      },
+      {
+        actionKey: 'inquiries',
+        iconName: 'headset-outline',
+        id: 'inquiries',
+        label: '문의하기',
+        tone: 'blue',
+      },
+      {
+        actionKey: 'appSettings',
+        iconName: 'settings-outline',
+        id: 'app-settings',
+        label: '앱 설정',
+        tone: 'gray',
+      },
+    ],
+  },
+];
+
+const MY_PAGE_STAT_CONFIGS: MyPageStatConfig[] = [
+  {
+    actionKey: 'myPosts',
+    id: 'post-count',
+    label: '작성한 글',
+  },
+  {
+    actionKey: 'bookmarks',
+    id: 'bookmark-count',
+    label: '북마크',
+  },
+  {
+    actionKey: 'taxiHistory',
+    id: 'taxi-usage-count',
+    label: '택시 이용',
+  },
+];
 
 const getToneColors = (tone: MyPageMenuTone) => {
   switch (tone) {

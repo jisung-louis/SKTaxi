@@ -11,9 +11,7 @@ const toViewData = (source: ProfileEditSource): ProfileEditScreenViewData => ({
   departmentOptions: source.departmentOptions,
   displayName: source.displayName,
   gradeLabel: source.gradeLabel,
-  saveLabel: '저장하기',
   studentId: source.studentId,
-  title: '프로필 수정',
 });
 
 export const useProfileEditScreenData = () => {

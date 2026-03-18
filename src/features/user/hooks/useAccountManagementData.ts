@@ -1,34 +1,24 @@
 import React from 'react';
 
-import {
-  ACCOUNT_MANAGEMENT_BANK_NAMES,
-  ACCOUNT_MANAGEMENT_INFO_LINES,
-} from '../constants/accountManagement';
 import {accountManagementRepository} from '../data/repositories/accountManagementRepository';
 import type {AccountManagementScreenViewData} from '../model/accountManagementViewData';
 
 const mapViewData = ({
   accountHolder,
   accountNumber,
-  bankNames,
   hideName,
-  infoLines,
   isBankDropdownOpen,
   selectedBankName,
 }: {
   accountHolder: string;
   accountNumber: string;
-  bankNames: string[];
   hideName: boolean;
-  infoLines: [string, string];
   isBankDropdownOpen: boolean;
   selectedBankName: string;
 }): AccountManagementScreenViewData => ({
   accountHolder,
   accountNumber,
-  bankNames,
   hideName,
-  infoLines,
   isBankDropdownOpen,
   isSaveEnabled:
     Boolean(selectedBankName.trim()) &&
@@ -93,9 +83,7 @@ export const useAccountManagementData = () => {
     data: mapViewData({
       accountHolder,
       accountNumber,
-      bankNames: [...ACCOUNT_MANAGEMENT_BANK_NAMES],
       hideName,
-      infoLines: ACCOUNT_MANAGEMENT_INFO_LINES,
       isBankDropdownOpen,
       selectedBankName,
     }),

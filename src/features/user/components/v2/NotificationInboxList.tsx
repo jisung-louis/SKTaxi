@@ -20,6 +20,14 @@ type NotificationInboxListProps = {
   onPressItem: (item: NotificationInboxItemViewData) => void;
 };
 
+const NOTIFICATION_INBOX_EMPTY_TITLE = '알림이 없습니다';
+const NOTIFICATION_INBOX_EMPTY_DESCRIPTION =
+  '새로운 소식이 도착하면 이곳에서 바로 확인할 수 있어요.';
+const NOTIFICATION_SECTION_LABELS = {
+  read: '이전 알림',
+  unread: '새 알림',
+} as const;
+
 const getToneStyle = (
   tone: NotificationInboxItemViewData['iconTone'],
   isRead: boolean,
@@ -68,7 +76,7 @@ export const NotificationInboxList = ({
   if (data.sections.length === 0) {
     return (
       <V2StateCard
-        description={data.emptyDescription}
+        description={NOTIFICATION_INBOX_EMPTY_DESCRIPTION}
         icon={
           <Icon
             color={V2_COLORS.border.default}
@@ -76,7 +84,7 @@ export const NotificationInboxList = ({
             size={28}
           />
         }
-        title={data.emptyTitle}
+        title={NOTIFICATION_INBOX_EMPTY_TITLE}
       />
     );
   }
@@ -85,7 +93,9 @@ export const NotificationInboxList = ({
     <View style={styles.sectionList}>
       {data.sections.map(section => (
         <View key={section.id} style={styles.section}>
-          <Text style={styles.sectionLabel}>{section.title}</Text>
+          <Text style={styles.sectionLabel}>
+            {NOTIFICATION_SECTION_LABELS[section.id]}
+          </Text>
 
           <View style={styles.card}>
             {section.items.map((item, index) => (

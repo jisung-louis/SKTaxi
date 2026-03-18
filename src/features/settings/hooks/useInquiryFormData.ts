@@ -1,17 +1,39 @@
 import React from 'react';
 
-import {
-  INQUIRY_FORM_ATTACHMENT,
-  INQUIRY_FORM_CONTENT_MAX_LENGTH,
-  INQUIRY_FORM_GUIDE_LINES,
-  INQUIRY_FORM_PLACEHOLDERS,
-  INQUIRY_FORM_SUBMIT_LABEL,
-  INQUIRY_FORM_TITLE_MAX_LENGTH,
-  INQUIRY_FORM_TYPE_OPTIONS,
-} from '../constants/inquiryForm';
 import {inquiryFormRepository} from '../data/repositories/inquiryFormRepository';
 import type {InquiryFormTypeKey} from '../model/inquiryFormSource';
 import type {InquiryFormScreenViewData} from '../model/inquiryFormViewData';
+
+interface InquiryTypeOptionConfig {
+  id: InquiryFormTypeKey;
+  label: string;
+}
+
+const INQUIRY_FORM_TITLE_MAX_LENGTH = 100;
+const INQUIRY_FORM_CONTENT_MAX_LENGTH = 500;
+const INQUIRY_FORM_TYPE_OPTIONS: InquiryTypeOptionConfig[] = [
+  {id: 'feature', label: '기능 제안'},
+  {id: 'bug', label: '버그 신고'},
+  {id: 'account', label: '계정 문의'},
+  {id: 'service', label: '서비스 문의'},
+  {id: 'other', label: '기타'},
+];
+const INQUIRY_FORM_PLACEHOLDERS = {
+  content: '문의 내용을 자세히 작성해주세요. (최대 500자)',
+  title: '문의 제목을 입력해주세요',
+} as const;
+const INQUIRY_FORM_ATTACHMENT = {
+  helperLines: ['파일을 첨부하려면 탭하세요', '이미지, PDF 지원'] as [
+    string,
+    string,
+  ],
+  title: '파일 첨부',
+} as const;
+const INQUIRY_FORM_GUIDE_LINES = [
+  '접수된 문의는 검토 후 순차적으로 처리됩니다.',
+  '빠른 처리를 위해 내용을 최대한 자세히 작성해주세요.',
+] as [string, string];
+const INQUIRY_FORM_SUBMIT_LABEL = '문의 접수하기';
 
 const resolveInitialType = (type?: string): InquiryFormTypeKey | null => {
   if (

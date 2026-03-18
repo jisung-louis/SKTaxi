@@ -19,8 +19,6 @@ export interface AppNoticeFeedCardViewData {
 }
 
 export interface AppNoticeFeedViewData {
-  emptyDescription: string;
-  emptyTitle: string;
   items: AppNoticeFeedCardViewData[];
 }
 
