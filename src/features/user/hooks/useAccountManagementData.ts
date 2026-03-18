@@ -1,5 +1,9 @@
 import React from 'react';
 
+import {
+  ACCOUNT_MANAGEMENT_BANK_NAMES,
+  ACCOUNT_MANAGEMENT_INFO_LINES,
+} from '../constants/accountManagement';
 import {accountManagementRepository} from '../data/repositories/accountManagementRepository';
 import type {AccountManagementScreenViewData} from '../model/accountManagementViewData';
 
@@ -36,13 +40,8 @@ const mapViewData = ({
 export const useAccountManagementData = () => {
   const [accountHolder, setAccountHolder] = React.useState('');
   const [accountNumber, setAccountNumber] = React.useState('');
-  const [bankNames, setBankNames] = React.useState<string[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [hideName, setHideName] = React.useState(false);
-  const [infoLines, setInfoLines] = React.useState<[string, string]>([
-    '',
-    '',
-  ]);
   const [isBankDropdownOpen, setIsBankDropdownOpen] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
@@ -54,12 +53,10 @@ export const useAccountManagementData = () => {
 
     try {
       const source = await accountManagementRepository.getAccountManagement();
-      setBankNames(source.bankNames);
-      setInfoLines(source.infoLines);
-      setSelectedBankName(source.account.bankName);
-      setAccountNumber(source.account.accountNumber);
-      setAccountHolder(source.account.accountHolder);
-      setHideName(source.account.hideName);
+      setSelectedBankName(source.bankName);
+      setAccountNumber(source.accountNumber);
+      setAccountHolder(source.accountHolder);
+      setHideName(source.hideName);
     } catch (caughtError) {
       console.error('계좌 관리 데이터를 불러오지 못했습니다.', caughtError);
       setError('계좌 관리 정보를 불러오지 못했습니다.');
@@ -96,9 +93,9 @@ export const useAccountManagementData = () => {
     data: mapViewData({
       accountHolder,
       accountNumber,
-      bankNames,
+      bankNames: [...ACCOUNT_MANAGEMENT_BANK_NAMES],
       hideName,
-      infoLines,
+      infoLines: ACCOUNT_MANAGEMENT_INFO_LINES,
       isBankDropdownOpen,
       selectedBankName,
     }),

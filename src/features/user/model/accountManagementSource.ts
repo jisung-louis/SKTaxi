@@ -5,8 +5,4 @@ export interface AccountManagementAccountSource {
   hideName: boolean;
 }
 
-export interface AccountManagementSource {
-  account: AccountManagementAccountSource;
-  bankNames: string[];
-  infoLines: [string, string];
-}
+export type AccountManagementSource = AccountManagementAccountSource;
