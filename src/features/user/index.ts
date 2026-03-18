@@ -45,11 +45,9 @@ export type { UseUserBookmarksResult } from './hooks/useUserBookmarks';
 
 export type {
   MyPageMenuActionKey,
-  MyPageMenuItemSource,
-  MyPageMenuSectionSource,
   MyPageProfileSource,
   MyPageSource,
-  MyPageStatSource,
+  MyPageStatKey,
 } from './model/myPageSource';
 export type {
   AccountManagementScreenViewData,

@@ -2,11 +2,14 @@ import React from 'react';
 
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
+import {
+  MY_PAGE_MENU_SECTIONS,
+  MY_PAGE_PROFILE_EDIT_LABEL,
+  MY_PAGE_STAT_CONFIGS,
+  type MyPageMenuTone,
+} from '../constants/myPage';
 import {myPageRepository} from '../data/repositories/myPageRepository';
-import type {
-  MyPageMenuTone,
-  MyPageSource,
-} from '../model/myPageSource';
+import type {MyPageSource} from '../model/myPageSource';
 import type {MyPageScreenViewData} from '../model/myPageViewData';
 
 const getToneColors = (tone: MyPageMenuTone) => {
@@ -49,10 +52,10 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
   profile: {
     avatarLabel: source.profile.displayName.slice(0, 1) || '?',
     displayName: source.profile.displayName,
-    editLabel: source.profile.editLabel,
+    editLabel: MY_PAGE_PROFILE_EDIT_LABEL,
     subtitle: source.profile.subtitle,
   },
-  sections: source.sections.map(section => ({
+  sections: MY_PAGE_MENU_SECTIONS.map(section => ({
     id: section.id,
     items: section.items.map(item => {
       const toneColors = getToneColors(item.tone);
@@ -68,11 +71,11 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
     }),
     title: section.title,
   })),
-  stats: source.stats.map(stat => ({
+  stats: MY_PAGE_STAT_CONFIGS.map(stat => ({
     actionKey: stat.actionKey,
     id: stat.id,
     label: stat.label,
-    valueLabel: `${stat.value}`,
+    valueLabel: `${source.stats[stat.actionKey]}`,
   })),
 });
 
