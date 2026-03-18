@@ -47,7 +47,7 @@ export { LegalDocumentScreen } from './screens/LegalDocumentScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
-export { AppNoticeFeedList } from './components/v2/AppNoticeFeedList';
+export { AppNoticeFeedList } from 'components/AppNoticeFeedList';
 export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
 export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
