@@ -32,6 +32,6 @@ export const HIDDEN_BOTTOM_TAB_SCREENS: Record<
     'MinecraftDetail',
     'MinecraftMapDetail',
   ],
-  NoticeTab: ['NoticeDetail', 'NoticeDetailWebView'],
+  NoticeTab: ['NoticeDetail'],
   CommunityTab: ['BoardDetail', 'BoardWrite', 'BoardEdit', 'ChatDetail'],
 };

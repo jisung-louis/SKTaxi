@@ -45,7 +45,6 @@ export type { NoticeStackParamList } from './model/navigation';
 export type { NoticeCategory } from './model/constants';
 
 export { NoticeDetailScreen } from './screens/NoticeDetailScreen';
-export { default as NoticeDetailWebViewScreen } from './screens/NoticeDetailWebViewScreen';
 export { NoticeScreen } from './screens/NoticeScreen';
 
 export {
@@ -64,7 +63,6 @@ export {
   buildNoticeForegroundNotification,
   buildNoticePushForegroundNotification,
   navigateToNoticeDetail,
-  toNoticeSubviewUrl,
 } from './services/noticeNavigationService';
 export {
   getNoticeIdsToMarkAllAsRead,
