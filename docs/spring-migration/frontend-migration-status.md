@@ -23,15 +23,15 @@
 - 최종 구조 기준 문서는 작성 완료
 - 실행 로드맵 문서는 작성 완료
 - Phase A 공통 transport 기반 구축은 1차 완료
-- auth/member 경로의 Spring concrete repository는 연결 완료
+- auth/member 경로의 Spring concrete repository는 bootstrap core까지 연결 완료
 - 전역 DI와 feature-local entrypoint의 혼재는 아직 남아 있음
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
 즉, 현재 상태는 다음과 같이 요약할 수 있다.
 
 - 공통 infra는 준비되었고
-- auth/bootstrap과 FCM token 경로는 Spring 기준으로 고정됐고
-- 이제부터는 남은 feature별 Spring 연결과 중앙화 수렴을 함께 진행하면 된다.
+- auth/bootstrap과 FCM token 경로는 Spring 기준으로 고정됐지만
+- auth 진입선의 프로필/온보딩 source of truth 정리는 아직 남아 있다.
 
 ---
 
@@ -40,7 +40,7 @@
 | Phase | 상태 | 비고 |
 |------|------|------|
 | Phase A. 공통 Transport 구축 | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가 |
-| Phase B. 인증/회원 bootstrap 정리 | 완료 | auth bootstrap + FCM token Spring API 이전 완료 |
+| Phase B. 인증/회원 bootstrap 정리 | 진행 중(후속 정리 필요) | bootstrap + FCM token은 완료, CompleteProfile/guard/source-of-truth 정리 남음 |
 | Phase C. App Notice / Notification Center / Taxi Home | 미시작 | 추천 첫 concrete migration 대상 |
 | Phase D. Notification 정식 이전 | 미시작 | REST + SSE 전환 필요 |
 | Phase E. Taxi Party 정식 이전 | 미시작 | REST + SSE 전환 필요 |
@@ -151,7 +151,17 @@
 
 현재 아직 남은 것:
 
-- Phase C concrete feature migration 시작
+- `CompleteProfileScreen` 저장 경로를 `PATCH /v1/members/me`로 이전
+- auth session의 핵심 프로필 source of truth를 mock `userRepository.subscribeToUserProfile()`가 아니라 Spring member profile 기준으로 정리
+- `permissionsComplete`를 mock in-memory profile에만 두지 않고, 재시작 후에도 유지되는 local adjunct 또는 backend 지원 방식으로 정리
+- `finalizeGoogleSignIn()` / auth bootstrap 경로에 남아 있는 `createInitialUserProfile()` / `syncLoginMetadata()` mock 의존을 제거하거나 local adjunct 책임으로 축소
+- 닉네임 중복 정책이 제품 필수 규칙이라면 backend 계약 추가 요청, 아니라면 frontend pre-check 제거
+
+현재 Phase B가 아직 닫히지 않은 이유:
+
+- `useAuthSession()`은 member bootstrap 이후에도 [useAuthSession.ts](/Users/jisung/SKTaxi/src/features/auth/hooks/useAuthSession.ts#L172)에서 mock user profile 구독을 auth state source of truth로 사용한다.
+- `MockUserRepository` 기본 프로필은 [MockUserRepository.ts](/Users/jisung/SKTaxi/src/features/user/data/repositories/MockUserRepository.ts#L79)에서 `studentId: null`, `department: null`, `permissionsComplete: false`로 생성된다.
+- 따라서 현재 구조를 그대로 두면 앱 재시작 후에도 `CompleteProfile` / `PermissionOnboarding` 가드가 mock 기본값에 끌려갈 수 있다.
 
 ---
 
@@ -177,20 +187,24 @@
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Phase C
+1. Phase B 후속 정리
+   - CompleteProfile Spring 이전
+   - auth state source of truth 정리
+   - permission onboarding persistence 정리
+2. Phase C
    - App Notice
    - Notification Center
    - Taxi Home
-2. Phase D 이후
+3. Phase D 이후
    - Notification
    - Taxi Party
    - Chat
 
 이 순서를 권장하는 이유:
 
-- Phase A 기반을 가장 빨리 검증할 수 있다.
-- 현재 구조상 entrypoint가 정리된 3개 화면이 가장 빠른 승리 지점이다.
-- 이 3개를 옮기면서 중앙 DI 수렴 패턴도 같이 확정할 수 있다.
+- 현재 auth 진입선이 여전히 mock profile 기본값에 의존하므로, 이 구간을 먼저 닫아야 Phase C 이후 feature migration이 안정된다.
+- 그 다음에는 Phase A 기반을 가장 빨리 검증할 수 있는 entrypoint 3종이 가장 빠른 승리 지점이다.
+- App Notice / Notification Center / Taxi Home을 옮기면서 중앙 DI 수렴 패턴도 같이 확정할 수 있다.
 
 ---
 

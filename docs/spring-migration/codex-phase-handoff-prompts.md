@@ -108,7 +108,53 @@
 
 ---
 
-## 4. Phase C 프롬프트
+## 4. Phase B 후속 프롬프트
+
+```text
+/Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션 Phase B 후속 정리를 진행해줘.
+
+반드시 먼저 읽을 문서:
+- /Users/jisung/SKTaxi/docs/spring-migration/frontend-migration-status.md
+- /Users/jisung/SKTaxi/docs/spring-migration/frontend-architecture-guideline.md
+- /Users/jisung/SKTaxi/docs/spring-migration/frontend-integration-roadmap.md
+- /Users/jisung/SKTaxi/docs/spring-migration/api-specification.md
+
+이번 스레드 목표:
+- CompleteProfile 저장 경로를 Spring member API로 이전
+- auth 진입 가드의 핵심 프로필 source of truth를 mock user profile에서 member profile 기준으로 전환
+- permission onboarding 상태를 재시작 후에도 유지되는 방식으로 정리
+- auth/member bootstrap 경로에 남아 있는 mock user profile 의존을 제거하거나 local adjunct 책임으로 축소
+
+반드시 확인할 현재 문제:
+- useAuthSession.ts는 member bootstrap 후에도 userRepository.subscribeToUserProfile()를 auth state source of truth로 사용한다.
+- MockUserRepository 기본 프로필은 studentId/department null, permissionsComplete false로 시작한다.
+- 그래서 현재 구조를 그대로 두면 앱 재시작 후 CompleteProfile / PermissionOnboarding 가드가 다시 열릴 수 있다.
+
+작업 원칙:
+- CompleteProfile core 필드(nickname/displayName, studentId, department, photoUrl)는 memberRepository 경계로 붙여.
+- permissionsComplete처럼 backend에 아직 없는 값은 local adjunct로 둘 수 있지만, mock in-memory state에만 두지는 마.
+- 서버 DTO를 hook/screen으로 직접 올리지 마.
+- 앱 전체 DI 전면 리팩터링은 하지 마.
+- touched auth/member 경로는 중앙 DI 기준에 맞게 정리해.
+- 실제 endpoint/DTO는 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 구현 기준으로 확인해.
+- 닉네임 중복 정책이 backend 계약과 다르면 프론트 workaround로 덮지 말고 사용자에게 변경 요청안을 보고해.
+
+검증:
+- 앱 재시작 후에도 프로필 완성 여부와 permission onboarding 여부가 안정적으로 유지되는지 코드 기준으로 설명
+- useAuthEntryGuard가 어떤 source of truth를 읽는지 설명
+- 변경 파일 기준 타입 오류 확인
+- 상태 문서 갱신
+
+작업 완료 후:
+- 이번 스레드에서 Phase B 후속 중 무엇을 끝냈는지
+- 아직 남은 Phase B 필수 작업이 있는지
+- 이제 Phase C로 넘어가도 되는지
+를 명확히 적어줘.
+```
+
+---
+
+## 5. Phase C 프롬프트
 
 ```text
 /Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션 Phase C를 진행해줘.
@@ -124,6 +170,10 @@
 - Notification Center
 - Taxi Home
 이 3개 중 현재 안전하게 진행 가능한 범위를 Spring API로 연결
+
+시작 전 전제:
+- frontend-migration-status.md에서 Phase B 후속 정리가 닫혔는지 먼저 확인해.
+- Phase B 후속 정리가 남아 있으면 Phase C를 강행하지 말고 사용자에게 먼저 보고해.
 
 작업 원칙:
 - 기존 feature-local entrypoint를 그대로 두고 단순 구현체 swap만 하지 말고,
@@ -152,7 +202,7 @@
 
 ---
 
-## 5. Phase D 프롬프트
+## 6. Phase D 프롬프트
 
 ```text
 /Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션 Phase D를 진행해줘.
@@ -185,7 +235,7 @@
 
 ---
 
-## 6. Phase E 프롬프트
+## 7. Phase E 프롬프트
 
 ```text
 /Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션 Phase E를 진행해줘.
@@ -218,7 +268,7 @@
 
 ---
 
-## 7. Phase F 프롬프트
+## 8. Phase F 프롬프트
 
 ```text
 /Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션 Phase F를 진행해줘.
@@ -251,7 +301,7 @@
 
 ---
 
-## 8. Phase G/H 프롬프트
+## 9. Phase G/H 프롬프트
 
 ```text
 /Users/jisung/SKTaxi 프로젝트에서 Spring 마이그레이션의 정리 단계(Phase G/H)를 진행해줘.

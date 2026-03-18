@@ -243,6 +243,7 @@ REST 재조회만으로 화면이 복구되어야 한다.
 목표:
 
 - 로그인 직후 Spring 보호 API를 안정적으로 호출할 수 있게 한다.
+- auth 진입 가드가 mock profile 기본값이 아니라 실제 member profile과 지속 가능한 onboarding 상태를 기준으로 동작하게 한다.
 
 작업:
 
@@ -252,6 +253,11 @@ REST 재조회만으로 화면이 복구되어야 한다.
   3. `POST /v1/members`
   4. `GET /v1/members/me`
 - FCM token 등록/삭제도 Spring API 기준으로 이동한다.
+- `CompleteProfileScreen` 저장 경로를 `PATCH /v1/members/me`로 이전한다.
+- auth session의 핵심 프로필 source of truth를 `userRepository.subscribeToUserProfile()`가 아니라 member profile 기준으로 정리한다.
+- `permissionsComplete`는 mock in-memory profile에만 남기지 않고, 재시작 후에도 유지되는 local adjunct 또는 backend 지원 방식으로 정리한다.
+- `finalizeGoogleSignIn()`에 남아 있는 `createInitialUserProfile()` / `syncLoginMetadata()` mock 의존은 제거하거나 local adjunct 책임으로 축소한다.
+- 닉네임 중복 정책이 제품 필수 규칙이라면 backend 계약을 추가 요청하고, 아니라면 frontend pre-check를 제거한다.
 
 2026-03-18 진행 반영:
 
@@ -262,9 +268,18 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - 앱 런타임 토큰 등록/refresh/로그아웃 토큰 해제를 `/v1/members/me/fcm-tokens`로 이전했다.
 - 기존 `IUserRepository` 기반 Firebase FCM token 저장 경로는 제거했다.
 
+Phase B 후속 필수 정리:
+
+- 현재 `useAuthSession()`은 member bootstrap 이후에도 mock user profile 구독을 auth state source of truth로 사용한다.
+- 현재 `MockUserRepository` 기본 프로필은 `studentId: null`, `department: null`, `permissionsComplete: false`로 생성된다.
+- 따라서 `CompleteProfile`과 `PermissionOnboarding`은 같은 세트로 정리해야 하며, 이 구간이 닫히기 전에는 Phase B를 완전 완료로 보지 않는다.
+
 완료 기준:
 
 - 앱 재시작/재로그인 후 보호 API 호출이 일관되게 성공한다.
+- `CompleteProfile` 제출값이 Spring member API에 저장된다.
+- 앱 재시작 후에도 `CompleteProfile` / `PermissionOnboarding` 진입 여부가 mock 기본값 때문에 다시 열리지 않는다.
+- auth 진입 가드가 member profile + 지속 가능한 onboarding 상태를 기준으로 동작한다.
 
 ### Phase C. 최근 entrypoint 3종 먼저 교체
 
@@ -278,6 +293,7 @@ REST 재조회만으로 화면이 복구되어야 한다.
 
 - 이미 hook -> repository entrypoint 구조가 정리되어 있으므로
   hook 변경 없이 구현체 교체만으로 가장 빠르게 전환 가능하다.
+- 단, Phase B 후속 정리가 닫힌 뒤 시작하는 것을 기본으로 한다.
 
 작업:
 
