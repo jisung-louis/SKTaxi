@@ -8,7 +8,7 @@ import {
   BoardWriteScreen,
 } from '@/features/board';
 import {CommunityScreen} from '@/features/community';
-import {ChatDetailScreen, ChatListScreen} from '@/features/chat';
+import {ChatDetailScreen} from '@/features/chat';
 
 const CommunityStack = createNativeStackNavigator<CommunityStackParamList>();
 
@@ -19,7 +19,6 @@ export const CommunityStackNavigator = () => {
       <CommunityStack.Screen name="BoardDetail" component={BoardDetailScreen} />
       <CommunityStack.Screen name="BoardWrite" component={BoardWriteScreen} />
       <CommunityStack.Screen name="BoardEdit" component={BoardEditScreen} />
-      <CommunityStack.Screen name="ChatList" component={ChatListScreen} />
       <CommunityStack.Screen name="ChatDetail" component={ChatDetailScreen} />
     </CommunityStack.Navigator>
   );
