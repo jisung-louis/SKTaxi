@@ -1,30 +1,29 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
-import { useRepository } from '@/di';
-import { registerAuthTokenResolver } from '@/shared/api';
-import { useUserRepository } from '@/features/user';
+import {useRepository} from '@/di';
+import type {MemberProfile} from '@/features/member';
+import {registerAuthTokenResolver} from '@/shared/api';
 
-import { AuthContextValue, AuthState } from '../model/types';
-import { AuthUser } from '../data/repositories/IAuthRepository';
+import {AuthContextValue, AuthState} from '../model/types';
+import {AuthUser} from '../data/repositories/IAuthRepository';
 import {
   bootstrapAuthenticatedMember,
+  buildAuthenticatedUser,
   buildFallbackUser,
   finalizeGoogleSignIn,
   mapAuthActionError,
   mapEmailPasswordSignInError,
-  mergeProfileUser,
   removeAuthSessionFcmToken,
   setAnalyticsAuthUser,
-  syncLoginMetadata,
 } from '../services/authSessionService';
+import {loadAuthLocalAdjunct} from '../services/authLocalAdjunctService';
 
 export const useAuthSession = (): AuthContextValue => {
-  const { authRepository, memberRepository } = useRepository();
-  const userRepository = useUserRepository();
+  const {authRepository, memberRepository} = useRepository();
   const bootstrappedMemberUidRef = useRef<string | null>(null);
   const memberBootstrapRef = useRef<{
     uid: string;
-    promise: Promise<void>;
+    promise: Promise<MemberProfile>;
   } | null>(null);
   const pendingAuthTransitionRef = useRef<{
     promise: Promise<void>;
@@ -82,7 +81,7 @@ export const useAuthSession = (): AuthContextValue => {
   const ensureMemberBootstrap = useCallback(
     (authUser: AuthUser) => {
       if (bootstrappedMemberUidRef.current === authUser.uid) {
-        return Promise.resolve();
+        return memberRepository.getMyMemberProfile();
       }
 
       const pending = memberBootstrapRef.current;
@@ -91,11 +90,12 @@ export const useAuthSession = (): AuthContextValue => {
       }
 
       const promise = (async () => {
-        await bootstrapAuthenticatedMember({
+        const memberProfile = await bootstrapAuthenticatedMember({
           authRepository,
           memberRepository,
         });
         bootstrappedMemberUidRef.current = authUser.uid;
+        return memberProfile;
       })().finally(() => {
         if (memberBootstrapRef.current?.promise === promise) {
           memberBootstrapRef.current = null;
@@ -112,38 +112,109 @@ export const useAuthSession = (): AuthContextValue => {
     [authRepository, memberRepository],
   );
 
+  const refreshCurrentUser = useCallback(
+    async (memberProfile?: MemberProfile) => {
+      const authUser = authRepository.getCurrentUser();
+
+      if (!authUser) {
+        setState({
+          user: null,
+          loading: false,
+        });
+        return;
+      }
+
+      const localAdjunct = await loadAuthLocalAdjunct(authUser.uid);
+
+      try {
+        const resolvedMemberProfile =
+          memberProfile ?? (await memberRepository.getMyMemberProfile());
+
+        setState({
+          user: buildAuthenticatedUser({
+            authUser,
+            localAdjunct,
+            memberProfile: resolvedMemberProfile,
+          }),
+          loading: false,
+        });
+      } catch (error) {
+        console.warn('현재 사용자 재동기화 실패:', error);
+
+        setState(previous => {
+          if (previous.user?.uid === authUser.uid) {
+            return {
+              user: {
+                ...previous.user,
+                email: authUser.email,
+                photoURL: previous.user.photoURL ?? authUser.photoURL ?? null,
+                onboarding: {
+                  permissionsComplete: localAdjunct.permissionsComplete,
+                },
+              },
+              loading: false,
+            };
+          }
+
+          return {
+            user: buildFallbackUser(authUser, localAdjunct),
+            loading: false,
+          };
+        });
+
+        throw error;
+      }
+    },
+    [authRepository, memberRepository],
+  );
+
   useEffect(() => {
-    return registerAuthTokenResolver(({ forceRefresh } = {}) =>
+    return registerAuthTokenResolver(({forceRefresh} = {}) =>
       authRepository.refreshToken(forceRefresh),
     );
   }, [authRepository]);
 
   useEffect(() => {
-    let unsubscribeProfile: (() => void) | undefined;
+    let cancelled = false;
 
     const unsubscribeAuth = authRepository.subscribeToAuthState({
       onData: async authUser => {
-        if (unsubscribeProfile) {
-          unsubscribeProfile();
-          unsubscribeProfile = undefined;
-        }
-
         await setAnalyticsAuthUser(authUser);
+        if (cancelled) {
+          return;
+        }
 
         if (!authUser) {
           bootstrappedMemberUidRef.current = null;
           memberBootstrapRef.current = null;
-          setState({
-            user: null,
-            loading: false,
-          });
+          if (!cancelled) {
+            setState({
+              user: null,
+              loading: false,
+            });
+          }
           return;
         }
 
-        setState(prev => ({ ...prev, loading: true }));
+        setState(prev => ({...prev, loading: true}));
 
         try {
-          await ensureMemberBootstrap(authUser);
+          const memberProfile = await ensureMemberBootstrap(authUser);
+          const localAdjunct = await loadAuthLocalAdjunct(authUser.uid);
+
+          if (cancelled) {
+            return;
+          }
+
+          setState({
+            user: buildAuthenticatedUser({
+              authUser,
+              localAdjunct,
+              memberProfile,
+            }),
+            loading: false,
+          });
+          resolvePendingAuthTransition();
         } catch (error) {
           console.error('Spring member bootstrap 실패:', error);
           bootstrappedMemberUidRef.current = null;
@@ -156,53 +227,39 @@ export const useAuthSession = (): AuthContextValue => {
             console.warn('bootstrap 실패 후 로그아웃 실패:', signOutError);
           }
 
-          setState({
-            user: null,
-            loading: false,
-          });
+          if (!cancelled) {
+            setState({
+              user: null,
+              loading: false,
+            });
+          }
+        }
+      },
+      onError: error => {
+        if (cancelled) {
           return;
         }
 
-        try {
-          await syncLoginMetadata(userRepository, authUser.uid);
-        } catch (error) {
-          console.warn('로그인 정보 업데이트 실패:', error);
-        }
-
-        unsubscribeProfile = userRepository.subscribeToUserProfile(
-          authUser.uid,
-          {
-            onData: profile => {
-              setState({
-                user: profile
-                  ? mergeProfileUser(authUser, profile)
-                  : buildFallbackUser(authUser),
-                loading: false,
-              });
-              resolvePendingAuthTransition();
-            },
-            onError: error => {
-              console.error('프로필 구독 에러:', error);
-              setState({
-                user: buildFallbackUser(authUser),
-                loading: false,
-              });
-              resolvePendingAuthTransition();
-            },
-          },
-        );
-      },
-      onError: error => {
         console.error('인증 상태 구독 에러:', error);
         rejectPendingAuthTransition(error);
-        setState(prev => ({ ...prev, loading: false }));
+        setState(previous => {
+          if (!previous.user) {
+            return {
+              ...previous,
+              loading: false,
+            };
+          }
+
+          return {
+            user: previous.user,
+            loading: false,
+          };
+        });
       },
     });
 
     return () => {
-      if (unsubscribeProfile) {
-        unsubscribeProfile();
-      }
+      cancelled = true;
       memberBootstrapRef.current = null;
       pendingAuthTransitionRef.current = null;
       unsubscribeAuth();
@@ -212,58 +269,51 @@ export const useAuthSession = (): AuthContextValue => {
     ensureMemberBootstrap,
     rejectPendingAuthTransition,
     resolvePendingAuthTransition,
-    userRepository,
   ]);
 
   const signOut = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, loading: true }));
+      setState(prev => ({...prev, loading: true}));
       await removeAuthSessionFcmToken(authRepository, memberRepository);
       await authRepository.signOut();
     } catch (error) {
-      setState(prev => ({ ...prev, loading: false }));
+      setState(prev => ({...prev, loading: false}));
       throw error;
     }
   }, [authRepository, memberRepository]);
 
   const signInWithGoogle = useCallback(async () => {
     try {
-      setState(prev => ({ ...prev, loading: true }));
+      setState(prev => ({...prev, loading: true}));
       const authTransition = beginPendingAuthTransition();
 
       const result = await authRepository.signInWithGoogle();
       const firstLogin = await finalizeGoogleSignIn({
         authRepository,
         result,
-        userRepository,
       });
       await authTransition;
 
-      setState(prev => ({ ...prev, loading: false }));
-      return { firstLogin };
+      setState(prev => ({...prev, loading: false}));
+      return {firstLogin};
     } catch (error) {
       rejectPendingAuthTransition(error);
-      setState(prev => ({ ...prev, loading: false }));
+      setState(prev => ({...prev, loading: false}));
       throw mapAuthActionError(error);
     }
-  }, [
-    authRepository,
-    beginPendingAuthTransition,
-    rejectPendingAuthTransition,
-    userRepository,
-  ]);
+  }, [authRepository, beginPendingAuthTransition, rejectPendingAuthTransition]);
 
   const signInWithEmailAndPassword = useCallback(
     async (email: string, password: string) => {
       try {
-        setState(prev => ({ ...prev, loading: true }));
+        setState(prev => ({...prev, loading: true}));
         const authTransition = beginPendingAuthTransition();
         await authRepository.signInWithEmailAndPassword(email.trim(), password);
         await authTransition;
-        setState(prev => ({ ...prev, loading: false }));
+        setState(prev => ({...prev, loading: false}));
       } catch (error) {
         rejectPendingAuthTransition(error);
-        setState(prev => ({ ...prev, loading: false }));
+        setState(prev => ({...prev, loading: false}));
         throw mapEmailPasswordSignInError(error);
       }
     },
@@ -280,5 +330,6 @@ export const useAuthSession = (): AuthContextValue => {
     signInWithEmailAndPassword,
     signOut,
     refreshAuthToken,
+    refreshCurrentUser,
   };
 };
