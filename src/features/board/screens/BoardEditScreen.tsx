@@ -19,8 +19,8 @@ import {
 import {V2_COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
-import {BoardComposeForm} from '../components/v2/BoardComposeForm';
-import {BoardComposeHeader} from '../components/v2/BoardComposeHeader';
+import {BoardComposeForm} from '../components/BoardComposeForm';
+import {BoardComposeHeader} from '../components/BoardComposeHeader';
 import {useBoardEdit} from '../hooks/useBoardEdit';
 import type {BoardStackParamList} from '../model/navigation';
 import type {BoardFormData, BoardPostCategoryId} from '../model/types';

@@ -36,7 +36,7 @@ import {
 
 import type {BoardStackParamList} from '../model/navigation';
 import {useBoardDetailData} from '../hooks/useBoardDetailData';
-import {BoardDetailPopupMenu} from '../components/v2/BoardDetailPopupMenu';
+import {BoardDetailPopupMenu} from '../components/BoardDetailPopupMenu';
 
 type BoardDetailNavigationProp = NativeStackNavigationProp<
   BoardStackParamList,
