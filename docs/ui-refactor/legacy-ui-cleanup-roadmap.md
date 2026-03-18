@@ -109,10 +109,26 @@
 
 ### Phase 8. 레거시 토큰 종결
 
+진행 중 커밋:
+- `3a4e921` `refactor: 공용 UI 디자인 토큰을 v2로 이관`
+
 목표:
 - `src/shared/constants/colors.ts` import 0
 - `src/shared/constants/typography.ts` import 0
 - `@/shared/ui` import를 최소화하거나 제거
+
+현재까지 정리한 내용:
+- `shared/ui` live 컴포넌트 `Button`, `PageHeader`, `PermissionBubble`, `ForegroundNotification`, `ForceUpdateModal`, `Dot`, `TabBadge` 를 v2 토큰으로 이관
+- `shared/design-system/tokens/typography.ts` 추가
+- `shared/ui`, `shared/design-system` 범위에서 legacy `colors`, `typography` import 0 달성
+
+남은 주요 사용처:
+- `campus`: `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`
+- `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `chatRoomService`
+- `taxi`: `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`, `JoinRequestModal`
+- `notice`: `NoticeDetailWebViewScreen`
+- `board`: `ImageViewer`, `selectors`
+- dead 후보 재확인: `NotificationSettingItem`, `TermsOfUseContent`
 
 ## 현재 live로 판단한 예외
 
