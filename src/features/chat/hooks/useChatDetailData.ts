@@ -142,7 +142,7 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
 
       setData(buildViewData(roomDetail));
     } catch (loadError) {
-      console.error('chat detail mock data load failed', loadError);
+      console.error('채팅 상세 데이터를 불러오지 못했습니다.', loadError);
       setError('채팅 상세 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);

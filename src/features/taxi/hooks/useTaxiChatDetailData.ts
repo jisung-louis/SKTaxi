@@ -106,7 +106,7 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       setData(buildViewData(partyChat));
       await taxiChatRepository.setCurrentParty(partyId);
     } catch (loadError) {
-      console.error('taxi chat mock data load failed', loadError);
+      console.error('파티 채팅 데이터를 불러오지 못했습니다.', loadError);
       setError('파티 채팅 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);

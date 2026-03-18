@@ -4,8 +4,7 @@ import {ko} from 'date-fns/locale';
 
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
-import type {ITaxiAcceptancePendingRepository} from '../data/repositories/ITaxiAcceptancePendingRepository';
-import {MockTaxiAcceptancePendingRepository} from '../data/repositories/MockTaxiAcceptancePendingRepository';
+import {taxiAcceptancePendingRepository} from '../data/repositories/taxiAcceptancePendingRepository';
 import type {
   TaxiAcceptancePendingAvatarViewData,
   TaxiAcceptancePendingNavigationParams,
@@ -153,13 +152,6 @@ const buildViewData = (
 export const useTaxiAcceptancePendingData = (
   params: TaxiAcceptancePendingNavigationParams,
 ): UseTaxiAcceptancePendingDataResult => {
-  const repositoryRef =
-    React.useRef<ITaxiAcceptancePendingRepository | null>(null);
-
-  if (!repositoryRef.current) {
-    repositoryRef.current = new MockTaxiAcceptancePendingRepository();
-  }
-
   const seed = React.useMemo(
     () => buildSeedFromLegacyParams(params),
     [params],
@@ -170,10 +162,6 @@ export const useTaxiAcceptancePendingData = (
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
-    if (!repositoryRef.current) {
-      return;
-    }
-
     if (!seed) {
       setSource(null);
       setError('동승 요청 대기 정보를 찾을 수 없습니다.');
@@ -186,10 +174,10 @@ export const useTaxiAcceptancePendingData = (
 
     try {
       const nextSource =
-        await repositoryRef.current.getPendingRequestSource(seed);
+        await taxiAcceptancePendingRepository.getPendingRequestSource(seed);
       setSource(nextSource);
     } catch (loadError) {
-      console.error('taxi acceptance pending mock data load failed', loadError);
+      console.error('동승 요청 대기 화면을 불러오지 못했습니다.', loadError);
       setError('동승 요청 대기 화면을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
@@ -201,11 +189,11 @@ export const useTaxiAcceptancePendingData = (
   }, [load]);
 
   const cancelRequest = React.useCallback(async () => {
-    if (!repositoryRef.current || !seed?.requestId) {
+    if (!seed?.requestId) {
       throw new Error('취소할 동승 요청이 없습니다.');
     }
 
-    await repositoryRef.current.cancelRequest(seed.requestId);
+    await taxiAcceptancePendingRepository.cancelRequest(seed.requestId);
   }, [seed?.requestId]);
 
   const data = React.useMemo(() => {

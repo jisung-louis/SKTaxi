@@ -1,7 +1,6 @@
 import React from 'react';
 
-import type {ITaxiHomeRepository} from '../data/repositories/ITaxiHomeRepository';
-import {MockTaxiHomeRepository} from '../data/repositories/MockTaxiHomeRepository';
+import {taxiHomeRepository} from '../data/repositories/taxiHomeRepository';
 import type {
   TaxiHomeFilterId,
   TaxiHomePartyCardViewData,
@@ -108,12 +107,6 @@ const buildTaxiHomeViewData = ({
 };
 
 export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
-  const repositoryRef = React.useRef<ITaxiHomeRepository | null>(null);
-
-  if (!repositoryRef.current) {
-    repositoryRef.current = new MockTaxiHomeRepository();
-  }
-
   const [source, setSource] = React.useState<TaxiHomeSourceData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -124,18 +117,14 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
     React.useState<TaxiHomeSortId>('latest');
 
   const load = React.useCallback(async () => {
-    if (!repositoryRef.current) {
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const nextSource = await repositoryRef.current.getHomeData();
+      const nextSource = await taxiHomeRepository.getHomeData();
       setSource(nextSource);
     } catch (loadError) {
-      console.error('taxi home mock data load failed', loadError);
+      console.error('택시 홈 데이터를 불러오지 못했습니다.', loadError);
       setError('택시 홈 데이터를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
