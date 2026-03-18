@@ -57,22 +57,14 @@
 
 ### Phase 4. 시간표 레거시 편집 흐름 제거
 
-대상:
-- `src/features/timetable/components/CourseCard.tsx`
-- `src/features/timetable/components/CourseSearch.tsx`
-- `src/features/timetable/components/SemesterDropdown.tsx`
-- `src/features/timetable/components/TimetableEditBottomSheet.tsx`
-- `src/features/timetable/components/TimetablePreview.tsx`
-- `src/features/timetable/components/TimetableShareModal.tsx`
-- `src/features/timetable/hooks/useCourseSearch.ts`
-- `src/features/timetable/providers/CourseSearchProvider.tsx`
+완료 커밋:
+- `2d96dc0` `refactor: 시간표 레거시 편집 흐름 제거`
 
-같이 수정할 파일:
-- `src/app/providers/AppProviders.tsx`
-- `src/features/timetable/index.ts`
-
-주의:
-- `CourseSearchProvider` 제거 시 `AppProviders` import/wrapper도 같이 제거해야 한다.
+정리 내용:
+- old 시간표 편집/검색/미리보기/공유 컴포넌트 제거
+- `useCourseSearch`, `useTimetable`, `CourseSearchProvider` 제거
+- `AppProviders` 에서 `CourseSearchProvider` wrapper 제거
+- `timetable/index.ts` 의 dead export 정리
 
 ### Phase 5. 택시 레거시 채팅 구성 제거
 
