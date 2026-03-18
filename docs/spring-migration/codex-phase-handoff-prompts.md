@@ -21,6 +21,9 @@
   2. 백엔드 코드 `/Users/jisung/skuri-backend`
   3. `docs/spring-migration/api-specification.md`
 - 충돌 시 우선순위는 `/v3/api-docs` > 백엔드 코드 > markdown 명세다.
+- 표현/매핑 수준의 계약 차이는 프론트 mapper/query에서 흡수한다.
+- 하지만 인증/인가, 상태 전이, 핵심 도메인 규칙, SSE/STOMP 계약 불일치는 프론트 workaround로 덮지 않는다.
+- 이런 불일치를 발견하면 해당 feature 작업을 중단하고, 차이점/영향 범위/필요한 백엔드 변경안을 사용자에게 보고한다.
 
 ---
 
@@ -50,6 +53,7 @@
 - 커밋 메시지는 Conventional Commits를 사용하고, 타입은 영어, 나머지 메시지는 한국어로 써.
 - 변경 후 docs/spring-migration/frontend-migration-status.md를 갱신해.
 - 실제 API를 붙일 때는 먼저 localhost의 /v3/api-docs 또는 /Users/jisung/skuri-backend 코드를 확인해.
+- 표현/매핑 수준 차이는 프론트에서 흡수할 수 있지만, 서버 진실 공급원 계약 불일치는 사용자에게 바로 보고해.
 
 작업 후에는 아래 형식으로 보고해.
 1. 이번 스레드에서 처리한 phase/범위
