@@ -76,6 +76,25 @@ Spring 서버 내부 구현 관점을 다룬다면,
 
 ## 3. 확정된 런타임 계약
 
+### 3.0 계약 확인 우선순위
+
+실제 프론트 구현 시 API 계약은 아래 우선순위로 확인한다.
+
+1. 로컬 백엔드 `/v3/api-docs`
+   - 예: `http://localhost:8080/v3/api-docs`
+2. 백엔드 구현 코드
+   - 경로: `/Users/jisung/skuri-backend`
+3. markdown 명세
+   - `docs/spring-migration/api-specification.md`
+
+충돌 시 우선순위:
+
+- `/v3/api-docs`
+- 백엔드 코드
+- markdown 명세
+
+즉, 이 문서는 프론트 실행 로드맵이지 endpoint의 최종 source of truth가 아니다.
+
 ### 3.1 기본 서버 정보
 
 - REST base URL: `https://api.skuri.kr`
@@ -179,6 +198,7 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - phase는 작업 계획 단위로 사용하고, 커밋 단위로 사용하지 않는다.
 - 커밋은 리뷰 가능한 작은 목적 단위로 분리한다.
 - phase 전체를 한 커밋으로 묶는 방식은 금지한다.
+- 실제 API 호출 구현 전에는 반드시 계약 확인 우선순위(3.0)를 따라 endpoint/DTO/enum을 검증한다.
 
 ---
 
@@ -229,6 +249,14 @@ REST 재조회만으로 화면이 복구되어야 한다.
   3. `POST /v1/members`
   4. `GET /v1/members/me`
 - FCM token 등록/삭제도 Spring API 기준으로 이동한다.
+
+2026-03-18 진행 반영:
+
+- `SpringMemberRepository`와 member API client를 추가했다.
+- `memberRepository`를 전역 DI에 등록했다.
+- `useAuthSession()`에서 auth user 감지 시 `POST /v1/members` → `GET /v1/members/me`를 먼저 수행한다.
+- `signInWithGoogle()` / `signInWithEmailAndPassword()`는 auth session bootstrap 완료까지 대기한다.
+- FCM token 등록/삭제의 Spring 이전은 아직 남아 있다.
 
 완료 기준:
 
@@ -449,8 +477,10 @@ REST 재조회만으로 화면이 복구되어야 한다.
 ## 8. 완료 체크리스트
 
 - [ ] hook이 mock 클래스를 직접 import하지 않는다.
-- [ ] 보호 API가 Firebase ID Token Bearer 인증으로 동작한다.
-- [ ] `POST /v1/members` bootstrap이 앱 시작 흐름에 포함된다.
+- [x] 보호 API가 Firebase ID Token Bearer 인증으로 동작한다.
+- [x] `POST /v1/members` bootstrap이 앱 시작 흐름에 포함된다.
+- [x] `GET /v1/members/me` bootstrap이 앱 시작 흐름에 포함된다.
+- [ ] FCM token 등록/삭제가 Spring API를 사용한다.
 - [ ] Notification inbox가 Spring REST + SSE로 동작한다.
 - [ ] Taxi home/party/join-request가 Spring REST + SSE로 동작한다.
 - [ ] Chat이 REST + STOMP로 동작한다.

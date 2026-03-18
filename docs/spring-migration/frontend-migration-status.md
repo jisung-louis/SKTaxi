@@ -1,7 +1,7 @@
 # RN Spring 연동 진행 현황
 
 > 최종 수정일: 2026-03-18
-> 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
+> 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [API 명세](./api-specification.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
 
 ---
 
@@ -23,14 +23,15 @@
 - 최종 구조 기준 문서는 작성 완료
 - 실행 로드맵 문서는 작성 완료
 - Phase A 공통 transport 기반 구축은 1차 완료
-- 실제 Spring API를 사용하는 concrete repository 구현은 아직 시작 전
+- auth/member 경로의 Spring concrete repository는 1차 연결 완료
 - 전역 DI와 feature-local entrypoint의 혼재는 아직 남아 있음
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
 즉, 현재 상태는 다음과 같이 요약할 수 있다.
 
 - 공통 infra는 준비되었고
-- 이제부터는 feature별로 Spring 연결과 중앙화 수렴을 함께 진행하면 된다.
+- auth bootstrap은 Spring 기준으로 고정되기 시작했고
+- 이제부터는 남은 feature별 Spring 연결과 중앙화 수렴을 함께 진행하면 된다.
 
 ---
 
@@ -39,7 +40,7 @@
 | Phase | 상태 | 비고 |
 |------|------|------|
 | Phase A. 공통 Transport 구축 | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가 |
-| Phase B. 인증/회원 bootstrap 정리 | 미시작 | `POST /v1/members` / `GET /v1/members/me` 부트스트랩 연결 필요 |
+| Phase B. 인증/회원 bootstrap 정리 | 진행 중(bootstrap 1차 완료) | `POST /v1/members` / `GET /v1/members/me` auth bootstrap 연결 완료, FCM token Spring 이전 남음 |
 | Phase C. App Notice / Notification Center / Taxi Home | 미시작 | 추천 첫 concrete migration 대상 |
 | Phase D. Notification 정식 이전 | 미시작 | REST + SSE 전환 필요 |
 | Phase E. Taxi Party 정식 이전 | 미시작 | REST + SSE 전환 필요 |
@@ -100,7 +101,51 @@
 - concrete Spring repository 구현
 - 실제 SSE 클라이언트 구현체 선택 및 연결
 - 실제 STOMP 라이브러리 연결
-- 로그인 직후 Spring member bootstrap
+- FCM token 등록/삭제의 Spring API 이전
+
+### 4.4 Phase B 구현
+
+다음 auth/member 경로를 추가하거나 갱신했다.
+
+- `src/features/member/data/api/memberApiClient.ts`
+- `src/features/member/data/dto/memberDto.ts`
+- `src/features/member/data/mappers/memberMapper.ts`
+- `src/features/member/data/repositories/IMemberRepository.ts`
+- `src/features/member/data/repositories/SpringMemberRepository.ts`
+- `src/features/member/model/types.ts`
+- `src/features/member/index.ts`
+- `src/di/RepositoryContext.ts`
+- `src/di/RepositoryProvider.tsx`
+- `src/di/repositoryContracts.ts`
+- `src/di/useRepository.ts`
+- `src/features/auth/services/authSessionService.ts`
+- `src/features/auth/hooks/useAuthSession.ts`
+
+핵심 변경:
+
+- Spring member API client/repository를 공통 transport 위에 추가
+- `memberRepository`를 전역 DI에 등록
+- `useAuthSession()`에서 인증 사용자 감지 시 아래 bootstrap 순서를 고정
+  1. Firebase 로그인 상태 확인
+  2. Firebase ID Token 확보
+  3. `POST /v1/members`
+  4. `GET /v1/members/me`
+- `signInWithGoogle()` / `signInWithEmailAndPassword()`는 auth session 준비가 끝날 때까지 대기
+- bootstrap 실패 시 half-authenticated 상태로 진행하지 않고 세션을 정리
+
+### 4.5 Phase B 현재 결과
+
+현재 가능한 것:
+
+- 앱 재시작 시 기존 Firebase 세션이 있으면 Spring member bootstrap을 먼저 수행
+- 신규 로그인 시 login function이 member bootstrap 완료 전에는 성공으로 반환되지 않음
+- hook/screen에 서버 DTO를 직접 노출하지 않고 auth는 repository 경계만 참조
+
+현재 아직 남은 것:
+
+- `POST /v1/members/me/fcm-tokens`
+- `DELETE /v1/members/me/fcm-tokens`
+- Phase C concrete feature migration 시작
 
 ---
 
@@ -127,10 +172,7 @@
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
 1. Phase B
-   - 로그인 후 Spring bootstrap 고정
-   - `POST /v1/members`
-   - `GET /v1/members/me`
-   - 보호 API 호출 흐름 안정화
+   - FCM token 등록/삭제를 Spring API로 이전
 2. Phase C
    - App Notice
    - Notification Center
@@ -166,6 +208,25 @@
 ---
 
 ## 8. 현재 알려진 주의사항
+
+### 8.0 API 계약 참조 소스
+
+다음 작업자는 실제 API 호출 구현 전에 아래 순서로 계약을 확인한다.
+
+1. 로컬 백엔드 `/v3/api-docs`
+   - 예: `http://localhost:8080/v3/api-docs`
+2. 백엔드 코드
+   - 경로: `/Users/jisung/skuri-backend`
+3. markdown 명세
+   - `docs/spring-migration/api-specification.md`
+
+충돌 시 우선순위:
+
+- `/v3/api-docs`
+- 백엔드 코드
+- markdown 명세
+
+즉, handoff 문서나 로드맵 문서만 보고 endpoint를 추측해서 구현하지 않는다.
 
 ### 8.1 타입체크
 
