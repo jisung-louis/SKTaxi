@@ -1,3 +1,3 @@
-import { FirebaseMinecraftRepository } from '../repositories/FirebaseMinecraftRepository';
+import { MockMinecraftRepository } from '../repositories/MockMinecraftRepository';
 
-export const minecraftRepository = new FirebaseMinecraftRepository();
+export const minecraftRepository = new MockMinecraftRepository();

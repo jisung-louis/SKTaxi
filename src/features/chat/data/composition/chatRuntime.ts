@@ -1,12 +1,12 @@
 import { getAuth } from '@react-native-firebase/auth';
 
-import { FirebaseUserRepository } from '@/features/user';
+import { MockUserRepository } from '@/features/user/data/repositories/MockUserRepository';
 
 import { sendChatSystemMessage, sendChatTextMessage } from '../../services/chatRoomService';
-import { FirebaseChatRepository } from '../repositories/FirebaseChatRepository';
+import { MockChatRepository } from '../repositories/MockChatRepository';
 
-const chatRepository = new FirebaseChatRepository();
-const userRepository = new FirebaseUserRepository();
+const chatRepository = new MockChatRepository();
+const userRepository = new MockUserRepository();
 
 const requireCurrentUser = () => {
   const user = getAuth().currentUser;

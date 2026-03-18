@@ -6,7 +6,7 @@ export type { LinkedAccount, UserAccountInfo } from '@/shared/types/user';
 
 export interface UserDoc {
   displayName?: string;
-  photoUrl?: string;
+  photoUrl?: string | null;
   fcmTokens?: string[];
   createdAt?: unknown;
   lastActiveAt?: unknown;
