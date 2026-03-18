@@ -20,6 +20,7 @@ export const V2_COLORS = {
   },
   brand: {
     logo: '#10B981',
+    primaryAccent: '#4ADE80',
     primary: '#22C55E',
     primaryStrong: '#16A34A',
     primarySoft: '#DCFCE7',
