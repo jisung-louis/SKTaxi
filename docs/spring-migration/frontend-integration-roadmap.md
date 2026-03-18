@@ -275,12 +275,14 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - `permissionsComplete`는 user id 기준 AsyncStorage local adjunct로 저장해 앱 재시작 후에도 유지되게 했다.
 - `finalizeGoogleSignIn()` / auth bootstrap 경로에서 `createInitialUserProfile()` / `syncLoginMetadata()` 의존을 제거했다.
 - backend 계약에 닉네임 중복 검사가 없음을 확인했고, frontend pre-check를 제거했다.
+- 기존 사용자 업그레이드 시 `PermissionOnboarding`이 1회 다시 열릴 수 있는 known caveat는 현재 허용된 상태이며, Phase C 이상의 blocker로 보지 않는다.
 
 완료 기준:
 
 - 앱 재시작/재로그인 후 보호 API 호출이 일관되게 성공한다.
 - `CompleteProfile` 제출값이 Spring member API에 저장된다.
-- 앱 재시작 후에도 `CompleteProfile` / `PermissionOnboarding` 진입 여부가 mock 기본값 때문에 다시 열리지 않는다.
+- local adjunct가 생성된 사용자 기준으로는 앱 재시작 후에도 `CompleteProfile` / `PermissionOnboarding` 진입 여부가 mock 기본값 때문에 다시 열리지 않는다.
+- 기존 사용자 업그레이드 시 `PermissionOnboarding`이 1회 다시 열릴 수 있는 known caveat는 현재 허용된 상태다.
 - auth 진입 가드가 member profile + 지속 가능한 onboarding 상태를 기준으로 동작한다.
 
 ### Phase C. 최근 entrypoint 3종 먼저 교체

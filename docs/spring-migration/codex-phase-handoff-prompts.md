@@ -1,6 +1,6 @@
 # Codex Phase Handoff Prompts
 
-> 최종 수정일: 2026-03-18
+> 최종 수정일: 2026-03-19
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [API 명세](./api-specification.md)
 
 ---
@@ -24,6 +24,7 @@
 - 표현/매핑 수준의 계약 차이는 프론트 mapper/query에서 흡수한다.
 - 하지만 인증/인가, 상태 전이, 핵심 도메인 규칙, SSE/STOMP 계약 불일치는 프론트 workaround로 덮지 않는다.
 - 이런 불일치를 발견하면 해당 feature 작업을 중단하고, 차이점/영향 범위/필요한 백엔드 변경안을 사용자에게 보고한다.
+- 기존 사용자 업그레이드 시 `PermissionOnboarding`이 1회 다시 열릴 수 있는 known caveat는 현재 허용된 상태다. 이 사유만으로 Phase C 이상 작업을 중단하지 않는다.
 
 ---
 
@@ -172,8 +173,8 @@
 이 3개 중 현재 안전하게 진행 가능한 범위를 Spring API로 연결
 
 시작 전 전제:
-- frontend-migration-status.md에서 Phase B 후속 정리가 닫혔는지 먼저 확인해.
-- Phase B 후속 정리가 남아 있으면 Phase C를 강행하지 말고 사용자에게 먼저 보고해.
+- frontend-migration-status.md에서 Phase B가 완료 상태인지 먼저 확인해.
+- 기존 사용자 업그레이드 시 PermissionOnboarding이 1회 다시 열릴 수 있는 known caveat는 현재 허용된 상태이므로, 이 사유만으로 Phase C를 막지 마.
 
 작업 원칙:
 - 기존 feature-local entrypoint를 그대로 두고 단순 구현체 swap만 하지 말고,
@@ -333,19 +334,14 @@
 
 ---
 
-## 9. 현재 추천 시작점
+## 10. 현재 추천 시작점
 
-현재 상태 기준으로 다음 스레드의 추천 시작점은 아래 둘 중 하나다.
+현재 상태 기준으로 다음 스레드의 추천 시작점은 아래다.
 
-1. Phase B
-2. Phase C에서 App Notice부터 시작
-
-보다 안전한 순서는 다음과 같다.
-
-- Phase B 먼저
-- 그 다음 Phase C
+- Phase C에서 App Notice부터 시작
 
 이유:
 
-- 로그인 후 Spring bootstrap이 먼저 안정되어야
-  이후 concrete feature migration에서 보호 API 사용이 자연스럽다.
+- Phase A/B의 공통 transport와 auth/member 진입선 정리가 완료됐다.
+- App Notice는 public/read 중심이라 Spring concrete migration의 첫 진입점으로 가장 안전하다.
+- 그 다음 Notification Center, Taxi Home 순으로 이어가면 공통 패턴을 빠르게 검증할 수 있다.

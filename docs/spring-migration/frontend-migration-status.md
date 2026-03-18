@@ -248,6 +248,12 @@ Phase B 완료 판단 근거:
 
 즉, handoff 문서나 로드맵 문서만 보고 endpoint를 추측해서 구현하지 않는다.
 
+### 8.0.1 허용된 known caveat
+
+- 기존 사용자 업그레이드 시 `PermissionOnboarding`이 1회 다시 열릴 수 있다.
+- 이는 Firestore 기반 과거 온보딩 상태를 AsyncStorage local adjunct로 일괄 backfill하지 않은 현재 구조에서 발생 가능한 현상이다.
+- 현재 제품 판단상 허용된 상태이며, 이 사유만으로 Phase C 이상 작업을 막지 않는다.
+
 ### 8.1 타입체크
 
 `npx tsc --noEmit`는 현재 프로젝트의 기존 선행 오류들 때문에 전체 성공하지 않는다.
