@@ -2,9 +2,13 @@ import React from 'react';
 
 import {V2_COLORS} from '@/shared/design-system/tokens';
 
+import {
+  NOTIFICATION_SETTINGS_ITEM_META,
+  NOTIFICATION_SETTINGS_MASTER_META,
+  type NotificationSettingIconKey,
+} from '../constants/notificationSettings';
 import {notificationSettingsScreenRepository} from '../data/repositories/notificationSettingsScreenRepository';
 import type {
-  NotificationSettingIconKey,
   NotificationSettingKey,
   NotificationSettingsScreenSource,
 } from '../model/notificationSettingsSource';
@@ -66,14 +70,15 @@ const mapItem = (
   item: NotificationSettingsScreenSource['items'][number],
   disabled: boolean,
 ): NotificationSettingItemViewData => {
-  const icon = resolveIcon(item.iconKey);
+  const meta = NOTIFICATION_SETTINGS_ITEM_META[item.key];
+  const icon = resolveIcon(meta.iconKey);
 
   return {
     disabled,
     ...icon,
     key: item.key,
-    subtitle: item.subtitle,
-    title: item.title,
+    subtitle: meta.subtitle,
+    title: meta.title,
     value: item.enabled,
   };
 };
@@ -83,10 +88,10 @@ const mapScreen = (
 ): NotificationSettingsScreenViewData => {
   const master: NotificationSettingMasterViewData = {
     disabled: false,
-    ...resolveIcon('allNotifications'),
+    ...resolveIcon(NOTIFICATION_SETTINGS_MASTER_META.iconKey),
     key: 'allNotifications',
-    subtitle: '모든 알림을 한 번에 켜거나 끕니다',
-    title: '모든 알림',
+    subtitle: NOTIFICATION_SETTINGS_MASTER_META.subtitle,
+    title: NOTIFICATION_SETTINGS_MASTER_META.title,
     value: source.allNotifications,
   };
 
