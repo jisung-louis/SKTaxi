@@ -84,18 +84,14 @@
 
 ### Phase 6. 공용 레거시 UI 정리
 
-후보:
-- `src/shared/ui/CommentInput.tsx`
-- `src/shared/ui/CustomTooltip.tsx`
-- `src/shared/ui/Dropdown.tsx`
-- `src/shared/ui/ForceUpdateModal.tsx`
-- `src/shared/ui/HashTagText.tsx`
-- `src/shared/ui/TimePicker.tsx`
-- `src/shared/ui/ToggleButton.tsx`
-- `src/shared/ui/Surface.tsx`
+완료 커밋:
+- `50a7c00` `refactor: 공용 레거시 ui orphan 파일 제거`
 
-조건:
-- feature 정리 이후 실제 import 수가 0이 되었는지 재확인 후 삭제
+정리 내용:
+- `CommentInput`, `CustomTooltip`, `Dropdown`, `HashTagText`, `Text`, `TimePicker`, `ToggleButton` 제거
+- feature 정리 이후 import 수가 0인 orphan 파일만 대상으로 정리
+- `ForceUpdateModal` 은 `App.tsx` 에서 live 이므로 유지
+- `Surface` 는 Phase 5에서 이미 제거 완료
 
 ### Phase 7. product 확인 후 제거할 route
 
