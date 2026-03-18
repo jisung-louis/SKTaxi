@@ -85,9 +85,6 @@ Gemfile.lock
 .env.test.local
 .env.production.local
 
-# Local API base URL override
-src/shared/api/apiBaseUrl.local.ts
-
 # Logs
 *.log
 
