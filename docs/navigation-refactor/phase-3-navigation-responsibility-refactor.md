@@ -66,7 +66,7 @@
 src/app/navigation
 ├── components
 │   ├── AnimatedTabBar.tsx
-│   └── V2BottomTabBar.tsx
+│   └── BottomTabBar.tsx
 ├── config
 │   └── mainTabs.ts
 ├── navigators
