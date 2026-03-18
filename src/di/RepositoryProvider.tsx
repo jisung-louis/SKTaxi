@@ -13,7 +13,7 @@ import { MockChatRepository } from '@/features/chat/data/repositories/MockChatRe
 import { MockNoticeRepository } from '@/features/notice/testing/MockNoticeRepository';
 import { MockAppNoticeRepository } from '@/features/settings/data/repositories/MockAppNoticeRepository';
 import { MockInquiryRepository } from '@/features/settings/data/repositories/MockInquiryRepository';
-import { MockPartyRepository } from '@/features/taxi/testing/MockPartyRepository';
+import { MockPartyRepository } from '@/features/taxi/data/repositories/MockPartyRepository';
 import { MockNotificationActionRepository } from '@/features/taxi/data/repositories/MockNotificationActionRepository';
 import { MockCourseRepository } from '@/features/timetable/data/repositories/MockCourseRepository';
 import { MockTimetableRepository } from '@/features/timetable/data/repositories/MockTimetableRepository';

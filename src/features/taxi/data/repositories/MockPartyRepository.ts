@@ -5,7 +5,7 @@ import type {
 
 import type {
   IPartyRepository,
-} from '../data/repositories/IPartyRepository';
+} from './IPartyRepository';
 import type {
   AccountMessageData,
   ArrivalMessageData,
@@ -15,7 +15,7 @@ import type {
   PartyMessage,
   PendingJoinRequest,
   SettlementData,
-} from '../model/types';
+} from '../../model/types';
 
 const parties = new Map<string, Party>();
 const joinRequests = new Map<string, JoinRequest>();
