@@ -11,10 +11,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { WebView } from 'react-native-webview';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 
+import {
+  MINECRAFT_COLORS as COLORS,
+  MINECRAFT_TYPOGRAPHY as TYPOGRAPHY,
+} from '../constants/minecraftDesignTokens';
 import { useMinecraftServerOverview } from '../hooks/useMinecraftServerOverview';
 
 export const MinecraftMapDetailScreen = () => {
@@ -109,4 +111,3 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
-
