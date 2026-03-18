@@ -121,14 +121,27 @@
 - `shared/ui` live 컴포넌트 `Button`, `PageHeader`, `PermissionBubble`, `ForegroundNotification`, `ForceUpdateModal`, `Dot`, `TabBadge` 를 v2 토큰으로 이관
 - `shared/design-system/tokens/typography.ts` 추가
 - `shared/ui`, `shared/design-system` 범위에서 legacy `colors`, `typography` import 0 달성
+- dead component `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`, `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`, `ImageViewer`, `TermsOfUseContent`, `NotificationSettingItem` 제거
+
+이번 배치 대상:
+- 확정 dead component 제거
+- `campus`: `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`
+- `taxi`: `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`
+- `board`: `ImageViewer`
+- `settings`: `TermsOfUseContent`
+- `user`: `NotificationSettingItem`
+
+이번 배치 제외:
+- `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `chatRoomService`
+- `notice`: `NoticeDetailWebViewScreen`
+- `taxi`: `JoinRequestModal`
+- `board`: `selectors`
 
 남은 주요 사용처:
-- `campus`: `AcademicCalendarSection`, `MonthCalendar`, `WeekCalendar`, `CafeteriaSection`
 - `chat`: `ChatListScreen`, `ChatListHeader`, `ChatRoomCard`, `EmptyChatList`, `chatRoomService`
-- `taxi`: `PartyList`, `TaxiHomeSection`, `TaxiPermissionPrompt`, `TaxiTimeRemaining`, `JoinRequestModal`
 - `notice`: `NoticeDetailWebViewScreen`
-- `board`: `ImageViewer`, `selectors`
-- dead 후보 재확인: `NotificationSettingItem`, `TermsOfUseContent`
+- `taxi`: `JoinRequestModal`
+- `board`: `selectors`
 
 ## 현재 live로 판단한 예외
 
