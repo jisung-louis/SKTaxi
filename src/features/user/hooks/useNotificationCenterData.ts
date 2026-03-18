@@ -1,7 +1,6 @@
 import React from 'react';
 
-import type {INotificationCenterRepository} from '../data/repositories/INotificationCenterRepository';
-import {MockNotificationCenterRepository} from '../data/repositories/MockNotificationCenterRepository';
+import {notificationCenterRepository} from '../data/repositories/notificationCenterRepository';
 import type {
   NotificationInboxItemViewData,
   NotificationInboxSectionViewData,
@@ -46,13 +45,6 @@ const buildViewData = (
 
 export const useNotificationCenterData =
   (): UseNotificationCenterDataResult => {
-    const repositoryRef =
-      React.useRef<INotificationCenterRepository | null>(null);
-
-    if (!repositoryRef.current) {
-      repositoryRef.current = new MockNotificationCenterRepository();
-    }
-
     const [items, setItems] = React.useState<NotificationInboxItemViewData[]>(
       [],
     );
@@ -60,15 +52,11 @@ export const useNotificationCenterData =
     const [error, setError] = React.useState<string | null>(null);
 
     const load = React.useCallback(async () => {
-      if (!repositoryRef.current) {
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
       try {
-        const nextItems = await repositoryRef.current.getInboxItems();
+        const nextItems = await notificationCenterRepository.getInboxItems();
         setItems(
           nextItems.map(item => ({
             contextLabel: item.contextLabel,
@@ -83,7 +71,7 @@ export const useNotificationCenterData =
           })),
         );
       } catch (loadError) {
-        console.error('notification center mock load failed', loadError);
+        console.error('알림함 데이터를 불러오지 못했습니다.', loadError);
         setError('알림함을 불러오지 못했습니다.');
       } finally {
         setLoading(false);
@@ -96,21 +84,13 @@ export const useNotificationCenterData =
 
     const markAsRead = React.useCallback(
       async (notificationId: string) => {
-        if (!repositoryRef.current) {
-          return;
-        }
-
-        await repositoryRef.current.markAsRead(notificationId);
+        await notificationCenterRepository.markAsRead(notificationId);
         await load();
       },
       [load],
     );
 
     const markAllAsRead = React.useCallback(async () => {
-      if (!repositoryRef.current) {
-        return;
-      }
-
       const unreadIds = items
         .filter(item => !item.isRead)
         .map(item => item.id);
@@ -119,7 +99,7 @@ export const useNotificationCenterData =
         return;
       }
 
-      await repositoryRef.current.markAllAsRead(unreadIds);
+      await notificationCenterRepository.markAllAsRead(unreadIds);
       await load();
     }, [items, load]);
 

@@ -1,7 +1,6 @@
 import React from 'react';
 
-import type {IAppNoticeScreenRepository} from '../data/repositories/IAppNoticeScreenRepository';
-import {MockAppNoticeScreenRepository} from '../data/repositories/MockAppNoticeScreenRepository';
+import {appNoticeScreenRepository} from '../data/repositories/appNoticeScreenRepository';
 import type {
   AppNoticeBadgeViewData,
   AppNoticeFeedViewData,
@@ -29,26 +28,16 @@ const buildBadges = (important: boolean): AppNoticeBadgeViewData[] => {
 };
 
 export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
-  const repositoryRef = React.useRef<IAppNoticeScreenRepository | null>(null);
-
-  if (!repositoryRef.current) {
-    repositoryRef.current = new MockAppNoticeScreenRepository();
-  }
-
   const [data, setData] = React.useState<AppNoticeFeedViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
-    if (!repositoryRef.current) {
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const records = await repositoryRef.current.getNotices();
+      const records = await appNoticeScreenRepository.getNotices();
       setData({
         items: records.map(record => ({
           badges: buildBadges(record.important),
@@ -61,7 +50,7 @@ export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
         })),
       });
     } catch (loadError) {
-      console.error('app notice feed mock load failed', loadError);
+      console.error('앱 공지사항 목록을 불러오지 못했습니다.', loadError);
       setError('앱 공지사항을 불러오지 못했습니다.');
     } finally {
       setLoading(false);
