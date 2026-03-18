@@ -1,10 +1,6 @@
 export {
-  BoardCommentList,
-  BoardHeader,
-  BoardSearch,
   ImageSelector,
   ImageViewer,
-  PostCard,
 } from './components';
 
 export {
@@ -21,21 +17,18 @@ export {
   useBoardActions,
   useBoardBookmarks,
   useBoardCategoryCounts,
-  useBoardComments,
   useBoardEdit,
   useBoardLikes,
   useBoardPost,
   useBoardPosts,
   useBoardRepository,
   useBoardWrite,
-  usePostActions,
   useUserBoardInteractions,
 } from './hooks';
 export type {
   UseBoardActionsResult,
   UseBoardBookmarksResult,
   UseBoardCategoryCountsResult,
-  UseBoardCommentsResult,
   UseBoardEditResult,
   UseBoardLikesResult,
   UseBoardPostResult,
@@ -64,7 +57,6 @@ export {
 
 export { BoardDetailScreen } from './screens/BoardDetailScreen';
 export { BoardEditScreen } from './screens/BoardEditScreen';
-export { BoardScreen } from './screens/BoardScreen';
 export { BoardWriteScreen } from './screens/BoardWriteScreen';
 
 export {
@@ -76,5 +68,4 @@ export {
 } from './services/boardModerationService';
 export {
   navigateToBoardDetail,
-  navigateToBoardSearch,
 } from './services/boardNavigationService';

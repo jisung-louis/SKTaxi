@@ -14,10 +14,3 @@ export function navigateToBoardDetail(navigation: any, postId: string) {
     });
   } catch {}
 }
-
-export function navigateToBoardSearch(navigation: any, searchText: string) {
-  navigation.navigate('BoardMain', {
-    searchText,
-    fromHashtag: true,
-  });
-}
