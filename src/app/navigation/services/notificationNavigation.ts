@@ -208,8 +208,12 @@ export const handleStoredNotificationNavigation = ({
   const postId = getStringRecordValue(notification.data, 'postId');
 
   switch (notification.type) {
+    case 'party_created':
+      navigateToTaxiMain(navigation);
+      break;
     case 'party_join_request':
     case 'party_join_accepted':
+    case 'party_join_rejected':
     case 'party_deleted':
     case 'party_closed':
     case 'party_arrived':
@@ -222,6 +226,9 @@ export const handleStoredNotificationNavigation = ({
       }
       break;
     case 'member_kicked':
+      break;
+    case 'party_ended':
+      navigateToTaxiMain(navigation);
       break;
     case 'notice':
       if (noticeId) {
@@ -245,6 +252,8 @@ export const handleStoredNotificationNavigation = ({
       if (noticeId) {
         navigateToNoticeDetail(navigation, noticeId);
       }
+      break;
+    case 'academic_schedule':
       break;
   }
 };

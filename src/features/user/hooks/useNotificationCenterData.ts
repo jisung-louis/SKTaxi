@@ -1,9 +1,13 @@
 import React from 'react';
 
-import {notificationCenterRepository} from '../data/repositories/notificationCenterRepository';
+import {useNotificationRepository} from '@/di/useRepository';
+import {useAuth} from '@/features/auth';
+
+import {
+  buildNotificationCenterViewData,
+  mapNotificationToInboxItemViewData,
+} from '../application/notificationCenterAssembler';
 import type {
-  NotificationInboxItemViewData,
-  NotificationInboxSectionViewData,
   NotificationInboxViewData,
 } from '../model/notificationCenterViewData';
 
@@ -16,100 +20,80 @@ interface UseNotificationCenterDataResult {
   reload: () => Promise<void>;
 }
 
-const buildViewData = (
-  items: NotificationInboxItemViewData[],
-): NotificationInboxViewData => {
-  const unreadItems = items.filter(item => !item.isRead);
-  const readItems = items.filter(item => item.isRead);
-  const sections: NotificationInboxSectionViewData[] = [];
-
-  if (unreadItems.length > 0) {
-    sections.push({
-      id: 'unread',
-      items: unreadItems,
-    });
-  }
-
-  if (readItems.length > 0) {
-    sections.push({
-      id: 'read',
-      items: readItems,
-    });
-  }
-
-  return {
-    sections,
-    unreadCount: unreadItems.length,
-  };
-};
+const NOTIFICATION_CENTER_LIMIT = 100;
 
 export const useNotificationCenterData =
   (): UseNotificationCenterDataResult => {
-    const [items, setItems] = React.useState<NotificationInboxItemViewData[]>(
-      [],
+    const notificationRepository = useNotificationRepository();
+    const {user} = useAuth();
+    const [data, setData] = React.useState<NotificationInboxViewData | null>(
+      null,
     );
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
 
     const load = React.useCallback(async () => {
+      if (!user?.uid) {
+        setData({
+          sections: [],
+          unreadCount: 0,
+        });
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
       try {
-        const nextItems = await notificationCenterRepository.getInboxItems();
-        setItems(
-          nextItems.map(item => ({
-            contextLabel: item.contextLabel,
-            iconName: item.iconName,
-            iconTone: item.iconTone,
-            id: item.notification.id,
-            isRead: item.notification.isRead,
-            message: item.notification.message,
-            notification: item.notification,
-            timeLabel: item.timeLabel,
-            title: item.notification.title,
-          })),
+        const notifications = await notificationRepository.getNotifications(
+          user.uid,
+          NOTIFICATION_CENTER_LIMIT,
         );
+        const items = notifications.map(mapNotificationToInboxItemViewData);
+        setData(buildNotificationCenterViewData(items));
       } catch (loadError) {
         console.error('알림함 데이터를 불러오지 못했습니다.', loadError);
         setError('알림함을 불러오지 못했습니다.');
       } finally {
         setLoading(false);
       }
-    }, []);
+    }, [notificationRepository, user?.uid]);
 
     React.useEffect(() => {
-      load();
+      load().catch(() => undefined);
     }, [load]);
 
     const markAsRead = React.useCallback(
       async (notificationId: string) => {
-        await notificationCenterRepository.markAsRead(notificationId);
+        if (!user?.uid) {
+          return;
+        }
+
+        await notificationRepository.markAsRead(user.uid, notificationId);
         await load();
       },
-      [load],
+      [load, notificationRepository, user?.uid],
     );
 
     const markAllAsRead = React.useCallback(async () => {
-      const unreadIds = items
-        .filter(item => !item.isRead)
-        .map(item => item.id);
+      if (!user?.uid) {
+        return;
+      }
+
+      const unreadIds =
+        data?.sections
+          .find(section => section.id === 'unread')
+          ?.items.map(item => item.id) ?? [];
 
       if (unreadIds.length === 0) {
         return;
       }
 
-      await notificationCenterRepository.markAllAsRead(unreadIds);
+      await notificationRepository.markAllAsRead(user.uid, unreadIds);
       await load();
-    }, [items, load]);
-
-    const data = React.useMemo(() => {
-      if (loading && items.length === 0 && !error) {
-        return null;
-      }
-
-      return buildViewData(items);
-    }, [error, items, loading]);
+    }, [data?.sections, load, notificationRepository, user?.uid]);
 
     return {
       data,

@@ -1,5 +1,11 @@
 import type {Notification} from '../data/repositories/INotificationRepository';
-import type {NotificationInboxIconTone} from './notificationCenterSource';
+
+export type NotificationInboxIconTone =
+  | 'blue'
+  | 'green'
+  | 'orange'
+  | 'purple'
+  | 'yellow';
 
 export interface NotificationInboxItemViewData {
   contextLabel?: string;

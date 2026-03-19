@@ -17,7 +17,7 @@ import { MockPartyRepository } from '@/features/taxi/data/repositories/MockParty
 import { MockNotificationActionRepository } from '@/features/taxi/data/repositories/MockNotificationActionRepository';
 import { MockCourseRepository } from '@/features/timetable/data/repositories/MockCourseRepository';
 import { MockTimetableRepository } from '@/features/timetable/data/repositories/MockTimetableRepository';
-import { MockNotificationRepository } from '@/features/user/data/repositories/MockNotificationRepository';
+import { SpringNotificationRepository } from '@/features/user/data/repositories/SpringNotificationRepository';
 import { MockUserRepository } from '@/features/user/data/repositories/MockUserRepository';
 import { MockStorageRepository } from '@/shared/lib/mock/MockStorageRepository';
 
@@ -47,7 +47,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       boardRepository: new MockBoardRepository(),
       noticeRepository: new MockNoticeRepository(),
       courseRepository: new MockCourseRepository(),
-      notificationRepository: new MockNotificationRepository(),
+      notificationRepository: new SpringNotificationRepository(),
       appNoticeRepository: new SpringAppNoticeRepository(),
       cafeteriaRepository: new MockCafeteriaRepository(),
       academicRepository: new MockAcademicRepository(),

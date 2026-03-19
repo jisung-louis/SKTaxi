@@ -7,6 +7,7 @@ export {
   FirebaseNotificationRepository,
   FirestoreNotificationRepository,
 } from './data/repositories/FirebaseNotificationRepository';
+export {SpringNotificationRepository} from './data/repositories/SpringNotificationRepository';
 export type {
   INotificationRepository,
   Notification,

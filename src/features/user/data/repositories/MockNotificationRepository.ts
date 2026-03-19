@@ -47,6 +47,10 @@ const emitNotifications = (userId: string) => {
 };
 
 export class MockNotificationRepository implements INotificationRepository {
+  async getNotifications(userId: string, limit: number): Promise<Notification[]> {
+    return ensureNotifications(userId).slice(0, limit).map(cloneNotification);
+  }
+
   subscribeToNotifications(
     userId: string,
     limit: number,
