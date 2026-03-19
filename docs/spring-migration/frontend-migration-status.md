@@ -24,7 +24,9 @@
 - 실행 로드맵 문서는 작성 완료
 - Phase A 공통 transport 기반 구축은 1차 완료
 - auth/member 경로의 Spring concrete repository는 CompleteProfile/guard 정리까지 연결 완료
-- 전역 DI와 feature-local entrypoint의 혼재는 아직 남아 있음
+- App Notice / Notification Center는 Spring API + 중앙 DI 기준으로 전환 완료
+- Taxi Home은 Spring REST query 기준 read-only 범위까지 연결 완료
+- 전역 DI와 feature-local entrypoint의 혼재는 줄었지만 taxi write/chat 경로에는 아직 남아 있음
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
 즉, 현재 상태는 다음과 같이 요약할 수 있다.
@@ -32,6 +34,8 @@
 - 공통 infra는 준비되었고
 - auth/bootstrap, CompleteProfile, FCM token 경로는 Spring 기준으로 고정됐고
 - auth 진입선의 프로필/온보딩 source of truth도 member profile + local adjunct 기준으로 정리됐다.
+- 이제 App Notice / Notification Center는 실서버 기준으로 동작하고,
+- Taxi Home은 목록/활성 파티 가시성만 우선 Spring REST로 전환된 상태다.
 
 ---
 
@@ -41,7 +45,7 @@
 | ----------------------------------------------------- | -------------- | --------------------------------------------------- |
 | Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가  |
 | Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료 |
-| Phase C. App Notice / Notification Center / Taxi Home | 미시작         | 추천 첫 concrete migration 대상                     |
+| Phase C. App Notice / Notification Center / Taxi Home | 진행 중        | App Notice/Notification Center 완료, Taxi Home 부분 완료 |
 | Phase D. Notification 정식 이전                       | 미시작         | REST + SSE 전환 필요                                |
 | Phase E. Taxi Party 정식 이전                         | 미시작         | REST + SSE 전환 필요                                |
 | Phase F. Chat 정식 이전                               | 미시작         | REST + STOMP 전환 필요                              |
@@ -169,6 +173,83 @@ Phase B 완료 판단 근거:
 - `permissionsComplete`는 [authLocalAdjunctService.ts](/Users/jisung/SKTaxi/src/features/auth/services/authLocalAdjunctService.ts#L1)에서 user id 기준 AsyncStorage에 저장되므로 mock in-memory 기본값으로 되돌아가지 않는다.
 - `CompleteProfile` 제출 시 [profileCompletionService.ts](/Users/jisung/SKTaxi/src/features/auth/services/profileCompletionService.ts#L27)에서 member repository의 `updateMyProfile()`만 호출하고, frontend 닉네임 중복 pre-check는 수행하지 않는다.
 
+### 4.6 Phase C 구현
+
+다음 feature를 Spring API 기준으로 연결했다.
+
+- App Notice
+  - `src/features/settings/data/api/appNoticeApiClient.ts`
+  - `src/features/settings/data/dto/appNoticeDto.ts`
+  - `src/features/settings/data/mappers/appNoticeMapper.ts`
+  - `src/features/settings/data/repositories/SpringAppNoticeRepository.ts`
+  - `src/features/settings/application/appNoticeViewAssembler.ts`
+  - `src/features/settings/hooks/useAppNoticeFeedData.ts`
+  - `src/features/settings/hooks/useAppNoticeDetailData.ts`
+- Notification Center
+  - `src/features/user/data/api/notificationApiClient.ts`
+  - `src/features/user/data/dto/notificationDto.ts`
+  - `src/features/user/data/mappers/notificationMapper.ts`
+  - `src/features/user/data/repositories/SpringNotificationRepository.ts`
+  - `src/features/user/application/notificationCenterAssembler.ts`
+  - `src/features/user/hooks/useNotificationCenterData.ts`
+- Taxi Home
+  - `src/features/taxi/data/api/taxiHomeApiClient.ts`
+  - `src/features/taxi/data/dto/taxiHomeDto.ts`
+  - `src/features/taxi/application/taxiHomeQuery.ts`
+  - `src/features/taxi/hooks/useTaxiHomeData.ts`
+  - `src/features/taxi/screens/TaxiScreen.tsx`
+
+이번 단계에서 실제로 사용한 API contract:
+
+- App Notice
+  - `GET /v1/app-notices`
+  - `GET /v1/app-notices/{appNoticeId}`
+- Notification Center
+  - `GET /v1/notifications`
+  - `POST /v1/notifications/{notificationId}/read`
+  - `POST /v1/notifications/read-all`
+  - `DELETE /v1/notifications/{notificationId}`
+- Taxi Home
+  - `GET /v1/parties?status=OPEN&size=50&sort=createdAt,desc`
+  - `GET /v1/members/me/parties`
+
+계약 확인 결과:
+
+- 로컬 `http://localhost:8080/v3/api-docs`는 이번 작업 시점에 응답을 주지 않아 최종 구현은 `/Users/jisung/skuri-backend` controller/dto와 markdown 명세를 기준으로 맞췄다.
+- App Notice는 backend 응답에 작성자/조회수 필드가 없어서 assembler에서 화면 전용 placeholder/optional 값으로 흡수했다.
+- Notification enum은 backend canonical enum을 repository mapper에서 기존 app navigation이 소비하는 문자열로 정규화했다.
+- Taxi Home card에 필요한 예상 요금/참여자 아바타/요청 상태 일부는 현재 backend summary에 없어서 query layer에서 read-only fallback 값으로 조합했다.
+
+### 4.7 Phase C 결과
+
+현재 가능한 것:
+
+- `RepositoryProvider`의 `appNoticeRepository` 기본 구현은 `SpringAppNoticeRepository`다.
+- `RepositoryProvider`의 `notificationRepository` 기본 구현은 `SpringNotificationRepository`다.
+- App Notice 목록/상세 hook은 feature-local entrypoint 없이 중앙 DI의 `appNoticeRepository`를 직접 사용한다.
+- Notification Center hook은 feature-local entrypoint 없이 중앙 DI의 `notificationRepository`를 직접 사용한다.
+- Notification Center 읽음 처리/전체 읽음 처리/단건 삭제는 Spring REST를 호출한다.
+- Taxi Home은 feature-local repository entrypoint 없이 `loadTaxiHomeQueryResult()` query를 통해 실제 파티 목록과 내 활성 파티 여부를 읽는다.
+- Taxi Home 플로팅 파티 채팅 버튼 노출 여부는 `GET /v1/members/me/parties` 결과를 기준으로 결정된다.
+
+현재 아직 남은 것:
+
+- Notification의 SSE 실시간 동기화는 Phase D 범위다.
+- Taxi Home의 동승 요청 생성, 수락 대기 화면, 실제 파티 채팅 전이는 아직 Spring API 기준으로 이어지지 않았다.
+- `IPartyRepository` 전체 Spring 구현 및 전역 DI 교체는 아직 하지 않았다.
+
+feature별 상태:
+
+- 완료
+  - App Notice
+  - Notification Center
+- 부분완료
+  - Taxi Home
+    - 완료 범위: 파티 목록 조회, 활성 파티 존재 여부 반영, 화면 필터/정렬/검색 유지
+    - 남은 범위: join request 생성/취소, AcceptancePending, party chat/상태 전이, `IPartyRepository` Spring 구현
+- 미완료
+  - 없음
+
 ---
 
 ## 5. 현재 남아 있는 구조 상태
@@ -187,6 +268,13 @@ Phase B 완료 판단 근거:
 
 즉, 다음 작업자는 앱 전체를 먼저 전면 리팩터링하지 않는다.
 
+Phase C 반영 후 구조 상태:
+
+- App Notice의 screen entrypoint는 제거됐고 중앙 DI `appNoticeRepository`로 수렴했다.
+- Notification Center의 screen entrypoint는 제거됐고 중앙 DI `notificationRepository`로 수렴했다.
+- Taxi Home의 screen entrypoint는 제거됐지만, 현재 query는 `shared/api` 위의 임시 adapter다.
+- 즉 Taxi Home은 hook direct mock import는 제거됐으나, 최종적인 도메인 경계 수렴은 Phase E에서 `IPartyRepository` Spring 구현과 함께 마무리해야 한다.
+
 ---
 
 ## 6. 다음 우선순위
@@ -194,9 +282,7 @@ Phase B 완료 판단 근거:
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
 1. Phase C
-   - App Notice
-   - Notification Center
-   - Taxi Home
+   - Taxi Home 남은 write/chat 경계 정리
 2. Phase D 이후
    - Notification
    - Taxi Party
@@ -287,4 +373,4 @@ Phase B 완료 판단 근거:
 - 실행 로드맵 수립 완료
 - Phase A 1차 완료
 - Phase B 후속 정리 완료
-- 다음 작업은 Phase C부터 시작
+- Phase C는 App Notice / Notification Center 완료, Taxi Home 부분 완료 상태

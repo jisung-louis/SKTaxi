@@ -320,6 +320,16 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - Notification Center 목록/읽음 처리 UI가 실제 Spring API를 사용한다.
 - Taxi Home 목록이 실제 파티 API 기반으로 렌더링된다.
 
+2026-03-19 진행 반영:
+
+- `SpringAppNoticeRepository`를 추가했고 `RepositoryProvider`의 `appNoticeRepository` 기본 구현을 Spring으로 교체했다.
+- `useAppNoticeFeedData()` / `useAppNoticeDetailData()`는 feature-local entrypoint를 제거하고 중앙 DI `appNoticeRepository` + assembler 조합으로 재구성했다.
+- `SpringNotificationRepository`를 추가했고 `RepositoryProvider`의 `notificationRepository` 기본 구현을 Spring으로 교체했다.
+- `useNotificationCenterData()`는 feature-local entrypoint를 제거하고 중앙 DI `notificationRepository` 기준으로 목록/읽음 처리 UI를 구성한다.
+- backend notification enum은 repository mapper에서 기존 RN navigation이 소비하는 canonical lower-snake 문자열로 정규화했다.
+- Taxi Home은 `loadTaxiHomeQueryResult()` query가 `GET /v1/parties` / `GET /v1/members/me/parties`를 직접 호출하도록 옮겼고, 기존 `taxiHomeRepository.ts` entrypoint는 제거했다.
+- Taxi Home은 목록/활성 파티 가시성까지는 Spring REST로 붙었지만, join request 생성/AcceptancePending/party chat은 아직 Phase E 범위로 남겨뒀다.
+
 ### Phase D. Notification 도메인 정식 이전
 
 목표:
