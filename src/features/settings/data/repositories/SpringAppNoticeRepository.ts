@@ -2,7 +2,7 @@ import type {
   SubscriptionCallbacks,
   Unsubscribe,
 } from '@/shared/types/subscription';
-import {RepositoryErrorCode} from '@/shared/lib/errors';
+import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {appNoticeApiClient} from '../api/appNoticeApiClient';
 import {mapAppNoticeResponseDto} from '../mappers/appNoticeMapper';
@@ -15,9 +15,7 @@ export class SpringAppNoticeRepository implements IAppNoticeRepository {
       return mapAppNoticeResponseDto(response.data);
     } catch (error) {
       if (
-        error &&
-        typeof error === 'object' &&
-        'code' in error &&
+        error instanceof RepositoryError &&
         error.code === RepositoryErrorCode.NOT_FOUND
       ) {
         return null;

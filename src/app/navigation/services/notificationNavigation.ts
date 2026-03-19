@@ -92,6 +92,7 @@ export const handlePushNotificationNavigation = ({
 
   switch (type) {
     case 'notice':
+    case 'notice_post_like':
       if (noticeId) {
         navigateToNoticeDetail(navigation, noticeId);
       }
@@ -136,6 +137,7 @@ export const handlePushNotificationNavigation = ({
       break;
     case 'notice_post_comment':
     case 'notice_comment_reply':
+    case 'notice_post_like':
       if (noticeId) {
         navigateToNoticeDetail(navigation, noticeId);
       }
@@ -161,6 +163,7 @@ export const handleForegroundNotificationNavigation = ({
   switch (type) {
     case 'notice':
     case 'notice_notification':
+    case 'notice_post_like':
       if (noticeId) {
         navigateToNoticeDetail(navigation, noticeId);
       }
@@ -249,6 +252,7 @@ export const handleStoredNotificationNavigation = ({
       break;
     case 'notice_post_comment':
     case 'notice_comment_reply':
+    case 'notice_post_like':
       if (noticeId) {
         navigateToNoticeDetail(navigation, noticeId);
       }

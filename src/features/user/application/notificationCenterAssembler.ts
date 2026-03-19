@@ -19,9 +19,13 @@ const buildIconMeta = (
       };
     case 'notice':
     case 'notice_post_comment':
+    case 'notice_post_like':
       return {
         contextLabel: '공지사항',
-        iconName: 'notifications-outline',
+        iconName:
+          notification.type === 'notice_post_like'
+            ? 'heart-outline'
+            : 'notifications-outline',
         iconTone: 'orange',
       };
     case 'party_join_request':
