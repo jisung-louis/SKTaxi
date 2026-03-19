@@ -1,12 +1,18 @@
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
+import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
+
 import {taxiHomeApiClient} from '../data/api/taxiHomeApiClient';
 import type {
-  MyPartyResponseDto,
+  JoinRequestListItemResponseDto,
   PartyStatusDto,
   PartySummaryResponseDto,
 } from '../data/dto/taxiHomeDto';
+import type {
+  TaxiAcceptancePendingAvatarViewData,
+  TaxiAcceptancePendingSeed,
+} from '../model/taxiAcceptancePendingViewData';
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomeFilterDefinition,
@@ -54,6 +60,17 @@ const TAXI_HOME_SORTS: TaxiHomeSortDefinition[] = [
 ];
 
 const ACTIVE_MY_PARTY_STATUSES: PartyStatusDto[] = ['OPEN', 'CLOSED', 'ARRIVED'];
+const PERSONAL_STATE_FALLBACK_ERROR_CODES = new Set<RepositoryErrorCode>([
+  RepositoryErrorCode.NETWORK_ERROR,
+  RepositoryErrorCode.TIMEOUT,
+  RepositoryErrorCode.RATE_LIMITED,
+]);
+
+interface PersonalTaxiState {
+  activePartyId: string | null;
+  pendingJoinRequestsByPartyId: Map<string, JoinRequestListItemResponseDto>;
+  resolved: boolean;
+}
 
 const hashSeed = (value: string) =>
   Array.from(value).reduce(
@@ -75,6 +92,34 @@ const buildAvatar = (
     textColor: palette.textColor,
   };
 };
+
+const mapHomeAvatarToPendingAvatar = (
+  avatar: TaxiHomeAvatarViewData,
+): TaxiAcceptancePendingAvatarViewData => ({
+  backgroundColor: avatar.backgroundColor,
+  id: avatar.id,
+  kind: 'label',
+  label: avatar.label,
+  textColor: avatar.textColor,
+});
+
+const cloneAcceptancePendingAvatar = (
+  avatar: TaxiAcceptancePendingAvatarViewData,
+): TaxiAcceptancePendingAvatarViewData => {
+  if (avatar.kind === 'image') {
+    return {...avatar};
+  }
+
+  return {...avatar};
+};
+
+const cloneAcceptancePendingSeed = (
+  seed: TaxiAcceptancePendingSeed,
+): TaxiAcceptancePendingSeed => ({
+  ...seed,
+  leaderAvatar: cloneAcceptancePendingAvatar(seed.leaderAvatar),
+  memberAvatars: seed.memberAvatars.map(cloneAcceptancePendingAvatar),
+});
 
 const formatDepartureTimeLabel = (value: string) => {
   const date = new Date(value);
@@ -147,15 +192,97 @@ const buildParticipantAvatars = (
   );
 };
 
-const buildJoinAction = (
-  partyId: string,
-  activePartyId: string | null,
-): TaxiHomePartyCardViewData['joinAction'] => {
-  if (activePartyId === partyId) {
+const buildAcceptancePendingSeedFromPartyCard = (
+  party: Pick<
+    TaxiHomePartyCardViewData,
+    | 'currentMemberCount'
+    | 'departureAt'
+    | 'departureLabel'
+    | 'destinationLabel'
+    | 'estimatedFareLabel'
+    | 'id'
+    | 'leaderAvatar'
+    | 'leaderName'
+    | 'maxMemberCount'
+    | 'participantAvatars'
+  >,
+  requestId: string,
+): TaxiAcceptancePendingSeed => ({
+  currentMemberCount: party.currentMemberCount,
+  departureAt: party.departureAt,
+  departureLabel: party.departureLabel,
+  destinationLabel: party.destinationLabel,
+  estimatedFareLabel: party.estimatedFareLabel,
+  leaderAvatar: mapHomeAvatarToPendingAvatar(party.leaderAvatar),
+  leaderName: party.leaderName,
+  maxMemberCount: party.maxMemberCount,
+  memberAvatars: party.participantAvatars.map(mapHomeAvatarToPendingAvatar),
+  partyId: party.id,
+  requestId,
+});
+
+const canFallbackOnPersonalTaxiStateError = (error: unknown) =>
+  error instanceof RepositoryError &&
+  PERSONAL_STATE_FALLBACK_ERROR_CODES.has(error.code);
+
+const hasApiErrorCode = (error: unknown, apiErrorCode: string) =>
+  error instanceof RepositoryError &&
+  error.context?.apiErrorCode === apiErrorCode;
+
+const loadPersonalTaxiState = async (): Promise<PersonalTaxiState> => {
+  const [myPartiesResponse, myJoinRequestsResponse] = await Promise.all([
+    taxiHomeApiClient.getMyParties(),
+    taxiHomeApiClient.getMyJoinRequests({
+      status: 'PENDING',
+    }),
+  ]);
+
+  const activeParty =
+    myPartiesResponse.data.find(party =>
+      ACTIVE_MY_PARTY_STATUSES.includes(party.status),
+    ) ?? null;
+
+  return {
+    activePartyId: activeParty?.id ?? null,
+    pendingJoinRequestsByPartyId: new Map(
+      myJoinRequestsResponse.data.map(request => [request.partyId, request]),
+    ),
+    resolved: true,
+  };
+};
+
+const buildJoinAction = ({
+  party,
+  activePartyId,
+  pendingJoinRequest,
+  personalStateResolved,
+}: {
+  party: TaxiHomePartyCardViewData;
+  activePartyId: string | null;
+  pendingJoinRequest?: JoinRequestListItemResponseDto;
+  personalStateResolved: boolean;
+}): TaxiHomePartyCardViewData['joinAction'] => {
+  if (activePartyId === party.id) {
     return {
       helperText: '현재 내가 참여 중인 파티예요',
-      label: '내가 참여중인 파티',
+      label: '파티 채팅 가기',
       state: 'joined',
+    };
+  }
+
+  if (pendingJoinRequest) {
+    return {
+      helperText: '파티장이 요청을 확인하고 있어요',
+      label: '수락 대기 화면 보기',
+      state: 'pending',
+    };
+  }
+
+  if (!personalStateResolved) {
+    return {
+      helperText: '내 파티 상태를 확인하지 못해 지금은 요청할 수 없어요',
+      label: '상태 확인 후 다시 시도',
+      state: 'unavailable',
     };
   }
 
@@ -168,13 +295,13 @@ const buildJoinAction = (
   }
 
   return {
-    helperText: '실제 동승 요청 연결은 다음 단계에서 이어집니다',
-    label: '동승 요청 준비중',
+    helperText: '파티장에게 동승 요청을 보냅니다',
+    label: '동승 요청하기',
     state: 'request',
   };
 };
 
-const buildPartyCard = (
+const buildBasePartyCard = (
   party: PartySummaryResponseDto,
   activePartyId: string | null,
 ): TaxiHomePartyCardViewData => {
@@ -187,6 +314,7 @@ const buildPartyCard = (
       type: activePartyId === party.id ? 'open-chat' : 'preview',
     },
     createdAt: party.createdAt,
+    currentMemberCount: party.currentMembers,
     departureAt: party.departureTime,
     departureLabel: party.departure.name,
     departureTimeLabel,
@@ -194,10 +322,10 @@ const buildPartyCard = (
     estimatedFareLabel: '미정',
     filterIds: buildFilterIds(party.departure.name),
     id: party.id,
-    joinAction: buildJoinAction(party.id, activePartyId),
     leaderAvatar: buildAvatar(party.leaderId, leaderName, party.leaderId),
     leaderName,
     leaderRoleLabel: '파티장',
+    maxMemberCount: party.maxMembers,
     memberSummaryLabel: `${party.currentMembers}/${party.maxMembers}명`,
     participantAvatars: buildParticipantAvatars(party),
     searchKeywords: [
@@ -209,27 +337,73 @@ const buildPartyCard = (
     ].filter(Boolean),
     statusLabel: statusMeta.label,
     statusTone: statusMeta.tone,
+    joinAction: {
+      label: '동승 요청하기',
+      state: 'request',
+    },
   };
 };
 
-const buildTaxiHomeSourceData = (
-  parties: PartySummaryResponseDto[],
-  activePartyId: string | null,
-): TaxiHomeSourceData => {
+const buildPartyCard = ({
+  party,
+  activePartyId,
+  pendingJoinRequest,
+  personalStateResolved,
+}: {
+  party: PartySummaryResponseDto;
+  activePartyId: string | null;
+  pendingJoinRequest?: JoinRequestListItemResponseDto;
+  personalStateResolved: boolean;
+}): TaxiHomePartyCardViewData => {
+  const basePartyCard = buildBasePartyCard(party, activePartyId);
+
   return {
-    emptyState: {
-      description: '검색어를 지우거나 다른 출발지 필터를 선택해보세요.',
-      title: '조건에 맞는 파티가 없습니다',
-    },
-    filters: TAXI_HOME_FILTERS,
-    liveChatActionLabel: '파티 채팅 가기',
-    parties: parties.map(party => buildPartyCard(party, activePartyId)),
-    primaryActionLabel: '새 파티 만들기',
-    searchPlaceholder: '출발지 검색',
-    sectionTitle: '모집 중인 파티',
-    sortOptions: TAXI_HOME_SORTS,
+    ...basePartyCard,
+    acceptancePendingSeed: pendingJoinRequest
+      ? buildAcceptancePendingSeedFromPartyCard(
+          basePartyCard,
+          pendingJoinRequest.id,
+        )
+      : undefined,
+    joinAction: buildJoinAction({
+      party: basePartyCard,
+      activePartyId,
+      pendingJoinRequest,
+      personalStateResolved,
+    }),
   };
 };
+
+const buildTaxiHomeSourceData = ({
+  parties,
+  activePartyId,
+  pendingJoinRequestsByPartyId,
+  personalStateResolved,
+}: {
+  parties: PartySummaryResponseDto[];
+  activePartyId: string | null;
+  pendingJoinRequestsByPartyId: Map<string, JoinRequestListItemResponseDto>;
+  personalStateResolved: boolean;
+}): TaxiHomeSourceData => ({
+  emptyState: {
+    description: '검색어를 지우거나 다른 출발지 필터를 선택해보세요.',
+    title: '조건에 맞는 파티가 없습니다',
+  },
+  filters: TAXI_HOME_FILTERS,
+  liveChatActionLabel: '파티 채팅 가기',
+  parties: parties.map(party =>
+    buildPartyCard({
+      party,
+      activePartyId,
+      pendingJoinRequest: pendingJoinRequestsByPartyId.get(party.id),
+      personalStateResolved,
+    }),
+  ),
+  primaryActionLabel: '새 파티 만들기',
+  searchPlaceholder: '출발지 검색',
+  sectionTitle: '모집 중인 파티',
+  sortOptions: TAXI_HOME_SORTS,
+});
 
 export interface TaxiHomeQueryResult {
   activePartyId: string | null;
@@ -237,27 +411,70 @@ export interface TaxiHomeQueryResult {
   source: TaxiHomeSourceData;
 }
 
+export async function createTaxiHomeJoinRequest(
+  party: TaxiHomePartyCardViewData,
+): Promise<TaxiAcceptancePendingSeed> {
+  if (party.acceptancePendingSeed) {
+    return cloneAcceptancePendingSeed(party.acceptancePendingSeed);
+  }
+
+  try {
+    const response = await taxiHomeApiClient.createJoinRequest(party.id);
+
+    return buildAcceptancePendingSeedFromPartyCard(
+      party,
+      response.data.id,
+    );
+  } catch (error) {
+    if (hasApiErrorCode(error, 'ALREADY_REQUESTED')) {
+      const pendingRequestsResponse = await taxiHomeApiClient.getMyJoinRequests({
+        status: 'PENDING',
+      });
+      const existingRequest = pendingRequestsResponse.data.find(
+        request => request.partyId === party.id,
+      );
+
+      if (existingRequest) {
+        return buildAcceptancePendingSeedFromPartyCard(
+          party,
+          existingRequest.id,
+        );
+      }
+    }
+
+    throw error;
+  }
+}
+
 export async function loadTaxiHomeQueryResult(): Promise<TaxiHomeQueryResult> {
-  const [partiesResponse, myPartiesResponse] = await Promise.all([
+  const [partiesResponse, personalTaxiState] = await Promise.all([
     taxiHomeApiClient.getOpenParties(),
-    taxiHomeApiClient.getMyParties().catch(() => ({
-      data: [] as MyPartyResponseDto[],
-      success: true,
-    })),
+    loadPersonalTaxiState().catch(error => {
+      if (!canFallbackOnPersonalTaxiStateError(error)) {
+        throw error;
+      }
+
+      console.warn(
+        '내 파티 상태 조회 실패, read-only fallback으로 계속합니다.',
+        error,
+      );
+      return {
+        activePartyId: null,
+        pendingJoinRequestsByPartyId: new Map(),
+        resolved: false,
+      } as PersonalTaxiState;
+    }),
   ]);
 
-  const activeParty =
-    myPartiesResponse.data.find(party =>
-      ACTIVE_MY_PARTY_STATUSES.includes(party.status),
-    ) ?? null;
-  const activePartyId = activeParty?.id ?? null;
-
   return {
-    activePartyId,
-    hasActiveParty: Boolean(activePartyId),
-    source: buildTaxiHomeSourceData(
-      partiesResponse.data.content,
-      activePartyId,
-    ),
+    activePartyId: personalTaxiState.activePartyId,
+    hasActiveParty: Boolean(personalTaxiState.activePartyId),
+    source: buildTaxiHomeSourceData({
+      activePartyId: personalTaxiState.activePartyId,
+      parties: partiesResponse.data.content,
+      pendingJoinRequestsByPartyId:
+        personalTaxiState.pendingJoinRequestsByPartyId,
+      personalStateResolved: personalTaxiState.resolved,
+    }),
   };
 }

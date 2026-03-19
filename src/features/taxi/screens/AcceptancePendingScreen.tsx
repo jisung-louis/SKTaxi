@@ -52,6 +52,11 @@ export const AcceptancePendingScreen = () => {
     useTaxiAcceptancePendingData(route.params ?? {});
 
   const handleCancelRequest = React.useCallback(async () => {
+    if (data && data.requestState !== 'pending') {
+      navigation.goBack();
+      return;
+    }
+
     try {
       await cancelRequest();
       navigation.goBack();
@@ -59,7 +64,7 @@ export const AcceptancePendingScreen = () => {
       console.error('taxi acceptance pending cancel failed', cancelError);
       Alert.alert('오류', '동승 요청 취소에 실패했습니다.');
     }
-  }, [cancelRequest, navigation]);
+  }, [cancelRequest, data, navigation]);
 
   React.useEffect(() => {
     if (!data) {
@@ -79,6 +84,16 @@ export const AcceptancePendingScreen = () => {
 
     if (data.requestState === 'declined') {
       Alert.alert('동승 요청 거절', '동승 요청이 거절되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+      return;
+    }
+
+    if (data.requestState === 'canceled') {
+      Alert.alert('동승 요청 취소', '더 이상 대기 중인 동승 요청이 없습니다.', [
         {
           text: '확인',
           onPress: () => navigation.goBack(),

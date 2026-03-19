@@ -4,7 +4,10 @@ import {ko} from 'date-fns/locale';
 
 import {COLORS} from '@/shared/design-system/tokens';
 
-import {taxiAcceptancePendingRepository} from '../data/repositories/taxiAcceptancePendingRepository';
+import {
+  cancelTaxiJoinRequest,
+  loadTaxiAcceptancePendingSource,
+} from '../application/taxiAcceptancePendingQuery';
 import type {
   TaxiAcceptancePendingAvatarViewData,
   TaxiAcceptancePendingNavigationParams,
@@ -173,8 +176,7 @@ export const useTaxiAcceptancePendingData = (
     setError(null);
 
     try {
-      const nextSource =
-        await taxiAcceptancePendingRepository.getPendingRequestSource(seed);
+      const nextSource = await loadTaxiAcceptancePendingSource(seed);
       setSource(nextSource);
     } catch (loadError) {
       console.error('동승 요청 대기 화면을 불러오지 못했습니다.', loadError);
@@ -193,7 +195,7 @@ export const useTaxiAcceptancePendingData = (
       throw new Error('취소할 동승 요청이 없습니다.');
     }
 
-    await taxiAcceptancePendingRepository.cancelRequest(seed.requestId);
+    await cancelTaxiJoinRequest(seed.requestId);
   }, [seed?.requestId]);
 
   const data = React.useMemo(() => {

@@ -27,8 +27,10 @@ export interface TaxiHomePartyAction {
 
 export type TaxiHomePartyJoinActionState =
   | 'request'
+  | 'pending'
   | 'joined'
-  | 'blocked-by-other-party';
+  | 'blocked-by-other-party'
+  | 'unavailable';
 
 export interface TaxiHomePartyJoinActionViewData {
   helperText?: string;
@@ -38,6 +40,7 @@ export interface TaxiHomePartyJoinActionViewData {
 
 export interface TaxiHomePartyCardViewData {
   acceptancePendingSeed?: TaxiAcceptancePendingSeed;
+  currentMemberCount: number;
   id: string;
   departureAt: string;
   createdAt: string;
@@ -49,6 +52,7 @@ export interface TaxiHomePartyCardViewData {
   leaderName: string;
   leaderRoleLabel: string;
   leaderAvatar: TaxiHomeAvatarViewData;
+  maxMemberCount: number;
   participantAvatars: TaxiHomeAvatarViewData[];
   memberSummaryLabel: string;
   estimatedFareLabel: string;

@@ -1,6 +1,10 @@
 import React from 'react';
 
-import {loadTaxiHomeQueryResult} from '../application/taxiHomeQuery';
+import {
+  createTaxiHomeJoinRequest,
+  loadTaxiHomeQueryResult,
+} from '../application/taxiHomeQuery';
+import type {TaxiAcceptancePendingSeed} from '../model/taxiAcceptancePendingViewData';
 import type {
   TaxiHomeFilterId,
   TaxiHomePartyCardViewData,
@@ -10,11 +14,15 @@ import type {
 } from '../model/taxiHomeViewData';
 
 interface UseTaxiHomeDataResult {
+  activePartyId: string | null;
   data: TaxiHomeViewData | null;
   error: string | null;
   hasActiveParty: boolean;
   loading: boolean;
   refetch: () => Promise<void>;
+  requestJoin: (
+    party: TaxiHomePartyCardViewData,
+  ) => Promise<TaxiAcceptancePendingSeed>;
   selectFilter: (filterId: TaxiHomeFilterId) => void;
   selectSort: (sortId: TaxiHomeSortId) => void;
   setSearchQuery: (value: string) => void;
@@ -108,6 +116,7 @@ const buildTaxiHomeViewData = ({
 };
 
 export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
+  const [activePartyId, setActivePartyId] = React.useState<string | null>(null);
   const [source, setSource] = React.useState<TaxiHomeSourceData | null>(null);
   const [hasActiveParty, setHasActiveParty] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
@@ -124,6 +133,7 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
 
     try {
       const result = await loadTaxiHomeQueryResult();
+      setActivePartyId(result.activePartyId);
       setHasActiveParty(result.hasActiveParty);
       setSource(result.source);
     } catch (loadError) {
@@ -159,12 +169,19 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
     setSelectedSortId(sortId);
   }, []);
 
+  const requestJoin = React.useCallback(
+    (party: TaxiHomePartyCardViewData) => createTaxiHomeJoinRequest(party),
+    [],
+  );
+
   return {
+    activePartyId,
     data,
     error,
     hasActiveParty,
     loading,
     refetch: load,
+    requestJoin,
     selectFilter,
     selectSort,
     setSearchQuery,

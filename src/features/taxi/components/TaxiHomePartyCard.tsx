@@ -52,6 +52,21 @@ const buildAvatarStyle = (
   backgroundColor: string,
 ): ViewStyle[] => [baseStyle, {backgroundColor}];
 
+const getJoinActionIconName = (
+  state: TaxiHomePartyCardViewData['joinAction']['state'],
+) => {
+  switch (state) {
+    case 'joined':
+      return 'chatbubble-ellipses';
+    case 'pending':
+      return 'time-outline';
+    case 'unavailable':
+      return 'refresh-outline';
+    default:
+      return 'car-sport';
+  }
+};
+
 export const TaxiHomePartyCard = ({
   expanded,
   onPressCard,
@@ -59,7 +74,6 @@ export const TaxiHomePartyCard = ({
   party,
 }: TaxiHomePartyCardProps) => {
   const expandable = party.statusTone === 'active';
-  const joinActionDisabled = party.joinAction.state === 'joined';
   const cardProgress = useSharedValue(expanded && expandable ? 1 : 0);
 
   React.useEffect(() => {
@@ -258,27 +272,15 @@ export const TaxiHomePartyCard = ({
 
           <TouchableOpacity
             accessibilityRole="button"
-            activeOpacity={joinActionDisabled ? 1 : 0.88}
-            disabled={joinActionDisabled}
+            activeOpacity={0.88}
             onPress={() => onPressJoinAction(party)}
-            style={[
-              styles.requestButton,
-              joinActionDisabled ? styles.requestButtonDisabled : null,
-            ]}>
+            style={styles.requestButton}>
             <Icon
-              color={
-                joinActionDisabled
-                  ? COLORS.text.tertiary
-                  : COLORS.text.inverse
-              }
-              name="car-sport"
+              color={COLORS.text.inverse}
+              name={getJoinActionIconName(party.joinAction.state)}
               size={16}
             />
-            <Text
-              style={[
-                styles.requestButtonLabel,
-                joinActionDisabled ? styles.requestButtonLabelDisabled : null,
-              ]}>
+            <Text style={styles.requestButtonLabel}>
               {party.joinAction.label}
             </Text>
           </TouchableOpacity>
@@ -515,18 +517,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
   },
-  requestButtonDisabled: {
-    backgroundColor: COLORS.background.subtle,
-    shadowOpacity: 0,
-  },
   requestButtonLabel: {
     color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 21,
-  },
-  requestButtonLabelDisabled: {
-    color: COLORS.text.tertiary,
   },
   requestHelperText: {
     color: COLORS.text.muted,

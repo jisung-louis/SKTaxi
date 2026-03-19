@@ -3,7 +3,8 @@ import type {Party} from './types';
 export type TaxiAcceptancePendingRequestState =
   | 'pending'
   | 'accepted'
-  | 'declined';
+  | 'declined'
+  | 'canceled';
 
 export type TaxiAcceptancePendingAvatarViewData =
   | {

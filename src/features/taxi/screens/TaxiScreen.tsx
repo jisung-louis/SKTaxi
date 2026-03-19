@@ -12,7 +12,11 @@ import {
 import MapView, {Marker, type Region} from 'react-native-maps';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated from 'react-native-reanimated';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {
+  NavigationProp,
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -103,11 +107,13 @@ export const TaxiScreen = () => {
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {location} = useTaxiLocation();
   const {
+    activePartyId,
     data,
     error,
     hasActiveParty,
     loading,
     refetch,
+    requestJoin,
     selectFilter,
     selectSort,
     setSearchQuery,
@@ -115,6 +121,7 @@ export const TaxiScreen = () => {
   const [expandedPartyId, setExpandedPartyId] = React.useState<string | null>(
     null,
   );
+  const hasFocusedRef = React.useRef(false);
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -159,11 +166,26 @@ export const TaxiScreen = () => {
   }, [navigation]);
 
   const handlePressMyPartyChat = React.useCallback(() => {
-    Alert.alert(
-      '준비 중',
-      '파티 채팅 상세 연결은 다음 단계에서 이어집니다.',
-    );
-  }, []);
+    if (!activePartyId) {
+      return;
+    }
+
+    navigation.navigate('Chat', {
+      partyId: activePartyId,
+    });
+  }, [activePartyId, navigation]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (hasFocusedRef.current) {
+        refetch().catch(() => undefined);
+      } else {
+        hasFocusedRef.current = true;
+      }
+
+      return () => {};
+    }, [refetch]),
+  );
 
   React.useEffect(() => {
     if (!expandedPartyId) {
@@ -189,8 +211,20 @@ export const TaxiScreen = () => {
   );
 
   const handlePressPartyJoinAction = React.useCallback(
-    (party: TaxiHomePartyCardViewData) => {
+    async (party: TaxiHomePartyCardViewData) => {
       if (party.joinAction.state === 'joined') {
+        navigation.navigate('Chat', {
+          partyId: party.id,
+        });
+        return;
+      }
+
+      if (party.joinAction.state === 'pending') {
+        if (party.acceptancePendingSeed) {
+          navigation.navigate('AcceptancePending', {
+            seed: party.acceptancePendingSeed,
+          });
+        }
         return;
       }
 
@@ -202,19 +236,30 @@ export const TaxiScreen = () => {
         return;
       }
 
-      if (party.acceptancePendingSeed) {
-        navigation.navigate('AcceptancePending', {
-          seed: party.acceptancePendingSeed,
-        });
+      if (party.joinAction.state === 'unavailable') {
+        Alert.alert(
+          '상태 확인 필요',
+          '내 파티 상태를 확인하지 못했습니다. 새로고침 후 다시 시도해주세요.',
+        );
         return;
       }
 
-      Alert.alert(
-        '준비 중',
-        '동승 요청 API 연결은 다음 단계에서 이어집니다.',
-      );
+      try {
+        const seed = await requestJoin(party);
+        navigation.navigate('AcceptancePending', {
+          seed,
+        });
+      } catch (requestError) {
+        console.error('동승 요청 생성 실패', requestError);
+        Alert.alert(
+          '동승 요청 실패',
+          requestError instanceof Error && requestError.message
+            ? requestError.message
+            : '동승 요청에 실패했습니다.',
+        );
+      }
     },
-    [navigation],
+    [navigation, requestJoin],
   );
 
   return (
