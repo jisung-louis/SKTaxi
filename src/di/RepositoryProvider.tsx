@@ -11,7 +11,7 @@ import { MockCafeteriaRepository } from '@/features/campus/data/repositories/Moc
 import { MockBoardRepository } from '@/features/board/data/repositories/MockBoardRepository';
 import { MockChatRepository } from '@/features/chat/data/repositories/MockChatRepository';
 import { MockNoticeRepository } from '@/features/notice/testing/MockNoticeRepository';
-import { MockAppNoticeRepository } from '@/features/settings/data/repositories/MockAppNoticeRepository';
+import { SpringAppNoticeRepository } from '@/features/settings/data/repositories/SpringAppNoticeRepository';
 import { MockInquiryRepository } from '@/features/settings/data/repositories/MockInquiryRepository';
 import { MockPartyRepository } from '@/features/taxi/data/repositories/MockPartyRepository';
 import { MockNotificationActionRepository } from '@/features/taxi/data/repositories/MockNotificationActionRepository';
@@ -48,7 +48,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       noticeRepository: new MockNoticeRepository(),
       courseRepository: new MockCourseRepository(),
       notificationRepository: new MockNotificationRepository(),
-      appNoticeRepository: new MockAppNoticeRepository(),
+      appNoticeRepository: new SpringAppNoticeRepository(),
       cafeteriaRepository: new MockCafeteriaRepository(),
       academicRepository: new MockAcademicRepository(),
       inquiryRepository: new MockInquiryRepository(),

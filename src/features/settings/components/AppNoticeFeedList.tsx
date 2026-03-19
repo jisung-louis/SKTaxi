@@ -76,14 +76,16 @@ export const AppNoticeFeedList = ({
             </Text>
 
             <View style={styles.footerRow}>
-              <View style={styles.viewCountRow}>
-                <Icon
-                  color={COLORS.text.muted}
-                  name="eye-outline"
-                  size={12}
-                />
-                <Text style={styles.viewCountLabel}>{item.viewCountLabel}</Text>
-              </View>
+              {item.viewCountLabel ? (
+                <View style={styles.viewCountRow}>
+                  <Icon
+                    color={COLORS.text.muted}
+                    name="eye-outline"
+                    size={12}
+                  />
+                  <Text style={styles.viewCountLabel}>{item.viewCountLabel}</Text>
+                </View>
+              ) : <View />}
 
               <Icon
                 color={COLORS.text.muted}

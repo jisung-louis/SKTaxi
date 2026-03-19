@@ -123,16 +123,20 @@ export const AppNoticeDetailScreen = () => {
 
               <Text style={styles.metaSeparator}>|</Text>
               <Text style={styles.metaLabel}>{data.publishedLabel}</Text>
-              <Text style={styles.metaSeparator}>|</Text>
+              {data.viewCountLabel ? (
+                <>
+                  <Text style={styles.metaSeparator}>|</Text>
 
-              <View style={styles.viewCountRow}>
-                <Icon
-                  color={COLORS.text.muted}
-                  name="eye-outline"
-                  size={14}
-                />
-                <Text style={styles.metaLabel}>{data.viewCountLabel}</Text>
-              </View>
+                  <View style={styles.viewCountRow}>
+                    <Icon
+                      color={COLORS.text.muted}
+                      name="eye-outline"
+                      size={14}
+                    />
+                    <Text style={styles.metaLabel}>{data.viewCountLabel}</Text>
+                  </View>
+                </>
+              ) : null}
             </View>
 
             <View style={styles.divider} />

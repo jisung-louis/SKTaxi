@@ -1,6 +1,8 @@
 import React from 'react';
 
-import {appNoticeScreenRepository} from '../data/repositories/appNoticeScreenRepository';
+import {useAppNoticeRepository} from '@/di/useRepository';
+
+import {assembleAppNoticeDetailViewData} from '../application/appNoticeViewAssembler';
 import type {
   AppNoticeBadgeViewData,
   AppNoticeDetailViewData,
@@ -39,6 +41,7 @@ const buildBadges = (
 export const useAppNoticeDetailData = (
   noticeId: string | undefined,
 ): UseAppNoticeDetailDataResult => {
+  const appNoticeRepository = useAppNoticeRepository();
   const [data, setData] = React.useState<AppNoticeDetailViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -55,24 +58,19 @@ export const useAppNoticeDetailData = (
     setError(null);
 
     try {
-      const record = await appNoticeScreenRepository.getNotice(noticeId);
+      const notice = await appNoticeRepository.getAppNotice(noticeId);
 
-      if (!record) {
+      if (!notice) {
         setData(null);
         setError('앱 공지사항을 찾을 수 없습니다.');
         return;
       }
 
+      const viewData = assembleAppNoticeDetailViewData(notice);
+
       setData({
-        authorLabel: record.authorLabel,
-        badges: buildBadges(record.important, record.categoryLabel),
-        bodyParagraphs: [...record.bodyParagraphs],
-        categoryLabel: record.categoryLabel,
-        galleryImages: [...record.galleryImages],
-        id: record.id,
-        publishedLabel: record.detailPublishedLabel,
-        title: record.title,
-        viewCountLabel: record.viewCountLabel,
+        ...viewData,
+        badges: buildBadges(notice.priority === 'urgent', viewData.categoryLabel),
       });
     } catch (loadError) {
       console.error('앱 공지사항 상세를 불러오지 못했습니다.', loadError);
@@ -81,7 +79,7 @@ export const useAppNoticeDetailData = (
     } finally {
       setLoading(false);
     }
-  }, [noticeId]);
+  }, [appNoticeRepository, noticeId]);
 
   React.useEffect(() => {
     load();

@@ -6,6 +6,7 @@ export {
   FirebaseAppNoticeRepository,
   FirestoreAppNoticeRepository,
 } from './data/repositories/FirebaseAppNoticeRepository';
+export {SpringAppNoticeRepository} from './data/repositories/SpringAppNoticeRepository';
 export {
   FirebaseInquiryRepository,
   FirestoreInquiryRepository,

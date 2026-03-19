@@ -1,6 +1,8 @@
 import React from 'react';
 
-import {appNoticeScreenRepository} from '../data/repositories/appNoticeScreenRepository';
+import {useAppNoticeRepository} from '@/di/useRepository';
+
+import {assembleAppNoticeFeedViewData} from '../application/appNoticeViewAssembler';
 import type {
   AppNoticeBadgeViewData,
   AppNoticeFeedViewData,
@@ -28,6 +30,7 @@ const buildBadges = (important: boolean): AppNoticeBadgeViewData[] => {
 };
 
 export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
+  const appNoticeRepository = useAppNoticeRepository();
   const [data, setData] = React.useState<AppNoticeFeedViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -37,16 +40,13 @@ export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
     setError(null);
 
     try {
-      const records = await appNoticeScreenRepository.getNotices();
+      const notices = await appNoticeRepository.getAppNotices();
+      const nextData = assembleAppNoticeFeedViewData(notices);
+
       setData({
-        items: records.map(record => ({
-          badges: buildBadges(record.important),
-          id: record.id,
-          previewImage: record.galleryImages[0],
-          publishedLabel: record.feedPublishedLabel,
-          summary: record.summary,
-          title: record.title,
-          viewCountLabel: record.viewCountLabel,
+        items: nextData.items.map(item => ({
+          ...item,
+          badges: buildBadges(notices.find(notice => notice.id === item.id)?.priority === 'urgent'),
         })),
       });
     } catch (loadError) {
@@ -55,7 +55,7 @@ export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [appNoticeRepository]);
 
   React.useEffect(() => {
     load();

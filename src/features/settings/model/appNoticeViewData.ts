@@ -15,7 +15,7 @@ export interface AppNoticeFeedCardViewData {
   publishedLabel: string;
   summary: string;
   title: string;
-  viewCountLabel: string;
+  viewCountLabel?: string;
 }
 
 export interface AppNoticeFeedViewData {
@@ -31,5 +31,5 @@ export interface AppNoticeDetailViewData {
   id: string;
   publishedLabel: string;
   title: string;
-  viewCountLabel: string;
+  viewCountLabel?: string;
 }
