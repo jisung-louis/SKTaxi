@@ -324,6 +324,28 @@ export const useAuthSession = (): AuthContextValue => {
     return authRepository.refreshToken();
   }, [authRepository]);
 
+  const markPermissionOnboardingComplete = useCallback(() => {
+    setState(previous => {
+      if (!previous.user) {
+        return previous;
+      }
+
+      if (previous.user.onboarding?.permissionsComplete) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        user: {
+          ...previous.user,
+          onboarding: {
+            permissionsComplete: true,
+          },
+        },
+      };
+    });
+  }, []);
+
   return {
     ...state,
     signInWithGoogle,
@@ -331,5 +353,6 @@ export const useAuthSession = (): AuthContextValue => {
     signOut,
     refreshAuthToken,
     refreshCurrentUser,
+    markPermissionOnboardingComplete,
   };
 };

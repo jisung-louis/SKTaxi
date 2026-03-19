@@ -10,11 +10,13 @@ const delay = (ms: number) =>
 
 export const completePermissionOnboarding = async ({
   completeOnboarding,
+  markPermissionOnboardingComplete,
   refreshCurrentUser,
   userId,
   memberRepository,
 }: {
   completeOnboarding: () => void;
+  markPermissionOnboardingComplete: () => void;
   refreshCurrentUser: () => Promise<void>;
   userId?: string;
   memberRepository: IMemberRepository;
@@ -40,6 +42,7 @@ export const completePermissionOnboarding = async ({
     console.warn('권한 온보딩 완료 처리 실패:', error);
     await delay(COMPLETION_DELAY_MS);
   } finally {
+    markPermissionOnboardingComplete();
     completeOnboarding();
   }
 };

@@ -15,6 +15,7 @@ export interface AuthContextValue extends AuthState {
   signOut: () => Promise<void>;
   refreshAuthToken: () => Promise<string | null>;
   refreshCurrentUser: (memberProfile?: MemberProfile) => Promise<void>;
+  markPermissionOnboardingComplete: () => void;
 }
 
 export interface CompleteProfileFormValues {

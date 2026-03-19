@@ -6,7 +6,7 @@ import {completePermissionOnboarding} from '../services/permissionOnboardingServ
 import {useAuth} from './useAuth';
 
 export const usePermissionOnboarding = () => {
-  const {refreshCurrentUser, user} = useAuth();
+  const {markPermissionOnboardingComplete, refreshCurrentUser, user} = useAuth();
   const memberRepository = useMemberRepository();
   const [completing, setCompleting] = useState(false);
 
@@ -16,6 +16,7 @@ export const usePermissionOnboarding = () => {
         setCompleting(true);
         await completePermissionOnboarding({
           completeOnboarding,
+          markPermissionOnboardingComplete,
           refreshCurrentUser,
           userId: user?.uid,
           memberRepository,
@@ -24,7 +25,7 @@ export const usePermissionOnboarding = () => {
         setCompleting(false);
       }
     },
-    [memberRepository, refreshCurrentUser, user?.uid],
+    [markPermissionOnboardingComplete, memberRepository, refreshCurrentUser, user?.uid],
   );
 
   return {
