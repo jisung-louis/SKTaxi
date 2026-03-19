@@ -318,7 +318,7 @@ REST 재조회만으로 화면이 복구되어야 한다.
 
 - App Notice 목록/상세가 실제 Spring API를 사용한다.
 - Notification Center 목록/읽음 처리 UI가 실제 Spring API를 사용한다.
-- Taxi Home 목록이 실제 파티 API 기반으로 렌더링된다.
+- Taxi Home 목록/동승 요청/수락 대기 화면/파티 채팅 진입이 Spring 기준으로 이어진다.
 
 2026-03-19 진행 반영:
 
@@ -328,7 +328,12 @@ REST 재조회만으로 화면이 복구되어야 한다.
 - `useNotificationCenterData()`는 feature-local entrypoint를 제거하고 중앙 DI `notificationRepository` 기준으로 목록/읽음 처리 UI를 구성한다.
 - backend notification enum은 repository mapper에서 기존 RN navigation이 소비하는 canonical lower-snake 문자열로 정규화했다.
 - Taxi Home은 `loadTaxiHomeQueryResult()` query가 `GET /v1/parties` / `GET /v1/members/me/parties`를 직접 호출하도록 옮겼고, 기존 `taxiHomeRepository.ts` entrypoint는 제거했다.
-- Taxi Home은 목록/활성 파티 가시성까지는 Spring REST로 붙었지만, join request 생성/AcceptancePending/party chat은 아직 Phase E 범위로 남겨뒀다.
+- `notice_post_like`는 알림함 icon/탭 이동에서 notice detail dead path가 나지 않도록 navigation/assembler를 정리했다.
+- `SpringAppNoticeRepository`의 상세 404는 공통 API error mapper가 반환하는 `RepositoryError(NOT_FOUND)` 기준으로 null 처리하게 맞췄다.
+- Taxi Home은 `GET /v1/members/me/join-requests`까지 묶어 개인 상태를 읽고, `NETWORK_ERROR` / `TIMEOUT` / `RATE_LIMITED`만 read-only fallback으로 허용한다.
+- Taxi Home의 join request 생성은 `POST /v1/parties/{partyId}/join-requests`, AcceptancePending 조회/취소는 `GET /v1/members/me/join-requests` / `GET /v1/parties/{id}` / `PATCH /v1/join-requests/{id}/cancel`로 연결했다.
+- AcceptancePending 전용 mock singleton repository는 제거했고, Taxi Home screen chain은 query/application adapter 기준으로 닫았다.
+- Taxi Home의 floating CTA / joined action은 실제 `Chat` route 진입으로 연결했지만, chat detail 데이터 소스 자체의 Spring 이전은 Phase F 범위로 남아 있다.
 
 ### Phase D. Notification 도메인 정식 이전
 
