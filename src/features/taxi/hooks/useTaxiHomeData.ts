@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {taxiHomeRepository} from '../data/repositories/taxiHomeRepository';
+import {loadTaxiHomeQueryResult} from '../application/taxiHomeQuery';
 import type {
   TaxiHomeFilterId,
   TaxiHomePartyCardViewData,
@@ -12,6 +12,7 @@ import type {
 interface UseTaxiHomeDataResult {
   data: TaxiHomeViewData | null;
   error: string | null;
+  hasActiveParty: boolean;
   loading: boolean;
   refetch: () => Promise<void>;
   selectFilter: (filterId: TaxiHomeFilterId) => void;
@@ -108,6 +109,7 @@ const buildTaxiHomeViewData = ({
 
 export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
   const [source, setSource] = React.useState<TaxiHomeSourceData | null>(null);
+  const [hasActiveParty, setHasActiveParty] = React.useState(false);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -121,8 +123,9 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
     setError(null);
 
     try {
-      const nextSource = await taxiHomeRepository.getHomeData();
-      setSource(nextSource);
+      const result = await loadTaxiHomeQueryResult();
+      setHasActiveParty(result.hasActiveParty);
+      setSource(result.source);
     } catch (loadError) {
       console.error('택시 홈 데이터를 불러오지 못했습니다.', loadError);
       setError('택시 홈 데이터를 불러오지 못했습니다.');
@@ -159,6 +162,7 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
   return {
     data,
     error,
+    hasActiveParty,
     loading,
     refetch: load,
     selectFilter,

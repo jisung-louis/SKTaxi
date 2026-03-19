@@ -105,6 +105,7 @@ export const TaxiScreen = () => {
   const {
     data,
     error,
+    hasActiveParty,
     loading,
     refetch,
     selectFilter,
@@ -114,8 +115,6 @@ export const TaxiScreen = () => {
   const [expandedPartyId, setExpandedPartyId] = React.useState<string | null>(
     null,
   );
-  const hasActiveParty = true;
-  // TODO: 참여 중인 파티 세션 API와 연결해서 플로팅 버튼 노출 여부를 결정한다.
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -160,8 +159,10 @@ export const TaxiScreen = () => {
   }, [navigation]);
 
   const handlePressMyPartyChat = React.useCallback(() => {
-    Alert.alert('준비 중', 'TODO: 실제 참여 중인 파티 채팅으로 연결할 예정입니다.');
-    // TODO: 참여 중인 파티 세션 API와 연결한 뒤 실제 partyId로 Chat 화면으로 이동한다.
+    Alert.alert(
+      '준비 중',
+      '파티 채팅 상세 연결은 다음 단계에서 이어집니다.',
+    );
   }, []);
 
   React.useEffect(() => {
@@ -208,7 +209,10 @@ export const TaxiScreen = () => {
         return;
       }
 
-      Alert.alert('대기 정보를 찾을 수 없습니다', '잠시 후 다시 시도해주세요.');
+      Alert.alert(
+        '준비 중',
+        '동승 요청 API 연결은 다음 단계에서 이어집니다.',
+      );
     },
     [navigation],
   );
