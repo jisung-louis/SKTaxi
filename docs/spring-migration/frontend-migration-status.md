@@ -27,8 +27,8 @@
 - App Notice / Notification Center는 Spring API + 중앙 DI 기준으로 전환 완료
 - Notification Center는 REST 초기 로드 + SSE 실시간 반영까지 연결 완료
 - Taxi Home은 Spring REST query + join request/pending/chat entry 범위까지 연결 완료
-- Taxi Party는 Spring REST/SSE + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) 일부와 ChatScreen 고급 상태전이 chain까지 부분 이전 완료
-- Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 부분 이전 완료
+- Taxi Party는 Spring REST/SSE + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) / 지도 선택 기반 자유 입력 좌표 정책 / ChatScreen 고급 상태전이 chain까지 부분 이전 완료
+- Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 리더/멤버 메뉴, 수정/취소, 특수 메시지(ACCOUNT/ARRIVED/END), 정산 현황 상단 공지 UI까지 부분 이전 완료
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
@@ -55,7 +55,7 @@
 | Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료                                        |
 | Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료                                 |
 | Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                               |
-| Phase E. Taxi Party 정식 이전                         | 부분 완료      | join request bugfix, SSE signal, ChatScreen 상태전이 chain 완료, 좌표 정책/system message contract는 잔여 |
+| Phase E. Taxi Party 정식 이전                         | 부분 완료      | recruit 지도 선택 기반 자유 입력, Chat header/action tray, 정산 현황 UI까지 완료. `SYSTEM` write / ACCOUNT payload 제약은 backend blocker |
 | Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완                                  |
 | Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                          |
 | Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                                   |
@@ -367,6 +367,28 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - Recruit(create) 경로 정리
   - `src/features/taxi/hooks/useTaxiRecruitForm.ts`
   - `src/features/taxi/model/taxiRecruitData.ts`
+- Recruit / Chat Phase E 마감 UI 정리
+  - `src/features/taxi/screens/RecruitScreen.tsx`
+  - `src/features/taxi/screens/TaxiLocationPickerScreen.tsx`
+  - `src/features/taxi/components/TaxiCreateLocationSection.tsx`
+  - `src/features/taxi/screens/ChatScreen.tsx`
+  - `src/features/taxi/components/TaxiChatSummaryCard.tsx`
+  - `src/features/taxi/components/TaxiChatComposer.tsx`
+  - `src/features/taxi/components/TaxiChatMessageList.tsx`
+  - `src/features/taxi/components/TaxiChatHeaderMenu.tsx`
+  - `src/features/taxi/components/TaxiTaxiCallSheet.tsx`
+  - `src/features/taxi/components/TaxiAccountSheet.tsx`
+  - `src/features/taxi/components/TaxiArriveSettlementSheet.tsx`
+  - `src/features/taxi/components/TaxiSettlementStatusSheet.tsx`
+  - `src/features/taxi/components/TaxiPartyEditSheet.tsx`
+- Taxi Chat assembler / DTO / repository 정리
+  - `src/features/taxi/model/taxiChatViewData.ts`
+  - `src/features/taxi/data/dto/taxiChatDto.ts`
+  - `src/features/taxi/data/mappers/taxiChatMapper.ts`
+  - `src/features/taxi/application/taxiChatDetailAssembler.ts`
+  - `src/features/taxi/data/repositories/ITaxiChatRepository.ts`
+  - `src/features/taxi/data/repositories/SpringTaxiChatRepository.ts`
+  - `src/features/taxi/hooks/useTaxiChatDetailData.ts`
 - System message contract 정리
   - `src/features/taxi/services/joinRequestService.ts`
   - `src/features/taxi/services/partyCreationService.ts`
@@ -381,6 +403,8 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
   - `GET /v1/members/me/join-requests`
 - Taxi Party command
   - `POST /v1/parties`
+  - `PATCH /v1/parties/{id}`
+  - `POST /v1/parties/{id}/cancel`
   - `PATCH /v1/join-requests/{id}/cancel`
   - `PATCH /v1/join-requests/{id}/accept`
   - `PATCH /v1/join-requests/{id}/decline`
@@ -399,6 +423,14 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - Notification cleanup
   - `GET /v1/notifications`
   - `DELETE /v1/notifications/{notificationId}`
+- Taxi Chat detail
+  - `GET /v1/chat-rooms/party:{partyId}`
+  - `GET /v1/chat-rooms/party:{partyId}/messages`
+  - `PATCH /v1/chat-rooms/party:{partyId}/settings`
+  - `PATCH /v1/chat-rooms/party:{partyId}/read`
+  - publish: `/app/chat/party:{partyId}` (`TEXT`, `ACCOUNT`, `ARRIVED`, `END`)
+  - subscribe: `/topic/chat/party:{partyId}`
+  - error queue: `/user/queue/errors`
 
 이번 구현 판단 메모:
 
@@ -408,9 +440,12 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - 따라서 leader action 이후 화면 반영 기준은 optimistic write가 아니라 `REST mutation -> repository refresh + SSE follow-up signal`이다.
 - `PARTY_JOIN_REQUEST` 알림 삭제는 `notification.data.requestId` 기준으로 좁혀, 같은 party의 다른 pending 요청 알림을 같이 지우지 않도록 수정했다.
 - FCM push runtime은 backend enum 이름(`PARTY_JOIN_REQUEST`, `PARTY_JOIN_ACCEPTED`, `PARTY_JOIN_DECLINED` 등)을 기존 frontend navigation type으로 정규화한다.
-- recruit(create)는 `/v1/parties`로 이전했지만, 좌표 계약상 프리셋 좌표를 해석할 수 없는 자유 입력 위치는 아직 완전 이전으로 보지 않는다.
+- `RecruitScreen`의 자유 입력은 더 이상 이름만 제출하지 않고, 직접 입력 + 지도 선택을 모두 거친 `name + lat + lng`가 확보될 때만 `POST /v1/parties`로 제출한다.
+- `TaxiLocationPickerScreen`은 기존 `react-native-maps`를 재사용해 출발지/도착지별 좌표를 stack route param으로 돌려주고, `useTaxiRecruitForm()`이 이를 draft state로 흡수한다.
 - ChatScreen은 `partyRepository.subscribeToParty()`의 SSE signal을 받아 `taxiChatRepository.getPartyChat()` REST snapshot을 다시 읽으므로, leader/member action 이후 summary/status가 stale 상태로 남지 않는다.
 - backend chat contract에는 client-authored `SYSTEM` message write가 없고, `ChatService.sendMessage()`는 `SYSTEM` 타입 전송을 거부한다. 따라서 create/accept 후 조용히 성공하는 no-op 호출은 제거했다.
+- backend special message contract는 `ACCOUNT`, `ARRIVED`, `END`만 허용하므로, ChatScreen은 해당 타입만 실제 STOMP publish와 후속 message 수신까지 연결한다.
+- `ACCOUNT`는 member 저장 계좌 정보를 기준으로만 전송되고 `hideName` 필드가 없으며, `ARRIVED` payload에는 `taxiFare`만 직접 전달 가능하다. 따라서 지원되지 않는 입력은 프론트에서 blocker로 남긴다.
 
 ### 4.12 Phase E 결과
 
@@ -423,20 +458,26 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - leader join request modal의 승인/거절은 `PATCH /v1/join-requests/{id}/accept|decline`를 실제 호출하고, 후속 badge/status는 repository refresh와 SSE signal로 다시 맞춘다.
 - `useJoinRequestStatus()`는 단일 request id를 Spring API 기준으로 재조회하므로 leader 모달에서 취소/처리 상태를 더 이상 mock store로 보지 않는다.
 - `RecruitScreen` 제출은 `POST /v1/parties`를 호출하고, 생성된 `partyId`로 바로 Taxi Chat screen chain에 진입한다.
+- `RecruitScreen`의 출발지/도착지 직접 입력은 `직접 입력 -> 지도에서 선택 -> name + lat + lng 확정` 순서를 강제하고, 선택 완료 시 초록 안내 배너와 `변경` 액션을 노출한다.
 - 승인/거절 이후 stale `PARTY_JOIN_REQUEST` 알림은 Spring notification REST를 다시 조회해 `requestId`가 일치하는 알림만 삭제한다.
 - `useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`, `usePendingJoinRequest`, `useParty`, `subscribeToJoinRequests()`는 Taxi Party SSE signal을 받아 REST snapshot을 다시 읽는다.
 - `SpringPartyRepository.sendSystemMessage()`는 더 이상 성공처럼 끝나는 no-op가 아니라, backend contract 부재를 드러내는 명시적 오류로 정리됐다.
-- `ChatScreen` summary/action strip은 `close/reopen/arrive/end/kick/leave/settlement confirm`을 실제 UI chain으로 연결한다.
+- `ChatScreen` header menu는 멤버일 때 `파티 나가기`, 리더일 때 `수정하기`/`파티 없애기`만 노출하며, 수정은 `PATCH /v1/parties/{id}`, 파티 없애기는 `POST /v1/parties/{id}/cancel`로 연결한다.
+- `ChatScreen` 하단 `+` 액션 트레이는 `택시 호출`, `계좌 전송`, `모집 마감/재개`, `택시 도착`, `정산 현황`, `파티 종료`를 파티 상태와 리더 여부에 따라 분기한다.
+- `택시 호출`은 카카오T / Uber / 티머니GO 딥링크를 `canOpenURL/openURL`로 연결하고, 실패 시 앱 설치 안내를 노출한다.
+- `계좌 전송`, `택시 도착`, `파티 종료`는 각각 backend 특수 메시지 `ACCOUNT`, `ARRIVED`, `END`까지 연결되며, repository는 publish 이후 실제 message 수신까지 대기해 반영한다.
 - 파티 도착/강퇴/멤버별 정산 확인은 `SpringPartyRepository` 경계에서 각각 `PATCH /v1/parties/{id}/arrive`, `DELETE /v1/parties/{id}/members/{memberId}`, `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`으로 연결됐다.
 - direct leave는 더 이상 `SpringTaxiChatRepository` 전용 책임이 아니고, `DELETE /v1/parties/{id}/members/me`를 `SpringPartyRepository.leaveParty()`로 옮겨 party domain command로 정리했다.
 - leader 모집 상태 전이는 `PATCH /v1/parties/{id}/close`, `PATCH /v1/parties/{id}/reopen`, `PATCH /v1/parties/{id}/end`까지 screen chain에 연결됐다.
+- 정산 현황은 상단 공지형 summary + 확장 패널 + 리더용 정산 관리 modal로 분리했고, `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm` 결과를 재조회 data에 반영한다.
 
 현재 아직 남은 것:
 
-- recruit(create)는 프리셋 또는 프리셋과 동일한 이름으로 좌표를 해석할 수 있는 위치만 Spring create에 연결했고, 임의 자유 입력 위치는 backend geocoding/좌표 contract가 없어 여전히 막혀 있다.
 - leader 승인 후 채팅 시스템 메시지 삽입은 backend에 별도 write contract가 없어 프론트에서 재현하지 않는다.
+- `ACCOUNT` special message는 서버가 member 저장 계좌 정보만 사용하므로, 화면에서 입력한 계좌 정보를 저장하지 않으면서 다른 값으로 바로 전송하는 경로는 지원되지 않는다.
+- `ACCOUNT` contract에는 `hideName` 필드가 없어, Figma의 이름 가리기 상태를 실제 message payload로 반영하지 못한다.
+- `ARRIVED` special message response에는 계좌 정보 override 필드가 없으므로, 도착 정산 sheet의 계좌 정보는 최신 저장 계좌/ACCOUNT message를 기준으로만 표시한다.
 - Taxi Party SSE는 연결됐지만, SSE payload를 직접 domain state로 쓰지 않고 signal-only로 사용하므로 REST snapshot 재조회 비용은 여전히 남아 있다.
-- `PATCH /v1/parties/{id}` 기반 파티 수정, `POST /v1/parties/{id}/cancel` 또는 leader withdraw 종료 정책은 이번 단계에서 별도 UI chain으로 닫지 않았다.
 
 ---
 
@@ -472,13 +513,13 @@ Phase D 반영 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Taxi Party SSE / 고급 상태전이 마무리
+1. Taxi Party / Chat 특수 메시지의 backend contract 잔여분 정리
 2. 일반 Chat 정식 이전
 3. 남은 mock 화면 체인 정리
 
 이 순서를 권장하는 이유:
 
-- Notification domain은 Phase D에서 닫혔고, Taxi Party도 Phase E에서 REST 기준 main flow를 옮겼으므로 다음 병목은 SSE/고급 상태전이 잔여분이다.
+- Notification domain은 Phase D에서 닫혔고, Taxi Party도 Phase E에서 프론트 screen chain은 대부분 옮겼으므로 다음 병목은 특수 메시지 contract 잔여분과 일반 Chat 이전이다.
 - Taxi Chat detail은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 일반 chat list/summary/custom room 이전으로 이어가는 편이 자연스럽다.
 - 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 
@@ -562,6 +603,6 @@ Phase D 반영 후 구조 상태:
 - Phase B 후속 정리 완료
 - Phase C는 App Notice / Notification Center / Taxi Home 완료 상태
 - Phase D는 Notification realtime까지 완료
-- Phase E는 join request bugfix + SSE signal 연결까지 반영됐지만 partial 상태
+- Phase E는 recruit map picker + ChatScreen action tray/정산 현황까지 반영됐지만 backend contract blocker 때문에 partial 상태
 - Phase D blocker fix까지 반영되어 close 가능 상태
 - Phase F는 Taxi Chat detail 범위에서 부분 진행 상태
