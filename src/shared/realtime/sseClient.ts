@@ -1,8 +1,11 @@
 import {
   ApiQueryParams,
   buildApiUrl,
+  createRealtimeLogContext,
   getApiRuntimeConfig,
   getAuthorizationHeaderValue,
+  logRealtimeConnected,
+  logRealtimeError,
 } from '@/shared/api';
 
 export interface SseConnectionRequest {
@@ -60,9 +63,27 @@ export class SseClient {
     factory: SseConnectionFactory<TConnection>,
   ): Promise<TConnection> {
     const options = await this.buildConnectionOptions(request);
-    return factory.connect(options);
+    const logContext = createRealtimeLogContext({
+      transport: 'sse',
+      url: options.url,
+      headers: options.headers,
+      extra: {
+        reconnectDelayMs: options.reconnectDelayMs,
+        lastEventId: request.lastEventId,
+      },
+    });
+
+    try {
+      const connection = factory.connect(options);
+      logRealtimeConnected(logContext, {
+        reconnectDelayMs: options.reconnectDelayMs,
+      });
+      return connection;
+    } catch (error) {
+      logRealtimeError(logContext, error);
+      throw error;
+    }
   }
 }
 
 export const sseClient = new SseClient();
-

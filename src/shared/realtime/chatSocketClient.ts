@@ -1,7 +1,9 @@
 import {
   buildWebSocketUrl,
+  createRealtimeLogContext,
   getApiRuntimeConfig,
   getAuthorizationHeaderValue,
+  logRealtimePrepared,
 } from '@/shared/api';
 
 export interface ChatSocketConnectionRequest {
@@ -41,7 +43,7 @@ export class ChatSocketClient {
       }
     }
 
-    return {
+    const options = {
       url: buildWebSocketUrl(request.endpointPath ?? runtimeConfig.wsEndpointPath),
       connectHeaders,
       reconnectDelayMs:
@@ -51,8 +53,24 @@ export class ChatSocketClient {
       heartbeatOutgoingMs:
         request.heartbeatOutgoingMs ?? runtimeConfig.stompHeartbeatOutgoingMs,
     };
+
+    const logContext = createRealtimeLogContext({
+      transport: 'stomp',
+      url: options.url,
+      headers: options.connectHeaders,
+      extra: {
+        reconnectDelayMs: options.reconnectDelayMs,
+        heartbeatIncomingMs: options.heartbeatIncomingMs,
+        heartbeatOutgoingMs: options.heartbeatOutgoingMs,
+      },
+    });
+
+    logRealtimePrepared(logContext, {
+      preparedOnly: true,
+    });
+
+    return options;
   }
 }
 
 export const chatSocketClient = new ChatSocketClient();
-

@@ -1,8 +1,13 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import { mapApiError } from './apiErrorMapper';
 import { getApiRuntimeConfig } from './apiConfig';
 import { getAuthorizationHeaderValue } from './authTokenProvider';
+import {
+  createHttpRequestLogContext,
+  logHttpError,
+  logHttpResponse,
+} from './apiLogger';
 
 export interface ApiRequestConfig<D = unknown>
   extends Omit<AxiosRequestConfig<D>, 'baseURL'> {
@@ -57,21 +62,49 @@ export class HttpClient {
   async request<TResponse, D = unknown>(
     config: ApiRequestConfig<D>,
   ): Promise<TResponse> {
+    let logContext: ReturnType<typeof createHttpRequestLogContext> | null = null;
+
     try {
       const headers = await buildRequestHeaders(config);
-      const response = await axios.request<TResponse, { data: TResponse }, D>({
+      const method = config.method?.toUpperCase() ?? 'GET';
+      logContext = createHttpRequestLogContext({
+        method,
+        path: config.url ?? '',
+        params: config.params,
+        headers,
+        body: config.data,
+      });
+      const response = await axios.request<TResponse, AxiosResponse<TResponse>, D>({
         ...config,
         baseURL: getApiRuntimeConfig().restBaseUrl,
         timeout: config.timeout ?? getApiRuntimeConfig().httpTimeoutMs,
         headers,
       });
 
+      logHttpResponse(logContext, {
+        statusCode: response.status,
+        data: response.data,
+      });
+
       return response.data;
     } catch (error) {
-      throw mapApiError(error, {
+      if (!logContext) {
+        logContext = createHttpRequestLogContext({
+          method: config.method?.toUpperCase() ?? 'GET',
+          path: config.url ?? '',
+          params: config.params,
+          headers: config.headers as Record<string, unknown> | undefined,
+          body: config.data,
+        });
+      }
+
+      const mappedError = mapApiError(error, {
         url: config.url,
         method: config.method?.toUpperCase(),
       });
+
+      logHttpError(logContext, mappedError);
+      throw mappedError;
     }
   }
 

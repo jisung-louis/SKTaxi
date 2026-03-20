@@ -23,5 +23,18 @@ export type {
   AuthTokenResolver,
 } from './authTokenProvider';
 export { mapApiError } from './apiErrorMapper';
+export {
+  createHttpRequestLogContext,
+  createRealtimeLogContext,
+  logHttpError,
+  logHttpResponse,
+  logRealtimeConnected,
+  logRealtimeError,
+  logRealtimePrepared,
+} from './apiLogger';
+export {
+  sanitizeHeadersForLog,
+  sanitizeLogValue,
+} from './apiLogSanitizer';
 export { HttpClient, httpClient } from './httpClient';
 export type { ApiRequestConfig } from './httpClient';
