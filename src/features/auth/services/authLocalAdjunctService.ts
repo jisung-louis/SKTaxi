@@ -16,17 +16,16 @@ const createDefaultAuthLocalAdjunct = (): AuthLocalAdjunct => ({
 export const loadAuthLocalAdjunct = async (
   userId: string,
 ): Promise<AuthLocalAdjunct> => {
+  const storageKey = buildAuthLocalAdjunctStorageKey(userId);
+
   try {
-    const stored = await AsyncStorage.getItem(
-      buildAuthLocalAdjunctStorageKey(userId),
-    );
+    const stored = await AsyncStorage.getItem(storageKey);
 
     if (!stored) {
       return createDefaultAuthLocalAdjunct();
     }
 
     const parsed = JSON.parse(stored);
-
     return {
       permissionsComplete: Boolean(parsed?.permissionsComplete),
     };
