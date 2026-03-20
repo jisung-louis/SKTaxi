@@ -38,7 +38,15 @@ interface PartyChatState {
   subscribers: Set<SubscriptionCallbacks<TaxiChatSourceData | null>>;
 }
 
+interface PendingSpecialMessageRequest {
+  reject: (error: Error) => void;
+  resolve: (value: TaxiChatSourceData | null) => void;
+  timeoutId: ReturnType<typeof setTimeout>;
+  type: 'account' | 'arrived' | 'end';
+}
+
 const MESSAGES_PAGE_SIZE = 100;
+const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 
 const buildSockJsWebSocketPath = (endpointPath = '/ws') =>
   endpointPath.endsWith('/websocket')
@@ -49,13 +57,19 @@ const clonePartySource = (
   source: TaxiChatSourceData,
 ): TaxiChatSourceData => ({
   ...source,
+  departureLocation: {...source.departureLocation},
+  destinationLocation: {...source.destinationLocation},
+  latestAccountData: source.latestAccountData
+    ? {...source.latestAccountData}
+    : undefined,
   messages: source.messages.map(message => ({
     ...message,
+    accountData: message.accountData ? {...message.accountData} : undefined,
+    arrivalData: message.arrivalData ? {...message.arrivalData} : undefined,
     avatar: message.avatar ? {...message.avatar} : undefined,
   })),
   participants: source.participants.map(participant => ({...participant})),
   settlement: source.settlement ? {...source.settlement} : undefined,
-  summary: {...source.summary},
 });
 
 const createStompRepositoryError = (
@@ -71,6 +85,11 @@ const createStompRepositoryError = (
   );
 
 export class SpringTaxiChatRepository implements ITaxiChatRepository {
+  private readonly pendingSpecialMessageRequests = new Map<
+    string,
+    PendingSpecialMessageRequest
+  >();
+
   private readonly partyStates = new Map<string, PartyChatState>();
 
   private readonly sessionListeners = new Set<() => void>();
@@ -140,6 +159,32 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     const state = this.partyStates.get(partyId);
 
     return state?.source ? clonePartySource(state.source) : null;
+  }
+
+  async sendAccountMessage(
+    partyId: string,
+  ): Promise<TaxiChatSourceData | null> {
+    return this.publishSpecialMessage(partyId, {
+      type: 'ACCOUNT',
+    });
+  }
+
+  async sendArrivedMessage(
+    partyId: string,
+    taxiFare: number,
+  ): Promise<TaxiChatSourceData | null> {
+    return this.publishSpecialMessage(partyId, {
+      taxiFare,
+      type: 'ARRIVED',
+    });
+  }
+
+  async sendEndMessage(
+    partyId: string,
+  ): Promise<TaxiChatSourceData | null> {
+    return this.publishSpecialMessage(partyId, {
+      type: 'END',
+    });
   }
 
   async setCurrentParty(partyId: string): Promise<void> {
@@ -229,6 +274,86 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     return source ? clonePartySource(source) : null;
   }
 
+  private buildSpecialMessageKey(
+    partyId: string,
+    type: PendingSpecialMessageRequest['type'],
+  ) {
+    return `${partyId}:${type}`;
+  }
+
+  private clearPendingSpecialMessageRequest(
+    key: string,
+    error?: Error,
+  ) {
+    const pendingRequest = this.pendingSpecialMessageRequests.get(key);
+
+    if (!pendingRequest) {
+      return;
+    }
+
+    clearTimeout(pendingRequest.timeoutId);
+    this.pendingSpecialMessageRequests.delete(key);
+
+    if (error) {
+      pendingRequest.reject(error);
+      return;
+    }
+
+    const partyId = key.split(':')[0];
+    const state = this.partyStates.get(partyId);
+    pendingRequest.resolve(state?.source ? clonePartySource(state.source) : null);
+  }
+
+  private async publishSpecialMessage(
+    partyId: string,
+    payload: SendChatMessageRequestDto,
+  ): Promise<TaxiChatSourceData | null> {
+    const client = await this.ensureStompClient();
+    const mappedType =
+      payload.type === 'ACCOUNT'
+        ? 'account'
+        : payload.type === 'ARRIVED'
+        ? 'arrived'
+        : 'end';
+    const key = this.buildSpecialMessageKey(partyId, mappedType);
+
+    this.clearPendingSpecialMessageRequest(
+      key,
+      createStompRepositoryError('이전 특수 메시지 요청이 새 요청으로 대체되었습니다.'),
+    );
+
+    const responsePromise = new Promise<TaxiChatSourceData | null>(
+      (resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          this.pendingSpecialMessageRequests.delete(key);
+          reject(
+            createStompRepositoryError(
+              '특수 메시지 전송 결과를 제시간에 확인하지 못했습니다.',
+              {
+                chatMessageType: payload.type,
+                partyId,
+              },
+            ),
+          );
+        }, SPECIAL_MESSAGE_TIMEOUT_MS);
+
+        this.pendingSpecialMessageRequests.set(key, {
+          reject,
+          resolve,
+          timeoutId,
+          type: mappedType,
+        });
+      },
+    );
+
+    client.publish({
+      body: JSON.stringify(payload),
+      destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
+    });
+
+    return responsePromise;
+  }
+
   private clearStompSubscriptions() {
     this.errorSubscription?.unsubscribe();
     this.errorSubscription = null;
@@ -248,6 +373,14 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     });
     this.errorSubscription?.unsubscribe();
     this.errorSubscription = null;
+    this.pendingSpecialMessageRequests.forEach((_, key) => {
+      this.clearPendingSpecialMessageRequest(
+        key,
+        createStompRepositoryError(
+          '채팅 세션이 정리되어 특수 메시지 대기 요청을 종료했습니다.',
+        ),
+      );
+    });
     this.partyStates.clear();
   }
 
@@ -258,6 +391,14 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     this.stompClient = null;
     this.stompConnectionPromise = null;
     this.errorSubscription = null;
+    this.pendingSpecialMessageRequests.forEach((_, key) => {
+      this.clearPendingSpecialMessageRequest(
+        key,
+        createStompRepositoryError(
+          '채팅 연결이 종료되어 특수 메시지 전송을 마무리하지 못했습니다.',
+        ),
+      );
+    });
 
     if (!client) {
       return;
@@ -291,6 +432,9 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           apiErrorCode: payload?.errorCode,
         });
 
+        this.pendingSpecialMessageRequests.forEach((_, key) => {
+          this.clearPendingSpecialMessageRequest(key, error);
+        });
         this.notifyPartySubscribers(error);
       },
     );
@@ -460,9 +604,15 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     }
 
     const state = this.getOrCreatePartyState(partyId);
+    const mappedMessage = mapTaxiChatMessageDto(message);
 
     if (!state.source) {
       await this.loadPartyChat(partyId, true);
+      if (mappedMessage.type !== 'text' && mappedMessage.type !== 'system') {
+        this.clearPendingSpecialMessageRequest(
+          this.buildSpecialMessageKey(partyId, mappedMessage.type),
+        );
+      }
       return;
     }
 
@@ -472,12 +622,22 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     state.source = {
       ...state.source,
+      latestAccountData:
+        mappedMessage.type === 'account' && mappedMessage.accountData
+          ? mappedMessage.accountData
+          : state.source.latestAccountData,
       messages: [
         ...state.source.messages,
-        mapTaxiChatMessageDto(message),
+        mappedMessage,
       ],
     };
     this.publishPartyState(partyId);
+
+    if (mappedMessage.type !== 'text' && mappedMessage.type !== 'system') {
+      this.clearPendingSpecialMessageRequest(
+        this.buildSpecialMessageKey(partyId, mappedMessage.type),
+      );
+    }
     await this.markLatestMessageAsRead(partyId, message.createdAt);
   }
 

@@ -1,6 +1,3 @@
-import {format} from 'date-fns';
-import {ko} from 'date-fns/locale';
-
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
@@ -26,9 +23,6 @@ const wait = async () => {
 const formatPartyTitle = (departureLabel: string, destinationLabel: string) =>
   `${departureLabel} → ${destinationLabel} 파티`;
 
-const formatDepartureTimeLabel = (departureAtISO: string) =>
-  format(new Date(departureAtISO), 'M월 d일 a hh:mm', {locale: ko});
-
 const createPartySource = ({
   departureLabel,
   destinationLabel,
@@ -45,6 +39,17 @@ const createPartySource = ({
   tags: string[]
 }): TaxiChatSourceData => ({
   composerPlaceholder: '메시지를 입력하세요',
+  departureLocation: {
+    lat: 37.38965,
+    lng: 126.9325,
+    name: departureLabel,
+  },
+  departureTimeISO: departureAtISO,
+  destinationLocation: {
+    lat: 37.3868,
+    lng: 126.9348,
+    name: destinationLabel,
+  },
   id: partyId,
   leaderId: TAXI_CHAT_CURRENT_USER_ID,
   maxMembers,
@@ -59,21 +64,7 @@ const createPartySource = ({
     },
   ],
   partyStatus: 'open',
-  summary: {
-    departureLabel,
-    departureTimeLabel: formatDepartureTimeLabel(departureAtISO),
-    destinationLabel,
-    management: {
-      canLeave: false,
-      isLeader: true,
-      memberActions: [],
-      primaryActions: [],
-      statusLabel: '',
-      statusTone: 'open',
-    },
-    memberSummaryLabel: `1/${maxMembers}명`,
-    tagLabel: tags[0] ?? '#빠른출발',
-  },
+  tagLabel: tags[0] ?? '#빠른출발',
   title: formatPartyTitle(departureLabel, destinationLabel),
   messages: [],
 });
@@ -90,13 +81,19 @@ const createFallbackPartySource = (partyId: string): TaxiChatSourceData =>
 
 const clonePartySource = (party: TaxiChatSourceData): TaxiChatSourceData => ({
   ...party,
+  departureLocation: {...party.departureLocation},
+  destinationLocation: {...party.destinationLocation},
+  latestAccountData: party.latestAccountData
+    ? {...party.latestAccountData}
+    : undefined,
   messages: party.messages.map(message => ({
     ...message,
+    accountData: message.accountData ? {...message.accountData} : undefined,
+    arrivalData: message.arrivalData ? {...message.arrivalData} : undefined,
     avatar: message.avatar ? {...message.avatar} : undefined,
   })),
   participants: party.participants.map(participant => ({...participant})),
   settlement: party.settlement ? {...party.settlement} : undefined,
-  summary: {...party.summary},
 });
 
 type TaxiChatStore = {
@@ -144,6 +141,16 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     return taxiChatStore.partiesById[partyId];
   }
 
+  private appendMessage(
+    partyId: string,
+    message: TaxiChatSourceData['messages'][number],
+  ) {
+    const party = this.ensureParty(partyId);
+    party.messages.push(message);
+    emitPartyChange(partyId);
+    return clonePartySource(party);
+  }
+
   async createPartyChat(draft: TaxiRecruitDraft): Promise<{partyId: string}> {
     await wait();
 
@@ -151,8 +158,8 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
 
     taxiChatStore.partiesById[partyId] = createPartySource({
       departureAtISO: draft.departureAtISO,
-      departureLabel: draft.departure.label,
-      destinationLabel: draft.destination.label,
+      departureLabel: draft.departure.name,
+      destinationLabel: draft.destination.name,
       maxMembers: draft.maxMembers,
       partyId,
       tags: draft.tags,
@@ -190,17 +197,84 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
   ): Promise<TaxiChatSourceData | null> {
     await wait();
 
-    const party = this.ensureParty(partyId);
-    party.messages.push({
+    return this.appendMessage(partyId, {
       createdAt: new Date().toISOString(),
       id: `${partyId}-message-${Date.now()}`,
       senderId: TAXI_CHAT_CURRENT_USER_ID,
       senderName: TAXI_CHAT_CURRENT_USER_NAME,
       text: messageText,
+      type: 'text',
     });
-    emitPartyChange(partyId);
+  }
 
-    return clonePartySource(party);
+  async sendAccountMessage(
+    partyId: string,
+  ): Promise<TaxiChatSourceData | null> {
+    await wait();
+
+    const party = this.ensureParty(partyId);
+    const accountData = {
+      accountHolder: '홍길동',
+      accountNumber: '3333-01-1234567',
+      bankName: '카카오뱅크',
+    };
+
+    party.latestAccountData = accountData;
+
+    return this.appendMessage(partyId, {
+      accountData,
+      createdAt: new Date().toISOString(),
+      id: `${partyId}-account-${Date.now()}`,
+      senderId: TAXI_CHAT_CURRENT_USER_ID,
+      senderName: TAXI_CHAT_CURRENT_USER_NAME,
+      text: `${accountData.bankName} ${accountData.accountNumber}`,
+      type: 'account',
+    });
+  }
+
+  async sendArrivedMessage(
+    partyId: string,
+    taxiFare: number,
+  ): Promise<TaxiChatSourceData | null> {
+    await wait();
+
+    const party = this.ensureParty(partyId);
+    const memberCount = party.memberCount;
+    const perPerson = memberCount > 0 ? Math.floor(taxiFare / memberCount) : 0;
+
+    party.partyStatus = 'arrived';
+
+    return this.appendMessage(partyId, {
+      arrivalData: {
+        memberCount,
+        perPerson,
+        taxiFare,
+      },
+      createdAt: new Date().toISOString(),
+      id: `${partyId}-arrived-${Date.now()}`,
+      senderId: TAXI_CHAT_CURRENT_USER_ID,
+      senderName: TAXI_CHAT_CURRENT_USER_NAME,
+      text: `파티가 도착했습니다. 정산을 진행해주세요. (1인당 ${perPerson}원)`,
+      type: 'arrived',
+    });
+  }
+
+  async sendEndMessage(
+    partyId: string,
+  ): Promise<TaxiChatSourceData | null> {
+    await wait();
+
+    const party = this.ensureParty(partyId);
+    party.partyStatus = 'ended';
+
+    return this.appendMessage(partyId, {
+      createdAt: new Date().toISOString(),
+      id: `${partyId}-end-${Date.now()}`,
+      senderId: 'system',
+      senderName: '안내',
+      text: '파티가 종료되었습니다.',
+      type: 'end',
+    });
   }
 
   async setCurrentParty(partyId: string): Promise<void> {

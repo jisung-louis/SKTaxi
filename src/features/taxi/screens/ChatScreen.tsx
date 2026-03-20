@@ -2,8 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
+  Linking,
   StyleSheet,
   View,
 } from 'react-native';
@@ -14,24 +13,29 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
-import {
-  DetailComposer,
-  StateCard,
-} from '@/shared/design-system/components';
+import {useAccountInfo, type AccountInfo} from '@/features/user/hooks/useAccountInfo';
+import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
-import {
-  ChatHeader,
-  ChatMessageList,
-  ChatPopupMenu,
-} from '@/shared/ui/chat';
+import {ChatHeader} from '@/shared/ui/chat';
 
+import {TaxiAccountSheet} from '../components/TaxiAccountSheet';
+import {TaxiArriveSettlementSheet} from '../components/TaxiArriveSettlementSheet';
+import {TaxiChatComposer} from '../components/TaxiChatComposer';
+import {TaxiChatHeaderMenu} from '../components/TaxiChatHeaderMenu';
+import {TaxiChatMessageList} from '../components/TaxiChatMessageList';
 import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
+import {TaxiPartyEditSheet} from '../components/TaxiPartyEditSheet';
+import {TaxiSettlementStatusSheet} from '../components/TaxiSettlementStatusSheet';
+import {
+  TaxiTaxiCallSheet,
+  type TaxiCallProvider,
+} from '../components/TaxiTaxiCallSheet';
 import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
 import type {TaxiStackParamList} from '../model/navigation';
-import type {TaxiChatSummaryMemberActionViewData} from '../model/taxiChatViewData';
+import type {TaxiChatActionTrayActionId} from '../model/taxiChatViewData';
 
-type TaxiChatNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>
+type TaxiChatNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>;
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) {
@@ -39,6 +43,56 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   }
 
   return fallback;
+};
+
+const isSameAccountInfo = (
+  currentAccountInfo: AccountInfo | null | undefined,
+  nextAccountInfo: AccountInfo,
+) => {
+  if (!currentAccountInfo) {
+    return false;
+  }
+
+  return (
+    currentAccountInfo.accountHolder.trim() ===
+      nextAccountInfo.accountHolder.trim() &&
+    currentAccountInfo.accountNumber.trim() ===
+      nextAccountInfo.accountNumber.trim() &&
+    currentAccountInfo.bankName.trim() === nextAccountInfo.bankName.trim() &&
+    Boolean(currentAccountInfo.hideName) === Boolean(nextAccountInfo.hideName)
+  );
+};
+
+const getTaxiCallUrl = ({
+  destinationLat,
+  destinationLng,
+  provider,
+}: {
+  destinationLat: number;
+  destinationLng: number;
+  provider: TaxiCallProvider;
+}) => {
+  switch (provider) {
+    case 'kakaoT':
+      return `kakaot://taxi?&dest_lat=${destinationLat}&dest_lng=${destinationLng}`;
+    case 'tmoneyGo':
+      return 'tmoneygo://';
+    case 'uber':
+    default:
+      return 'uber://';
+  }
+};
+
+const getTaxiCallProviderLabel = (provider: TaxiCallProvider) => {
+  switch (provider) {
+    case 'kakaoT':
+      return '카카오T';
+    case 'tmoneyGo':
+      return '티머니GO';
+    case 'uber':
+    default:
+      return 'Uber';
+  }
 };
 
 export const ChatScreen = () => {
@@ -50,37 +104,46 @@ export const ChatScreen = () => {
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {
+    accountInfo,
+    saveAccountInfo,
+    saving: savingAccountInfo,
+  } = useAccountInfo();
+  const {
     actionInFlightId,
+    cancelParty,
     closeParty,
     confirmSettlement,
     data,
     endParty,
     error,
-    kickMember,
     leaveParty,
     loading,
     reload,
     reopenParty,
+    sendAccountMessage,
     sendMessage,
     startSettlement,
     toggleNotification,
+    updateParty,
   } = useTaxiChatDetailData(route.params?.partyId);
   const [composerValue, setComposerValue] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
-  const [arrivalEditorVisible, setArrivalEditorVisible] = React.useState(false);
-  const [arrivalFareInput, setArrivalFareInput] = React.useState('');
+  const [actionTrayVisible, setActionTrayVisible] = React.useState(false);
+  const [settlementNoticeExpanded, setSettlementNoticeExpanded] =
+    React.useState(false);
+  const [taxiCallSheetVisible, setTaxiCallSheetVisible] = React.useState(false);
+  const [accountSheetVisible, setAccountSheetVisible] = React.useState(false);
+  const [editSheetVisible, setEditSheetVisible] = React.useState(false);
+  const [arriveSheetVisible, setArriveSheetVisible] = React.useState(false);
+  const [settlementSheetVisible, setSettlementSheetVisible] =
+    React.useState(false);
+  const [sendingAccount, setSendingAccount] = React.useState(false);
 
   React.useEffect(() => {
-    const canArrive =
-      data?.summary.management.primaryActions.some(
-        action => action.id === 'arrive',
-      ) ?? false;
-
-    if (!canArrive && arrivalEditorVisible) {
-      setArrivalEditorVisible(false);
-      setArrivalFareInput('');
+    if ((data?.actionTrayActions.length ?? 0) === 0 && actionTrayVisible) {
+      setActionTrayVisible(false);
     }
-  }, [arrivalEditorVisible, data]);
+  }, [actionTrayVisible, data?.actionTrayActions.length]);
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -135,12 +198,49 @@ export const ChatScreen = () => {
     ]);
   }, [leaveParty, navigation, runAction]);
 
-  const handlePressLeaderAction = React.useCallback(
-    (actionId: 'close' | 'reopen' | 'arrive' | 'end') => {
-      setMenuVisible(false);
+  const handleCancelParty = React.useCallback(() => {
+    Alert.alert('파티 없애기', '파티를 취소하고 채팅을 종료할까요?', [
+      {text: '취소', style: 'cancel'},
+      {
+        text: '파티 없애기',
+        style: 'destructive',
+        onPress: () => {
+          runAction({
+            fallbackMessage: '파티를 취소하지 못했습니다.',
+            onSuccess: () => {
+              navigation.navigate('TaxiMain');
+            },
+            task: async () => {
+              await cancelParty();
+            },
+            title: '파티 취소 실패',
+          }).catch(() => undefined);
+        },
+      },
+    ]);
+  }, [cancelParty, navigation, runAction]);
+
+  const handleActionTrayAction = React.useCallback(
+    (actionId: TaxiChatActionTrayActionId) => {
+      setActionTrayVisible(false);
+
+      if (actionId === 'callTaxi') {
+        setTaxiCallSheetVisible(true);
+        return;
+      }
+
+      if (actionId === 'sendAccount') {
+        setAccountSheetVisible(true);
+        return;
+      }
 
       if (actionId === 'arrive') {
-        setArrivalEditorVisible(true);
+        setArriveSheetVisible(true);
+        return;
+      }
+
+      if (actionId === 'settlementStatus') {
+        setSettlementSheetVisible(true);
         return;
       }
 
@@ -152,11 +252,8 @@ export const ChatScreen = () => {
           title: '모집 마감',
         },
         end: {
-          confirmMessage: '도착 정산을 마치고 파티를 종료할까요?',
+          confirmMessage: '정산을 마무리하고 파티를 종료할까요?',
           fallbackMessage: '파티 종료에 실패했습니다.',
-          onSuccess: () => {
-            navigation.navigate('TaxiMain');
-          },
           task: endParty,
           title: '파티 종료',
         },
@@ -168,6 +265,10 @@ export const ChatScreen = () => {
         },
       }[actionId];
 
+      if (!actionConfig) {
+        return;
+      }
+
       Alert.alert(actionConfig.title, actionConfig.confirmMessage, [
         {text: '취소', style: 'cancel'},
         {
@@ -175,7 +276,6 @@ export const ChatScreen = () => {
           onPress: () => {
             runAction({
               fallbackMessage: actionConfig.fallbackMessage,
-              onSuccess: actionConfig.onSuccess,
               task: async () => {
                 await actionConfig.task();
               },
@@ -185,83 +285,140 @@ export const ChatScreen = () => {
         },
       ]);
     },
-    [closeParty, endParty, navigation, reopenParty, runAction],
+    [closeParty, endParty, reopenParty, runAction],
   );
 
-  const handlePressMemberAction = React.useCallback(
-    (memberAction: TaxiChatSummaryMemberActionViewData) => {
-      if (memberAction.actionId === 'kick') {
+  const handleSubmitArrive = React.useCallback(
+    (taxiFare: number) => {
+      runAction({
+        fallbackMessage: '도착 처리에 실패했습니다.',
+        onSuccess: () => {
+          setArriveSheetVisible(false);
+          setSettlementNoticeExpanded(true);
+        },
+        task: async () => {
+          await startSettlement(taxiFare);
+        },
+        title: '도착 처리 실패',
+      }).catch(() => undefined);
+    },
+    [runAction, startSettlement],
+  );
+
+  const handleSend = React.useCallback(
+    async (messageText: string) => {
+      try {
+        await sendMessage(messageText);
+        setComposerValue('');
+      } catch (sendError) {
         Alert.alert(
-          '멤버 내보내기',
-          `${memberAction.label}님을 파티에서 내보낼까요?`,
-          [
-            {text: '취소', style: 'cancel'},
-            {
-              text: '내보내기',
-              style: 'destructive',
-              onPress: () => {
-                runAction({
-                  fallbackMessage: '멤버를 내보내지 못했습니다.',
-                  task: async () => {
-                    await kickMember(memberAction.id);
-                  },
-                  title: '멤버 내보내기 실패',
-                }).catch(() => undefined);
-              },
-            },
-          ],
+          '메시지 전송 실패',
+          getErrorMessage(sendError, '메시지를 전송하지 못했습니다.'),
+        );
+      }
+    },
+    [sendMessage],
+  );
+
+  const handleSelectTaxiCallProvider = React.useCallback(
+    async (provider: TaxiCallProvider) => {
+      if (!data) {
+        return;
+      }
+
+      const url = getTaxiCallUrl({
+        destinationLat: data.summary.destinationLocation.lat,
+        destinationLng: data.summary.destinationLocation.lng,
+        provider,
+      });
+      const providerLabel = getTaxiCallProviderLabel(provider);
+
+      try {
+        const canOpen = await Linking.canOpenURL(url);
+
+        if (!canOpen) {
+          Alert.alert(
+            '앱 실행 불가',
+            `${providerLabel} 앱을 열 수 없습니다. 설치 여부와 딥링크 설정을 확인해주세요.`,
+          );
+          return;
+        }
+
+        await Linking.openURL(url);
+        setTaxiCallSheetVisible(false);
+      } catch (linkError) {
+        Alert.alert(
+          '택시 호출 실패',
+          getErrorMessage(
+            linkError,
+            `${providerLabel} 앱을 열지 못했습니다. 다시 시도해주세요.`,
+          ),
+        );
+      }
+    },
+    [data],
+  );
+
+  const handleSubmitAccount = React.useCallback(
+    async ({
+      accountHolder,
+      accountNumber,
+      bankName,
+      hideName,
+      saveAccountInfo: shouldSaveAccountInfo,
+    }: {
+      accountHolder: string;
+      accountNumber: string;
+      bankName: string;
+      hideName: boolean;
+      saveAccountInfo: boolean;
+    }) => {
+      const nextAccountInfo: AccountInfo = {
+        accountHolder,
+        accountNumber,
+        bankName,
+        hideName,
+      };
+      const hasAccountInfoChanges = !isSameAccountInfo(accountInfo, nextAccountInfo);
+
+      if (hideName) {
+        Alert.alert(
+          '계약 미지원',
+          'Spring ACCOUNT 특수 메시지 contract에는 hideName 필드가 없어 채팅에서 이름 가리기 전송을 아직 지원하지 않습니다.',
         );
         return;
       }
 
-      if (memberAction.actionId === 'confirmSettlement') {
+      if (hasAccountInfoChanges && !shouldSaveAccountInfo) {
         Alert.alert(
-          '정산 확인',
-          `${memberAction.label}님의 정산 완료를 확인할까요?`,
-          [
-            {text: '취소', style: 'cancel'},
-            {
-              text: '확인',
-              onPress: () => {
-                runAction({
-                  fallbackMessage: '정산 확인에 실패했습니다.',
-                  task: async () => {
-                    await confirmSettlement(memberAction.id);
-                  },
-                  title: '정산 확인 실패',
-                }).catch(() => undefined);
-              },
-            },
-          ],
+          '계약 미지원',
+          '채팅 ACCOUNT 특수 메시지는 저장된 내 계좌 정보로만 전송할 수 있습니다. 변경한 값을 함께 보내는 contract가 없어서, 전송하려면 `계좌 정보 저장하기`를 먼저 선택해야 합니다.',
         );
+        return;
+      }
+
+      setSendingAccount(true);
+
+      try {
+        if (hasAccountInfoChanges) {
+          await saveAccountInfo(nextAccountInfo);
+        }
+
+        await sendAccountMessage();
+        setAccountSheetVisible(false);
+      } catch (submitError) {
+        Alert.alert(
+          '계좌 전송 실패',
+          getErrorMessage(submitError, '계좌 정보를 전송하지 못했습니다.'),
+        );
+      } finally {
+        setSendingAccount(false);
       }
     },
-    [confirmSettlement, kickMember, runAction],
+    [accountInfo, saveAccountInfo, sendAccountMessage],
   );
 
-  const handleSubmitArrivalFare = React.useCallback(() => {
-    const parsedTaxiFare = Number(arrivalFareInput.replace(/,/g, '').trim());
-
-    runAction({
-      fallbackMessage: '도착 처리에 실패했습니다.',
-      onSuccess: () => {
-        setArrivalEditorVisible(false);
-        setArrivalFareInput('');
-      },
-      task: async () => {
-        await startSettlement(parsedTaxiFare);
-      },
-      title: '도착 처리 실패',
-    }).catch(() => undefined);
-  }, [arrivalFareInput, runAction, startSettlement]);
-
-  const handleSend = React.useCallback(
-    async (messageText: string) => {
-      await sendMessage(messageText);
-      setComposerValue('');
-    },
-    [sendMessage],
-  );
+  const settlementMembers = data?.summary.members ?? [];
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -301,58 +458,141 @@ export const ChatScreen = () => {
         ) : data ? (
           <>
             <View style={styles.threadWrap}>
-              <ChatMessageList
+              <TaxiChatMessageList
                 contentContainerStyle={styles.threadContent}
                 headerContent={
                   <TaxiChatSummaryCard
-                    arrivalEditorVisible={arrivalEditorVisible}
-                    arrivalFareInput={arrivalFareInput}
-                    loadingActionId={actionInFlightId}
+                    settlementNoticeExpanded={settlementNoticeExpanded}
                     summary={data.summary}
-                    onCancelArrivalEditor={() => {
-                      setArrivalEditorVisible(false);
-                      setArrivalFareInput('');
+                    onToggleSettlementNotice={() => {
+                      setSettlementNoticeExpanded(current => !current);
                     }}
-                    onChangeArrivalFareInput={setArrivalFareInput}
-                    onPressLeaderAction={handlePressLeaderAction}
-                    onPressMemberAction={handlePressMemberAction}
-                    onSubmitArrivalFare={handleSubmitArrivalFare}
                   />
                 }
                 items={data.items}
               />
             </View>
 
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={0}>
-              <DetailComposer
-                leadingActionAccessibilityLabel="첨부 메뉴"
-                leadingIconName="add-outline"
-                onChangeText={setComposerValue}
-                onPressLeadingAction={() => {
-                  Alert.alert('준비 중', '첨부 기능은 다음 단계에서 연결할 예정입니다.');
-                }}
-                onSend={handleSend}
-                placeholder={data.composerPlaceholder}
-                sendAccessibilityLabel="메시지 전송"
-                value={composerValue}
-              />
-            </KeyboardAvoidingView>
+            <TaxiChatComposer
+              actionTrayActions={data.actionTrayActions}
+              actionTrayVisible={actionTrayVisible}
+              onChangeText={setComposerValue}
+              onPressAction={handleActionTrayAction}
+              onPressToggleTray={() => {
+                setActionTrayVisible(current => !current);
+              }}
+              onSend={handleSend}
+              placeholder={data.composerPlaceholder}
+              value={composerValue}
+            />
           </>
         ) : null}
 
         {data ? (
-          <ChatPopupMenu
-            leaveLabel={data.menu.leaveLabel}
+          <TaxiChatHeaderMenu
+            canCancelParty={data.menu.canCancelParty}
+            canEditParty={data.menu.canEditParty}
+            canLeave={Boolean(data.menu.canLeave)}
             notificationEnabled={data.menu.notificationEnabled}
+            onCancelParty={handleCancelParty}
             onClose={() => setMenuVisible(false)}
-            onLeave={data.menu.canLeave ? handleLeaveParty : undefined}
+            onEditParty={() => {
+              if (!data.menu.canEditParty) {
+                Alert.alert('수정 불가', '모집 중 또는 모집 마감 상태에서만 수정할 수 있습니다.');
+                return;
+              }
+
+              setEditSheetVisible(true);
+            }}
+            onLeaveParty={handleLeaveParty}
             onToggleNotification={() => {
-              toggleNotification().catch(() => undefined);
+              toggleNotification().catch(toggleError => {
+                Alert.alert(
+                  '알림 설정 실패',
+                  getErrorMessage(toggleError, '알림 설정을 변경하지 못했습니다.'),
+                );
+              });
             }}
             visible={menuVisible}
           />
+        ) : null}
+
+        {data ? (
+          <>
+            <TaxiTaxiCallSheet
+              onClose={() => {
+                setTaxiCallSheetVisible(false);
+              }}
+              onSelectProvider={provider => {
+                handleSelectTaxiCallProvider(provider).catch(() => undefined);
+              }}
+              visible={taxiCallSheetVisible}
+            />
+
+            <TaxiAccountSheet
+              initialAccountInfo={accountInfo}
+              loading={sendingAccount || savingAccountInfo}
+              onClose={() => {
+                setAccountSheetVisible(false);
+              }}
+              onSubmit={payload => {
+                handleSubmitAccount(payload).catch(() => undefined);
+              }}
+              visible={accountSheetVisible}
+            />
+
+            <TaxiPartyEditSheet
+              initialDepartureTimeISO={data.summary.departureTimeISO}
+              initialDetail={data.summary.detail}
+              loading={actionInFlightId === 'edit'}
+              onClose={() => {
+                setEditSheetVisible(false);
+              }}
+              onSubmit={payload => {
+                runAction({
+                  fallbackMessage: '파티 수정에 실패했습니다.',
+                  onSuccess: () => {
+                    setEditSheetVisible(false);
+                  },
+                  task: async () => {
+                    await updateParty(payload);
+                  },
+                  title: '파티 수정 실패',
+                }).catch(() => undefined);
+              }}
+              visible={editSheetVisible}
+            />
+
+            <TaxiArriveSettlementSheet
+              accountInfo={accountInfo}
+              loading={actionInFlightId === 'arrive'}
+              members={settlementMembers}
+              onClose={() => {
+                setArriveSheetVisible(false);
+              }}
+              onSubmit={handleSubmitArrive}
+              visible={arriveSheetVisible}
+            />
+
+            <TaxiSettlementStatusSheet
+              isLeader={data.summary.management.isLeader}
+              loadingActionId={actionInFlightId}
+              notice={data.summary.settlementNotice}
+              onClose={() => {
+                setSettlementSheetVisible(false);
+              }}
+              onConfirmMember={memberId => {
+                runAction({
+                  fallbackMessage: '정산 확인에 실패했습니다.',
+                  task: async () => {
+                    await confirmSettlement(memberId);
+                  },
+                  title: '정산 확인 실패',
+                }).catch(() => undefined);
+              }}
+              visible={settlementSheetVisible}
+            />
+          </>
         ) : null}
       </Animated.View>
     </SafeAreaView>

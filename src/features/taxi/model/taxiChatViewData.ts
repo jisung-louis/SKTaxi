@@ -1,100 +1,207 @@
 import type {
   ChatAvatarViewData,
-  ChatThreadListViewData,
+  ChatThreadHeaderViewData,
+  ChatThreadMenuViewData,
 } from '@/shared/ui/chat';
 
 import type {TaxiRecruitDraft} from './taxiRecruitData';
+import type {PartyLocation} from './types';
 
 export const TAXI_CHAT_CURRENT_USER_ID = 'current-user';
 export const TAXI_CHAT_CURRENT_USER_NAME = '나';
 
 export type TaxiChatPartyStatus = 'open' | 'closed' | 'arrived' | 'ended';
-export type TaxiChatLeaderActionId = 'close' | 'reopen' | 'arrive' | 'end';
-export type TaxiChatMemberActionId = 'kick' | 'confirmSettlement';
+export type TaxiChatActionTrayActionId =
+  | 'callTaxi'
+  | 'sendAccount'
+  | 'close'
+  | 'reopen'
+  | 'arrive'
+  | 'settlementStatus'
+  | 'end';
 
-export interface TaxiChatSummaryActionViewData {
-  id: TaxiChatLeaderActionId
-  label: string
-  tone: 'primary' | 'secondary' | 'danger'
-}
-
-export interface TaxiChatSummaryMemberActionViewData {
-  actionId?: TaxiChatMemberActionId
-  actionLabel?: string
-  actionTone?: 'primary' | 'danger'
-  id: string
-  label: string
-  metaLabel: string
+export interface TaxiChatActionTrayActionViewData {
+  id: TaxiChatActionTrayActionId;
+  label: string;
+  tone: 'brand' | 'info' | 'warning' | 'danger' | 'purple';
 }
 
 export interface TaxiChatSummaryManagementViewData {
-  canLeave: boolean
-  isLeader: boolean
-  memberActionSectionTitle?: string
-  memberActions: TaxiChatSummaryMemberActionViewData[]
-  noticeLabel?: string
-  primaryActions: TaxiChatSummaryActionViewData[]
-  settlementSummaryLabel?: string
-  statusLabel: string
-  statusTone: TaxiChatPartyStatus
+  canCancelParty: boolean;
+  canEditParty: boolean;
+  canLeave: boolean;
+  canManageSettlement: boolean;
+  isLeader: boolean;
+  noticeLabel?: string;
+}
+
+export interface TaxiChatSettlementMemberViewData {
+  id: string;
+  isCurrentUser: boolean;
+  label: string;
+  settled: boolean;
+}
+
+export interface TaxiChatSettlementNoticeViewData {
+  accountLabel?: string;
+  completedCount: number;
+  description: string;
+  members: TaxiChatSettlementMemberViewData[];
+  perPersonAmount?: number;
+  statusLabel: string;
+  summaryLabel: string;
+  totalCount: number;
 }
 
 export interface TaxiChatSummaryViewData {
-  departureLabel: string
-  departureTimeLabel: string
-  destinationLabel: string
-  management: TaxiChatSummaryManagementViewData
-  memberSummaryLabel: string
-  tagLabel: string
+  departureLabel: string;
+  departureLocation: PartyLocation;
+  departureTimeISO: string;
+  departureTimeLabel: string;
+  detail?: string;
+  destinationLabel: string;
+  destinationLocation: PartyLocation;
+  management: TaxiChatSummaryManagementViewData;
+  memberSummaryLabel: string;
+  members: TaxiChatSettlementMemberViewData[];
+  partyStatus: TaxiChatPartyStatus;
+  settlementNotice?: TaxiChatSettlementNoticeViewData;
+  tagLabel: string;
 }
 
 export interface TaxiChatSourceParticipant {
-  id: string
-  isLeader: boolean
-  name: string
-  settled: boolean
-  settledAt?: string
+  id: string;
+  isLeader: boolean;
+  name: string;
+  settled: boolean;
+  settledAt?: string;
 }
 
 export interface TaxiChatSourceSettlement {
-  perPersonAmount: number
-  status: 'pending' | 'completed'
+  perPersonAmount: number;
+  status: 'pending' | 'completed';
+}
+
+export interface TaxiChatSourceAccountData {
+  accountHolder: string;
+  accountNumber: string;
+  bankName: string;
+}
+
+export interface TaxiChatSourceArrivalData {
+  memberCount?: number;
+  perPerson?: number;
+  taxiFare?: number;
 }
 
 export interface TaxiChatSourceMessageItem {
-  avatar?: ChatAvatarViewData
-  createdAt: string
-  id: string
-  senderId: string
-  senderName: string
-  text: string
-  type?: 'text' | 'system'
+  accountData?: TaxiChatSourceAccountData;
+  arrivalData?: TaxiChatSourceArrivalData;
+  avatar?: ChatAvatarViewData;
+  createdAt: string;
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  type: 'text' | 'system' | 'account' | 'arrived' | 'end';
 }
 
 export interface TaxiChatSourceData {
-  composerPlaceholder: string
-  id: string
-  leaderId: string
-  maxMembers: number
-  memberCount: number
-  notificationEnabled: boolean
-  participants: TaxiChatSourceParticipant[]
-  partyStatus: TaxiChatPartyStatus
-  settlement?: TaxiChatSourceSettlement
-  summary: TaxiChatSummaryViewData
-  title: string
-  messages: TaxiChatSourceMessageItem[]
+  composerPlaceholder: string;
+  departureLocation: PartyLocation;
+  departureTimeISO: string;
+  detail?: string;
+  destinationLocation: PartyLocation;
+  id: string;
+  latestAccountData?: TaxiChatSourceAccountData;
+  leaderId: string;
+  maxMembers: number;
+  memberCount: number;
+  messages: TaxiChatSourceMessageItem[];
+  notificationEnabled: boolean;
+  participants: TaxiChatSourceParticipant[];
+  partyStatus: TaxiChatPartyStatus;
+  settlement?: TaxiChatSourceSettlement;
+  tagLabel: string;
+  title: string;
 }
 
-export interface TaxiChatViewData extends ChatThreadListViewData {
-  composerPlaceholder: string
-  summary: TaxiChatSummaryViewData
+export interface TaxiChatDateDividerViewData {
+  id: string;
+  label: string;
+  type: 'date-divider';
+}
+
+export interface TaxiChatTextMessageViewData {
+  avatar?: ChatAvatarViewData;
+  direction: 'incoming' | 'outgoing';
+  id: string;
+  minuteKey: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  timeLabel: string;
+  type: 'text-message';
+}
+
+export interface TaxiChatSystemMessageViewData {
+  id: string;
+  text: string;
+  type: 'system-message';
+}
+
+export interface TaxiChatAccountMessageViewData {
+  accountData: TaxiChatSourceAccountData;
+  id: string;
+  senderName: string;
+  text: string;
+  timeLabel: string;
+  type: 'account-message';
+}
+
+export interface TaxiChatArrivedMessageViewData {
+  accountLabel?: string;
+  id: string;
+  memberCount?: number;
+  perPerson?: number;
+  taxiFare?: number;
+  timeLabel: string;
+  type: 'arrived-message';
+}
+
+export interface TaxiChatEndMessageViewData {
+  id: string;
+  text: string;
+  type: 'end-message';
+}
+
+export type TaxiChatThreadItemViewData =
+  | TaxiChatDateDividerViewData
+  | TaxiChatTextMessageViewData
+  | TaxiChatSystemMessageViewData
+  | TaxiChatAccountMessageViewData
+  | TaxiChatArrivedMessageViewData
+  | TaxiChatEndMessageViewData;
+
+export interface TaxiChatViewData {
+  actionTrayActions: TaxiChatActionTrayActionViewData[];
+  composerPlaceholder: string;
+  currentUserId: string;
+  header: ChatThreadHeaderViewData;
+  items: TaxiChatThreadItemViewData[];
+  menu: ChatThreadMenuViewData & {
+    canCancelParty: boolean;
+    canEditParty: boolean;
+    isLeader: boolean;
+  };
+  roomId: string;
+  summary: TaxiChatSummaryViewData;
 }
 
 export interface CreateTaxiChatRoomParams {
-  draft: TaxiRecruitDraft
+  draft: TaxiRecruitDraft;
 }
 
 export interface TaxiChatSessionSnapshot {
-  currentPartyId: string | null
+  currentPartyId: string | null;
 }

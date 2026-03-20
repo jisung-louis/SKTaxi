@@ -205,8 +205,27 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
-    await runPartyAction('end', () => partyRepository.endParty(partyId));
-  }, [partyId, partyRepository, runPartyAction]);
+    await runPartyAction('end', async () => {
+      await partyRepository.endParty(partyId);
+
+      try {
+        await taxiChatRepository.sendEndMessage(partyId);
+      } catch (sendEndError) {
+        await refreshPartySnapshot();
+        throw new Error(
+          sendEndError instanceof Error && sendEndError.message
+            ? `파티 종료 상태는 반영됐지만 종료 메시지 전송에 실패했습니다. ${sendEndError.message}`
+            : '파티 종료 상태는 반영됐지만 종료 메시지 전송에 실패했습니다.',
+        );
+      }
+    });
+  }, [
+    partyId,
+    partyRepository,
+    refreshPartySnapshot,
+    runPartyAction,
+    taxiChatRepository,
+  ]);
 
   const kickMember = React.useCallback(
     async (memberId: string) => {
@@ -244,14 +263,32 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
         throw new Error('택시 총액을 1원 이상 숫자로 입력해주세요.');
       }
 
-      await runPartyAction('arrive', () =>
-        partyRepository.startSettlement(
+      await runPartyAction('arrive', async () => {
+        await partyRepository.startSettlement(
           partyId,
           buildSettlementDraft(sourceData, taxiFare),
-        ),
-      );
+        );
+
+        try {
+          await taxiChatRepository.sendArrivedMessage(partyId, taxiFare);
+        } catch (sendArrivedError) {
+          await refreshPartySnapshot();
+          throw new Error(
+            sendArrivedError instanceof Error && sendArrivedError.message
+              ? `도착/정산 상태는 반영됐지만 ARRIVED 메시지 전송에 실패했습니다. ${sendArrivedError.message}`
+              : '도착/정산 상태는 반영됐지만 ARRIVED 메시지 전송에 실패했습니다.',
+          );
+        }
+      });
     },
-    [partyId, partyRepository, runPartyAction, sourceData],
+    [
+      partyId,
+      partyRepository,
+      refreshPartySnapshot,
+      runPartyAction,
+      sourceData,
+      taxiChatRepository,
+    ],
   );
 
   const leaveParty = React.useCallback(async () => {
@@ -281,6 +318,47 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     [partyId, taxiChatRepository],
   );
 
+  const sendAccountMessage = React.useCallback(async () => {
+    if (!partyId) {
+      return;
+    }
+
+    await taxiChatRepository.sendAccountMessage(partyId);
+    await refreshPartySnapshot();
+  }, [partyId, refreshPartySnapshot, taxiChatRepository]);
+
+  const updateParty = React.useCallback(
+    async ({
+      departureTime,
+      detail,
+    }: {
+      departureTime: string;
+      detail?: string;
+    }) => {
+      if (!partyId) {
+        return;
+      }
+
+      await runPartyAction('edit', () =>
+        partyRepository.updateParty(partyId, {
+          departureTime,
+          detail,
+        }),
+      );
+    },
+    [partyId, partyRepository, runPartyAction],
+  );
+
+  const cancelParty = React.useCallback(async () => {
+    if (!partyId) {
+      return;
+    }
+
+    await runPartyAction('cancel', () =>
+      partyRepository.deleteParty(partyId, 'cancelled'),
+    );
+  }, [partyId, partyRepository, runPartyAction]);
+
   const toggleNotification = React.useCallback(async () => {
     if (!partyId || !sourceData) {
       return;
@@ -300,6 +378,7 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
 
   return {
     actionInFlightId,
+    cancelParty,
     closeParty,
     confirmSettlement,
     data,
@@ -310,8 +389,10 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     loading,
     reload,
     reopenParty,
+    sendAccountMessage,
     sendMessage,
     startSettlement,
     toggleNotification,
+    updateParty,
   };
 };

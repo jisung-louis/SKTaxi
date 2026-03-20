@@ -27,6 +27,8 @@ export interface ChatRoomDetailResponseDto {
 }
 
 export interface ChatMessageResponseDto {
+  accountData?: ChatAccountDataResponseDto | null;
+  arrivalData?: ChatArrivalDataResponseDto | null;
   chatRoomId: string;
   createdAt: string;
   id: string;
@@ -35,6 +37,18 @@ export interface ChatMessageResponseDto {
   senderName?: string | null;
   text?: string | null;
   type: ChatMessageTypeDto;
+}
+
+export interface ChatAccountDataResponseDto {
+  accountHolder: string;
+  accountNumber: string;
+  bankName: string;
+}
+
+export interface ChatArrivalDataResponseDto {
+  memberCount?: number | null;
+  perPerson?: number | null;
+  taxiFare?: number | null;
 }
 
 export interface ChatMessageCursorResponseDto {
