@@ -45,7 +45,10 @@ export interface IPartyRepository {
    * @param callbacks - 데이터 및 에러 콜백
    * @returns 구독 해제 함수
    */
-  subscribeToParty(partyId: string, callbacks: SubscriptionCallbacks<Party | null>): Unsubscribe;
+  subscribeToParty(
+    partyId: string,
+    callbacks: SubscriptionCallbacks<Party | null>,
+  ): Unsubscribe;
 
   /**
    * 사용자의 현재 참여 중인 파티 조회
@@ -53,7 +56,10 @@ export interface IPartyRepository {
    * @param callbacks - 데이터 및 에러 콜백
    * @returns 구독 해제 함수
    */
-  subscribeToMyParty(userId: string, callbacks: SubscriptionCallbacks<Party | null>): Unsubscribe;
+  subscribeToMyParty(
+    userId: string,
+    callbacks: SubscriptionCallbacks<Party | null>,
+  ): Unsubscribe;
 
   /**
    * 파티 생성
@@ -105,7 +111,7 @@ export interface IPartyRepository {
    */
   subscribeToJoinRequestCount(
     leaderId: string,
-    callbacks: SubscriptionCallbacks<number>
+    callbacks: SubscriptionCallbacks<number>,
   ): Unsubscribe;
 
   /**
@@ -116,7 +122,7 @@ export interface IPartyRepository {
    */
   subscribeToMyPendingJoinRequest(
     requesterId: string,
-    callbacks: SubscriptionCallbacks<PendingJoinRequest | null>
+    callbacks: SubscriptionCallbacks<PendingJoinRequest | null>,
   ): Unsubscribe;
 
   /**
@@ -127,7 +133,7 @@ export interface IPartyRepository {
    */
   subscribeToJoinRequest(
     requestId: string,
-    callbacks: SubscriptionCallbacks<JoinRequestStatus | null>
+    callbacks: SubscriptionCallbacks<JoinRequestStatus | null>,
   ): Unsubscribe;
 
   /**
@@ -143,7 +149,11 @@ export interface IPartyRepository {
    * @param requesterId - 요청자 ID
    * @returns 생성된 요청 ID
    */
-  createJoinRequest(partyId: string, leaderId: string, requesterId: string): Promise<string>;
+  createJoinRequest(
+    partyId: string,
+    leaderId: string,
+    requesterId: string,
+  ): Promise<string>;
 
   // === 파티 채팅 메시지 관련 ===
 
@@ -153,7 +163,10 @@ export interface IPartyRepository {
    * @param callbacks - 데이터 및 에러 콜백
    * @returns 구독 해제 함수
    */
-  subscribeToPartyMessages(partyId: string, callbacks: SubscriptionCallbacks<PartyMessage[]>): Unsubscribe;
+  subscribeToPartyMessages(
+    partyId: string,
+    callbacks: SubscriptionCallbacks<PartyMessage[]>,
+  ): Unsubscribe;
 
   /**
    * 파티 채팅 일반 메시지 전송
@@ -161,7 +174,11 @@ export interface IPartyRepository {
    * @param senderId - 발신자 ID
    * @param text - 메시지 텍스트
    */
-  sendPartyMessage(partyId: string, senderId: string, text: string): Promise<void>;
+  sendPartyMessage(
+    partyId: string,
+    senderId: string,
+    text: string,
+  ): Promise<void>;
 
   /**
    * 파티 채팅 시스템 메시지 전송
@@ -176,7 +193,11 @@ export interface IPartyRepository {
    * @param senderId - 발신자 ID
    * @param accountData - 계좌 정보
    */
-  sendAccountMessage(partyId: string, senderId: string, accountData: AccountMessageData): Promise<void>;
+  sendAccountMessage(
+    partyId: string,
+    senderId: string,
+    accountData: AccountMessageData,
+  ): Promise<void>;
 
   /**
    * 파티 채팅 도착 메시지 전송
@@ -184,7 +205,11 @@ export interface IPartyRepository {
    * @param senderId - 발신자 ID
    * @param arrivalData - 도착/정산 정보
    */
-  sendArrivedMessage(partyId: string, senderId: string, arrivalData: ArrivalMessageData): Promise<void>;
+  sendArrivedMessage(
+    partyId: string,
+    senderId: string,
+    arrivalData: ArrivalMessageData,
+  ): Promise<void>;
 
   /**
    * 파티 채팅 종료 메시지 전송
@@ -192,7 +217,11 @@ export interface IPartyRepository {
    * @param senderId - 발신자 ID
    * @param partyArrived - 도착 여부
    */
-  sendEndMessage(partyId: string, senderId: string, partyArrived: boolean): Promise<void>;
+  sendEndMessage(
+    partyId: string,
+    senderId: string,
+    partyArrived: boolean,
+  ): Promise<void>;
 
   // === 동승 요청 관리 (확장) ===
 
@@ -202,15 +231,22 @@ export interface IPartyRepository {
    * @param callbacks - 데이터 및 에러 콜백
    * @returns 구독 해제 함수
    */
-  subscribeToJoinRequests(partyId: string, callbacks: SubscriptionCallbacks<JoinRequest[]>): Unsubscribe;
+  subscribeToJoinRequests(
+    partyId: string,
+    callbacks: SubscriptionCallbacks<JoinRequest[]>,
+  ): Unsubscribe;
 
   /**
    * 동승 요청 승인
    * @param requestId - 요청 ID
    * @param partyId - 파티 ID
-   * @param requesterId - 요청자 ID
+   * @param requesterId - 요청자 ID (legacy fallback, 없으면 requestId 기준으로 저장소에서 조회)
    */
-  acceptJoinRequest(requestId: string, partyId: string, requesterId: string): Promise<void>;
+  acceptJoinRequest(
+    requestId: string,
+    partyId: string,
+    requesterId?: string,
+  ): Promise<void>;
 
   /**
    * 동승 요청 거절
@@ -234,7 +270,11 @@ export interface IPartyRepository {
    * @param userId - 사용자 ID
    * @param muted - 음소거 여부
    */
-  setPartyChatMuted(partyId: string, userId: string, muted: boolean): Promise<void>;
+  setPartyChatMuted(
+    partyId: string,
+    userId: string,
+    muted: boolean,
+  ): Promise<void>;
 
   // === 정산 관리 ===
 
@@ -243,7 +283,10 @@ export interface IPartyRepository {
    * @param partyId - 파티 ID
    * @param settlementData - 정산 데이터
    */
-  startSettlement(partyId: string, settlementData: SettlementData): Promise<void>;
+  startSettlement(
+    partyId: string,
+    settlementData: SettlementData,
+  ): Promise<void>;
 
   /**
    * 멤버 정산 완료 처리

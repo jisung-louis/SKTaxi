@@ -3,6 +3,11 @@ import type {
   Unsubscribe,
 } from '@/shared/types/subscription';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
+import {
+  createXhrSseStream,
+  sseClient,
+  type SseStreamConnection,
+} from '@/shared/realtime';
 
 import {taxiHomeApiClient} from '../api/taxiHomeApiClient';
 import type {JoinRequestListItemResponseDto} from '../dto/taxiHomeDto';
@@ -24,8 +29,7 @@ import type {
 } from '../../model/types';
 import type {IPartyRepository} from './IPartyRepository';
 
-const DEFAULT_POLL_INTERVAL_MS = 8000;
-const PARTY_LIST_POLL_INTERVAL_MS = 12000;
+const DEFAULT_SSE_RECONNECT_DELAY_MS = 3000;
 
 const formatLocalDateTime = (value: string) => {
   const parsedDate = new Date(value);
@@ -54,17 +58,18 @@ const toError = (error: unknown) => {
 export class SpringPartyRepository implements IPartyRepository {
   private readonly refreshers = new Set<() => Promise<void>>();
 
-  private subscribeWithPolling<T>({
+  private subscribeWithSignals<T>({
     callbacks,
     load,
-    pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+    connectSignals,
   }: {
     callbacks: SubscriptionCallbacks<T>;
     load: () => Promise<T>;
-    pollIntervalMs?: number;
+    connectSignals?: (refresh: () => void) => Promise<Unsubscribe>;
   }): Unsubscribe {
     let active = true;
     let inFlight: Promise<void> | null = null;
+    let signalCleanup: Unsubscribe | null = null;
 
     const refresh = async () => {
       if (!active) {
@@ -93,16 +98,33 @@ export class SpringPartyRepository implements IPartyRepository {
       return inFlight;
     };
 
-    this.refreshers.add(refresh);
-    refresh().catch(() => undefined);
-
-    const timerId = setInterval(() => {
+    const triggerRefresh = () => {
       refresh().catch(() => undefined);
-    }, pollIntervalMs);
+    };
+
+    this.refreshers.add(refresh);
+    triggerRefresh();
+
+    if (connectSignals) {
+      connectSignals(triggerRefresh)
+        .then(cleanup => {
+          if (!active) {
+            cleanup();
+            return;
+          }
+
+          signalCleanup = cleanup;
+        })
+        .catch(error => {
+          if (active) {
+            callbacks.onError(toError(error));
+          }
+        });
+    }
 
     return () => {
       active = false;
-      clearInterval(timerId);
+      signalCleanup?.();
       this.refreshers.delete(refresh);
     };
   }
@@ -189,9 +211,258 @@ export class SpringPartyRepository implements IPartyRepository {
     }
   }
 
+  private async connectSignalGroup(
+    connectors: Array<() => Promise<Unsubscribe>>,
+  ): Promise<Unsubscribe> {
+    const cleanups: Unsubscribe[] = [];
+
+    try {
+      for (const connect of connectors) {
+        cleanups.push(await connect());
+      }
+    } catch (error) {
+      cleanups.forEach(cleanup => cleanup());
+      throw error;
+    }
+
+    return () => {
+      cleanups.forEach(cleanup => cleanup());
+    };
+  }
+
+  private async openSseSignalStream({
+    label,
+    path,
+    query,
+    onSignal,
+  }: {
+    label: string;
+    onSignal: () => void;
+    path: string;
+    query?: Record<string, string | undefined>;
+  }): Promise<Unsubscribe> {
+    let active = true;
+    let connection: SseStreamConnection | null = null;
+    let connectionPromise: Promise<void> | null = null;
+    let lastEventId: string | undefined;
+    let reconnectDelayMs = DEFAULT_SSE_RECONNECT_DELAY_MS;
+    let reconnectTimerId: ReturnType<typeof setTimeout> | null = null;
+
+    const normalizedQuery = query
+      ? Object.fromEntries(
+          Object.entries(query).filter(
+            ([, value]) => typeof value === 'string' && value.length > 0,
+          ),
+        )
+      : undefined;
+
+    const clearReconnectTimer = () => {
+      if (!reconnectTimerId) {
+        return;
+      }
+
+      clearTimeout(reconnectTimerId);
+      reconnectTimerId = null;
+    };
+
+    const scheduleReconnect = () => {
+      if (!active || reconnectTimerId) {
+        return;
+      }
+
+      reconnectTimerId = setTimeout(() => {
+        reconnectTimerId = null;
+        connect().catch(() => undefined);
+      }, reconnectDelayMs);
+    };
+
+    const connect = async () => {
+      if (!active || connection || connectionPromise) {
+        return;
+      }
+
+      connectionPromise = sseClient
+        .connect(
+          {
+            lastEventId,
+            path,
+            query: normalizedQuery,
+          },
+          {
+            connect: options => {
+              reconnectDelayMs = options.reconnectDelayMs;
+
+              connection = createXhrSseStream(options, {
+                onClosed: () => {
+                  connection = null;
+                  scheduleReconnect();
+                },
+                onError: error => {
+                  if (!active) {
+                    return;
+                  }
+
+                  console.warn(`[TaxiParty] ${label} SSE 연결 오류`, error);
+                },
+                onEvent: event => {
+                  if (event.id) {
+                    lastEventId = event.id;
+                  }
+
+                  if (event.event === 'HEARTBEAT') {
+                    return;
+                  }
+
+                  onSignal();
+                },
+                onOpen: () => {
+                  onSignal();
+                },
+              });
+
+              return connection;
+            },
+          },
+        )
+        .then(() => undefined)
+        .catch(error => {
+          if (!active) {
+            return;
+          }
+
+          console.warn(`[TaxiParty] ${label} SSE 연결 실패`, error);
+          scheduleReconnect();
+        })
+        .finally(() => {
+          connectionPromise = null;
+        });
+
+      await connectionPromise;
+    };
+
+    await connect();
+
+    return () => {
+      active = false;
+      clearReconnectTimer();
+
+      const currentConnection = connection;
+      connection = null;
+      currentConnection?.close();
+    };
+  }
+
+  private connectPartiesSignals(onSignal: () => void) {
+    return this.openSseSignalStream({
+      label: 'parties',
+      onSignal,
+      path: '/v1/sse/parties',
+    });
+  }
+
+  private connectPartyJoinRequestSignals(
+    partyId: string,
+    onSignal: () => void,
+  ) {
+    return this.openSseSignalStream({
+      label: `party ${partyId} join requests`,
+      onSignal,
+      path: `/v1/sse/parties/${partyId}/join-requests`,
+    });
+  }
+
+  private connectMyJoinRequestSignals(
+    onSignal: () => void,
+    status?: 'PENDING',
+  ) {
+    return this.openSseSignalStream({
+      label: status ? `my join requests (${status})` : 'my join requests',
+      onSignal,
+      path: '/v1/sse/members/me/join-requests',
+      query: status ? {status} : undefined,
+    });
+  }
+
+  private async connectLeaderJoinRequestSignals(
+    onSignal: () => void,
+  ): Promise<Unsubscribe> {
+    let active = true;
+    let partiesCleanup: Unsubscribe | null = null;
+    const partyJoinRequestCleanups = new Map<string, Unsubscribe>();
+    let syncPromise: Promise<void> | null = null;
+
+    const syncPartyStreams = async () => {
+      if (!active || syncPromise) {
+        return syncPromise;
+      }
+
+      syncPromise = (async () => {
+        try {
+          const leaderPartyIds = await this.getActiveLeaderPartyIds();
+          const nextPartyIds = new Set(leaderPartyIds);
+
+          Array.from(partyJoinRequestCleanups.entries()).forEach(
+            ([partyId, cleanup]) => {
+              if (nextPartyIds.has(partyId)) {
+                return;
+              }
+
+              cleanup();
+              partyJoinRequestCleanups.delete(partyId);
+            },
+          );
+
+          for (const partyId of leaderPartyIds) {
+            if (partyJoinRequestCleanups.has(partyId)) {
+              continue;
+            }
+
+            const cleanup = await this.connectPartyJoinRequestSignals(
+              partyId,
+              onSignal,
+            );
+
+            if (!active) {
+              cleanup();
+              return;
+            }
+
+            partyJoinRequestCleanups.set(partyId, cleanup);
+          }
+        } catch (error) {
+          if (active) {
+            console.warn(
+              '[TaxiParty] leader join request SSE 구독 대상을 동기화하지 못했습니다.',
+              error,
+            );
+          }
+        } finally {
+          syncPromise = null;
+        }
+      })();
+
+      return syncPromise;
+    };
+
+    partiesCleanup = await this.connectPartiesSignals(() => {
+      onSignal();
+      syncPartyStreams().catch(() => undefined);
+    });
+
+    await syncPartyStreams();
+
+    return () => {
+      active = false;
+      partiesCleanup?.();
+      partyJoinRequestCleanups.forEach(cleanup => cleanup());
+      partyJoinRequestCleanups.clear();
+    };
+  }
+
   subscribeToParties(callbacks: SubscriptionCallbacks<Party[]>): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh => this.connectPartiesSignals(refresh),
       load: async () => {
         const partiesResponse = await taxiHomeApiClient.getOpenParties();
         const parties = await Promise.all(
@@ -202,7 +473,6 @@ export class SpringPartyRepository implements IPartyRepository {
 
         return parties.filter((party): party is Party => party !== null);
       },
-      pollIntervalMs: PARTY_LIST_POLL_INTERVAL_MS,
     });
   }
 
@@ -210,8 +480,9 @@ export class SpringPartyRepository implements IPartyRepository {
     partyId: string,
     callbacks: SubscriptionCallbacks<Party | null>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh => this.connectPartiesSignals(refresh),
       load: () => this.getParty(partyId),
     });
   }
@@ -220,8 +491,9 @@ export class SpringPartyRepository implements IPartyRepository {
     _userId: string,
     callbacks: SubscriptionCallbacks<Party | null>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh => this.connectPartiesSignals(refresh),
       load: async () => {
         const activePartyId = await this.getActiveMyPartyId();
 
@@ -305,11 +577,9 @@ export class SpringPartyRepository implements IPartyRepository {
     );
   }
 
-  async removeMember(_partyId: string, _userId: string): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '직접 멤버 제거는 지원하지 않습니다. 파티 나가기/강퇴 전용 API를 사용해주세요.',
-    );
+  async removeMember(partyId: string, userId: string): Promise<void> {
+    await taxiHomeApiClient.kickMember(partyId, userId);
+    await this.refreshActiveSubscriptions();
   }
 
   async getParty(partyId: string): Promise<Party | null> {
@@ -332,8 +602,9 @@ export class SpringPartyRepository implements IPartyRepository {
     _leaderId: string,
     callbacks: SubscriptionCallbacks<number>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh => this.connectLeaderJoinRequestSignals(refresh),
       load: async () => {
         const leaderPartyIds = await this.getActiveLeaderPartyIds();
 
@@ -361,8 +632,10 @@ export class SpringPartyRepository implements IPartyRepository {
     _requesterId: string,
     callbacks: SubscriptionCallbacks<PendingJoinRequest | null>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh =>
+        this.connectMyJoinRequestSignals(refresh, 'PENDING'),
       load: async () => {
         const response = await taxiHomeApiClient.getMyJoinRequests({
           status: 'PENDING',
@@ -385,8 +658,13 @@ export class SpringPartyRepository implements IPartyRepository {
     requestId: string,
     callbacks: SubscriptionCallbacks<JoinRequestStatus | null>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh =>
+        this.connectSignalGroup([
+          () => this.connectMyJoinRequestSignals(refresh),
+          () => this.connectLeaderJoinRequestSignals(refresh),
+        ]),
       load: () => this.loadJoinRequestStatus(requestId),
     });
   }
@@ -418,7 +696,10 @@ export class SpringPartyRepository implements IPartyRepository {
   }
 
   async sendSystemMessage(_partyId: string, _text: string): Promise<void> {
-    // Phase E에서는 system message 전용 write contract가 없어 REST leader flow만 우선 연결한다.
+    throw new RepositoryError(
+      RepositoryErrorCode.INVALID_ARGUMENT,
+      'Spring backend에 파티 시스템 메시지 write contract가 없습니다.',
+    );
   }
 
   async sendAccountMessage(
@@ -472,8 +753,10 @@ export class SpringPartyRepository implements IPartyRepository {
     partyId: string,
     callbacks: SubscriptionCallbacks<JoinRequest[]>,
   ): Unsubscribe {
-    return this.subscribeWithPolling({
+    return this.subscribeWithSignals({
       callbacks,
+      connectSignals: refresh =>
+        this.connectPartyJoinRequestSignals(partyId, refresh),
       load: async () => {
         const [party, joinRequestsResponse] = await Promise.all([
           this.getParty(partyId),
@@ -493,7 +776,7 @@ export class SpringPartyRepository implements IPartyRepository {
   async acceptJoinRequest(
     requestId: string,
     _partyId: string,
-    _requesterId: string,
+    _requesterId?: string,
   ): Promise<void> {
     await taxiHomeApiClient.acceptJoinRequest(requestId);
     await this.refreshActiveSubscriptions();
@@ -515,26 +798,26 @@ export class SpringPartyRepository implements IPartyRepository {
   ): Promise<void> {}
 
   async startSettlement(
-    _partyId: string,
-    _settlementData: SettlementData,
+    partyId: string,
+    settlementData: SettlementData,
   ): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '정산 시작은 아직 partyRepository Spring 경계에 포함되지 않았습니다.',
-    );
+    const settlementTargetCount = Object.keys(settlementData.members).length;
+
+    await taxiHomeApiClient.arriveParty(partyId, {
+      taxiFare: settlementData.perPersonAmount * settlementTargetCount,
+    });
+    await this.refreshActiveSubscriptions();
   }
 
-  async markMemberSettled(_partyId: string, _memberId: string): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '멤버 정산 완료는 아직 partyRepository Spring 경계에 포함되지 않았습니다.',
-    );
+  async markMemberSettled(partyId: string, memberId: string): Promise<void> {
+    await taxiHomeApiClient.confirmSettlement(partyId, memberId);
+    await this.refreshActiveSubscriptions();
   }
 
   async completeSettlement(_partyId: string): Promise<void> {
     throw new RepositoryError(
       RepositoryErrorCode.INVALID_ARGUMENT,
-      '정산 완료는 아직 partyRepository Spring 경계에 포함되지 않았습니다.',
+      'Spring backend에 별도 정산 완료 write contract가 없습니다.',
     );
   }
 }

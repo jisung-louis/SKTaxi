@@ -3,9 +3,7 @@ import type {
   Unsubscribe,
 } from '@/shared/types/subscription';
 
-import type {
-  IPartyRepository,
-} from './IPartyRepository';
+import type {IPartyRepository} from './IPartyRepository';
 import type {
   AccountMessageData,
   ArrivalMessageData,
@@ -71,36 +69,51 @@ const cloneParty = (party: Party): Party => ({
   ...party,
   members: [...party.members],
   tags: party.tags ? [...party.tags] : undefined,
-  departure: { ...party.departure },
-  destination: { ...party.destination },
+  departure: {...party.departure},
+  destination: {...party.destination},
   settlement: party.settlement
     ? {
         ...party.settlement,
-        members: Object.entries(party.settlement.members).reduce<Record<string, { settled: boolean; settledAt?: unknown }>>(
-          (accumulator, [memberId, member]) => {
-            accumulator[memberId] = { ...member };
-            return accumulator;
-          },
-          {},
-        ),
+        members: Object.entries(party.settlement.members).reduce<
+          Record<string, {settled: boolean; settledAt?: unknown}>
+        >((accumulator, [memberId, member]) => {
+          accumulator[memberId] = {...member};
+          return accumulator;
+        }, {}),
       }
     : undefined,
-  createdAt: party.createdAt instanceof Date ? new Date(party.createdAt) : party.createdAt,
-  updatedAt: party.updatedAt instanceof Date ? new Date(party.updatedAt) : party.updatedAt,
-  endedAt: party.endedAt instanceof Date ? new Date(party.endedAt) : party.endedAt,
+  createdAt:
+    party.createdAt instanceof Date
+      ? new Date(party.createdAt)
+      : party.createdAt,
+  updatedAt:
+    party.updatedAt instanceof Date
+      ? new Date(party.updatedAt)
+      : party.updatedAt,
+  endedAt:
+    party.endedAt instanceof Date ? new Date(party.endedAt) : party.endedAt,
 });
 
 const cloneJoinRequest = (request: JoinRequest): JoinRequest => ({
   ...request,
-  createdAt: request.createdAt instanceof Date ? new Date(request.createdAt) : request.createdAt,
+  createdAt:
+    request.createdAt instanceof Date
+      ? new Date(request.createdAt)
+      : request.createdAt,
 });
 
 const cloneMessage = (message: PartyMessage): PartyMessage => ({
   ...message,
-  accountData: message.accountData ? { ...message.accountData } : undefined,
-  arrivalData: message.arrivalData ? { ...message.arrivalData } : undefined,
-  createdAt: message.createdAt instanceof Date ? new Date(message.createdAt) : message.createdAt,
-  updatedAt: message.updatedAt instanceof Date ? new Date(message.updatedAt) : message.updatedAt,
+  accountData: message.accountData ? {...message.accountData} : undefined,
+  arrivalData: message.arrivalData ? {...message.arrivalData} : undefined,
+  createdAt:
+    message.createdAt instanceof Date
+      ? new Date(message.createdAt)
+      : message.createdAt,
+  updatedAt:
+    message.updatedAt instanceof Date
+      ? new Date(message.updatedAt)
+      : message.updatedAt,
 });
 
 const displayNameByUserId = (userId: string) => {
@@ -124,8 +137,8 @@ const seedParties = () => {
     {
       id: 'taxi-home-party-1',
       leaderId: 'leader-1',
-      departure: { name: '안양역', lat: 37.401, lng: 126.923 },
-      destination: { name: '성결대학교', lat: 37.380, lng: 126.928 },
+      departure: {name: '안양역', lat: 37.401, lng: 126.923},
+      destination: {name: '성결대학교', lat: 37.38, lng: 126.928},
       departureTime: '2026-03-20T09:00:00+09:00',
       maxMembers: 4,
       members: ['leader-1', 'member-1', 'member-2'],
@@ -136,8 +149,8 @@ const seedParties = () => {
     {
       id: 'taxi-home-party-2',
       leaderId: 'leader-2',
-      departure: { name: '범계역', lat: 37.390, lng: 126.951 },
-      destination: { name: '성결대학교', lat: 37.380, lng: 126.928 },
+      departure: {name: '범계역', lat: 37.39, lng: 126.951},
+      destination: {name: '성결대학교', lat: 37.38, lng: 126.928},
       departureTime: '2026-03-20T10:30:00+09:00',
       maxMembers: 3,
       members: ['leader-2', 'member-3', 'member-4'],
@@ -148,8 +161,8 @@ const seedParties = () => {
     {
       id: 'taxi-home-party-3',
       leaderId: 'leader-3',
-      departure: { name: '안양역', lat: 37.401, lng: 126.923 },
-      destination: { name: '성결대학교', lat: 37.380, lng: 126.928 },
+      departure: {name: '안양역', lat: 37.401, lng: 126.923},
+      destination: {name: '성결대학교', lat: 37.38, lng: 126.928},
       departureTime: '2026-03-20T13:00:00+09:00',
       maxMembers: 4,
       members: ['leader-3', 'member-5'],
@@ -184,8 +197,7 @@ const resolveActiveParties = () =>
     .filter(party => party.status !== 'ended')
     .sort(
       (left, right) =>
-        toTimestamp(right.createdAt) -
-        toTimestamp(left.createdAt),
+        toTimestamp(right.createdAt) - toTimestamp(left.createdAt),
     )
     .map(cloneParty);
 
@@ -220,7 +232,9 @@ const emitMyParty = (userId: string) => {
   });
 };
 
-const resolveJoinRequestStatus = (requestId: string): JoinRequestStatus | null => {
+const resolveJoinRequestStatus = (
+  requestId: string,
+): JoinRequestStatus | null => {
   const request = joinRequests.get(requestId);
   if (!request) {
     return null;
@@ -270,7 +284,9 @@ const emitPendingJoinRequest = (requesterId: string) => {
 
 const emitJoinRequests = (partyId: string) => {
   const requests = Array.from(joinRequests.values())
-    .filter(request => request.partyId === partyId && request.status === 'pending')
+    .filter(
+      request => request.partyId === partyId && request.status === 'pending',
+    )
     .map(cloneJoinRequest);
 
   joinRequestsSubscribers.get(partyId)?.forEach(callbacks => {
@@ -286,7 +302,11 @@ const emitMessages = (partyId: string) => {
 };
 
 const resolvePartyStatus = (party: Party): Party['status'] =>
-  party.members.length >= party.maxMembers ? 'closed' : party.status === 'ended' ? 'ended' : 'open';
+  party.members.length >= party.maxMembers
+    ? 'closed'
+    : party.status === 'ended'
+    ? 'ended'
+    : 'open';
 
 export class MockPartyRepository implements IPartyRepository {
   setMockData(mockParties: Party[]): void {
@@ -319,9 +339,7 @@ export class MockPartyRepository implements IPartyRepository {
     emitPartyList();
   }
 
-  subscribeToParties(
-    callbacks: SubscriptionCallbacks<Party[]>,
-  ): Unsubscribe {
+  subscribeToParties(callbacks: SubscriptionCallbacks<Party[]>): Unsubscribe {
     partySubscribers.add(callbacks);
     callbacks.onData(resolveActiveParties());
 
@@ -337,7 +355,9 @@ export class MockPartyRepository implements IPartyRepository {
     const bucket = partyDetailSubscribers.get(partyId) ?? new Set();
     bucket.add(callbacks);
     partyDetailSubscribers.set(partyId, bucket);
-    callbacks.onData(parties.get(partyId) ? cloneParty(parties.get(partyId)!) : null);
+    callbacks.onData(
+      parties.get(partyId) ? cloneParty(parties.get(partyId)!) : null,
+    );
 
     return () => {
       partyDetailSubscribers.get(partyId)?.delete(callbacks);
@@ -439,9 +459,10 @@ export class MockPartyRepository implements IPartyRepository {
     parties.set(partyId, {
       ...current,
       members: nextMembers,
-      status: current.status === 'ended'
-        ? 'ended'
-        : nextMembers.length >= current.maxMembers
+      status:
+        current.status === 'ended'
+          ? 'ended'
+          : nextMembers.length >= current.maxMembers
           ? 'closed'
           : 'open',
       updatedAt: nowIso(),
@@ -549,7 +570,11 @@ export class MockPartyRepository implements IPartyRepository {
     };
   }
 
-  async sendPartyMessage(partyId: string, senderId: string, text: string): Promise<void> {
+  async sendPartyMessage(
+    partyId: string,
+    senderId: string,
+    text: string,
+  ): Promise<void> {
     const nextMessage: PartyMessage = {
       id: nextId('mock-party-message'),
       partyId,
@@ -559,7 +584,10 @@ export class MockPartyRepository implements IPartyRepository {
       type: 'user',
       createdAt: nowIso(),
     };
-    partyMessages.set(partyId, [...(partyMessages.get(partyId) ?? []), nextMessage]);
+    partyMessages.set(partyId, [
+      ...(partyMessages.get(partyId) ?? []),
+      nextMessage,
+    ]);
     emitMessages(partyId);
   }
 
@@ -658,21 +686,23 @@ export class MockPartyRepository implements IPartyRepository {
   async acceptJoinRequest(
     requestId: string,
     partyId: string,
-    requesterId: string,
+    requesterId?: string,
   ): Promise<void> {
     const request = joinRequests.get(requestId);
     if (!request) {
       return;
     }
 
+    const targetRequesterId = requesterId ?? request.requesterId;
+
     joinRequests.set(requestId, {
       ...request,
       status: 'accepted',
     });
-    await this.addMember(partyId, requesterId);
+    await this.addMember(partyId, targetRequesterId);
     emitJoinRequest(requestId);
     emitJoinRequestCount(request.leaderId);
-    emitPendingJoinRequest(requesterId);
+    emitPendingJoinRequest(targetRequesterId);
     emitJoinRequests(partyId);
   }
 
@@ -704,7 +734,10 @@ export class MockPartyRepository implements IPartyRepository {
     partyChatMuted.set(`${partyId}:${userId}`, muted);
   }
 
-  async startSettlement(partyId: string, settlementData: SettlementData): Promise<void> {
+  async startSettlement(
+    partyId: string,
+    settlementData: SettlementData,
+  ): Promise<void> {
     const party = parties.get(partyId);
     if (!party) {
       return;
@@ -716,7 +749,7 @@ export class MockPartyRepository implements IPartyRepository {
       settlement: {
         status: 'pending',
         perPersonAmount: settlementData.perPersonAmount,
-        members: { ...settlementData.members },
+        members: {...settlementData.members},
       },
       updatedAt: nowIso(),
     });

@@ -13,7 +13,7 @@ import {usePartyRepository} from './usePartyRepository';
 export interface JoinRequestData {
   requestId: string;
   partyId: string;
-  requesterId: string;
+  requesterId?: string;
   requesterName?: string;
 }
 
@@ -46,7 +46,7 @@ export function useJoinRequestModal(
     ? joinData.requesterName
     : joinData?.requesterId
     ? displayNameMap[joinData.requesterId] || '익명'
-    : '';
+    : '새 요청';
 
   useEffect(() => {
     if (requestStatus?.status === 'canceled') {
@@ -63,18 +63,10 @@ export function useJoinRequestModal(
         leaderId: userId,
         partyId: joinData.partyId,
         requestId: joinData.requestId,
-        requesterId: joinData.requesterId,
-        requesterName,
       });
     }
     setJoinData(null);
-  }, [
-    joinData,
-    userId,
-    partyRepository,
-    notificationActionRepository,
-    requesterName,
-  ]);
+  }, [joinData, userId, partyRepository, notificationActionRepository]);
 
   // 거절 핸들러
   const handleDecline = useCallback(async () => {

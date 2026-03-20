@@ -99,6 +99,10 @@ export interface UpdatePartyRequestDto {
   detail?: string | null;
 }
 
+export interface ArrivePartyRequestDto {
+  taxiFare: number;
+}
+
 export interface PartyCreateResponseDto {
   chatRoomId: string;
   id: string;
@@ -119,6 +123,13 @@ export interface JoinRequestAcceptResponseDto {
   id: string;
   partyId: string;
   status: JoinRequestStatusDto;
+}
+
+export interface SettlementConfirmResponseDto {
+  allSettled: boolean;
+  memberId: string;
+  settled: boolean;
+  settledAt?: string | null;
 }
 
 export interface JoinRequestListItemResponseDto {

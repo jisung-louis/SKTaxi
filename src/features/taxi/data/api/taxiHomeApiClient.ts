@@ -1,6 +1,7 @@
 import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 
 import type {
+  ArrivePartyRequestDto,
   CreatePartyRequestDto,
   JoinRequestAcceptResponseDto,
   JoinRequestListItemResponseDto,
@@ -11,6 +12,7 @@ import type {
   PartyDetailResponseDto,
   PartyPageResponseDto,
   JoinRequestStatusDto,
+  SettlementConfirmResponseDto,
   UpdatePartyRequestDto,
 } from '../dto/taxiHomeDto';
 
@@ -52,6 +54,13 @@ export class TaxiHomeApiClient {
     );
   }
 
+  arriveParty(partyId: string, payload: ArrivePartyRequestDto) {
+    return httpClient.patch<ApiSuccessResponse<PartyDetailResponseDto>>(
+      `/v1/parties/${partyId}/arrive`,
+      payload,
+    );
+  }
+
   getMyJoinRequests(params?: {status?: JoinRequestStatusDto}) {
     return httpClient.get<ApiSuccessResponse<JoinRequestListItemResponseDto[]>>(
       '/v1/members/me/join-requests',
@@ -89,6 +98,18 @@ export class TaxiHomeApiClient {
   getPartyJoinRequests(partyId: string) {
     return httpClient.get<ApiSuccessResponse<JoinRequestListItemResponseDto[]>>(
       `/v1/parties/${partyId}/join-requests`,
+    );
+  }
+
+  kickMember(partyId: string, memberId: string) {
+    return httpClient.delete<ApiSuccessResponse<null>>(
+      `/v1/parties/${partyId}/members/${memberId}`,
+    );
+  }
+
+  confirmSettlement(partyId: string, memberId: string) {
+    return httpClient.patch<ApiSuccessResponse<SettlementConfirmResponseDto>>(
+      `/v1/parties/${partyId}/settlement/members/${memberId}/confirm`,
     );
   }
 

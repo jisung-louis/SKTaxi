@@ -35,7 +35,7 @@ export class SpringNotificationActionRepository
 
   async deleteJoinRequestNotifications(
     _userId: string,
-    partyId: string,
+    requestId: string,
   ): Promise<void> {
     try {
       let page = 0;
@@ -51,7 +51,7 @@ export class SpringNotificationActionRepository
         response.data.content.forEach(notification => {
           if (
             notification.type === 'PARTY_JOIN_REQUEST' &&
-            notification.data?.partyId === partyId
+            notification.data?.requestId === requestId
           ) {
             targetIds.push(notification.id);
           }
