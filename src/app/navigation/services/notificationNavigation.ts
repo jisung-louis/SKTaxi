@@ -1,9 +1,10 @@
-import { navigateToBoardDetail } from '@/features/board';
-import { navigateToNoticeDetail } from '@/features/notice';
-import { navigateToAppNoticeDetail } from '@/features/settings';
-import type { Notification } from '@/features/user/data/repositories/INotificationRepository';
+import {navigateToBoardDetail} from '@/features/board';
+import {navigateToNoticeDetail} from '@/features/notice';
+import {navigateToAppNoticeDetail} from '@/features/settings';
+import type {Notification} from '@/features/user/data/repositories/INotificationRepository';
 
-import { navigateToChatRoom } from './communityNavigation';
+import {navigateToChatRoom} from './communityNavigation';
+import {normalizePushNotificationType} from './normalizePushNotificationType';
 
 type NavigationLike = {
   navigate: (...args: any[]) => void;
@@ -20,9 +21,7 @@ const tryNavigate = (navigate: () => void) => {
   }
 };
 
-const navigateToTaxiMain = (
-  navigation: NavigationLike,
-) => {
+const navigateToTaxiMain = (navigation: NavigationLike) => {
   if (
     tryNavigate(() =>
       navigation.navigate('Main', {
@@ -40,17 +39,14 @@ const navigateToTaxiMain = (
   );
 };
 
-const navigateToTaxiChat = (
-  navigation: NavigationLike,
-  partyId: string,
-) => {
+const navigateToTaxiChat = (navigation: NavigationLike, partyId: string) => {
   if (
     tryNavigate(() =>
       navigation.navigate('Main', {
         screen: 'TaxiTab',
         params: {
           screen: 'Chat',
-          params: { partyId },
+          params: {partyId},
         },
       }),
     )
@@ -61,7 +57,7 @@ const navigateToTaxiChat = (
   tryNavigate(() =>
     navigation.navigate('TaxiTab', {
       screen: 'Chat',
-      params: { partyId },
+      params: {partyId},
     }),
   );
 };
@@ -88,7 +84,10 @@ export const handlePushNotificationNavigation = ({
   const partyId = getStringRecordValue(data, 'partyId');
   const postId = getStringRecordValue(data, 'postId');
   const chatRoomId = getStringRecordValue(data, 'chatRoomId');
-  const type = getStringRecordValue(data, 'type');
+  const type = normalizePushNotificationType(
+    getStringRecordValue(data, 'type'),
+    data,
+  );
 
   switch (type) {
     case 'notice':
@@ -158,7 +157,7 @@ export const handleForegroundNotificationNavigation = ({
     chatRoomId?: string;
   };
 }) => {
-  const { type, noticeId, partyId, postId, chatRoomId } = notification;
+  const {type, noticeId, partyId, postId, chatRoomId} = notification;
 
   switch (type) {
     case 'notice':

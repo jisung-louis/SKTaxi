@@ -1,11 +1,12 @@
-import type { FirebaseMessagingTypes } from '@/shared/lib/firebase/messaging';
+import type {FirebaseMessagingTypes} from '@/shared/lib/firebase/messaging';
 import {
   getInitialNotificationMessage,
   registerBackgroundMessageHandler,
   subscribeForegroundMessages,
   subscribeNotificationOpenedApp,
 } from '@/shared/lib/firebase/messaging';
-import { handlePushNotificationNavigation } from '@/app/navigation/services/notificationNavigation';
+import {handlePushNotificationNavigation} from '@/app/navigation/services/notificationNavigation';
+import {normalizePushNotificationType} from '@/app/navigation/services/normalizePushNotificationType';
 
 export interface ForegroundMessageCallbacks {
   showModal: (data: any) => void;
@@ -350,7 +351,9 @@ export function initForegroundMessageHandler(
     const data = remoteMessage.data || {};
     console.log('🔔 메시지 데이터:', data);
 
-    switch (data.type) {
+    const normalizedType = normalizePushNotificationType(data.type, data);
+
+    switch (normalizedType) {
       case 'join_request':
         handleJoinRequest(data, callbacks);
         break;
@@ -406,17 +409,19 @@ export function initBackgroundMessageHandler(
     const data = remoteMessage.data || {};
     console.log('백그라운드에서 받은 알림:', data);
 
-    if (data.type === 'notice') {
+    const normalizedType = normalizePushNotificationType(data.type, data);
+
+    if (normalizedType === 'notice') {
       console.log('백그라운드 공지사항 알림:', data.noticeId);
-    } else if (data.type === 'join_request' && onJoinRequestReceived) {
+    } else if (normalizedType === 'join_request' && onJoinRequestReceived) {
       console.log('백그라운드 동승 요청 알림:', data);
       onJoinRequestReceived(data);
     } else if (
-      data.type === 'party_join_accepted' ||
-      data.type === 'party_join_rejected' ||
-      data.type === 'party_deleted'
+      normalizedType === 'party_join_accepted' ||
+      normalizedType === 'party_join_rejected' ||
+      normalizedType === 'party_deleted'
     ) {
-      console.log('백그라운드 알림:', data.type);
+      console.log('백그라운드 알림:', normalizedType);
     }
   });
 }
