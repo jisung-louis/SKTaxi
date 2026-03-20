@@ -1,7 +1,7 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-19
-> 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [API 명세](./api-specification.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
+> 최종 수정일: 2026-03-20
+> 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
 
 ---
 

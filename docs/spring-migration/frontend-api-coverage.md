@@ -1,0 +1,435 @@
+# RN Spring API 커버리지와 로깅 가이드
+
+> 최종 수정일: 2026-03-20
+> 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
+
+---
+
+## 1. 문서 목적
+
+이 문서는 현재 React Native 앱이 실제로 어떤 Spring API를 호출하고 있는지,
+어떤 영역은 부분 연결 상태인지,
+그리고 개발 중 API 로깅을 어떤 원칙으로 붙여야 하는지 정리한다.
+
+이 문서의 기준은 다음과 같다.
+
+- 실제 앱 코드에서 호출 중인 endpoint를 우선 기록한다.
+- “완료/부분 연결/미연결”은 backend 전체가 아니라 **앱 사용자 기능 기준**으로 판단한다.
+- 실서버 연동 디버깅을 위해 로깅은 허용하되, 인증 정보와 민감 데이터는 반드시 마스킹한다.
+
+---
+
+## 2. 현재 요약
+
+현재 앱은 다음 범위까지 Spring REST를 사용한다.
+
+- 완료
+  - Member bootstrap / profile / FCM token
+  - App Notice 공개 조회
+  - Notification Center 기본 조회/읽음 처리/삭제
+  - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
+- 부분 연결
+  - Notification domain 전체
+  - Taxi Party domain 전체
+- 아직 미연결
+  - Notification SSE
+  - Taxi Party 정식 repository/SSE
+  - Chat REST/STOMP
+  - Board / Notice / Campus 등 나머지 도메인
+
+즉, endpoint 단위로는 꽤 연결됐지만,
+도메인 단위로 보면 Notification / Taxi / Chat은 아직 다음 phase 작업이 남아 있다.
+
+---
+
+## 3. 연결 완료 API
+
+아래 endpoint는 **현재 프론트에서 실제로 호출 중인 Spring REST API**다.
+
+### 3.1 Member / Auth bootstrap
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `POST /v1/members`
+- `GET /v1/members/me`
+- `PATCH /v1/members/me`
+- `POST /v1/members/me/fcm-tokens`
+- `DELETE /v1/members/me/fcm-tokens`
+
+현재 사용처:
+
+- 로그인 직후 Spring member bootstrap
+- `CompleteProfileScreen` 저장
+- 앱 시작/refresh/logout 시 FCM token 등록/삭제
+
+코드:
+
+- `src/features/member/data/api/memberApiClient.ts`
+- `src/features/member/data/repositories/SpringMemberRepository.ts`
+- `src/features/auth/hooks/useAuthSession.ts`
+- `src/features/member/services/memberFcmTokenService.ts`
+
+### 3.2 App Notice
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/app-notices`
+- `GET /v1/app-notices/{appNoticeId}`
+
+현재 사용처:
+
+- 앱 공지 목록 화면
+- 앱 공지 상세 화면
+- Notification Hub의 App Notice 탭
+
+코드:
+
+- `src/features/settings/data/api/appNoticeApiClient.ts`
+- `src/features/settings/data/repositories/SpringAppNoticeRepository.ts`
+- `src/features/settings/hooks/useAppNoticeFeedData.ts`
+- `src/features/settings/hooks/useAppNoticeDetailData.ts`
+
+### 3.3 Notification Center 기본 동작
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/notifications`
+- `POST /v1/notifications/{notificationId}/read`
+- `POST /v1/notifications/read-all`
+- `DELETE /v1/notifications/{notificationId}`
+
+현재 사용처:
+
+- 알림함 목록 조회
+- 단건 읽음 처리
+- 전체 읽음 처리
+- 단건 삭제
+
+코드:
+
+- `src/features/user/data/api/notificationApiClient.ts`
+- `src/features/user/data/repositories/SpringNotificationRepository.ts`
+- `src/features/user/hooks/useNotificationCenterData.ts`
+
+### 3.4 Taxi Home / Join Request / Acceptance Pending
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/parties`
+- `GET /v1/parties/{partyId}`
+- `GET /v1/members/me/parties`
+- `GET /v1/members/me/join-requests`
+- `POST /v1/parties/{partyId}/join-requests`
+- `PATCH /v1/join-requests/{id}/cancel`
+
+현재 사용처:
+
+- Taxi Home 파티 목록 조회
+- 내 활성 파티 여부 반영
+- 내 pending join request 상태 반영
+- 동승 요청 생성
+- AcceptancePending 화면 조회/취소
+- 실제 Taxi Chat route 진입
+
+코드:
+
+- `src/features/taxi/data/api/taxiHomeApiClient.ts`
+- `src/features/taxi/application/taxiHomeQuery.ts`
+- `src/features/taxi/application/taxiAcceptancePendingQuery.ts`
+- `src/features/taxi/hooks/useTaxiHomeData.ts`
+- `src/features/taxi/hooks/useTaxiAcceptancePendingData.ts`
+
+---
+
+## 4. 부분 연결 API
+
+이 섹션은 “endpoint 몇 개는 이미 연결됐지만, 도메인 전체 전환은 끝나지 않은 영역”을 정리한다.
+
+### 4.1 Notification domain
+
+상태:
+
+- 부분 연결
+
+이미 연결된 endpoint:
+
+- `GET /v1/notifications`
+- `POST /v1/notifications/{notificationId}/read`
+- `POST /v1/notifications/read-all`
+- `DELETE /v1/notifications/{notificationId}`
+
+아직 남은 것:
+
+- `GET /v1/notifications/unread-count`
+- `GET /v1/sse/notifications`
+- 인앱 unread badge를 SSE 기준으로 동기화
+
+의미:
+
+- Notification Center는 동작한다.
+- 하지만 Notification domain 전체를 “Spring 정식 이전 완료”라고 보기는 이르다.
+- 현재는 polling / reload 중심이고, SSE 실시간 동기화는 Phase D 이후다.
+
+### 4.2 Taxi Party domain
+
+상태:
+
+- 부분 연결
+
+이미 연결된 endpoint:
+
+- `GET /v1/parties`
+- `GET /v1/parties/{partyId}`
+- `GET /v1/members/me/parties`
+- `GET /v1/members/me/join-requests`
+- `POST /v1/parties/{partyId}/join-requests`
+- `PATCH /v1/join-requests/{id}/cancel`
+
+아직 남은 것:
+
+- `POST /v1/parties`
+- `PATCH /v1/parties/{id}`
+- 파티 종료/도착/정산/강퇴/나가기 관련 endpoint
+- 리더용 join request 수락/거절
+- `GET /v1/sse/parties`
+- `GET /v1/sse/parties/{partyId}/join-requests`
+- `GET /v1/sse/members/me/join-requests`
+- `IPartyRepository` 전체 Spring concrete 구현
+
+의미:
+
+- Taxi Home screen chain은 Spring 기준으로 동작한다.
+- 하지만 Taxi Party domain 전체는 아직 query/application adapter 중심의 부분 이전 상태다.
+
+### 4.3 Chat domain
+
+상태:
+
+- 부분 연결 직전
+
+이미 연결된 것:
+
+- Taxi Home / AcceptancePending에서 실제 `Chat` route 진입까지는 연결됨
+
+아직 남은 것:
+
+- 채팅방 상세 데이터 source 자체의 Spring 이전
+- `GET /v1/chat-rooms/{chatRoomId}/messages`
+- `/ws`
+- `/app/chat/{chatRoomId}`
+- `/topic/chat/{chatRoomId}`
+- `/user/queue/chat-rooms`
+- `/user/queue/errors`
+
+의미:
+
+- 화면 이동만 실제 route로 연결됐고,
+- 채팅 데이터 자체는 아직 Phase F 범위다.
+
+---
+
+## 5. 아직 미연결 API
+
+이 섹션은 “현재 앱에서 아직 Spring으로 붙지 않은 대표 사용자 기능 API”를 정리한다.
+
+### 5.1 Notification
+
+- `GET /v1/notifications/unread-count`
+- `GET /v1/sse/notifications`
+
+### 5.2 Taxi Party / Join Request leader flow
+
+- `POST /v1/parties`
+- `PATCH /v1/parties/{id}`
+- `DELETE /v1/parties/{id}` 또는 상태 전이 endpoint
+- `PATCH /v1/join-requests/{id}/accept`
+- `PATCH /v1/join-requests/{id}/decline`
+- `GET /v1/parties/{partyId}/join-requests`
+- Taxi SSE endpoint들
+
+### 5.3 Chat
+
+- 채팅 메시지 이력 조회 REST
+- WebSocket/STOMP endpoint
+- 채팅방 목록 summary 실시간 동기화
+
+### 5.4 Notice / Board / Campus / 기타
+
+현재 다음 영역은 여전히 Spring 정식 이전 전이다.
+
+- Notice 본체
+- Board / Community
+- Campus 계열
+- 남아 있는 mock 화면 체인
+
+---
+
+## 6. 개발용 API 로깅 가이드
+
+### 6.1 결론
+
+개발 중에는 API 요청/응답을 콘솔에 출력해도 된다.
+
+하지만 아래 항목은 **그대로 출력하면 안 된다.**
+
+- Firebase ID token
+- Authorization header 원문
+- FCM token
+- password / auth code / refresh token 계열
+- multipart binary payload
+- 채팅/문의/신고처럼 민감한 본문 전체
+
+즉, **“전부 raw dump”는 비권장**이고,
+**“개발 전용 + 구조화된 로그 + 민감정보 마스킹”** 전략이 맞다.
+
+### 6.2 권장 로깅 위치
+
+우선순위는 다음 순서가 좋다.
+
+1. `src/shared/api/httpClient.ts`
+2. `src/shared/realtime/sseClient.ts`
+3. `src/shared/realtime/chatSocketClient.ts`
+
+이유:
+
+- 모든 Spring REST 요청이 `httpClient`를 통과한다.
+- 여기서 찍어야 feature별 중복 로깅이 안 생긴다.
+- SSE/STOMP도 transport 레이어에서 찍어야 연결/재연결/구독 실패를 한 번에 볼 수 있다.
+
+### 6.3 권장 로그 필드
+
+request 로그:
+
+- requestId
+- method
+- full URL
+- params
+- body summary
+- sanitized headers
+- startedAt
+
+response 로그:
+
+- requestId
+- method
+- full URL
+- statusCode
+- durationMs
+- response summary
+
+error 로그:
+
+- requestId
+- method
+- full URL
+- statusCode
+- repository error code
+- api error code
+- message
+- durationMs
+
+### 6.4 반드시 마스킹할 값
+
+header:
+
+- `Authorization`
+- `Cookie`
+- `Set-Cookie`
+- `X-Api-Key`
+
+body / params key:
+
+- `token`
+- `idToken`
+- `refreshToken`
+- `fcmToken`
+- `password`
+- `authCode`
+
+권장 출력 형식:
+
+- `Authorization: Bearer <redacted>`
+- `fcmToken: <redacted>`
+
+### 6.5 body/response 로깅 원칙
+
+body와 response는 무조건 전부 찍지 않는다.
+
+권장 방식:
+
+- 기본값은 key 목록 + 길이/개수만 출력
+- 객체는 depth 2 정도까지만 출력
+- 배열은 앞쪽 몇 개만 preview
+- 문자열은 최대 길이 제한
+- multipart/form-data는 파일 메타만 출력
+
+예:
+
+- 게시글 본문: 전문 출력 금지, 길이만 출력
+- 채팅 메시지: 전문 출력 금지, 길이만 출력
+- 파티 목록: `content.length`, `page`, `hasNext` 중심 출력
+
+### 6.6 환경별 정책
+
+권장 정책:
+
+- `__DEV__ === true`일 때만 기본 활성화
+- release build에서는 완전 비활성화
+- 필요하면 별도 debug flag로 강제 on/off
+
+예:
+
+- `ENABLE_API_DEBUG_LOG=true`일 때만 상세 로그
+- 기본 개발 모드에서는 summary 로그만
+
+### 6.7 추천 전략
+
+가장 안전한 전략은 아래 3단계다.
+
+1. request/response/error 공통 logger를 `httpClient`에 1곳만 둔다.
+2. 민감정보는 중앙 sanitizer 함수로 마스킹한다.
+3. 기본은 summary 로그, 필요할 때만 endpoint whitelist 기반 상세 로그를 켠다.
+
+즉, 지금 프로젝트에 가장 맞는 방식은:
+
+- 중앙 로깅
+- dev only
+- redaction 필수
+- large payload truncation
+- requestId 기반 추적
+
+### 6.8 지금 프로젝트에서의 권장 구현 순서
+
+1. `src/shared/api/httpClient.ts`에 dev-only logger hook 추가
+2. `src/shared/api/` 아래에 `apiLogger.ts`와 `apiLogSanitizer.ts` 추가
+3. SSE / STOMP는 Phase D/F에서 transport별 event logger 추가
+
+권장 추가 파일:
+
+- `src/shared/api/apiLogger.ts`
+- `src/shared/api/apiLogSanitizer.ts`
+
+---
+
+## 7. 다음 작업자 메모
+
+- 실제 endpoint 계약은 `/v3/api-docs` 우선이다.
+- 이 문서의 “연결 완료”는 사용자 기능 기준이며, backend 전체 완료를 뜻하지 않는다.
+- Notification / Taxi / Chat은 domain 전체 기준으로는 아직 다음 phase 작업이 남아 있다.
+- API 로깅을 붙일 때는 raw token/body를 그대로 출력하지 않는다.

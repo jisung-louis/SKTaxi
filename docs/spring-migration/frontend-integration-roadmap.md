@@ -1,7 +1,7 @@
 # RN Spring 연동 로드맵
 
-> 최종 수정일: 2026-03-18
-> 관련 문서: [프로젝트 종합 문서](./project-overview.md) | [역할 정의](./role-definition.md) | [API 명세](./api-specification.md) | [백엔드 레이어 점검](./backend-layer-review-and-spring-migration.md) | [RN Notification Migration Reference](./rn-notification-migration-reference.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
+> 최종 수정일: 2026-03-20
+> 관련 문서: [프로젝트 종합 문서](./project-overview.md) | [역할 정의](./role-definition.md) | [API 명세](./api-specification.md) | [백엔드 레이어 점검](./backend-layer-review-and-spring-migration.md) | [RN Notification Migration Reference](./rn-notification-migration-reference.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [Codex Phase Handoff Prompts](./codex-phase-handoff-prompts.md)
 
 ---
 
