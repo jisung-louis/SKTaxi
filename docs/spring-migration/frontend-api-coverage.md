@@ -303,12 +303,9 @@ runtime note:
 
 ### 5.1 Taxi Party / Join Request leader flow
 
-- `POST /v1/parties`
 - `PATCH /v1/parties/{id}`
-- `DELETE /v1/parties/{id}` 또는 상태 전이 endpoint
-- `PATCH /v1/join-requests/{id}/accept`
-- `PATCH /v1/join-requests/{id}/decline`
-- `GET /v1/parties/{partyId}/join-requests`
+- `POST /v1/parties/{partyId}/cancel` 또는 `DELETE /v1/parties/{id}`
+- 파티 도착/정산/강퇴/직접 leave/kick 관련 endpoint
 - Taxi SSE endpoint들
 
 ### 5.3 Chat
