@@ -55,6 +55,7 @@ export { AcceptancePendingScreen } from './screens/AcceptancePendingScreen';
 export { ChatScreen } from './screens/ChatScreen';
 export { RecruitScreen } from './screens/RecruitScreen';
 export { TaxiScreen } from './screens/TaxiScreen';
+export { TaxiLocationPickerScreen } from './screens/TaxiLocationPickerScreen';
 
 export {
   DEPARTURE_LOCATION,

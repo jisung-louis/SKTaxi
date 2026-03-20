@@ -1,8 +1,15 @@
+import type {PartyLocation} from './types';
+
+export type TaxiRecruitLocationKind = 'departure' | 'destination';
 export type TaxiRecruitLocationMode = 'preset' | 'custom';
 
-export interface TaxiRecruitLocationValue {
-  label: string;
+export interface TaxiRecruitLocationValue extends PartyLocation {
   mode: TaxiRecruitLocationMode;
+}
+
+export interface TaxiRecruitLocationSelection {
+  kind: TaxiRecruitLocationKind;
+  location: PartyLocation;
 }
 
 export interface TaxiRecruitDraft {

@@ -10,11 +10,14 @@ import {
   DESTINATION_OPTIONS,
 } from '../model/constants';
 import type {
-  TaxiRecruitLocationValue,
   TaxiRecruitDraft,
+  TaxiRecruitLocationKind,
   TaxiRecruitLocationMode,
+  TaxiRecruitLocationSelection,
+  TaxiRecruitLocationValue,
   TaxiRecruitSubmitResult,
 } from '../model/taxiRecruitData';
+import type {PartyLocation} from '../model/types';
 import {usePartyRepository} from './usePartyRepository';
 
 const PRESET_TAG_OPTIONS = [
@@ -27,40 +30,44 @@ const PRESET_TAG_OPTIONS = [
 ] as const;
 
 const MAX_MEMBER_OPTIONS = [2, 3, 4, 5, 6, 7] as const;
-const DAY_OFFSET_TOMORROW = 1 as const;
 const DAY_OFFSET_TODAY = 0 as const;
+const DAY_OFFSET_TOMORROW = 1 as const;
 
-const DEPARTURE_COORDINATES_BY_LABEL = DEPARTURE_OPTIONS.flatMap(
-  (row, rowIndex) =>
-    row.map((label, columnIndex) => ({
-      coordinate: DEPARTURE_LOCATION[rowIndex][columnIndex],
-      label,
-    })),
-).reduce<Record<string, {lat: number; lng: number}>>((accumulator, item) => {
-  accumulator[item.label] = {
-    lat: item.coordinate.latitude,
-    lng: item.coordinate.longitude,
-  };
+const buildPresetLocationMap = ({
+  coordinates,
+  labels,
+}: {
+  coordinates: readonly {latitude: number; longitude: number}[][];
+  labels: readonly string[][];
+}) =>
+  labels
+    .flatMap((row, rowIndex) =>
+      row.map((label, columnIndex) => ({
+        coordinate: coordinates[rowIndex][columnIndex],
+        label,
+      })),
+    )
+    .reduce<Record<string, PartyLocation>>((accumulator, item) => {
+      accumulator[item.label] = {
+        lat: item.coordinate.latitude,
+        lng: item.coordinate.longitude,
+        name: item.label,
+      };
 
-  return accumulator;
-}, {});
+      return accumulator;
+    }, {});
 
-const DESTINATION_COORDINATES_BY_LABEL = DESTINATION_OPTIONS.flatMap(
-  (row, rowIndex) =>
-    row.map((label, columnIndex) => ({
-      coordinate: DESTINATION_LOCATION[rowIndex][columnIndex],
-      label,
-    })),
-).reduce<Record<string, {lat: number; lng: number}>>((accumulator, item) => {
-  accumulator[item.label] = {
-    lat: item.coordinate.latitude,
-    lng: item.coordinate.longitude,
-  };
+const DEPARTURE_LOCATION_BY_LABEL = buildPresetLocationMap({
+  coordinates: DEPARTURE_LOCATION,
+  labels: DEPARTURE_OPTIONS,
+});
 
-  return accumulator;
-}, {});
+const DESTINATION_LOCATION_BY_LABEL = buildPresetLocationMap({
+  coordinates: DESTINATION_LOCATION,
+  labels: DESTINATION_OPTIONS,
+});
 
-const normalizeLocationLabel = (value: string) => value.trim();
+const normalizeLocationName = (value: string) => value.trim();
 
 const formatTagValue = (value: string) => {
   const trimmed = value.trim();
@@ -105,50 +112,111 @@ const formatDepartureSummary = (date: Date, isTomorrow: boolean) => {
   )}:${minute} 출발`;
 };
 
-const getLocationLabel = (
-  mode: TaxiRecruitLocationMode,
-  presetValue: string,
-  customValue: string,
-) => (mode === 'custom' ? normalizeLocationLabel(customValue) : presetValue);
-
 const normalizePartyTags = (tags: string[]) =>
   tags.map(tag => tag.replace(/^#/, '').trim()).filter(Boolean);
 
-const resolveLocationCoordinates = (
-  location: TaxiRecruitLocationValue,
-  kind: 'departure' | 'destination',
-) => {
-  const coordinatesByLabel =
+const resolvePresetLocation = (
+  kind: TaxiRecruitLocationKind,
+  label: string,
+): TaxiRecruitLocationValue | null => {
+  const trimmedLabel = normalizeLocationName(label);
+  const locationByLabel =
     kind === 'departure'
-      ? DEPARTURE_COORDINATES_BY_LABEL
-      : DESTINATION_COORDINATES_BY_LABEL;
-  const coordinates = coordinatesByLabel[location.label];
+      ? DEPARTURE_LOCATION_BY_LABEL
+      : DESTINATION_LOCATION_BY_LABEL;
+  const location = locationByLabel[trimmedLabel];
 
-  if (!coordinates) {
-    throw new Error(
-      `${
-        kind === 'departure' ? '출발지' : '도착지'
-      } 자유 입력은 아직 지원하지 않습니다. Spring 파티 생성 계약상 좌표가 필요하므로 프리셋 위치를 선택하거나, 프리셋과 동일한 이름으로 입력해주세요.`,
-    );
+  if (!location) {
+    return null;
   }
 
   return {
-    lat: coordinates.lat,
-    lng: coordinates.lng,
-    name: location.label,
+    ...location,
+    mode: 'preset',
   };
 };
+
+const resolveCustomLocation = (
+  selectedLocation: PartyLocation | null,
+): TaxiRecruitLocationValue | null => {
+  if (!selectedLocation) {
+    return null;
+  }
+
+  const normalizedName = normalizeLocationName(selectedLocation.name);
+
+  if (!normalizedName) {
+    return null;
+  }
+
+  return {
+    lat: selectedLocation.lat,
+    lng: selectedLocation.lng,
+    mode: 'custom',
+    name: normalizedName,
+  };
+};
+
+const isSameLocation = (
+  left: TaxiRecruitLocationValue | null,
+  right: TaxiRecruitLocationValue | null,
+) => {
+  if (!left || !right) {
+    return false;
+  }
+
+  return (
+    normalizeLocationName(left.name) === normalizeLocationName(right.name) &&
+    left.lat === right.lat &&
+    left.lng === right.lng
+  );
+};
+
+const buildCustomLocationHint = ({
+  customValue,
+  selectedLocation,
+}: {
+  customValue: string;
+  selectedLocation: PartyLocation | null;
+}) => {
+  if (selectedLocation) {
+    return {
+      text: `${selectedLocation.name} 좌표를 지도에서 선택했어요.`,
+      tone: 'success' as const,
+    };
+  }
+
+  if (!normalizeLocationName(customValue)) {
+    return {
+      text: '위치명을 입력한 뒤 지도에서 좌표를 선택해주세요.',
+      tone: 'warning' as const,
+    };
+  }
+
+  return {
+    text: '정확한 파티 생성을 위해 지도에서 좌표를 꼭 선택해주세요.',
+    tone: 'warning' as const,
+  };
+};
+
+interface RecruitLocationSectionState {
+  customValue: string;
+  disabledLabel: string | null;
+  hasMapSelection: boolean;
+  helperText: string | null;
+  helperTone: 'success' | 'warning' | null;
+  mapActionDisabled: boolean;
+  mapActionLabel: string;
+  mode: TaxiRecruitLocationMode;
+  options: readonly string[][];
+  selectedLabel: string;
+  selectedLocation: PartyLocation | null;
+}
 
 export interface UseTaxiRecruitFormResult {
   canSubmit: boolean;
   customTagInput: string;
-  departure: {
-    customValue: string;
-    disabledLabel: string | null;
-    mode: TaxiRecruitLocationMode;
-    options: typeof DEPARTURE_OPTIONS;
-    selectedLabel: string;
-  };
+  departure: RecruitLocationSectionState;
   departureTime: {
     hour: number;
     minute: number;
@@ -156,19 +224,14 @@ export interface UseTaxiRecruitFormResult {
     summaryTone: 'today' | 'tomorrow';
   };
   detail: string;
-  destination: {
-    customValue: string;
-    disabledLabel: string | null;
-    mode: TaxiRecruitLocationMode;
-    options: typeof DESTINATION_OPTIONS;
-    selectedLabel: string;
-  };
+  destination: RecruitLocationSectionState;
   isSubmitting: boolean;
   maxMemberOptions: readonly number[];
   maxMembers: number;
   selectedTags: string[];
   tagOptions: readonly string[];
   addCustomTag: () => void;
+  applyLocationSelection: (selection: TaxiRecruitLocationSelection) => void;
   removeTag: (tag: string) => void;
   selectDepartureCustom: () => void;
   selectDeparturePreset: (label: string) => void;
@@ -188,15 +251,20 @@ export interface UseTaxiRecruitFormResult {
 export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   const {user} = useAuth();
   const partyRepository = usePartyRepository();
+
   const [departureMode, setDepartureMode] =
     React.useState<TaxiRecruitLocationMode>('preset');
   const [departurePreset, setDeparturePreset] = React.useState('');
   const [customDeparture, setCustomDeparture] = React.useState('');
+  const [departureCustomLocation, setDepartureCustomLocation] =
+    React.useState<PartyLocation | null>(null);
 
   const [destinationMode, setDestinationMode] =
     React.useState<TaxiRecruitLocationMode>('preset');
   const [destinationPreset, setDestinationPreset] = React.useState('');
   const [customDestination, setCustomDestination] = React.useState('');
+  const [destinationCustomLocation, setDestinationCustomLocation] =
+    React.useState<PartyLocation | null>(null);
 
   const [customTagInput, setCustomTagInput] = React.useState('');
   const [selectedTags, setSelectedTags] = React.useState<string[]>([]);
@@ -221,14 +289,20 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     return () => clearInterval(interval);
   }, []);
 
-  const departureLabel = React.useMemo(
-    () => getLocationLabel(departureMode, departurePreset, customDeparture),
-    [customDeparture, departureMode, departurePreset],
-  );
-  const destinationLabel = React.useMemo(
+  const departureLocation = React.useMemo(
     () =>
-      getLocationLabel(destinationMode, destinationPreset, customDestination),
-    [customDestination, destinationMode, destinationPreset],
+      departureMode === 'preset'
+        ? resolvePresetLocation('departure', departurePreset)
+        : resolveCustomLocation(departureCustomLocation),
+    [departureCustomLocation, departureMode, departurePreset],
+  );
+
+  const destinationLocation = React.useMemo(
+    () =>
+      destinationMode === 'preset'
+        ? resolvePresetLocation('destination', destinationPreset)
+        : resolveCustomLocation(destinationCustomLocation),
+    [destinationCustomLocation, destinationMode, destinationPreset],
   );
 
   const selectedDepartureDate = React.useMemo(
@@ -245,51 +319,37 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     [selectedDepartureDate.date, selectedDepartureDate.isTomorrow],
   );
 
-  const normalizedDepartureLabel = React.useMemo(
-    () => normalizeLocationLabel(departureLabel),
-    [departureLabel],
-  );
-  const normalizedDestinationLabel = React.useMemo(
-    () => normalizeLocationLabel(destinationLabel),
-    [destinationLabel],
-  );
-
-  const canSubmit = React.useMemo(() => {
-    if (!normalizedDepartureLabel || !normalizedDestinationLabel) {
-      return false;
+  const draft = React.useMemo<TaxiRecruitDraft | null>(() => {
+    if (!departureLocation || !destinationLocation) {
+      return null;
     }
 
-    return normalizedDepartureLabel !== normalizedDestinationLabel;
-  }, [normalizedDepartureLabel, normalizedDestinationLabel]);
-
-  const draft = React.useMemo<TaxiRecruitDraft>(
-    () => ({
-      departure: {
-        label: normalizedDepartureLabel,
-        mode: departureMode,
-      },
+    return {
+      departure: departureLocation,
       departureAtISO: selectedDepartureDate.date.toISOString(),
       departureDayOffset: selectedDepartureDate.dayOffset,
-      destination: {
-        label: normalizedDestinationLabel,
-        mode: destinationMode,
-      },
+      destination: destinationLocation,
       detail: detail.trim(),
       maxMembers,
       tags: selectedTags,
-    }),
-    [
-      departureMode,
-      detail,
-      destinationMode,
-      maxMembers,
-      normalizedDepartureLabel,
-      normalizedDestinationLabel,
-      selectedDepartureDate.date,
-      selectedDepartureDate.dayOffset,
-      selectedTags,
-    ],
-  );
+    };
+  }, [
+    departureLocation,
+    detail,
+    destinationLocation,
+    maxMembers,
+    selectedDepartureDate.date,
+    selectedDepartureDate.dayOffset,
+    selectedTags,
+  ]);
+
+  const canSubmit = React.useMemo(() => {
+    if (!draft) {
+      return false;
+    }
+
+    return !isSameLocation(draft.departure, draft.destination);
+  }, [draft]);
 
   const selectDeparturePreset = React.useCallback((label: string) => {
     setDepartureMode('preset');
@@ -308,6 +368,59 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   const selectDestinationCustom = React.useCallback(() => {
     setDestinationMode('custom');
   }, []);
+
+  const setCustomDepartureValue = React.useCallback((value: string) => {
+    const normalizedName = normalizeLocationName(value);
+
+    setCustomDeparture(value);
+    setDepartureCustomLocation(currentLocation => {
+      if (
+        currentLocation &&
+        normalizeLocationName(currentLocation.name) !== normalizedName
+      ) {
+        return null;
+      }
+
+      return currentLocation;
+    });
+  }, []);
+
+  const setCustomDestinationValue = React.useCallback((value: string) => {
+    const normalizedName = normalizeLocationName(value);
+
+    setCustomDestination(value);
+    setDestinationCustomLocation(currentLocation => {
+      if (
+        currentLocation &&
+        normalizeLocationName(currentLocation.name) !== normalizedName
+      ) {
+        return null;
+      }
+
+      return currentLocation;
+    });
+  }, []);
+
+  const applyLocationSelection = React.useCallback(
+    ({kind, location}: TaxiRecruitLocationSelection) => {
+      const normalizedLocation = {
+        ...location,
+        name: normalizeLocationName(location.name),
+      };
+
+      if (kind === 'departure') {
+        setDepartureMode('custom');
+        setCustomDeparture(normalizedLocation.name);
+        setDepartureCustomLocation(normalizedLocation);
+        return;
+      }
+
+      setDestinationMode('custom');
+      setCustomDestination(normalizedLocation.name);
+      setDestinationCustomLocation(normalizedLocation);
+    },
+    [],
+  );
 
   const selectHour = React.useCallback((hour: number) => {
     React.startTransition(() => {
@@ -351,10 +464,10 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   }, []);
 
   const submitForm = React.useCallback(async () => {
-    if (!canSubmit || isSubmitting) {
+    if (!canSubmit || !draft || isSubmitting) {
       return {
         message:
-          '출발지와 도착지를 모두 입력하고 서로 다른 장소로 선택해주세요.',
+          '출발지와 도착지를 모두 선택하고, 직접 입력 위치는 지도 좌표까지 지정해주세요.',
         status: 'blocked' as const,
       };
     }
@@ -372,12 +485,9 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
       const partyId = await createTaxiParty({
         partyRepository,
         party: {
-          departure: resolveLocationCoordinates(draft.departure, 'departure'),
+          departure: draft.departure,
           departureTime: draft.departureAtISO,
-          destination: resolveLocationCoordinates(
-            draft.destination,
-            'destination',
-          ),
+          destination: draft.destination,
           detail: draft.detail || undefined,
           leaderId: user.uid,
           maxMembers: draft.maxMembers,
@@ -407,17 +517,49 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     }
   }, [canSubmit, draft, isSubmitting, partyRepository, user?.uid]);
 
+  const departureHint = React.useMemo(
+    () =>
+      departureMode === 'custom'
+        ? buildCustomLocationHint({
+            customValue: customDeparture,
+            selectedLocation: departureCustomLocation,
+          })
+        : null,
+    [customDeparture, departureCustomLocation, departureMode],
+  );
+
+  const destinationHint = React.useMemo(
+    () =>
+      destinationMode === 'custom'
+        ? buildCustomLocationHint({
+            customValue: customDestination,
+            selectedLocation: destinationCustomLocation,
+          })
+        : null,
+    [customDestination, destinationCustomLocation, destinationMode],
+  );
+
   return {
     addCustomTag,
+    applyLocationSelection,
     canSubmit,
     customTagInput,
     departure: {
       customValue: customDeparture,
       disabledLabel:
         destinationMode === 'preset' ? destinationPreset || null : null,
+      hasMapSelection: Boolean(departureCustomLocation),
+      helperText: departureHint?.text ?? null,
+      helperTone: departureHint?.tone ?? null,
+      mapActionDisabled: !normalizeLocationName(customDeparture),
+      mapActionLabel: departureCustomLocation ? '변경' : '지도에서 선택',
       mode: departureMode,
       options: DEPARTURE_OPTIONS,
-      selectedLabel: departureLabel,
+      selectedLabel:
+        departureMode === 'custom'
+          ? normalizeLocationName(customDeparture)
+          : departurePreset,
+      selectedLocation: departureCustomLocation,
     },
     departureTime: {
       hour: selectedHour,
@@ -430,9 +572,18 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
       customValue: customDestination,
       disabledLabel:
         departureMode === 'preset' ? departurePreset || null : null,
+      hasMapSelection: Boolean(destinationCustomLocation),
+      helperText: destinationHint?.text ?? null,
+      helperTone: destinationHint?.tone ?? null,
+      mapActionDisabled: !normalizeLocationName(customDestination),
+      mapActionLabel: destinationCustomLocation ? '변경' : '지도에서 선택',
       mode: destinationMode,
       options: DESTINATION_OPTIONS,
-      selectedLabel: destinationLabel,
+      selectedLabel:
+        destinationMode === 'custom'
+          ? normalizeLocationName(customDestination)
+          : destinationPreset,
+      selectedLocation: destinationCustomLocation,
     },
     isSubmitting,
     maxMemberOptions: MAX_MEMBER_OPTIONS,
@@ -446,8 +597,8 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
     selectMaxMembers: setMaxMembers,
     selectMinute,
     selectedTags,
-    setCustomDepartureValue: setCustomDeparture,
-    setCustomDestinationValue: setCustomDestination,
+    setCustomDepartureValue,
+    setCustomDestinationValue,
     setCustomTagInput,
     setDetail,
     submitForm,

@@ -10,8 +10,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import {
+  NativeStackNavigationProp,
+  type NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 import Animated, {
   interpolate,
   interpolateColor,
@@ -36,6 +39,7 @@ import {TaxiCreateTagSection} from '../components/TaxiCreateTagSection';
 import {TaxiCreateTimePicker} from '../components/TaxiCreateTimePicker';
 import {useTaxiRecruitForm} from '../hooks/useTaxiRecruitForm';
 import type {TaxiStackParamList} from '../model/navigation';
+import type {TaxiRecruitLocationKind} from '../model/taxiRecruitData';
 
 type RecruitScreenNavigationProp = NativeStackNavigationProp<
   TaxiStackParamList,
@@ -101,11 +105,15 @@ export const RecruitScreen = () => {
   useScreenView();
 
   const navigation = useNavigation<RecruitScreenNavigationProp>();
+  const route =
+    useRoute<NativeStackScreenProps<TaxiStackParamList, 'Recruit'>['route']>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const scrollViewRef = React.useRef<ScrollView>(null);
+  const handledSelectionTokenRef = React.useRef<string | null>(null);
   const {
     addCustomTag,
+    applyLocationSelection,
     canSubmit,
     customTagInput,
     departure,
@@ -133,6 +141,31 @@ export const RecruitScreen = () => {
     togglePresetTag,
   } = useTaxiRecruitForm();
 
+  React.useEffect(() => {
+    const selectionToken = route.params?.selectionToken;
+    const selection = route.params?.selection;
+
+    if (
+      !selectionToken ||
+      !selection ||
+      handledSelectionTokenRef.current === selectionToken
+    ) {
+      return;
+    }
+
+    handledSelectionTokenRef.current = selectionToken;
+    applyLocationSelection(selection);
+    navigation.setParams({
+      selection: undefined,
+      selectionToken: undefined,
+    });
+  }, [
+    applyLocationSelection,
+    navigation,
+    route.params?.selection,
+    route.params?.selectionToken,
+  ]);
+
   const handleSubmit = React.useCallback(async () => {
     const result = await submitForm();
 
@@ -149,6 +182,19 @@ export const RecruitScreen = () => {
       scrollViewRef.current?.scrollToEnd({animated: true});
     }, 120);
   }, []);
+
+  const handlePressMapAction = React.useCallback(
+    (kind: TaxiRecruitLocationKind) => {
+      const section = kind === 'departure' ? departure : destination;
+
+      navigation.navigate('TaxiLocationPicker', {
+        initialLocation: section.selectedLocation ?? undefined,
+        initialName: section.customValue.trim(),
+        kind,
+      });
+    },
+    [departure, destination, navigation],
+  );
 
   const footerPaddingBottom = insets.bottom;
 
@@ -189,12 +235,20 @@ export const RecruitScreen = () => {
                 customPlaceholder="출발지를 직접 입력하세요"
                 customValue={departure.customValue}
                 disabledLabel={departure.disabledLabel}
+                hasMapSelection={departure.hasMapSelection}
+                helperText={departure.helperText}
+                helperTone={departure.helperTone}
+                mapActionDisabled={departure.mapActionDisabled}
+                mapActionLabel={departure.mapActionLabel}
                 mode={departure.mode}
                 options={departure.options}
                 selectedLabel={departure.selectedLabel}
                 title="출발지"
                 onChangeCustomValue={setCustomDepartureValue}
                 onPressCustom={selectDepartureCustom}
+                onPressMapAction={() => {
+                  handlePressMapAction('departure');
+                }}
                 onPressPreset={selectDeparturePreset}
               />
             </Animated.View>
@@ -204,12 +258,20 @@ export const RecruitScreen = () => {
                 customPlaceholder="도착지를 직접 입력하세요"
                 customValue={destination.customValue}
                 disabledLabel={destination.disabledLabel}
+                hasMapSelection={destination.hasMapSelection}
+                helperText={destination.helperText}
+                helperTone={destination.helperTone}
+                mapActionDisabled={destination.mapActionDisabled}
+                mapActionLabel={destination.mapActionLabel}
                 mode={destination.mode}
                 options={destination.options}
                 selectedLabel={destination.selectedLabel}
                 title="도착지"
                 onChangeCustomValue={setCustomDestinationValue}
                 onPressCustom={selectDestinationCustom}
+                onPressMapAction={() => {
+                  handlePressMapAction('destination');
+                }}
                 onPressPreset={selectDestinationPreset}
               />
             </Animated.View>

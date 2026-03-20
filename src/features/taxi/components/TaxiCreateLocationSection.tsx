@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
   FadeInDown,
   FadeOutUp,
@@ -28,12 +29,18 @@ interface TaxiCreateLocationSectionProps {
   customPlaceholder: string;
   customValue: string;
   disabledLabel: string | null;
+  hasMapSelection: boolean;
+  helperText: string | null;
+  helperTone: 'success' | 'warning' | null;
+  mapActionDisabled: boolean;
+  mapActionLabel: string;
   mode: 'preset' | 'custom';
   options: readonly string[][];
   selectedLabel: string;
   title: string;
   onChangeCustomValue: (value: string) => void;
   onPressCustom: () => void;
+  onPressMapAction: () => void;
   onPressPreset: (label: string) => void;
 }
 
@@ -135,12 +142,18 @@ export const TaxiCreateLocationSection = ({
   customPlaceholder,
   customValue,
   disabledLabel,
+  hasMapSelection,
+  helperText,
+  helperTone,
+  mapActionDisabled,
+  mapActionLabel,
   mode,
   options,
   selectedLabel,
   title,
   onChangeCustomValue,
   onPressCustom,
+  onPressMapAction,
   onPressPreset,
 }: TaxiCreateLocationSectionProps) => {
   return (
@@ -175,17 +188,99 @@ export const TaxiCreateLocationSection = ({
           entering={FadeInDown.duration(180)}
           exiting={FadeOutUp.duration(140)}
           layout={LinearTransition.springify()}
-          style={styles.inputShell}>
-          <TextInput
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder={customPlaceholder}
-            placeholderTextColor={COLORS.text.muted}
-            selectionColor={COLORS.brand.primary}
-            style={styles.input}
-            value={customValue}
-            onChangeText={onChangeCustomValue}
-          />
+          style={styles.customSection}>
+          <View style={styles.inputRow}>
+            <TextInput
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholder={customPlaceholder}
+              placeholderTextColor={COLORS.text.muted}
+              selectionColor={COLORS.brand.primary}
+              style={styles.input}
+              value={customValue}
+              onChangeText={onChangeCustomValue}
+            />
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={mapActionDisabled ? 1 : 0.84}
+              disabled={mapActionDisabled}
+              onPress={onPressMapAction}
+              style={[
+                styles.mapActionButton,
+                hasMapSelection
+                  ? styles.mapActionButtonSelected
+                  : styles.mapActionButtonDefault,
+                mapActionDisabled && styles.mapActionButtonDisabled,
+              ]}>
+              <Icon
+                color={
+                  mapActionDisabled
+                    ? COLORS.text.muted
+                    : hasMapSelection
+                    ? COLORS.status.success
+                    : COLORS.accent.blue
+                }
+                name="map-outline"
+                size={16}
+              />
+              <Text
+                style={[
+                  styles.mapActionLabel,
+                  hasMapSelection
+                    ? styles.mapActionLabelSelected
+                    : styles.mapActionLabelDefault,
+                  mapActionDisabled && styles.mapActionLabelDisabled,
+                ]}>
+                {mapActionLabel}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {helperText && helperTone ? (
+            <View
+              style={[
+                styles.banner,
+                helperTone === 'success'
+                  ? styles.successBanner
+                  : styles.warningBanner,
+              ]}>
+              <View style={styles.bannerContent}>
+                <Icon
+                  color={
+                    helperTone === 'success'
+                      ? COLORS.status.success
+                      : COLORS.status.warning
+                  }
+                  name={
+                    helperTone === 'success'
+                      ? 'checkmark-circle'
+                      : 'alert-circle'
+                  }
+                  size={18}
+                />
+                <Text
+                  style={[
+                    styles.bannerLabel,
+                    helperTone === 'success'
+                      ? styles.successBannerLabel
+                      : styles.warningBannerLabel,
+                  ]}>
+                  {helperText}
+                </Text>
+              </View>
+
+              {helperTone === 'success' ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.84}
+                  onPress={onPressMapAction}
+                  style={styles.bannerActionButton}>
+                  <Text style={styles.bannerActionLabel}>변경</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
         </Animated.View>
       ) : null}
     </Animated.View>
@@ -193,6 +288,41 @@ export const TaxiCreateLocationSection = ({
 };
 
 const styles = StyleSheet.create({
+  banner: {
+    alignItems: 'center',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
+  },
+  bannerActionButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
+    justifyContent: 'center',
+    minHeight: 28,
+    paddingHorizontal: 12,
+  },
+  bannerActionLabel: {
+    color: COLORS.status.success,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  bannerContent: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  bannerLabel: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
   card: {
     backgroundColor: COLORS.background.surface,
     borderColor: COLORS.border.subtle,
@@ -200,18 +330,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: SPACING.lg,
     ...SHADOWS.card,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 24,
-    marginBottom: SPACING.md,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
   },
   chip: {
     alignItems: 'center',
@@ -227,7 +345,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 20,
   },
-  inputShell: {
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  customSection: {
+    gap: SPACING.md,
     marginTop: SPACING.md,
   },
   input: {
@@ -236,11 +360,74 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     borderWidth: 1,
     color: COLORS.text.primary,
+    flex: 1,
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
     minHeight: 48,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  mapActionButton: {
+    alignItems: 'center',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'center',
+    minHeight: 48,
+    minWidth: 104,
+    paddingHorizontal: 12,
+  },
+  mapActionButtonDefault: {
+    backgroundColor: COLORS.accent.blueSoft,
+    borderColor: '#BFDBFE',
+  },
+  mapActionButtonDisabled: {
+    backgroundColor: COLORS.background.subtle,
+    borderColor: COLORS.border.default,
+  },
+  mapActionButtonSelected: {
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.border.accent,
+  },
+  mapActionLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  mapActionLabelDefault: {
+    color: COLORS.accent.blue,
+  },
+  mapActionLabelDisabled: {
+    color: COLORS.text.muted,
+  },
+  mapActionLabelSelected: {
+    color: COLORS.status.success,
+  },
+  successBanner: {
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.border.accent,
+  },
+  successBannerLabel: {
+    color: COLORS.status.success,
+  },
+  title: {
+    color: COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 24,
+    marginBottom: SPACING.md,
+  },
+  warningBanner: {
+    backgroundColor: COLORS.accent.orangeSoft,
+    borderColor: '#FED7AA',
+  },
+  warningBannerLabel: {
+    color: COLORS.status.warning,
   },
 });

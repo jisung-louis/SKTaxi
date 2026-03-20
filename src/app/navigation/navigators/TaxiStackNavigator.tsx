@@ -5,6 +5,7 @@ import {
   AcceptancePendingScreen,
   ChatScreen,
   RecruitScreen,
+  TaxiLocationPickerScreen,
   TaxiScreen,
   type TaxiStackParamList,
 } from '@/features/taxi';
@@ -21,6 +22,10 @@ export const TaxiStackNavigator = () => {
       />
       <TaxiStack.Screen name="Chat" component={ChatScreen} />
       <TaxiStack.Screen name="Recruit" component={RecruitScreen} />
+      <TaxiStack.Screen
+        name="TaxiLocationPicker"
+        component={TaxiLocationPickerScreen}
+      />
     </TaxiStack.Navigator>
   );
 };
