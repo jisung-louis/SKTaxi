@@ -1,6 +1,11 @@
 import type {RepositoryError} from '@/shared/lib/errors';
 
-import {buildApiUrl, type ApiQueryParams, type ApiQueryValue} from './apiConfig';
+import {
+  buildApiUrl,
+  getApiRuntimeConfig,
+  type ApiQueryParams,
+  type ApiQueryValue,
+} from './apiConfig';
 import {sanitizeHeadersForLog, sanitizeLogValue} from './apiLogSanitizer';
 
 type HttpRequestLogContext = {
@@ -26,13 +31,33 @@ const isApiQueryValue = (value: unknown): value is ApiQueryValue =>
   typeof value === 'number' ||
   typeof value === 'boolean';
 
-const toLogUrl = (value: string) => {
-  try {
-    const parsed = new URL(value);
-    return `${parsed.pathname}${parsed.search}`;
-  } catch {
+const ABSOLUTE_ORIGIN_PATTERN = /^[a-z]+:\/\/[^/]+/i;
+
+const normalizeBaseUrl = (baseUrl: string) =>
+  baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+const normalizeLogPath = (value: string) => {
+  if (!value) {
+    return '/';
+  }
+
+  const runtimeBaseUrl = normalizeBaseUrl(getApiRuntimeConfig().restBaseUrl);
+
+  if (value.startsWith(runtimeBaseUrl)) {
+    const stripped = value.slice(runtimeBaseUrl.length);
+    return stripped || '/';
+  }
+
+  if (ABSOLUTE_ORIGIN_PATTERN.test(value)) {
+    const stripped = value.replace(ABSOLUTE_ORIGIN_PATTERN, '');
+    return stripped || '/';
+  }
+
+  if (value.startsWith('/')) {
     return value;
   }
+
+  return `/${value}`;
 };
 
 const toApiQueryParams = (value: unknown): ApiQueryParams | undefined => {
@@ -94,7 +119,7 @@ export const createHttpRequestLogContext = (input: {
     requestId: nextRequestId('http'),
     startedAt: Date.now(),
     method: input.method.toUpperCase(),
-    url: toLogUrl(buildApiUrl(input.path, toApiQueryParams(input.params))),
+    url: normalizeLogPath(buildApiUrl(input.path, toApiQueryParams(input.params))),
   };
 
   debugLog(buildHttpLabel('request', context), {
@@ -152,7 +177,7 @@ export const createRealtimeLogContext = (input: {
     requestId: nextRequestId(input.transport),
     startedAt: Date.now(),
     transport: input.transport,
-    url: toLogUrl(input.url),
+    url: normalizeLogPath(input.url),
   };
 
   debugLog(buildRealtimeLabel(input.transport, 'connect', context.url), {
