@@ -46,3 +46,11 @@ export interface NotificationListResponseDto {
   totalPages: number;
   unreadCount: number;
 }
+
+export interface NotificationUnreadCountResponseDto {
+  count: number;
+}
+
+export interface NotificationSnapshotResponseDto {
+  unreadCount: number;
+}

@@ -2,6 +2,7 @@ import React from 'react';
 
 import {useNotificationRepository} from '@/di/useRepository';
 import {useAuth} from '@/features/auth';
+import type {Notification} from '@/features/user/data/repositories/INotificationRepository';
 
 import {
   buildNotificationCenterViewData,
@@ -32,12 +33,17 @@ export const useNotificationCenterData =
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<string | null>(null);
 
-    const load = React.useCallback(async () => {
+    const applyNotifications = React.useCallback(
+      (notifications: Notification[]) => {
+        const items = notifications.map(mapNotificationToInboxItemViewData);
+        setData(buildNotificationCenterViewData(items));
+      },
+      [],
+    );
+
+    const reload = React.useCallback(async () => {
       if (!user?.uid) {
-        setData({
-          sections: [],
-          unreadCount: 0,
-        });
+        applyNotifications([]);
         setError(null);
         setLoading(false);
         return;
@@ -51,19 +57,52 @@ export const useNotificationCenterData =
           user.uid,
           NOTIFICATION_CENTER_LIMIT,
         );
-        const items = notifications.map(mapNotificationToInboxItemViewData);
-        setData(buildNotificationCenterViewData(items));
+        applyNotifications(notifications);
       } catch (loadError) {
-        console.error('알림함 데이터를 불러오지 못했습니다.', loadError);
+        console.error('알림함 데이터를 다시 불러오지 못했습니다.', loadError);
         setError('알림함을 불러오지 못했습니다.');
       } finally {
         setLoading(false);
       }
-    }, [notificationRepository, user?.uid]);
+    }, [applyNotifications, notificationRepository, user?.uid]);
 
     React.useEffect(() => {
-      load().catch(() => undefined);
-    }, [load]);
+      if (!user?.uid) {
+        setData({
+          sections: [],
+          unreadCount: 0,
+        });
+        setError(null);
+        setLoading(false);
+        return undefined;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      const unsubscribe = notificationRepository.subscribeToNotifications(
+        user.uid,
+        NOTIFICATION_CENTER_LIMIT,
+        {
+          onData: notifications => {
+            applyNotifications(notifications);
+            setError(null);
+            setLoading(false);
+          },
+          onError: loadError => {
+            console.error('알림함 데이터를 불러오지 못했습니다.', loadError);
+            setError('알림함을 불러오지 못했습니다.');
+            setLoading(false);
+          },
+        },
+      );
+
+      return () => unsubscribe();
+    }, [
+      applyNotifications,
+      notificationRepository,
+      user?.uid,
+    ]);
 
     const markAsRead = React.useCallback(
       async (notificationId: string) => {
@@ -72,9 +111,8 @@ export const useNotificationCenterData =
         }
 
         await notificationRepository.markAsRead(user.uid, notificationId);
-        await load();
       },
-      [load, notificationRepository, user?.uid],
+      [notificationRepository, user?.uid],
     );
 
     const markAllAsRead = React.useCallback(async () => {
@@ -92,8 +130,7 @@ export const useNotificationCenterData =
       }
 
       await notificationRepository.markAllAsRead(user.uid, unreadIds);
-      await load();
-    }, [data?.sections, load, notificationRepository, user?.uid]);
+    }, [data?.sections, notificationRepository, user?.uid]);
 
     return {
       data,
@@ -101,6 +138,6 @@ export const useNotificationCenterData =
       loading,
       markAllAsRead,
       markAsRead,
-      reload: load,
+      reload,
     };
   };

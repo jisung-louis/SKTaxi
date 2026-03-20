@@ -3,6 +3,7 @@ import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 import type {
   NotificationListResponseDto,
   NotificationResponseDto,
+  NotificationUnreadCountResponseDto,
 } from '../dto/notificationDto';
 
 interface NotificationListParams {
@@ -29,6 +30,12 @@ export class NotificationApiClient {
       {
         params,
       },
+    );
+  }
+
+  getUnreadCount() {
+    return httpClient.get<ApiSuccessResponse<NotificationUnreadCountResponseDto>>(
+      '/v1/notifications/unread-count',
     );
   }
 
