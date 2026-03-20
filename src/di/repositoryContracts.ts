@@ -14,6 +14,7 @@ export type {
 export type {
   INotificationActionRepository,
   IPartyRepository,
+  ITaxiChatRepository,
 } from '@/features/taxi';
 export type {
   ICourseRepository,

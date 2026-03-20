@@ -15,6 +15,7 @@ export type {
   INotificationActionRepository,
   JoinRequestStatusValue,
 } from './data/repositories/INotificationActionRepository';
+export type { ITaxiChatRepository } from './data/repositories/ITaxiChatRepository';
 
 export { useJoinRequest } from './hooks/useJoinRequest';
 export type { UseJoinRequestResult } from './hooks/useJoinRequest';

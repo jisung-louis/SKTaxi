@@ -1,6 +1,11 @@
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
+
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import {
   TAXI_CHAT_CURRENT_USER_ID,
@@ -85,10 +90,28 @@ const taxiChatStore: TaxiChatStore = {
 };
 
 const listeners = new Set<() => void>();
+const partyListeners = new Map<
+  string,
+  Set<SubscriptionCallbacks<TaxiChatSourceData | null>>
+>();
 
 const emitChange = () => {
   listeners.forEach(listener => {
     listener();
+  });
+};
+
+const emitPartyChange = (partyId: string) => {
+  const subscribers = partyListeners.get(partyId);
+
+  if (!subscribers || subscribers.size === 0) {
+    return;
+  }
+
+  const party = taxiChatStore.partiesById[partyId];
+
+  subscribers.forEach(callbacks => {
+    callbacks.onData(party ? clonePartySource(party) : null);
   });
 };
 
@@ -116,6 +139,7 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     });
     taxiChatStore.currentPartyId = partyId;
     emitChange();
+    emitPartyChange(partyId);
 
     return {partyId};
   }
@@ -154,6 +178,7 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
       senderName: TAXI_CHAT_CURRENT_USER_NAME,
       text: messageText,
     });
+    emitPartyChange(partyId);
 
     return clonePartySource(party);
   }
@@ -173,6 +198,30 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     };
   }
 
+  subscribeToPartyChat(
+    partyId: string,
+    callbacks: SubscriptionCallbacks<TaxiChatSourceData | null>,
+  ): Unsubscribe {
+    const bucket = partyListeners.get(partyId) ?? new Set();
+    bucket.add(callbacks);
+    partyListeners.set(partyId, bucket);
+    callbacks.onData(clonePartySource(this.ensureParty(partyId)));
+
+    return () => {
+      const currentBucket = partyListeners.get(partyId);
+
+      if (!currentBucket) {
+        return;
+      }
+
+      currentBucket.delete(callbacks);
+
+      if (currentBucket.size === 0) {
+        partyListeners.delete(partyId);
+      }
+    };
+  }
+
   async updateNotificationSetting(
     partyId: string,
     enabled: boolean,
@@ -181,6 +230,7 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
 
     const party = this.ensureParty(partyId);
     party.notificationEnabled = enabled;
+    emitPartyChange(partyId);
     return clonePartySource(party);
   }
 }

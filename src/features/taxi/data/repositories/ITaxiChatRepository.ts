@@ -1,3 +1,8 @@
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
+
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import type {
   TaxiChatSessionSnapshot,
@@ -14,6 +19,10 @@ export interface ITaxiChatRepository {
     messageText: string,
   ): Promise<TaxiChatSourceData | null>
   setCurrentParty(partyId: string): Promise<void>
+  subscribeToPartyChat(
+    partyId: string,
+    callbacks: SubscriptionCallbacks<TaxiChatSourceData | null>,
+  ): Unsubscribe
   subscribeToSession(listener: () => void): () => void
   updateNotificationSetting(
     partyId: string,

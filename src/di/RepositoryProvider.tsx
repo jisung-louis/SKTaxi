@@ -15,6 +15,7 @@ import { SpringAppNoticeRepository } from '@/features/settings/data/repositories
 import { MockInquiryRepository } from '@/features/settings/data/repositories/MockInquiryRepository';
 import { MockPartyRepository } from '@/features/taxi/data/repositories/MockPartyRepository';
 import { MockNotificationActionRepository } from '@/features/taxi/data/repositories/MockNotificationActionRepository';
+import { SpringTaxiChatRepository } from '@/features/taxi/data/repositories/SpringTaxiChatRepository';
 import { MockCourseRepository } from '@/features/timetable/data/repositories/MockCourseRepository';
 import { MockTimetableRepository } from '@/features/timetable/data/repositories/MockTimetableRepository';
 import { SpringNotificationRepository } from '@/features/user/data/repositories/SpringNotificationRepository';
@@ -57,6 +58,7 @@ export function RepositoryProvider({ children, customRepositories }: RepositoryP
       authRepository: new FirebaseAuthRepository(),
       memberRepository: new SpringMemberRepository(),
       notificationActionRepository: new MockNotificationActionRepository(),
+      taxiChatRepository: new SpringTaxiChatRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

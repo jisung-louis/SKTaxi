@@ -17,6 +17,7 @@ import type {
   INoticeRepository,
   IPartyRepository,
   IStorageRepository,
+  ITaxiChatRepository,
   ITimetableRepository,
   IUserRepository,
 } from './repositoryContracts';
@@ -41,6 +42,7 @@ export interface RepositoryContainer {
   authRepository: IAuthRepository;
   memberRepository: IMemberRepository;
   notificationActionRepository: INotificationActionRepository;
+  taxiChatRepository: ITaxiChatRepository;
 }
 
 /**

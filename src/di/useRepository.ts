@@ -19,6 +19,7 @@ import type {
   INoticeRepository,
   IPartyRepository,
   IStorageRepository,
+  ITaxiChatRepository,
   ITimetableRepository,
   IUserRepository,
 } from './repositoryContracts';
@@ -161,6 +162,14 @@ export function useMemberRepository(): IMemberRepository {
 export function useNotificationActionRepository(): INotificationActionRepository {
   const { notificationActionRepository } = useRepositories();
   return notificationActionRepository;
+}
+
+/**
+ * Taxi chat Repository 접근 훅
+ */
+export function useTaxiChatRepository(): ITaxiChatRepository {
+  const { taxiChatRepository } = useRepositories();
+  return taxiChatRepository;
 }
 
 /**
