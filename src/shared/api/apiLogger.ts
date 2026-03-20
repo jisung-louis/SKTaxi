@@ -65,6 +65,24 @@ const debugLog = (label: string, payload: Record<string, unknown>) => {
   console.log(label, payload);
 };
 
+const buildHttpLabel = (
+  phase: 'request' | 'response' | 'error',
+  context: HttpRequestLogContext,
+  statusCode?: number,
+) => {
+  if (phase === 'response' && statusCode) {
+    return `[api][response][${statusCode}][${context.method} ${context.url}]`;
+  }
+
+  return `[api][${phase}][${context.method} ${context.url}]`;
+};
+
+const buildRealtimeLabel = (
+  transport: 'sse' | 'stomp',
+  phase: 'connect' | 'prepared' | 'connected' | 'error',
+  path: string,
+) => `[api][${transport}][${phase}][${path}]`;
+
 export const createHttpRequestLogContext = (input: {
   method: string;
   path: string;
@@ -79,10 +97,10 @@ export const createHttpRequestLogContext = (input: {
     url: toLogUrl(buildApiUrl(input.path, toApiQueryParams(input.params))),
   };
 
-  debugLog('[api][request]', {
+  debugLog(buildHttpLabel('request', context), {
     requestId: context.requestId,
     method: context.method,
-    url: context.url,
+    path: context.url,
     params: sanitizeLogValue(input.params),
     headers: sanitizeHeadersForLog(input.headers),
     body: sanitizeLogValue(input.body),
@@ -98,10 +116,10 @@ export const logHttpResponse = (
     data?: unknown;
   },
 ) => {
-  debugLog('[api][response]', {
+  debugLog(buildHttpLabel('response', context, input.statusCode), {
     requestId: context.requestId,
     method: context.method,
-    url: context.url,
+    path: context.url,
     statusCode: input.statusCode,
     durationMs: getDurationMs(context.startedAt),
     data: sanitizeLogValue(input.data),
@@ -112,10 +130,10 @@ export const logHttpError = (
   context: HttpRequestLogContext,
   error: RepositoryError,
 ) => {
-  debugLog('[api][error]', {
+  debugLog(buildHttpLabel('error', context), {
     requestId: context.requestId,
     method: context.method,
-    url: context.url,
+    path: context.url,
     durationMs: getDurationMs(context.startedAt),
     errorName: error.name,
     repositoryErrorCode: error.code,
@@ -137,10 +155,10 @@ export const createRealtimeLogContext = (input: {
     url: toLogUrl(input.url),
   };
 
-  debugLog(`[api][${input.transport}][connect]`, {
+  debugLog(buildRealtimeLabel(input.transport, 'connect', context.url), {
     requestId: context.requestId,
     transport: input.transport,
-    url: context.url,
+    path: context.url,
     headers: sanitizeHeadersForLog(input.headers),
     extra: sanitizeLogValue(input.extra),
   });
@@ -152,10 +170,10 @@ export const logRealtimePrepared = (
   context: RealtimeLogContext,
   extra?: Record<string, unknown>,
 ) => {
-  debugLog(`[api][${context.transport}][prepared]`, {
+  debugLog(buildRealtimeLabel(context.transport, 'prepared', context.url), {
     requestId: context.requestId,
     transport: context.transport,
-    url: context.url,
+    path: context.url,
     durationMs: getDurationMs(context.startedAt),
     extra: sanitizeLogValue(extra),
   });
@@ -165,10 +183,10 @@ export const logRealtimeConnected = (
   context: RealtimeLogContext,
   extra?: Record<string, unknown>,
 ) => {
-  debugLog(`[api][${context.transport}][connected]`, {
+  debugLog(buildRealtimeLabel(context.transport, 'connected', context.url), {
     requestId: context.requestId,
     transport: context.transport,
-    url: context.url,
+    path: context.url,
     durationMs: getDurationMs(context.startedAt),
     extra: sanitizeLogValue(extra),
   });
@@ -186,10 +204,10 @@ export const logRealtimeError = (
         }
       : sanitizeLogValue(error);
 
-  debugLog(`[api][${context.transport}][error]`, {
+  debugLog(buildRealtimeLabel(context.transport, 'error', context.url), {
     requestId: context.requestId,
     transport: context.transport,
-    url: context.url,
+    path: context.url,
     durationMs: getDurationMs(context.startedAt),
     error: normalizedError,
   });
