@@ -194,6 +194,11 @@ endpoint / realtime contract:
 - `src/features/taxi/hooks/useTaxiChatDetailData.ts`
 - `src/di/RepositoryProvider.tsx`
 
+runtime note:
+
+- `SpringTaxiChatRepository`는 subscriber가 0명이 되거나 auth session uid가 바뀌면 STOMP client를 deactivate하고 party state를 정리한다.
+- 따라서 로그아웃 후 다른 계정 로그인 시 이전 CONNECT Authorization 세션을 재사용하지 않는다.
+
 ---
 
 ## 4. 부분 연결 API

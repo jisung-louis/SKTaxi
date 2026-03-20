@@ -28,6 +28,7 @@
 - Notification Center는 REST 초기 로드 + SSE 실시간 반영까지 연결 완료
 - Taxi Home은 Spring REST query + join request/pending/chat entry 범위까지 연결 완료
 - Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 부분 이전 완료
+- Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
@@ -39,6 +40,7 @@
 - 이제 App Notice / Notification Center는 실서버 기준으로 동작하고, Notification Center는 SSE로 실시간 반영된다.
 - Taxi Home도 목록/개인 상태 조회, 동승 요청 생성/취소, 수락 대기 화면, 실제 파티 채팅 진입까지 Spring 기준으로 정리됐다.
 - Taxi Chat detail도 mock singleton이 아니라 Spring REST/STOMP를 source of truth로 사용하기 시작했다.
+- Taxi Chat detail의 STOMP client는 로그아웃/계정 전환 시 이전 Authorization 세션을 재사용하지 않도록 정리된다.
 
 ---
 
@@ -329,6 +331,17 @@ feature별 상태:
 - Taxi Party domain의 전체 command/state transition과 `IPartyRepository` Spring concrete 구현은 아직 남아 있다.
 - 일반 community/custom chat list/detail, `/v1/chat-rooms`, `/user/queue/chat-rooms` 기반 요약 갱신은 아직 legacy/mock 경로가 남아 있다.
 
+### 4.10 Phase D blocker fix
+
+이번 스레드에서는 Taxi Chat detail의 STOMP lifecycle/auth reset blocker를 정리했다.
+
+- `SpringTaxiChatRepository`는 마지막 subscriber가 해제되면 room subscription뿐 아니라 STOMP client 자체를 deactivate한다.
+- `SpringTaxiChatRepository.resetSession()`은 auth 세션 변경 시 `currentPartyId`, party state cache, room/error subscription, STOMP client를 함께 정리한다.
+- `useAuthSession()`은 로그아웃 직전과 auth uid 변경 시 `taxiChatRepository.resetSession()`을 호출한다.
+- 따라서 새 계정의 첫 STOMP 구독은 기존 connected socket을 재사용하지 않고, 새 `beforeConnect`에서 새 token으로 다시 연결한다.
+
+이 blocker fix 기준으로는 Phase D close 판단을 막던 STOMP auth/session 재사용 리스크가 해소됐다.
+
 ---
 
 ## 5. 현재 남아 있는 구조 상태
@@ -437,7 +450,7 @@ Phase D 반영 후 구조 상태:
 즉:
 
 - Notification SSE는 `xhrSseStream` 기반 concrete client가 연결된 상태다.
-- Taxi Chat detail은 `@stomp/stompjs`를 사용한 concrete STOMP client가 연결된 상태다.
+- Taxi Chat detail은 `@stomp/stompjs`를 사용한 concrete STOMP client가 연결된 상태고, subscriber 0건 또는 auth uid 변경 시 해당 client를 정리한다.
 - 아직 Taxi Party SSE나 일반 chat summary realtime은 이 공통 레이어를 재사용하는 다음 phase 작업으로 남아 있다.
 
 ---
@@ -450,4 +463,5 @@ Phase D 반영 후 구조 상태:
 - Phase B 후속 정리 완료
 - Phase C는 App Notice / Notification Center / Taxi Home 완료 상태
 - Phase D는 Notification realtime까지 완료
+- Phase D blocker fix까지 반영되어 close 가능 상태
 - Phase F는 Taxi Chat detail 범위에서 부분 진행 상태
