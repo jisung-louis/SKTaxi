@@ -61,6 +61,12 @@ export class TaxiHomeApiClient {
     );
   }
 
+  closeParty(partyId: string) {
+    return httpClient.patch<ApiSuccessResponse<PartyStatusResponseDto>>(
+      `/v1/parties/${partyId}/close`,
+    );
+  }
+
   getMyJoinRequests(params?: {status?: JoinRequestStatusDto}) {
     return httpClient.get<ApiSuccessResponse<JoinRequestListItemResponseDto[]>>(
       '/v1/members/me/join-requests',
@@ -107,9 +113,27 @@ export class TaxiHomeApiClient {
     );
   }
 
+  leaveParty(partyId: string) {
+    return httpClient.delete<ApiSuccessResponse<null>>(
+      `/v1/parties/${partyId}/members/me`,
+    );
+  }
+
+  endParty(partyId: string) {
+    return httpClient.patch<ApiSuccessResponse<PartyStatusResponseDto>>(
+      `/v1/parties/${partyId}/end`,
+    );
+  }
+
   confirmSettlement(partyId: string, memberId: string) {
     return httpClient.patch<ApiSuccessResponse<SettlementConfirmResponseDto>>(
       `/v1/parties/${partyId}/settlement/members/${memberId}/confirm`,
+    );
+  }
+
+  reopenParty(partyId: string) {
+    return httpClient.patch<ApiSuccessResponse<PartyStatusResponseDto>>(
+      `/v1/parties/${partyId}/reopen`,
     );
   }
 

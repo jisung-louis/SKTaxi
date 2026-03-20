@@ -8,6 +8,7 @@ export interface ChatThreadHeaderViewData {
 
 export interface ChatThreadMenuViewData {
   canReport?: boolean
+  canLeave?: boolean
   leaveLabel: string
   notificationEnabled: boolean
 }

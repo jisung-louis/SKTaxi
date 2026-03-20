@@ -429,6 +429,59 @@ export class MockPartyRepository implements IPartyRepository {
     emitPartyDetail(partyId);
   }
 
+  async closeParty(partyId: string): Promise<void> {
+    const current = parties.get(partyId);
+    if (!current) {
+      return;
+    }
+
+    parties.set(partyId, {
+      ...current,
+      status: 'closed',
+      updatedAt: nowIso(),
+    });
+    emitPartyList();
+    emitPartyDetail(partyId);
+  }
+
+  async reopenParty(partyId: string): Promise<void> {
+    const current = parties.get(partyId);
+    if (!current) {
+      return;
+    }
+
+    parties.set(partyId, {
+      ...current,
+      status: 'open',
+      updatedAt: nowIso(),
+    });
+    emitPartyList();
+    emitPartyDetail(partyId);
+  }
+
+  async endParty(partyId: string): Promise<void> {
+    const current = parties.get(partyId);
+    if (!current) {
+      return;
+    }
+
+    parties.set(partyId, {
+      ...current,
+      endedAt: nowIso(),
+      endReason: 'arrived',
+      settlement: current.settlement
+        ? {
+            ...current.settlement,
+            status: 'completed',
+          }
+        : current.settlement,
+      status: 'ended',
+      updatedAt: nowIso(),
+    });
+    emitPartyList();
+    emitPartyDetail(partyId);
+  }
+
   async addMember(partyId: string, userId: string): Promise<void> {
     const current = parties.get(partyId);
     if (!current || current.members.includes(userId)) {
@@ -469,6 +522,21 @@ export class MockPartyRepository implements IPartyRepository {
     });
     emitPartyList();
     emitPartyDetail(partyId);
+  }
+
+  async leaveParty(partyId: string): Promise<void> {
+    const current = parties.get(partyId);
+    if (!current) {
+      return;
+    }
+
+    const leaverId = current.members.find(memberId => memberId !== current.leaderId);
+
+    if (!leaverId) {
+      return;
+    }
+
+    await this.removeMember(partyId, leaverId);
   }
 
   async getParty(partyId: string): Promise<Party | null> {

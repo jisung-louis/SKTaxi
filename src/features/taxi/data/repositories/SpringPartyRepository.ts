@@ -570,6 +570,21 @@ export class SpringPartyRepository implements IPartyRepository {
     await this.refreshActiveSubscriptions();
   }
 
+  async closeParty(partyId: string): Promise<void> {
+    await taxiHomeApiClient.closeParty(partyId);
+    await this.refreshActiveSubscriptions();
+  }
+
+  async reopenParty(partyId: string): Promise<void> {
+    await taxiHomeApiClient.reopenParty(partyId);
+    await this.refreshActiveSubscriptions();
+  }
+
+  async endParty(partyId: string): Promise<void> {
+    await taxiHomeApiClient.endParty(partyId);
+    await this.refreshActiveSubscriptions();
+  }
+
   async addMember(_partyId: string, _userId: string): Promise<void> {
     throw new RepositoryError(
       RepositoryErrorCode.INVALID_ARGUMENT,
@@ -579,6 +594,11 @@ export class SpringPartyRepository implements IPartyRepository {
 
   async removeMember(partyId: string, userId: string): Promise<void> {
     await taxiHomeApiClient.kickMember(partyId, userId);
+    await this.refreshActiveSubscriptions();
+  }
+
+  async leaveParty(partyId: string): Promise<void> {
+    await taxiHomeApiClient.leaveParty(partyId);
     await this.refreshActiveSubscriptions();
   }
 
@@ -802,9 +822,12 @@ export class SpringPartyRepository implements IPartyRepository {
     settlementData: SettlementData,
   ): Promise<void> {
     const settlementTargetCount = Object.keys(settlementData.members).length;
+    const taxiFare =
+      settlementData.taxiFare ??
+      settlementData.perPersonAmount * settlementTargetCount;
 
     await taxiHomeApiClient.arriveParty(partyId, {
-      taxiFare: settlementData.perPersonAmount * settlementTargetCount,
+      taxiFare,
     });
     await this.refreshActiveSubscriptions();
   }

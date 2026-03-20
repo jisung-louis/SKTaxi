@@ -53,6 +53,8 @@ const clonePartySource = (
     ...message,
     avatar: message.avatar ? {...message.avatar} : undefined,
   })),
+  participants: source.participants.map(participant => ({...participant})),
+  settlement: source.settlement ? {...source.settlement} : undefined,
   summary: {...source.summary},
 });
 
@@ -100,15 +102,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     return {
       currentPartyId: this.currentPartyId,
     };
-  }
-
-  async leaveParty(partyId: string): Promise<void> {
-    await taxiChatApiClient.leaveParty(partyId);
-
-    if (this.currentPartyId === partyId) {
-      this.currentPartyId = null;
-      this.emitSessionChange();
-    }
   }
 
   async resetSession(): Promise<void> {

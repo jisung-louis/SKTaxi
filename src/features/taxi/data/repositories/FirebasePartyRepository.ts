@@ -23,6 +23,10 @@ import type {
   SubscriptionCallbacks,
   Unsubscribe,
 } from '@/shared/types/subscription';
+import {
+  RepositoryError,
+  RepositoryErrorCode,
+} from '@/shared/lib/errors';
 
 import type {
   AccountMessageData,
@@ -159,6 +163,32 @@ export class FirebasePartyRepository implements IPartyRepository {
     });
   }
 
+  async closeParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      status: 'closed',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async reopenParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      status: 'open',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async endParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      endedAt: serverTimestamp(),
+      endReason: 'arrived',
+      status: 'ended',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
   async addMember(partyId: string, userId: string): Promise<void> {
     const docRef = doc(this.db, this.collectionName, partyId);
     await updateDoc(docRef, {
@@ -173,6 +203,18 @@ export class FirebasePartyRepository implements IPartyRepository {
       members: arrayRemove(userId),
       updatedAt: serverTimestamp(),
     });
+  }
+
+  async leaveParty(partyId: string): Promise<void> {
+    throw new RepositoryError(
+      RepositoryErrorCode.INVALID_ARGUMENT,
+      'Firestore 파티 저장소의 direct leave는 현재 사용자 문맥 없이 지원하지 않습니다.',
+      {
+        context: {
+          partyId,
+        },
+      },
+    );
   }
 
   async getParty(partyId: string): Promise<Party | null> {

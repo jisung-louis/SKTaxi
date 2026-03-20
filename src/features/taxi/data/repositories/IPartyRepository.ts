@@ -83,6 +83,24 @@ export interface IPartyRepository {
   deleteParty(partyId: string, reason: Party['endReason']): Promise<void>;
 
   /**
+   * 파티 모집 마감
+   * @param partyId - 파티 ID
+   */
+  closeParty(partyId: string): Promise<void>;
+
+  /**
+   * 파티 모집 재개
+   * @param partyId - 파티 ID
+   */
+  reopenParty(partyId: string): Promise<void>;
+
+  /**
+   * 파티 강제 종료
+   * @param partyId - 파티 ID
+   */
+  endParty(partyId: string): Promise<void>;
+
+  /**
    * 파티에 멤버 추가
    * @param partyId - 파티 ID
    * @param userId - 추가할 사용자 ID
@@ -95,6 +113,12 @@ export interface IPartyRepository {
    * @param userId - 제거할 사용자 ID
    */
   removeMember(partyId: string, userId: string): Promise<void>;
+
+  /**
+   * 현재 사용자가 파티에서 나가기
+   * @param partyId - 파티 ID
+   */
+  leaveParty(partyId: string): Promise<void>;
 
   /**
    * 특정 파티 단일 조회 (구독 없이)

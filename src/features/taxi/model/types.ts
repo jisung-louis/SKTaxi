@@ -61,6 +61,7 @@ export interface JoinRequestStatus {
 export interface SettlementData {
   perPersonAmount: number;
   members: Record<string, PartySettlementMember>;
+  taxiFare?: number;
 }
 
 export interface AccountMessageData {

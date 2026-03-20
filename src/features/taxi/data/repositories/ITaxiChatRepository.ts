@@ -13,7 +13,6 @@ export interface ITaxiChatRepository {
   createPartyChat(draft: TaxiRecruitDraft): Promise<{partyId: string}>
   getPartyChat(partyId: string): Promise<TaxiChatSourceData | null>
   getSessionSnapshot(): TaxiChatSessionSnapshot
-  leaveParty(partyId: string): Promise<void>
   resetSession(): Promise<void>
   sendMessage(
     partyId: string,

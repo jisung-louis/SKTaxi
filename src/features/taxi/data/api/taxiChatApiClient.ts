@@ -30,12 +30,6 @@ export class TaxiChatApiClient {
     );
   }
 
-  leaveParty(partyId: string) {
-    return httpClient.delete<ApiSuccessResponse<null>>(
-      `/v1/parties/${partyId}/members/me`,
-    );
-  }
-
   markAsRead(chatRoomId: string, lastReadAt: string) {
     return httpClient.patch<ApiSuccessResponse<ChatReadUpdateResponseDto>>(
       `/v1/chat-rooms/${chatRoomId}/read`,

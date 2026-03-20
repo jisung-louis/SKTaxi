@@ -29,8 +29,17 @@ import {
 import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
 import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
 import type {TaxiStackParamList} from '../model/navigation';
+import type {TaxiChatSummaryMemberActionViewData} from '../model/taxiChatViewData';
 
 type TaxiChatNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallback;
+};
 
 export const ChatScreen = () => {
   useScreenView();
@@ -40,10 +49,38 @@ export const ChatScreen = () => {
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {data, error, leaveParty, loading, reload, sendMessage, toggleNotification} =
-    useTaxiChatDetailData(route.params?.partyId);
+  const {
+    actionInFlightId,
+    closeParty,
+    confirmSettlement,
+    data,
+    endParty,
+    error,
+    kickMember,
+    leaveParty,
+    loading,
+    reload,
+    reopenParty,
+    sendMessage,
+    startSettlement,
+    toggleNotification,
+  } = useTaxiChatDetailData(route.params?.partyId);
   const [composerValue, setComposerValue] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
+  const [arrivalEditorVisible, setArrivalEditorVisible] = React.useState(false);
+  const [arrivalFareInput, setArrivalFareInput] = React.useState('');
+
+  React.useEffect(() => {
+    const canArrive =
+      data?.summary.management.primaryActions.some(
+        action => action.id === 'arrive',
+      ) ?? false;
+
+    if (!canArrive && arrivalEditorVisible) {
+      setArrivalEditorVisible(false);
+      setArrivalFareInput('');
+    }
+  }, [arrivalEditorVisible, data]);
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -54,19 +91,169 @@ export const ChatScreen = () => {
     navigation.navigate('TaxiMain');
   }, [navigation]);
 
+  const runAction = React.useCallback(
+    async ({
+      fallbackMessage,
+      onSuccess,
+      task,
+      title,
+    }: {
+      fallbackMessage: string;
+      onSuccess?: () => void;
+      task: () => Promise<void>;
+      title: string;
+    }) => {
+      try {
+        await task();
+        onSuccess?.();
+      } catch (actionError) {
+        Alert.alert(title, getErrorMessage(actionError, fallbackMessage));
+      }
+    },
+    [],
+  );
+
   const handleLeaveParty = React.useCallback(() => {
-    Alert.alert('채팅방 나가기', '현재 파티 채팅방에서 나갈까요?', [
+    Alert.alert('파티 나가기', '현재 파티에서 나갈까요?', [
       {text: '취소', style: 'cancel'},
       {
         text: '나가기',
         style: 'destructive',
-        onPress: async () => {
-          await leaveParty();
-          navigation.navigate('TaxiMain');
+        onPress: () => {
+          runAction({
+            fallbackMessage: '파티를 나가지 못했습니다.',
+            onSuccess: () => {
+              navigation.navigate('TaxiMain');
+            },
+            task: async () => {
+              await leaveParty();
+            },
+            title: '파티 나가기 실패',
+          }).catch(() => undefined);
         },
       },
     ]);
-  }, [leaveParty, navigation]);
+  }, [leaveParty, navigation, runAction]);
+
+  const handlePressLeaderAction = React.useCallback(
+    (actionId: 'close' | 'reopen' | 'arrive' | 'end') => {
+      setMenuVisible(false);
+
+      if (actionId === 'arrive') {
+        setArrivalEditorVisible(true);
+        return;
+      }
+
+      const actionConfig = {
+        close: {
+          confirmMessage: '새 동승 요청을 받지 않도록 모집을 마감할까요?',
+          fallbackMessage: '모집 마감에 실패했습니다.',
+          task: closeParty,
+          title: '모집 마감',
+        },
+        end: {
+          confirmMessage: '도착 정산을 마치고 파티를 종료할까요?',
+          fallbackMessage: '파티 종료에 실패했습니다.',
+          onSuccess: () => {
+            navigation.navigate('TaxiMain');
+          },
+          task: endParty,
+          title: '파티 종료',
+        },
+        reopen: {
+          confirmMessage: '다시 동승 요청을 받을 수 있도록 모집을 재개할까요?',
+          fallbackMessage: '모집 재개에 실패했습니다.',
+          task: reopenParty,
+          title: '모집 재개',
+        },
+      }[actionId];
+
+      Alert.alert(actionConfig.title, actionConfig.confirmMessage, [
+        {text: '취소', style: 'cancel'},
+        {
+          text: '확인',
+          onPress: () => {
+            runAction({
+              fallbackMessage: actionConfig.fallbackMessage,
+              onSuccess: actionConfig.onSuccess,
+              task: async () => {
+                await actionConfig.task();
+              },
+              title: `${actionConfig.title} 실패`,
+            }).catch(() => undefined);
+          },
+        },
+      ]);
+    },
+    [closeParty, endParty, navigation, reopenParty, runAction],
+  );
+
+  const handlePressMemberAction = React.useCallback(
+    (memberAction: TaxiChatSummaryMemberActionViewData) => {
+      if (memberAction.actionId === 'kick') {
+        Alert.alert(
+          '멤버 내보내기',
+          `${memberAction.label}님을 파티에서 내보낼까요?`,
+          [
+            {text: '취소', style: 'cancel'},
+            {
+              text: '내보내기',
+              style: 'destructive',
+              onPress: () => {
+                runAction({
+                  fallbackMessage: '멤버를 내보내지 못했습니다.',
+                  task: async () => {
+                    await kickMember(memberAction.id);
+                  },
+                  title: '멤버 내보내기 실패',
+                }).catch(() => undefined);
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      if (memberAction.actionId === 'confirmSettlement') {
+        Alert.alert(
+          '정산 확인',
+          `${memberAction.label}님의 정산 완료를 확인할까요?`,
+          [
+            {text: '취소', style: 'cancel'},
+            {
+              text: '확인',
+              onPress: () => {
+                runAction({
+                  fallbackMessage: '정산 확인에 실패했습니다.',
+                  task: async () => {
+                    await confirmSettlement(memberAction.id);
+                  },
+                  title: '정산 확인 실패',
+                }).catch(() => undefined);
+              },
+            },
+          ],
+        );
+      }
+    },
+    [confirmSettlement, kickMember, runAction],
+  );
+
+  const handleSubmitArrivalFare = React.useCallback(() => {
+    const parsedTaxiFare = Number(arrivalFareInput.replace(/,/g, '').trim());
+
+    runAction({
+      fallbackMessage: '도착 처리에 실패했습니다.',
+      onSuccess: () => {
+        setArrivalEditorVisible(false);
+        setArrivalFareInput('');
+      },
+      task: async () => {
+        await startSettlement(parsedTaxiFare);
+      },
+      title: '도착 처리 실패',
+    }).catch(() => undefined);
+  }, [arrivalFareInput, runAction, startSettlement]);
 
   const handleSend = React.useCallback(
     async (messageText: string) => {
@@ -116,7 +303,22 @@ export const ChatScreen = () => {
             <View style={styles.threadWrap}>
               <ChatMessageList
                 contentContainerStyle={styles.threadContent}
-                headerContent={<TaxiChatSummaryCard summary={data.summary} />}
+                headerContent={
+                  <TaxiChatSummaryCard
+                    arrivalEditorVisible={arrivalEditorVisible}
+                    arrivalFareInput={arrivalFareInput}
+                    loadingActionId={actionInFlightId}
+                    summary={data.summary}
+                    onCancelArrivalEditor={() => {
+                      setArrivalEditorVisible(false);
+                      setArrivalFareInput('');
+                    }}
+                    onChangeArrivalFareInput={setArrivalFareInput}
+                    onPressLeaderAction={handlePressLeaderAction}
+                    onPressMemberAction={handlePressMemberAction}
+                    onSubmitArrivalFare={handleSubmitArrivalFare}
+                  />
+                }
                 items={data.items}
               />
             </View>
@@ -145,7 +347,7 @@ export const ChatScreen = () => {
             leaveLabel={data.menu.leaveLabel}
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}
-            onLeave={handleLeaveParty}
+            onLeave={data.menu.canLeave ? handleLeaveParty : undefined}
             onToggleNotification={() => {
               toggleNotification().catch(() => undefined);
             }}

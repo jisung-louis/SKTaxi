@@ -20,7 +20,7 @@ interface ChatPopupMenuProps {
   leaveLabel: string
   notificationEnabled: boolean
   onClose: () => void
-  onLeave: () => void
+  onLeave?: () => void
   onReport?: () => void
   onToggleNotification: () => void
   right?: number
@@ -60,6 +60,8 @@ export const ChatPopupMenu = ({
   if (!visible) {
     return null;
   }
+
+  const showLeaveAction = Boolean(onLeave);
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
@@ -102,19 +104,25 @@ export const ChatPopupMenu = ({
           </TouchableOpacity>
         ) : null}
 
-        <View style={styles.divider} />
+        {showLeaveAction ? <View style={styles.divider} /> : null}
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.82}
-          onPress={() => {
-            onClose();
-            onLeave();
-          }}
-          style={styles.actionRow}>
-          <Icon color={COLORS.status.danger} name="log-out-outline" size={15} />
-          <Text style={styles.leaveLabel}>{leaveLabel}</Text>
-        </TouchableOpacity>
+        {showLeaveAction ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            onPress={() => {
+              onClose();
+              onLeave?.();
+            }}
+            style={styles.actionRow}>
+            <Icon
+              color={COLORS.status.danger}
+              name="log-out-outline"
+              size={15}
+            />
+            <Text style={styles.leaveLabel}>{leaveLabel}</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     </View>
   );

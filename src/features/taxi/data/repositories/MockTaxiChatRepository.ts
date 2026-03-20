@@ -46,13 +46,31 @@ const createPartySource = ({
 }): TaxiChatSourceData => ({
   composerPlaceholder: '메시지를 입력하세요',
   id: partyId,
+  leaderId: TAXI_CHAT_CURRENT_USER_ID,
   maxMembers,
   memberCount: 1,
   notificationEnabled: true,
+  participants: [
+    {
+      id: TAXI_CHAT_CURRENT_USER_ID,
+      isLeader: true,
+      name: TAXI_CHAT_CURRENT_USER_NAME,
+      settled: false,
+    },
+  ],
+  partyStatus: 'open',
   summary: {
     departureLabel,
     departureTimeLabel: formatDepartureTimeLabel(departureAtISO),
     destinationLabel,
+    management: {
+      canLeave: false,
+      isLeader: true,
+      memberActions: [],
+      primaryActions: [],
+      statusLabel: '',
+      statusTone: 'open',
+    },
     memberSummaryLabel: `1/${maxMembers}명`,
     tagLabel: tags[0] ?? '#빠른출발',
   },
@@ -76,6 +94,8 @@ const clonePartySource = (party: TaxiChatSourceData): TaxiChatSourceData => ({
     ...message,
     avatar: message.avatar ? {...message.avatar} : undefined,
   })),
+  participants: party.participants.map(participant => ({...participant})),
+  settlement: party.settlement ? {...party.settlement} : undefined,
   summary: {...party.summary},
 });
 
@@ -153,15 +173,6 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     return {
       currentPartyId: taxiChatStore.currentPartyId,
     };
-  }
-
-  async leaveParty(partyId: string): Promise<void> {
-    await wait();
-
-    if (taxiChatStore.currentPartyId === partyId) {
-      taxiChatStore.currentPartyId = null;
-      emitChange();
-    }
   }
 
   async resetSession(): Promise<void> {
