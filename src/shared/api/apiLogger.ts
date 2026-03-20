@@ -26,6 +26,15 @@ const isApiQueryValue = (value: unknown): value is ApiQueryValue =>
   typeof value === 'number' ||
   typeof value === 'boolean';
 
+const toLogUrl = (value: string) => {
+  try {
+    const parsed = new URL(value);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return value;
+  }
+};
+
 const toApiQueryParams = (value: unknown): ApiQueryParams | undefined => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return undefined;
@@ -67,7 +76,7 @@ export const createHttpRequestLogContext = (input: {
     requestId: nextRequestId('http'),
     startedAt: Date.now(),
     method: input.method.toUpperCase(),
-    url: buildApiUrl(input.path, toApiQueryParams(input.params)),
+    url: toLogUrl(buildApiUrl(input.path, toApiQueryParams(input.params))),
   };
 
   debugLog('[api][request]', {
@@ -125,7 +134,7 @@ export const createRealtimeLogContext = (input: {
     requestId: nextRequestId(input.transport),
     startedAt: Date.now(),
     transport: input.transport,
-    url: input.url,
+    url: toLogUrl(input.url),
   };
 
   debugLog(`[api][${input.transport}][connect]`, {
