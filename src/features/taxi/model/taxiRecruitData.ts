@@ -18,5 +18,5 @@ export interface TaxiRecruitDraft {
 export interface TaxiRecruitSubmitResult {
   message: string;
   partyId?: string;
-  status: 'mocked';
+  status: 'blocked' | 'mocked' | 'spring';
 }

@@ -1,15 +1,21 @@
 import React from 'react';
 
-import {taxiRecruitRepository} from '../data/repositories/taxiRecruitRepository';
+import {useAuth} from '@/features/auth';
+
+import {createTaxiParty} from '../services/partyCreationService';
 import {
+  DEPARTURE_LOCATION,
   DEPARTURE_OPTIONS,
+  DESTINATION_LOCATION,
   DESTINATION_OPTIONS,
 } from '../model/constants';
 import type {
+  TaxiRecruitLocationValue,
   TaxiRecruitDraft,
   TaxiRecruitLocationMode,
   TaxiRecruitSubmitResult,
 } from '../model/taxiRecruitData';
+import {usePartyRepository} from './usePartyRepository';
 
 const PRESET_TAG_OPTIONS = [
   '#여성전용',
@@ -23,6 +29,36 @@ const PRESET_TAG_OPTIONS = [
 const MAX_MEMBER_OPTIONS = [2, 3, 4, 5, 6, 7] as const;
 const DAY_OFFSET_TOMORROW = 1 as const;
 const DAY_OFFSET_TODAY = 0 as const;
+
+const DEPARTURE_COORDINATES_BY_LABEL = DEPARTURE_OPTIONS.flatMap(
+  (row, rowIndex) =>
+    row.map((label, columnIndex) => ({
+      coordinate: DEPARTURE_LOCATION[rowIndex][columnIndex],
+      label,
+    })),
+).reduce<Record<string, {lat: number; lng: number}>>((accumulator, item) => {
+  accumulator[item.label] = {
+    lat: item.coordinate.latitude,
+    lng: item.coordinate.longitude,
+  };
+
+  return accumulator;
+}, {});
+
+const DESTINATION_COORDINATES_BY_LABEL = DESTINATION_OPTIONS.flatMap(
+  (row, rowIndex) =>
+    row.map((label, columnIndex) => ({
+      coordinate: DESTINATION_LOCATION[rowIndex][columnIndex],
+      label,
+    })),
+).reduce<Record<string, {lat: number; lng: number}>>((accumulator, item) => {
+  accumulator[item.label] = {
+    lat: item.coordinate.latitude,
+    lng: item.coordinate.longitude,
+  };
+
+  return accumulator;
+}, {});
 
 const normalizeLocationLabel = (value: string) => value.trim();
 
@@ -61,7 +97,12 @@ const formatDepartureSummary = (date: Date, isTomorrow: boolean) => {
   const minute = `${date.getMinutes()}`.padStart(2, '0');
   const dayLabel = isTomorrow ? '내일' : '오늘';
 
-  return `${dayLabel} ${date.getMonth() + 1}월 ${date.getDate()}일 ${meridiem} ${`${hour12}`.padStart(2, '0')}:${minute} 출발`;
+  return `${dayLabel} ${
+    date.getMonth() + 1
+  }월 ${date.getDate()}일 ${meridiem} ${`${hour12}`.padStart(
+    2,
+    '0',
+  )}:${minute} 출발`;
 };
 
 const getLocationLabel = (
@@ -69,6 +110,34 @@ const getLocationLabel = (
   presetValue: string,
   customValue: string,
 ) => (mode === 'custom' ? normalizeLocationLabel(customValue) : presetValue);
+
+const normalizePartyTags = (tags: string[]) =>
+  tags.map(tag => tag.replace(/^#/, '').trim()).filter(Boolean);
+
+const resolveLocationCoordinates = (
+  location: TaxiRecruitLocationValue,
+  kind: 'departure' | 'destination',
+) => {
+  const coordinatesByLabel =
+    kind === 'departure'
+      ? DEPARTURE_COORDINATES_BY_LABEL
+      : DESTINATION_COORDINATES_BY_LABEL;
+  const coordinates = coordinatesByLabel[location.label];
+
+  if (!coordinates) {
+    throw new Error(
+      `${
+        kind === 'departure' ? '출발지' : '도착지'
+      } 좌표를 확인할 수 없습니다. 프리셋 위치를 선택하거나, 프리셋과 동일한 이름으로 입력해주세요.`,
+    );
+  }
+
+  return {
+    lat: coordinates.lat,
+    lng: coordinates.lng,
+    name: location.label,
+  };
+};
 
 export interface UseTaxiRecruitFormResult {
   canSubmit: boolean;
@@ -117,6 +186,8 @@ export interface UseTaxiRecruitFormResult {
 }
 
 export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
+  const {user} = useAuth();
+  const partyRepository = usePartyRepository();
   const [departureMode, setDepartureMode] =
     React.useState<TaxiRecruitLocationMode>('preset');
   const [departurePreset, setDeparturePreset] = React.useState('');
@@ -134,7 +205,9 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   const [maxMembers, setMaxMembers] = React.useState(4);
 
   const initialDate = React.useMemo(() => new Date(), []);
-  const [selectedHour, setSelectedHour] = React.useState(initialDate.getHours());
+  const [selectedHour, setSelectedHour] = React.useState(
+    initialDate.getHours(),
+  );
   const [selectedMinute, setSelectedMinute] = React.useState(
     initialDate.getMinutes(),
   );
@@ -149,8 +222,7 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   }, []);
 
   const departureLabel = React.useMemo(
-    () =>
-      getLocationLabel(departureMode, departurePreset, customDeparture),
+    () => getLocationLabel(departureMode, departurePreset, customDeparture),
     [customDeparture, departureMode, departurePreset],
   );
   const destinationLabel = React.useMemo(
@@ -283,18 +355,57 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
       return {
         message:
           '출발지와 도착지를 모두 입력하고 서로 다른 장소로 선택해주세요.',
-        status: 'mocked' as const,
+        status: 'blocked' as const,
+      };
+    }
+
+    if (!user?.uid) {
+      return {
+        message: '로그인 후 다시 시도해주세요.',
+        status: 'blocked' as const,
       };
     }
 
     setIsSubmitting(true);
 
     try {
-      return await taxiRecruitRepository.submitRecruit(draft);
+      const partyId = await createTaxiParty({
+        partyRepository,
+        party: {
+          departure: resolveLocationCoordinates(draft.departure, 'departure'),
+          departureTime: draft.departureAtISO,
+          destination: resolveLocationCoordinates(
+            draft.destination,
+            'destination',
+          ),
+          detail: draft.detail || undefined,
+          leaderId: user.uid,
+          maxMembers: draft.maxMembers,
+          members: [user.uid],
+          status: 'open',
+          tags: normalizePartyTags(draft.tags),
+        },
+      });
+
+      return {
+        message: '파티 채팅방으로 바로 이동합니다.',
+        partyId,
+        status: 'spring' as const,
+      };
+    } catch (error) {
+      console.error('택시 파티 생성 실패:', error);
+
+      return {
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : '파티 만들기에 실패했습니다.',
+        status: 'blocked' as const,
+      };
     } finally {
       setIsSubmitting(false);
     }
-  }, [canSubmit, draft, isSubmitting]);
+  }, [canSubmit, draft, isSubmitting, partyRepository, user?.uid]);
 
   return {
     addCustomTag,
