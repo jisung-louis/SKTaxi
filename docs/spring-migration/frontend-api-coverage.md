@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-20
+> 최종 수정일: 2026-03-21
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -28,12 +28,11 @@
   - App Notice 공개 조회
   - Notification Center REST + unread count + SSE 실시간 동기화
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
-  - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 좌표 해석 가능 범위)
+  - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 좌표 해석 가능 범위) + 주요 SSE subscription
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
 - 아직 미연결
-  - Taxi Party SSE
   - 일반 community/custom chat REST/STOMP
   - Board / Notice / Campus 등 나머지 도메인
 
@@ -141,6 +140,9 @@ endpoint:
 - `GET /v1/parties/{partyId}/join-requests`
 - `GET /v1/members/me/parties`
 - `GET /v1/members/me/join-requests`
+- `GET /v1/sse/parties`
+- `GET /v1/sse/parties/{partyId}/join-requests`
+- `GET /v1/sse/members/me/join-requests`
 - `POST /v1/parties/{partyId}/join-requests`
 - `PATCH /v1/join-requests/{id}/accept`
 - `PATCH /v1/join-requests/{id}/decline`
@@ -156,6 +158,7 @@ endpoint:
 - Main tab의 `My Party` / `JoinRequestCount`
 - leader join request modal의 승인/거절
 - leader join request notification 정리
+- `useMyParty` / `usePendingJoinRequest` / `useJoinRequestStatus` / `useParty` / `subscribeToJoinRequests`의 SSE signal subscription
 - 동승 요청 생성
 - AcceptancePending 화면 조회/취소
 - RecruitScreen 파티 생성
@@ -180,8 +183,12 @@ endpoint:
 
 runtime note:
 
-- `SpringPartyRepository`는 현재 SSE가 아니라 REST polling 기반 subscription으로 `useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`를 유지한다.
-- leader action 이후 화면 반영 기준은 optimistic mutation이 아니라 `REST mutation -> repository refresh -> polling/focus refetch`다.
+- `SpringPartyRepository`는 `GET /v1/sse/parties`, `GET /v1/sse/parties/{partyId}/join-requests`, `GET /v1/sse/members/me/join-requests`를 signal transport로 사용하고, 실제 domain state는 REST snapshot으로 다시 읽는다.
+- 따라서 `useMyParty`, `JoinRequestProvider`, `usePendingJoinRequest`, `useJoinRequestStatus`, `useParty`, `subscribeToJoinRequests()`는 `SSE signal -> REST refresh` 기준으로 동기화된다.
+- leader action 이후 화면 반영 기준은 optimistic mutation이 아니라 `REST mutation -> repository refresh + SSE follow-up signal`이다.
+- `PARTY_JOIN_REQUEST` 알림 정리는 `notification.data.requestId` 기준으로 삭제해, 같은 party의 다른 pending 요청 알림을 같이 지우지 않는다.
+- push runtime은 backend FCM enum(`PARTY_JOIN_REQUEST`, `PARTY_JOIN_ACCEPTED`, `PARTY_JOIN_DECLINED`)을 기존 frontend navigation type으로 정규화한다.
+- backend에는 client-authored system message write contract가 없고 `SYSTEM` 메시지 전송은 거부되므로, create/accept 후 조용히 성공하던 frontend no-op는 제거했다.
 - `POST /v1/parties`는 프리셋 좌표를 해석할 수 있는 위치 입력에 한해 사용하며, 임의 자유 입력 위치는 아직 완전 이전으로 보지 않는다.
 
 ### 3.5 Taxi Chat detail
@@ -247,6 +254,9 @@ runtime note:
 - `GET /v1/parties/{partyId}`
 - `GET /v1/members/me/parties`
 - `GET /v1/members/me/join-requests`
+- `GET /v1/sse/parties`
+- `GET /v1/sse/parties/{partyId}/join-requests`
+- `GET /v1/sse/members/me/join-requests`
 - `POST /v1/parties/{partyId}/join-requests`
 - `PATCH /v1/join-requests/{id}/cancel`
 - `DELETE /v1/parties/{partyId}/members/me`
@@ -254,17 +264,16 @@ runtime note:
 아직 남은 것:
 
 - `PATCH /v1/parties/{id}`
-- 파티 종료/도착/정산/강퇴/직접 leave/kick 관련 endpoint
-- `GET /v1/sse/parties`
-- `GET /v1/sse/parties/{partyId}/join-requests`
-- `GET /v1/sse/members/me/join-requests`
+- close/reopen/end를 포함한 파티 종료 상태 전이 endpoint
+- 도착/정산/강퇴 endpoint의 실제 screen chain 연결
+- 직접 leave 흐름의 party domain 경계 일원화
 - leader 승인 후 시스템 메시지 write contract
 - 임의 자유 입력 위치의 좌표 정책
 
 의미:
 
-- Taxi Home, AcceptancePending, Main tab의 my party/join request badge, leader 승인/거절, recruit(create) 일부는 Spring 기준으로 동작한다.
-- 하지만 Taxi Party domain 전체는 아직 REST polling 기반의 부분 이전 상태이고, SSE 및 고급 상태전이는 후속 작업이 남아 있다.
+- Taxi Home, AcceptancePending, Main tab의 my party/join request badge, leader 승인/거절, recruit(create) 일부와 주요 subscription은 Spring REST/SSE 기준으로 동작한다.
+- 하지만 Taxi Party domain 전체는 아직 signal-only SSE + REST snapshot 구조의 부분 이전 상태이고, 고급 상태전이/위치 정책/system message contract 부재 대응은 후속 작업이 남아 있다.
 
 ### 4.2 Chat domain
 
@@ -305,8 +314,9 @@ runtime note:
 
 - `PATCH /v1/parties/{id}`
 - `POST /v1/parties/{partyId}/cancel` 또는 `DELETE /v1/parties/{id}`
-- 파티 도착/정산/강퇴/직접 leave/kick 관련 endpoint
-- Taxi SSE endpoint들
+- close/reopen/end를 포함한 파티 종료 상태 전이 endpoint
+- 자유 입력 위치를 위한 좌표/geocoding 정책
+- leader 승인 후 시스템 메시지 write contract
 
 ### 5.3 Chat
 
