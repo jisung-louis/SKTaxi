@@ -25,7 +25,9 @@
 - Phase A 공통 transport 기반 구축은 1차 완료
 - auth/member 경로의 Spring concrete repository는 CompleteProfile/guard 정리까지 연결 완료
 - App Notice / Notification Center는 Spring API + 중앙 DI 기준으로 전환 완료
+- Notification Center는 REST 초기 로드 + SSE 실시간 반영까지 연결 완료
 - Taxi Home은 Spring REST query + join request/pending/chat entry 범위까지 연결 완료
+- Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 부분 이전 완료
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
@@ -34,23 +36,24 @@
 - 공통 infra는 준비되었고
 - auth/bootstrap, CompleteProfile, FCM token 경로는 Spring 기준으로 고정됐고
 - auth 진입선의 프로필/온보딩 source of truth도 member profile + local adjunct 기준으로 정리됐다.
-- 이제 App Notice / Notification Center는 실서버 기준으로 동작하고,
+- 이제 App Notice / Notification Center는 실서버 기준으로 동작하고, Notification Center는 SSE로 실시간 반영된다.
 - Taxi Home도 목록/개인 상태 조회, 동승 요청 생성/취소, 수락 대기 화면, 실제 파티 채팅 진입까지 Spring 기준으로 정리됐다.
+- Taxi Chat detail도 mock singleton이 아니라 Spring REST/STOMP를 source of truth로 사용하기 시작했다.
 
 ---
 
 ## 3. Phase 진행 현황
 
-| Phase                                                 | 상태           | 비고                                                |
-| ----------------------------------------------------- | -------------- | --------------------------------------------------- |
-| Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가  |
-| Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료 |
-| Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료 |
-| Phase D. Notification 정식 이전                       | 미시작         | REST + SSE 전환 필요                                |
-| Phase E. Taxi Party 정식 이전                         | 미시작         | REST + SSE 전환 필요                                |
-| Phase F. Chat 정식 이전                               | 미시작         | REST + STOMP 전환 필요                              |
-| Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                   |
-| Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거            |
+| Phase                                                 | 상태      | 비고                                                     |
+| ----------------------------------------------------- | --------- | -------------------------------------------------------- |
+| Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가       |
+| Phase B. 인증/회원 bootstrap 정리                     | 완료      | CompleteProfile/guard/source-of-truth 정리까지 완료      |
+| Phase C. App Notice / Notification Center / Taxi Home | 완료      | App Notice/Notification Center/Taxi Home screen chain 완료 |
+| Phase D. Notification 정식 이전                       | 완료      | REST + unread count + SSE 실시간 동기화 완료             |
+| Phase E. Taxi Party 정식 이전                         | 미시작    | Taxi Party SSE / leader flow / IPartyRepository 전환 필요 |
+| Phase F. Chat 정식 이전                               | 부분 진행 | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완 |
+| Phase G. 남은 mock 화면 체인 정리                     | 미시작    | feature-local 임시 경로 수렴 필요                        |
+| Phase H. 정리/수렴                                    | 미시작    | Firestore direct path와 legacy 분기 제거                 |
 
 ---
 
@@ -103,8 +106,7 @@
 현재 아직 남은 것:
 
 - concrete Spring repository 구현
-- 실제 SSE 클라이언트 구현체 선택 및 연결
-- 실제 STOMP 라이브러리 연결
+- concrete feature에 맞는 SSE/STOMP 사용 지점 확장
 
 ### 4.4 Phase B 구현
 
@@ -223,7 +225,7 @@ Phase B 완료 판단 근거:
 
 계약 확인 결과:
 
-- 로컬 `http://localhost:8080/v3/api-docs`는 이번 작업 시점에 응답을 주지 않아 최종 구현은 `/Users/jisung/skuri-backend` controller/dto와 markdown 명세를 기준으로 맞췄다.
+- 로컬 `http://localhost:8080/v3/api-docs`, `/Users/jisung/skuri-backend`, markdown 명세를 모두 대조했고, 실제 구현은 `/v3/api-docs`를 1순위 기준으로 맞췄다.
 - App Notice는 backend 응답에 작성자/조회수 필드가 없어서 assembler에서 화면 전용 placeholder/optional 값으로 흡수했다.
 - Notification enum은 backend canonical enum을 repository mapper에서 기존 app navigation이 소비하는 문자열로 정규화했다.
 - Notification의 `POST_LIKED + noticeId`는 `notice_post_like`로 유지하되 알림함 icon/탭 이동에서 notice detail dead path가 되지 않게 정리했다.
@@ -247,9 +249,9 @@ Phase B 완료 판단 근거:
 
 현재 아직 남은 것:
 
-- Notification의 SSE 실시간 동기화는 Phase D 범위다.
 - `IPartyRepository` 전체 Spring 구현 및 전역 DI 교체는 아직 하지 않았다.
-- Taxi chat detail 자체의 데이터 소스는 아직 mock adapter이며, chat REST/STOMP 이전은 Phase F 범위다.
+- Taxi Party SSE, leader join request 처리, 파티 상태 전이/정산 흐름은 아직 남아 있다.
+- 일반 community/custom chat 영역의 REST/STOMP 전환은 아직 Phase F 범위다.
 
 feature별 상태:
 
@@ -257,8 +259,75 @@ feature별 상태:
   - App Notice
   - Notification Center
   - Taxi Home
-- 미완료
-  - 없음
+- 부분 완료
+  - Taxi Chat detail
+
+### 4.8 Phase D 구현
+
+이번 스레드에서는 Notification realtime과 Taxi Chat detail source of truth를 다음처럼 옮겼다.
+
+- Notification realtime
+  - `src/shared/realtime/xhrSseStream.ts`
+  - `src/features/user/data/api/notificationApiClient.ts`
+  - `src/features/user/data/dto/notificationDto.ts`
+  - `src/features/user/data/repositories/SpringNotificationRepository.ts`
+  - `src/features/user/hooks/useNotificationCenterData.ts`
+- Taxi Chat detail / DI 정리
+  - `src/features/taxi/data/api/taxiChatApiClient.ts`
+  - `src/features/taxi/data/dto/taxiChatDto.ts`
+  - `src/features/taxi/data/mappers/taxiChatMapper.ts`
+  - `src/features/taxi/data/repositories/SpringTaxiChatRepository.ts`
+  - `src/features/taxi/application/taxiChatDetailAssembler.ts`
+  - `src/features/taxi/hooks/useTaxiChatDetailData.ts`
+  - `src/di/RepositoryContext.ts`
+  - `src/di/RepositoryProvider.tsx`
+  - `src/di/repositoryContracts.ts`
+  - `src/di/useRepository.ts`
+- runtime dependency
+  - `package.json`
+  - `package-lock.json`
+  - `@stomp/stompjs`
+
+이번 단계에서 실제로 사용한 계약:
+
+- Notification
+  - `GET /v1/notifications`
+  - `GET /v1/notifications/unread-count`
+  - `GET /v1/sse/notifications`
+  - SSE event: `SNAPSHOT`, `NOTIFICATION`, `UNREAD_COUNT_CHANGED`, `HEARTBEAT`
+- Taxi Chat detail
+  - `GET /v1/parties/{partyId}`
+  - `GET /v1/chat-rooms/party:{partyId}`
+  - `GET /v1/chat-rooms/party:{partyId}/messages`
+  - `PATCH /v1/chat-rooms/party:{partyId}/settings`
+  - `PATCH /v1/chat-rooms/party:{partyId}/read`
+  - `DELETE /v1/parties/{partyId}/members/me`
+  - STOMP publish: `/app/chat/party:{partyId}`
+  - STOMP subscribe: `/topic/chat/party:{partyId}`
+  - STOMP error queue: `/user/queue/errors`
+
+보충 메모:
+
+- RN 클라이언트의 STOMP 연결은 backend의 SockJS endpoint `/ws`를 WebSocket transport path인 `/ws/websocket`으로 붙인다.
+- 이 경로는 `/v3/api-docs`의 상위 계약(`/ws`)과 backend SockJS 설정을 함께 확인한 뒤, 로컬 handshake probe로 실제 연결 가능 여부를 검증해서 사용했다.
+
+### 4.9 Phase D 결과
+
+현재 가능한 것:
+
+- Notification Center는 중앙 DI의 `notificationRepository`를 통해 REST 초기 로드 후 SSE로 신규 알림과 unread count 변경을 반영한다.
+- 단건 읽음/전체 읽음/단건 삭제/전체 삭제는 repository cache를 즉시 갱신하고, SSE unread count가 cache와 어긋나면 REST 재조회로 다시 맞춘다.
+- `useNotificationCenterData()`는 polling이 아니라 repository subscription을 사용한다.
+- Taxi Chat detail은 중앙 DI의 `taxiChatRepository`를 사용하고, `taxiChatRepository.ts` mock singleton을 source of truth로 보지 않는다.
+- Taxi Chat detail의 과거 메시지/기본 방 상태는 REST로 로드하고, 신규 메시지 수신과 전송은 STOMP로 처리한다.
+- Taxi Chat detail의 음소거 토글은 `PATCH /v1/chat-rooms/{id}/settings`, 방 열람 중 읽음 시각 반영은 `PATCH /v1/chat-rooms/{id}/read`, 파티 나가기는 `DELETE /v1/parties/{id}/members/me`를 사용한다.
+- Taxi Chat 화면용 조합 로직은 hook 안에서 직접 만들지 않고 `taxiChatDetailAssembler`로 분리했다.
+
+현재 아직 남은 것:
+
+- Taxi Party SSE(`/v1/sse/parties`, `/v1/sse/parties/{partyId}/join-requests`, `/v1/sse/members/me/join-requests`)는 아직 연결하지 않았다.
+- Taxi Party domain의 전체 command/state transition과 `IPartyRepository` Spring concrete 구현은 아직 남아 있다.
+- 일반 community/custom chat list/detail, `/v1/chat-rooms`, `/user/queue/chat-rooms` 기반 요약 갱신은 아직 legacy/mock 경로가 남아 있다.
 
 ---
 
@@ -278,12 +347,13 @@ feature별 상태:
 
 즉, 다음 작업자는 앱 전체를 먼저 전면 리팩터링하지 않는다.
 
-Phase C 반영 후 구조 상태:
+Phase D 반영 후 구조 상태:
 
 - App Notice의 screen entrypoint는 제거됐고 중앙 DI `appNoticeRepository`로 수렴했다.
 - Notification Center의 screen entrypoint는 제거됐고 중앙 DI `notificationRepository`로 수렴했다.
 - Taxi Home/AcceptancePending screen chain은 `shared/api` 위의 query/application adapter로 수렴했고, `ITaxiAcceptancePendingRepository` mock singleton은 제거됐다.
-- 다만 Taxi domain 전체의 최종 도메인 경계 수렴은 Phase E의 `IPartyRepository` Spring 구현과 Phase F의 chat 이전까지 남아 있다.
+- Taxi Chat detail은 중앙 DI `taxiChatRepository`와 assembler로 수렴했고, feature-local taxi chat singleton은 더 이상 source of truth가 아니다.
+- 다만 Taxi domain 전체의 최종 도메인 경계 수렴은 Phase E의 `IPartyRepository` Spring 구현과 Phase F의 일반 chat 이전까지 남아 있다.
 
 ---
 
@@ -291,15 +361,15 @@ Phase C 반영 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Phase D 이후
-   - Notification
-   - Taxi Party
-   - Chat
+1. Taxi Party 정식 이전
+2. 일반 Chat 정식 이전
+3. 남은 mock 화면 체인 정리
 
 이 순서를 권장하는 이유:
 
-- auth 진입선의 프로필/온보딩 source of truth가 정리됐으므로, 이제 Phase A/B 기반 위에서 concrete feature migration을 안정적으로 진행할 수 있다.
-- App Notice / Notification Center / Taxi Home screen chain이 닫혔으므로, 다음부터는 SSE/STOMP와 도메인 repository 수렴 같은 정식 이전 phase를 진행하면 된다.
+- Notification domain은 Phase D에서 닫혔으므로 다음 병목은 Taxi Party SSE/leader flow다.
+- Taxi Chat detail은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 일반 chat list/summary/custom room 이전으로 이어가는 편이 자연스럽다.
+- 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 
 ---
 
@@ -345,7 +415,7 @@ Phase C 반영 후 구조 상태:
 
 - 기존 사용자 업그레이드 시 `PermissionOnboarding`이 1회 다시 열릴 수 있다.
 - 이는 Firestore 기반 과거 온보딩 상태를 AsyncStorage local adjunct로 일괄 backfill하지 않은 현재 구조에서 발생 가능한 현상이다.
-- 현재 제품 판단상 허용된 상태이며, 이 사유만으로 Phase C 이상 작업을 막지 않는다.
+- 현재 제품 판단상 허용된 상태이며, 이 사유만으로 Phase D 이상 작업을 막지 않는다.
 
 ### 8.1 타입체크
 
@@ -360,17 +430,15 @@ Phase C 반영 후 구조 상태:
 - 변경한 파일 기준 타입 오류가 없는지 우선 확인
 - 전체 타입 오류는 기존 오류와 신규 오류를 분리해서 판단
 
-### 8.2 실시간 라이브러리 선택
+### 8.2 실시간 클라이언트 상태
 
-현재 `src/shared/realtime/*`는 공통 connection option builder까지 구현된 상태다.
+현재 `src/shared/realtime/*`는 공통 option builder뿐 아니라 실제 feature 연결도 일부 포함한다.
 
 즉:
 
-- SSE는 아직 concrete client 라이브러리를 실제 연결하지 않았다.
-- STOMP도 아직 concrete 라이브러리를 실제 연결하지 않았다.
-
-다음 작업자는 concrete feature migration 시
-현재 공통 옵션 레이어를 재사용하는 방향으로 실제 라이브러리를 연결하면 된다.
+- Notification SSE는 `xhrSseStream` 기반 concrete client가 연결된 상태다.
+- Taxi Chat detail은 `@stomp/stompjs`를 사용한 concrete STOMP client가 연결된 상태다.
+- 아직 Taxi Party SSE나 일반 chat summary realtime은 이 공통 레이어를 재사용하는 다음 phase 작업으로 남아 있다.
 
 ---
 
@@ -381,3 +449,5 @@ Phase C 반영 후 구조 상태:
 - Phase A 1차 완료
 - Phase B 후속 정리 완료
 - Phase C는 App Notice / Notification Center / Taxi Home 완료 상태
+- Phase D는 Notification realtime까지 완료
+- Phase F는 Taxi Chat detail 범위에서 부분 진행 상태

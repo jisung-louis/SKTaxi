@@ -26,19 +26,18 @@
 - 완료
   - Member bootstrap / profile / FCM token
   - App Notice 공개 조회
-  - Notification Center 기본 조회/읽음 처리/삭제
+  - Notification Center REST + unread count + SSE 실시간 동기화
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
 - 부분 연결
-  - Notification domain 전체
   - Taxi Party domain 전체
+  - Chat domain 전체
 - 아직 미연결
-  - Notification SSE
   - Taxi Party 정식 repository/SSE
-  - Chat REST/STOMP
+  - 일반 community/custom chat REST/STOMP
   - Board / Notice / Campus 등 나머지 도메인
 
 즉, endpoint 단위로는 꽤 연결됐지만,
-도메인 단위로 보면 Notification / Taxi / Chat은 아직 다음 phase 작업이 남아 있다.
+도메인 단위로 보면 Taxi / Chat은 아직 다음 phase 작업이 남아 있다.
 
 ---
 
@@ -97,7 +96,7 @@ endpoint:
 - `src/features/settings/hooks/useAppNoticeFeedData.ts`
 - `src/features/settings/hooks/useAppNoticeDetailData.ts`
 
-### 3.3 Notification Center 기본 동작
+### 3.3 Notification Center + realtime
 
 상태:
 
@@ -106,6 +105,8 @@ endpoint:
 endpoint:
 
 - `GET /v1/notifications`
+- `GET /v1/notifications/unread-count`
+- `GET /v1/sse/notifications`
 - `POST /v1/notifications/{notificationId}/read`
 - `POST /v1/notifications/read-all`
 - `DELETE /v1/notifications/{notificationId}`
@@ -113,6 +114,8 @@ endpoint:
 현재 사용처:
 
 - 알림함 목록 조회
+- unread count 기준 동기화
+- SSE 실시간 신규 알림 반영
 - 단건 읽음 처리
 - 전체 읽음 처리
 - 단건 삭제
@@ -155,38 +158,49 @@ endpoint:
 - `src/features/taxi/hooks/useTaxiHomeData.ts`
 - `src/features/taxi/hooks/useTaxiAcceptancePendingData.ts`
 
+### 3.5 Taxi Chat detail
+
+상태:
+
+- 해당 screen chain 연결 완료
+
+endpoint / realtime contract:
+
+- `GET /v1/parties/{partyId}`
+- `GET /v1/chat-rooms/party:{partyId}`
+- `GET /v1/chat-rooms/party:{partyId}/messages`
+- `PATCH /v1/chat-rooms/party:{partyId}/settings`
+- `PATCH /v1/chat-rooms/party:{partyId}/read`
+- `DELETE /v1/parties/{partyId}/members/me`
+- STOMP endpoint: `/ws` (RN transport path는 `/ws/websocket`)
+- publish: `/app/chat/party:{partyId}`
+- subscribe: `/topic/chat/party:{partyId}`
+- error queue: `/user/queue/errors`
+
+현재 사용처:
+
+- Taxi Chat 상세 화면 초기 상태 로드
+- Taxi Chat 과거 메시지 조회
+- Taxi Chat 실시간 메시지 수신/전송
+- Taxi Chat 음소거 토글
+- Taxi Chat 방 열람 중 읽음 처리
+- Taxi Chat 화면에서 파티 나가기
+
+코드:
+
+- `src/features/taxi/data/api/taxiChatApiClient.ts`
+- `src/features/taxi/data/repositories/SpringTaxiChatRepository.ts`
+- `src/features/taxi/application/taxiChatDetailAssembler.ts`
+- `src/features/taxi/hooks/useTaxiChatDetailData.ts`
+- `src/di/RepositoryProvider.tsx`
+
 ---
 
 ## 4. 부분 연결 API
 
 이 섹션은 “endpoint 몇 개는 이미 연결됐지만, 도메인 전체 전환은 끝나지 않은 영역”을 정리한다.
 
-### 4.1 Notification domain
-
-상태:
-
-- 부분 연결
-
-이미 연결된 endpoint:
-
-- `GET /v1/notifications`
-- `POST /v1/notifications/{notificationId}/read`
-- `POST /v1/notifications/read-all`
-- `DELETE /v1/notifications/{notificationId}`
-
-아직 남은 것:
-
-- `GET /v1/notifications/unread-count`
-- `GET /v1/sse/notifications`
-- 인앱 unread badge를 SSE 기준으로 동기화
-
-의미:
-
-- Notification Center는 동작한다.
-- 하지만 Notification domain 전체를 “Spring 정식 이전 완료”라고 보기는 이르다.
-- 현재는 polling / reload 중심이고, SSE 실시간 동기화는 Phase D 이후다.
-
-### 4.2 Taxi Party domain
+### 4.1 Taxi Party domain
 
 상태:
 
@@ -200,6 +214,7 @@ endpoint:
 - `GET /v1/members/me/join-requests`
 - `POST /v1/parties/{partyId}/join-requests`
 - `PATCH /v1/join-requests/{id}/cancel`
+- `DELETE /v1/parties/{partyId}/members/me`
 
 아직 남은 것:
 
@@ -217,30 +232,34 @@ endpoint:
 - Taxi Home screen chain은 Spring 기준으로 동작한다.
 - 하지만 Taxi Party domain 전체는 아직 query/application adapter 중심의 부분 이전 상태다.
 
-### 4.3 Chat domain
+### 4.2 Chat domain
 
 상태:
 
-- 부분 연결 직전
+- 부분 연결
 
 이미 연결된 것:
 
-- Taxi Home / AcceptancePending에서 실제 `Chat` route 진입까지는 연결됨
+- Taxi Home / AcceptancePending에서 실제 `Chat` route 진입
+- Taxi Chat detail의 `GET /v1/chat-rooms/{chatRoomId}`
+- Taxi Chat detail의 `GET /v1/chat-rooms/{chatRoomId}/messages`
+- Taxi Chat detail의 `PATCH /v1/chat-rooms/{chatRoomId}/settings`
+- Taxi Chat detail의 `PATCH /v1/chat-rooms/{chatRoomId}/read`
+- Taxi Chat detail의 `/app/chat/{chatRoomId}`
+- Taxi Chat detail의 `/topic/chat/{chatRoomId}`
+- Taxi Chat detail의 `/user/queue/errors`
 
 아직 남은 것:
 
-- 채팅방 상세 데이터 source 자체의 Spring 이전
-- `GET /v1/chat-rooms/{chatRoomId}/messages`
-- `/ws`
-- `/app/chat/{chatRoomId}`
-- `/topic/chat/{chatRoomId}`
+- `GET /v1/chat-rooms`
 - `/user/queue/chat-rooms`
-- `/user/queue/errors`
+- community/custom chat detail의 Spring 이전
+- 이미지/특수 메시지 전송의 실사용 연결
 
 의미:
 
-- 화면 이동만 실제 route로 연결됐고,
-- 채팅 데이터 자체는 아직 Phase F 범위다.
+- Taxi Chat detail은 REST/STOMP 기준으로 동작한다.
+- 하지만 Chat domain 전체로 보면 목록/요약/일반 채팅방은 아직 legacy/mock 경로가 남아 있다.
 
 ---
 
@@ -248,12 +267,7 @@ endpoint:
 
 이 섹션은 “현재 앱에서 아직 Spring으로 붙지 않은 대표 사용자 기능 API”를 정리한다.
 
-### 5.1 Notification
-
-- `GET /v1/notifications/unread-count`
-- `GET /v1/sse/notifications`
-
-### 5.2 Taxi Party / Join Request leader flow
+### 5.1 Taxi Party / Join Request leader flow
 
 - `POST /v1/parties`
 - `PATCH /v1/parties/{id}`
@@ -265,9 +279,10 @@ endpoint:
 
 ### 5.3 Chat
 
-- 채팅 메시지 이력 조회 REST
-- WebSocket/STOMP endpoint
-- 채팅방 목록 summary 실시간 동기화
+- `GET /v1/chat-rooms`
+- `/user/queue/chat-rooms`
+- 일반 community/custom chat 목록/상세의 Spring 이전
+- 이미지/특수 메시지 전송의 실사용 연결
 
 ### 5.4 Notice / Board / Campus / 기타
 
