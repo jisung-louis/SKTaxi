@@ -85,8 +85,39 @@ export interface PartyDetailResponseDto {
   tags?: string[] | null;
 }
 
+export interface CreatePartyRequestDto {
+  departure: PartyLocationDto;
+  departureTime: string;
+  destination: PartyLocationDto;
+  detail?: string | null;
+  maxMembers: number;
+  tags?: string[] | null;
+}
+
+export interface UpdatePartyRequestDto {
+  departureTime?: string | null;
+  detail?: string | null;
+}
+
+export interface PartyCreateResponseDto {
+  chatRoomId: string;
+  id: string;
+}
+
+export interface PartyStatusResponseDto {
+  endReason?: string | null;
+  id: string;
+  status: PartyStatusDto;
+}
+
 export interface JoinRequestResponseDto {
   id: string;
+  status: JoinRequestStatusDto;
+}
+
+export interface JoinRequestAcceptResponseDto {
+  id: string;
+  partyId: string;
   status: JoinRequestStatusDto;
 }
 

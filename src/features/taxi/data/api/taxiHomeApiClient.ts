@@ -1,12 +1,17 @@
 import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 
 import type {
+  CreatePartyRequestDto,
+  JoinRequestAcceptResponseDto,
   JoinRequestListItemResponseDto,
   JoinRequestResponseDto,
+  PartyCreateResponseDto,
+  PartyStatusResponseDto,
   MyPartyResponseDto,
   PartyDetailResponseDto,
   PartyPageResponseDto,
   JoinRequestStatusDto,
+  UpdatePartyRequestDto,
 } from '../dto/taxiHomeDto';
 
 export class TaxiHomeApiClient {
@@ -16,9 +21,34 @@ export class TaxiHomeApiClient {
     );
   }
 
+  cancelParty(partyId: string) {
+    return httpClient.post<ApiSuccessResponse<PartyStatusResponseDto>>(
+      `/v1/parties/${partyId}/cancel`,
+    );
+  }
+
   createJoinRequest(partyId: string) {
     return httpClient.post<ApiSuccessResponse<JoinRequestResponseDto>>(
       `/v1/parties/${partyId}/join-requests`,
+    );
+  }
+
+  createParty(payload: CreatePartyRequestDto) {
+    return httpClient.post<ApiSuccessResponse<PartyCreateResponseDto>>(
+      '/v1/parties',
+      payload,
+    );
+  }
+
+  declineJoinRequest(requestId: string) {
+    return httpClient.patch<ApiSuccessResponse<JoinRequestResponseDto>>(
+      `/v1/join-requests/${requestId}/decline`,
+    );
+  }
+
+  acceptJoinRequest(requestId: string) {
+    return httpClient.patch<ApiSuccessResponse<JoinRequestAcceptResponseDto>>(
+      `/v1/join-requests/${requestId}/accept`,
     );
   }
 
@@ -53,6 +83,19 @@ export class TaxiHomeApiClient {
   getParty(partyId: string) {
     return httpClient.get<ApiSuccessResponse<PartyDetailResponseDto>>(
       `/v1/parties/${partyId}`,
+    );
+  }
+
+  getPartyJoinRequests(partyId: string) {
+    return httpClient.get<ApiSuccessResponse<JoinRequestListItemResponseDto[]>>(
+      `/v1/parties/${partyId}/join-requests`,
+    );
+  }
+
+  updateParty(partyId: string, payload: UpdatePartyRequestDto) {
+    return httpClient.patch<ApiSuccessResponse<PartyDetailResponseDto>>(
+      `/v1/parties/${partyId}`,
+      payload,
     );
   }
 }
