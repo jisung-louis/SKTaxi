@@ -27,6 +27,7 @@
 - App Notice / Notification Center는 Spring API + 중앙 DI 기준으로 전환 완료
 - Notification Center는 REST 초기 로드 + SSE 실시간 반영까지 연결 완료
 - Taxi Home은 Spring REST query + join request/pending/chat entry 범위까지 연결 완료
+- Taxi Party는 Spring REST + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) 일부까지 부분 이전 완료
 - Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 부분 이전 완료
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
@@ -39,6 +40,8 @@
 - auth 진입선의 프로필/온보딩 source of truth도 member profile + local adjunct 기준으로 정리됐다.
 - 이제 App Notice / Notification Center는 실서버 기준으로 동작하고, Notification Center는 SSE로 실시간 반영된다.
 - Taxi Home도 목록/개인 상태 조회, 동승 요청 생성/취소, 수락 대기 화면, 실제 파티 채팅 진입까지 Spring 기준으로 정리됐다.
+- Taxi Party의 전역 탭 상태(`My Party`, `JoinRequestCount`)와 leader join request 처리 모달은 더 이상 mock `IPartyRepository` 메모리 상태를 source of truth로 보지 않는다.
+- Taxi Party의 현재 구현 기준 실시간성은 SSE가 아니라 Spring REST 재조회/polling + push runtime을 조합하는 방식으로 정리된다.
 - Taxi Chat detail도 mock singleton이 아니라 Spring REST/STOMP를 source of truth로 사용하기 시작했다.
 - Taxi Chat detail의 STOMP client는 로그아웃/계정 전환 시 이전 Authorization 세션을 재사용하지 않도록 정리된다.
 
@@ -46,16 +49,16 @@
 
 ## 3. Phase 진행 현황
 
-| Phase                                                 | 상태      | 비고                                                     |
-| ----------------------------------------------------- | --------- | -------------------------------------------------------- |
-| Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가       |
-| Phase B. 인증/회원 bootstrap 정리                     | 완료      | CompleteProfile/guard/source-of-truth 정리까지 완료      |
-| Phase C. App Notice / Notification Center / Taxi Home | 완료      | App Notice/Notification Center/Taxi Home screen chain 완료 |
-| Phase D. Notification 정식 이전                       | 완료      | REST + unread count + SSE 실시간 동기화 완료             |
-| Phase E. Taxi Party 정식 이전                         | 미시작    | Taxi Party SSE / leader flow / IPartyRepository 전환 필요 |
-| Phase F. Chat 정식 이전                               | 부분 진행 | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완 |
-| Phase G. 남은 mock 화면 체인 정리                     | 미시작    | feature-local 임시 경로 수렴 필요                        |
-| Phase H. 정리/수렴                                    | 미시작    | Firestore direct path와 legacy 분기 제거                 |
+| Phase                                                 | 상태           | 비고                                                                                  |
+| ----------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------- |
+| Phase A. 공통 Transport 구축                          | 진행 완료(1차) | 공통 API/실시간 레이어 및 전역 token resolver 추가                                    |
+| Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료                                   |
+| Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료                            |
+| Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                          |
+| Phase E. Taxi Party 정식 이전                         | 부분 완료      | my party/join request/leader flow/기본 recruit(create) 이전, SSE·고급 상태전이는 잔여 |
+| Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완                             |
+| Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                     |
+| Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                              |
 
 ---
 
@@ -328,7 +331,7 @@ feature별 상태:
 현재 아직 남은 것:
 
 - Taxi Party SSE(`/v1/sse/parties`, `/v1/sse/parties/{partyId}/join-requests`, `/v1/sse/members/me/join-requests`)는 아직 연결하지 않았다.
-- Taxi Party domain의 전체 command/state transition과 `IPartyRepository` Spring concrete 구현은 아직 남아 있다.
+- Taxi Party domain의 고급 command/state transition(도착/정산/강퇴/직접 leave/kick 분기)은 아직 남아 있다.
 - 일반 community/custom chat list/detail, `/v1/chat-rooms`, `/user/queue/chat-rooms` 기반 요약 갱신은 아직 legacy/mock 경로가 남아 있다.
 
 ### 4.10 Phase D blocker fix
@@ -341,6 +344,72 @@ feature별 상태:
 - 따라서 새 계정의 첫 STOMP 구독은 기존 connected socket을 재사용하지 않고, 새 `beforeConnect`에서 새 token으로 다시 연결한다.
 
 이 blocker fix 기준으로는 Phase D close 판단을 막던 STOMP auth/session 재사용 리스크가 해소됐다.
+
+### 4.11 Phase E 구현
+
+이번 스레드에서는 Taxi Party runtime source of truth를 다음처럼 더 Spring 쪽으로 이동했다.
+
+- Taxi Party DI / repository
+  - `src/features/taxi/data/api/taxiHomeApiClient.ts`
+  - `src/features/taxi/data/dto/taxiHomeDto.ts`
+  - `src/features/taxi/data/mappers/taxiPartyMapper.ts`
+  - `src/features/taxi/data/repositories/SpringPartyRepository.ts`
+  - `src/di/RepositoryProvider.tsx`
+- Leader join request flow / badge 정리
+  - `src/features/taxi/providers/JoinRequestProvider.tsx`
+  - `src/features/taxi/hooks/useMyParty.ts`
+  - `src/features/taxi/hooks/useJoinRequestStatus.ts`
+  - `src/features/taxi/hooks/useJoinRequestModal.ts`
+- 알림 정리
+  - `src/features/taxi/data/repositories/SpringNotificationActionRepository.ts`
+- Recruit(create) 경로 정리
+  - `src/features/taxi/hooks/useTaxiRecruitForm.ts`
+  - `src/features/taxi/model/taxiRecruitData.ts`
+
+이번 단계에서 실제로 사용한 계약:
+
+- Taxi Party read / status
+  - `GET /v1/parties`
+  - `GET /v1/parties/{partyId}`
+  - `GET /v1/members/me/parties`
+  - `GET /v1/members/me/join-requests`
+- Taxi Party command
+  - `POST /v1/parties`
+  - `PATCH /v1/join-requests/{id}/cancel`
+  - `PATCH /v1/join-requests/{id}/accept`
+  - `PATCH /v1/join-requests/{id}/decline`
+  - `GET /v1/parties/{partyId}/join-requests`
+- Notification cleanup
+  - `GET /v1/notifications`
+  - `DELETE /v1/notifications/{notificationId}`
+
+이번 구현 판단 메모:
+
+- `IPartyRepository`는 Spring REST 기반 concrete 구현으로 교체했지만, 현재 단계의 subscription은 SSE가 아니라 polling 기반이다.
+- 이유는 Phase E에서 우선순위가 party detail / my party / leader join request flow 정리였고, 이 범위는 REST 재조회만으로 화면 복구가 가능하기 때문이다.
+- 따라서 leader action 이후 화면 반영 기준은 optimistic write가 아니라 `mutation -> repository refresh -> polling/focus refetch`다.
+- recruit(create)는 `/v1/parties`로 이전했지만, 좌표 계약상 프리셋 좌표를 해석할 수 없는 자유 입력 위치는 아직 완전 이전으로 보지 않는다.
+
+### 4.12 Phase E 결과
+
+현재 가능한 것:
+
+- `RepositoryProvider`의 `partyRepository` 기본 구현은 `SpringPartyRepository`다.
+- `RepositoryProvider`의 `notificationActionRepository` 기본 구현은 `SpringNotificationActionRepository`다.
+- `useMyParty()`는 `GET /v1/members/me/parties` + `GET /v1/parties/{id}`를 통해 active party를 계산하므로 Main tab의 `hasParty`가 mock 메모리 상태와 분리된다.
+- `JoinRequestProvider`의 `joinRequestCount`는 active leader party들의 `GET /v1/parties/{partyId}/join-requests` 결과를 기준으로 계산된다.
+- leader join request modal의 승인/거절은 `PATCH /v1/join-requests/{id}/accept|decline`를 실제 호출하고, 후속 badge/status는 repository refresh로 다시 맞춘다.
+- `useJoinRequestStatus()`는 단일 request id를 Spring API 기준으로 재조회하므로 leader 모달에서 취소/처리 상태를 더 이상 mock store로 보지 않는다.
+- `RecruitScreen` 제출은 `POST /v1/parties`를 호출하고, 생성된 `partyId`로 바로 Taxi Chat screen chain에 진입한다.
+- 승인/거절 이후 stale `PARTY_JOIN_REQUEST` 알림은 Spring notification REST를 다시 조회해 삭제한다.
+
+현재 아직 남은 것:
+
+- Taxi Party SSE(`/v1/sse/parties`, `/v1/sse/parties/{partyId}/join-requests`, `/v1/sse/members/me/join-requests`)는 아직 연결하지 않았다.
+- `SpringPartyRepository`의 subscription은 polling 기반이므로 push/SSE 없는 순수 실시간 동기화까지는 아직 닫지 않았다.
+- 파티 도착/정산/강퇴/직접 leave/kick 같은 고급 state transition은 아직 chat/party command 경계에 남아 있다.
+- recruit(create)는 프리셋 또는 프리셋과 동일한 이름으로 좌표를 해석할 수 있는 위치만 Spring create에 연결했고, 임의 자유 입력 위치는 후속 좌표 정책이 필요하다.
+- leader 승인 후 채팅 시스템 메시지 삽입은 별도 write contract가 없어 아직 프론트에서 재현하지 않는다.
 
 ---
 
@@ -365,8 +434,10 @@ Phase D 반영 후 구조 상태:
 - App Notice의 screen entrypoint는 제거됐고 중앙 DI `appNoticeRepository`로 수렴했다.
 - Notification Center의 screen entrypoint는 제거됐고 중앙 DI `notificationRepository`로 수렴했다.
 - Taxi Home/AcceptancePending screen chain은 `shared/api` 위의 query/application adapter로 수렴했고, `ITaxiAcceptancePendingRepository` mock singleton은 제거됐다.
+- Taxi Party의 전역 상태(`useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`, `useJoinRequestModal`)는 중앙 DI `partyRepository`/`notificationActionRepository` 기준으로 수렴했다.
+- RecruitScreen도 더 이상 `taxiRecruitRepository` mock singleton을 source of truth로 사용하지 않고 중앙 `partyRepository`를 통해 `/v1/parties`를 호출한다.
 - Taxi Chat detail은 중앙 DI `taxiChatRepository`와 assembler로 수렴했고, feature-local taxi chat singleton은 더 이상 source of truth가 아니다.
-- 다만 Taxi domain 전체의 최종 도메인 경계 수렴은 Phase E의 `IPartyRepository` Spring 구현과 Phase F의 일반 chat 이전까지 남아 있다.
+- 다만 Taxi domain 전체의 최종 도메인 경계 수렴은 Phase E 잔여 SSE/고급 상태전이와 Phase F의 일반 chat 이전까지 남아 있다.
 
 ---
 
@@ -374,13 +445,13 @@ Phase D 반영 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Taxi Party 정식 이전
+1. Taxi Party SSE / 고급 상태전이 마무리
 2. 일반 Chat 정식 이전
 3. 남은 mock 화면 체인 정리
 
 이 순서를 권장하는 이유:
 
-- Notification domain은 Phase D에서 닫혔으므로 다음 병목은 Taxi Party SSE/leader flow다.
+- Notification domain은 Phase D에서 닫혔고, Taxi Party도 Phase E에서 REST 기준 main flow를 옮겼으므로 다음 병목은 SSE/고급 상태전이 잔여분이다.
 - Taxi Chat detail은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 일반 chat list/summary/custom room 이전으로 이어가는 편이 자연스럽다.
 - 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 

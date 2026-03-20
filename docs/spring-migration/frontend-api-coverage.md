@@ -28,11 +28,12 @@
   - App Notice 공개 조회
   - Notification Center REST + unread count + SSE 실시간 동기화
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
+  - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 좌표 해석 가능 범위)
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
 - 아직 미연결
-  - Taxi Party 정식 repository/SSE
+  - Taxi Party SSE
   - 일반 community/custom chat REST/STOMP
   - Board / Notice / Campus 등 나머지 도메인
 
@@ -126,7 +127,7 @@ endpoint:
 - `src/features/user/data/repositories/SpringNotificationRepository.ts`
 - `src/features/user/hooks/useNotificationCenterData.ts`
 
-### 3.4 Taxi Home / Join Request / Acceptance Pending
+### 3.4 Taxi Home / My Party / Join Request / Leader Flow
 
 상태:
 
@@ -134,29 +135,54 @@ endpoint:
 
 endpoint:
 
+- `POST /v1/parties`
 - `GET /v1/parties`
 - `GET /v1/parties/{partyId}`
+- `GET /v1/parties/{partyId}/join-requests`
 - `GET /v1/members/me/parties`
 - `GET /v1/members/me/join-requests`
 - `POST /v1/parties/{partyId}/join-requests`
+- `PATCH /v1/join-requests/{id}/accept`
+- `PATCH /v1/join-requests/{id}/decline`
 - `PATCH /v1/join-requests/{id}/cancel`
+- `GET /v1/notifications`
+- `DELETE /v1/notifications/{notificationId}`
 
 현재 사용처:
 
 - Taxi Home 파티 목록 조회
 - 내 활성 파티 여부 반영
 - 내 pending join request 상태 반영
+- Main tab의 `My Party` / `JoinRequestCount`
+- leader join request modal의 승인/거절
+- leader join request notification 정리
 - 동승 요청 생성
 - AcceptancePending 화면 조회/취소
+- RecruitScreen 파티 생성
 - 실제 Taxi Chat route 진입
 
 코드:
 
 - `src/features/taxi/data/api/taxiHomeApiClient.ts`
+- `src/features/taxi/data/mappers/taxiPartyMapper.ts`
+- `src/features/taxi/data/repositories/SpringPartyRepository.ts`
+- `src/features/taxi/data/repositories/SpringNotificationActionRepository.ts`
 - `src/features/taxi/application/taxiHomeQuery.ts`
 - `src/features/taxi/application/taxiAcceptancePendingQuery.ts`
 - `src/features/taxi/hooks/useTaxiHomeData.ts`
 - `src/features/taxi/hooks/useTaxiAcceptancePendingData.ts`
+- `src/features/taxi/hooks/useTaxiRecruitForm.ts`
+- `src/features/taxi/hooks/useJoinRequestModal.ts`
+- `src/features/taxi/hooks/useMyParty.ts`
+- `src/features/taxi/hooks/useJoinRequestStatus.ts`
+- `src/features/taxi/providers/JoinRequestProvider.tsx`
+- `src/di/RepositoryProvider.tsx`
+
+runtime note:
+
+- `SpringPartyRepository`는 현재 SSE가 아니라 REST polling 기반 subscription으로 `useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`를 유지한다.
+- leader action 이후 화면 반영 기준은 optimistic mutation이 아니라 `REST mutation -> repository refresh -> polling/focus refetch`다.
+- `POST /v1/parties`는 프리셋 좌표를 해석할 수 있는 위치 입력에 한해 사용하며, 임의 자유 입력 위치는 아직 완전 이전으로 보지 않는다.
 
 ### 3.5 Taxi Chat detail
 
@@ -213,6 +239,10 @@ runtime note:
 
 이미 연결된 endpoint:
 
+- `POST /v1/parties`
+- `GET /v1/parties/{partyId}/join-requests`
+- `PATCH /v1/join-requests/{id}/accept`
+- `PATCH /v1/join-requests/{id}/decline`
 - `GET /v1/parties`
 - `GET /v1/parties/{partyId}`
 - `GET /v1/members/me/parties`
@@ -223,19 +253,18 @@ runtime note:
 
 아직 남은 것:
 
-- `POST /v1/parties`
 - `PATCH /v1/parties/{id}`
-- 파티 종료/도착/정산/강퇴/나가기 관련 endpoint
-- 리더용 join request 수락/거절
+- 파티 종료/도착/정산/강퇴/직접 leave/kick 관련 endpoint
 - `GET /v1/sse/parties`
 - `GET /v1/sse/parties/{partyId}/join-requests`
 - `GET /v1/sse/members/me/join-requests`
-- `IPartyRepository` 전체 Spring concrete 구현
+- leader 승인 후 시스템 메시지 write contract
+- 임의 자유 입력 위치의 좌표 정책
 
 의미:
 
-- Taxi Home screen chain은 Spring 기준으로 동작한다.
-- 하지만 Taxi Party domain 전체는 아직 query/application adapter 중심의 부분 이전 상태다.
+- Taxi Home, AcceptancePending, Main tab의 my party/join request badge, leader 승인/거절, recruit(create) 일부는 Spring 기준으로 동작한다.
+- 하지만 Taxi Party domain 전체는 아직 REST polling 기반의 부분 이전 상태이고, SSE 및 고급 상태전이는 후속 작업이 남아 있다.
 
 ### 4.2 Chat domain
 
