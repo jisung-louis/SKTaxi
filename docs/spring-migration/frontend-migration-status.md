@@ -27,7 +27,7 @@
 - App Notice / Notification Center는 Spring API + 중앙 DI 기준으로 전환 완료
 - Notification Center는 REST 초기 로드 + SSE 실시간 반영까지 연결 완료
 - Taxi Home은 Spring REST query + join request/pending/chat entry 범위까지 연결 완료
-- Taxi Party는 Spring REST/SSE + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) 일부까지 부분 이전 완료
+- Taxi Party는 Spring REST/SSE + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) 일부와 ChatScreen 고급 상태전이 chain까지 부분 이전 완료
 - Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 부분 이전 완료
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
@@ -55,7 +55,7 @@
 | Phase B. 인증/회원 bootstrap 정리                     | 완료           | CompleteProfile/guard/source-of-truth 정리까지 완료                                        |
 | Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료                                 |
 | Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                               |
-| Phase E. Taxi Party 정식 이전                         | 부분 완료      | join request 과삭제 버그 수정 및 SSE signal 구독 연결 완료, 고급 상태전이/위치 정책은 잔여 |
+| Phase E. Taxi Party 정식 이전                         | 부분 완료      | join request bugfix, SSE signal, ChatScreen 상태전이 chain 완료, 좌표 정책/system message contract는 잔여 |
 | Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완                                  |
 | Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                          |
 | Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                                   |
@@ -385,8 +385,12 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
   - `PATCH /v1/join-requests/{id}/accept`
   - `PATCH /v1/join-requests/{id}/decline`
   - `GET /v1/parties/{partyId}/join-requests`
+  - `PATCH /v1/parties/{id}/close`
+  - `PATCH /v1/parties/{id}/reopen`
   - `PATCH /v1/parties/{id}/arrive`
+  - `PATCH /v1/parties/{id}/end`
   - `DELETE /v1/parties/{id}/members/{memberId}`
+  - `DELETE /v1/parties/{id}/members/me`
   - `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`
 - Taxi Party SSE
   - `GET /v1/sse/parties`
@@ -405,6 +409,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - `PARTY_JOIN_REQUEST` 알림 삭제는 `notification.data.requestId` 기준으로 좁혀, 같은 party의 다른 pending 요청 알림을 같이 지우지 않도록 수정했다.
 - FCM push runtime은 backend enum 이름(`PARTY_JOIN_REQUEST`, `PARTY_JOIN_ACCEPTED`, `PARTY_JOIN_DECLINED` 등)을 기존 frontend navigation type으로 정규화한다.
 - recruit(create)는 `/v1/parties`로 이전했지만, 좌표 계약상 프리셋 좌표를 해석할 수 없는 자유 입력 위치는 아직 완전 이전으로 보지 않는다.
+- ChatScreen은 `partyRepository.subscribeToParty()`의 SSE signal을 받아 `taxiChatRepository.getPartyChat()` REST snapshot을 다시 읽으므로, leader/member action 이후 summary/status가 stale 상태로 남지 않는다.
 - backend chat contract에는 client-authored `SYSTEM` message write가 없고, `ChatService.sendMessage()`는 `SYSTEM` 타입 전송을 거부한다. 따라서 create/accept 후 조용히 성공하는 no-op 호출은 제거했다.
 
 ### 4.12 Phase E 결과
@@ -421,15 +426,17 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - 승인/거절 이후 stale `PARTY_JOIN_REQUEST` 알림은 Spring notification REST를 다시 조회해 `requestId`가 일치하는 알림만 삭제한다.
 - `useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`, `usePendingJoinRequest`, `useParty`, `subscribeToJoinRequests()`는 Taxi Party SSE signal을 받아 REST snapshot을 다시 읽는다.
 - `SpringPartyRepository.sendSystemMessage()`는 더 이상 성공처럼 끝나는 no-op가 아니라, backend contract 부재를 드러내는 명시적 오류로 정리됐다.
+- `ChatScreen` summary/action strip은 `close/reopen/arrive/end/kick/leave/settlement confirm`을 실제 UI chain으로 연결한다.
 - 파티 도착/강퇴/멤버별 정산 확인은 `SpringPartyRepository` 경계에서 각각 `PATCH /v1/parties/{id}/arrive`, `DELETE /v1/parties/{id}/members/{memberId}`, `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`으로 연결됐다.
+- direct leave는 더 이상 `SpringTaxiChatRepository` 전용 책임이 아니고, `DELETE /v1/parties/{id}/members/me`를 `SpringPartyRepository.leaveParty()`로 옮겨 party domain command로 정리했다.
+- leader 모집 상태 전이는 `PATCH /v1/parties/{id}/close`, `PATCH /v1/parties/{id}/reopen`, `PATCH /v1/parties/{id}/end`까지 screen chain에 연결됐다.
 
 현재 아직 남은 것:
 
-- 파티 도착/정산/강퇴의 repository 경계는 일부 연결했지만, close/reopen/end/직접 leave를 포함한 고급 state transition 전체가 screen chain까지 닫힌 것은 아니다.
-- recruit(create)는 프리셋 또는 프리셋과 동일한 이름으로 좌표를 해석할 수 있는 위치만 Spring create에 연결했고, 임의 자유 입력 위치는 후속 좌표 정책이 필요하다.
+- recruit(create)는 프리셋 또는 프리셋과 동일한 이름으로 좌표를 해석할 수 있는 위치만 Spring create에 연결했고, 임의 자유 입력 위치는 backend geocoding/좌표 contract가 없어 여전히 막혀 있다.
 - leader 승인 후 채팅 시스템 메시지 삽입은 backend에 별도 write contract가 없어 프론트에서 재현하지 않는다.
 - Taxi Party SSE는 연결됐지만, SSE payload를 직접 domain state로 쓰지 않고 signal-only로 사용하므로 REST snapshot 재조회 비용은 여전히 남아 있다.
-- `DELETE /v1/parties/{id}/members/me`는 Taxi Party가 아니라 `SpringTaxiChatRepository`의 leave 흐름에 남아 있어, 고급 상태 전이 경계가 완전히 단일화되지는 않았다.
+- `PATCH /v1/parties/{id}` 기반 파티 수정, `POST /v1/parties/{id}/cancel` 또는 leader withdraw 종료 정책은 이번 단계에서 별도 UI chain으로 닫지 않았다.
 
 ---
 

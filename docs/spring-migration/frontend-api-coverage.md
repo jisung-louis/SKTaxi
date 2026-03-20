@@ -29,6 +29,7 @@
   - Notification Center REST + unread count + SSE 실시간 동기화
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
   - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 좌표 해석 가능 범위) + 주요 SSE subscription
+  - Taxi Chat detail의 close/reopen/arrive/end/kick/leave/settlement confirm screen chain
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
@@ -202,9 +203,15 @@ endpoint / realtime contract:
 - `GET /v1/parties/{partyId}`
 - `GET /v1/chat-rooms/party:{partyId}`
 - `GET /v1/chat-rooms/party:{partyId}/messages`
+- `PATCH /v1/parties/{id}/close`
+- `PATCH /v1/parties/{id}/reopen`
+- `PATCH /v1/parties/{id}/arrive`
+- `PATCH /v1/parties/{id}/end`
+- `DELETE /v1/parties/{id}/members/{memberId}`
+- `DELETE /v1/parties/{id}/members/me`
+- `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`
 - `PATCH /v1/chat-rooms/party:{partyId}/settings`
 - `PATCH /v1/chat-rooms/party:{partyId}/read`
-- `DELETE /v1/parties/{partyId}/members/me`
 - STOMP endpoint: `/ws` (RN transport path는 `/ws/websocket`)
 - publish: `/app/chat/party:{partyId}`
 - subscribe: `/topic/chat/party:{partyId}`
@@ -217,20 +224,25 @@ endpoint / realtime contract:
 - Taxi Chat 실시간 메시지 수신/전송
 - Taxi Chat 음소거 토글
 - Taxi Chat 방 열람 중 읽음 처리
-- Taxi Chat 화면에서 파티 나가기
+- Taxi Chat 화면에서 모집 마감/재개, 도착 처리, 강제 종료, 멤버 내보내기, 직접 나가기, 정산 확인
 
 코드:
 
 - `src/features/taxi/data/api/taxiChatApiClient.ts`
+- `src/features/taxi/data/api/taxiHomeApiClient.ts`
+- `src/features/taxi/data/repositories/SpringPartyRepository.ts`
 - `src/features/taxi/data/repositories/SpringTaxiChatRepository.ts`
 - `src/features/taxi/application/taxiChatDetailAssembler.ts`
+- `src/features/taxi/components/TaxiChatSummaryCard.tsx`
 - `src/features/taxi/hooks/useTaxiChatDetailData.ts`
+- `src/features/taxi/screens/ChatScreen.tsx`
 - `src/di/RepositoryProvider.tsx`
 
 runtime note:
 
 - `SpringTaxiChatRepository`는 subscriber가 0명이 되거나 auth session uid가 바뀌면 STOMP client를 deactivate하고 party state를 정리한다.
 - 따라서 로그아웃 후 다른 계정 로그인 시 이전 CONNECT Authorization 세션을 재사용하지 않는다.
+- Taxi Chat detail은 `partyRepository.subscribeToParty()`의 SSE signal을 받아 `taxiChatRepository.getPartyChat()` REST snapshot을 다시 읽으므로, party status/member/settlement 변화도 chat summary에서 Spring source 기준으로 다시 반영된다.
 
 ---
 
@@ -259,16 +271,20 @@ runtime note:
 - `GET /v1/sse/members/me/join-requests`
 - `POST /v1/parties/{partyId}/join-requests`
 - `PATCH /v1/join-requests/{id}/cancel`
+- `PATCH /v1/parties/{id}/close`
+- `PATCH /v1/parties/{id}/reopen`
+- `PATCH /v1/parties/{id}/arrive`
+- `PATCH /v1/parties/{id}/end`
+- `DELETE /v1/parties/{id}/members/{memberId}`
 - `DELETE /v1/parties/{partyId}/members/me`
+- `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`
 
 아직 남은 것:
 
 - `PATCH /v1/parties/{id}`
-- close/reopen/end를 포함한 파티 종료 상태 전이 endpoint
-- 도착/정산/강퇴 endpoint의 실제 screen chain 연결
-- 직접 leave 흐름의 party domain 경계 일원화
+- `POST /v1/parties/{partyId}/cancel` 또는 leader withdraw 종료 UI
 - leader 승인 후 시스템 메시지 write contract
-- 임의 자유 입력 위치의 좌표 정책
+- 임의 자유 입력 위치의 좌표/geocoding 정책
 
 의미:
 
@@ -314,7 +330,6 @@ runtime note:
 
 - `PATCH /v1/parties/{id}`
 - `POST /v1/parties/{partyId}/cancel` 또는 `DELETE /v1/parties/{id}`
-- close/reopen/end를 포함한 파티 종료 상태 전이 endpoint
 - 자유 입력 위치를 위한 좌표/geocoding 정책
 - leader 승인 후 시스템 메시지 write contract
 
