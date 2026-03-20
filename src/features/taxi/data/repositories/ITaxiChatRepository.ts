@@ -14,6 +14,7 @@ export interface ITaxiChatRepository {
   getPartyChat(partyId: string): Promise<TaxiChatSourceData | null>
   getSessionSnapshot(): TaxiChatSessionSnapshot
   leaveParty(partyId: string): Promise<void>
+  resetSession(): Promise<void>
   sendMessage(
     partyId: string,
     messageText: string,

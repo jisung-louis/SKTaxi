@@ -81,6 +81,8 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
   private stompConnectionPromise: Promise<Client> | null = null;
 
+  private stompClientGeneration = 0;
+
   async createPartyChat(_draft: TaxiRecruitDraft): Promise<{partyId: string}> {
     throw new RepositoryError(
       RepositoryErrorCode.INVALID_ARGUMENT,
@@ -107,6 +109,17 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       this.currentPartyId = null;
       this.emitSessionChange();
     }
+  }
+
+  async resetSession(): Promise<void> {
+    this.clearPartyStates();
+
+    if (this.currentPartyId !== null) {
+      this.currentPartyId = null;
+      this.emitSessionChange();
+    }
+
+    await this.deactivateStompClient();
   }
 
   async sendMessage(
@@ -176,6 +189,19 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       if (currentState.subscribers.size === 0) {
         currentState.roomSubscription?.unsubscribe();
         currentState.roomSubscription = null;
+
+        if (this.currentPartyId === partyId) {
+          this.currentPartyId = null;
+          this.emitSessionChange();
+        }
+
+        this.partyStates.delete(partyId);
+
+        if (!this.hasActiveSubscribers()) {
+          this.deactivateStompClient().catch(error => {
+            console.warn('채팅 STOMP 클라이언트를 정리하지 못했습니다.', error);
+          });
+        }
       }
     };
   }
@@ -218,6 +244,37 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       state.roomSubscription?.unsubscribe();
       state.roomSubscription = null;
     });
+  }
+
+  private clearPartyStates() {
+    this.partyStates.forEach(state => {
+      state.roomSubscription?.unsubscribe();
+      state.roomSubscription = null;
+      state.source = null;
+      state.subscribers.clear();
+    });
+    this.errorSubscription?.unsubscribe();
+    this.errorSubscription = null;
+    this.partyStates.clear();
+  }
+
+  private async deactivateStompClient() {
+    const client = this.stompClient;
+
+    this.stompClientGeneration += 1;
+    this.stompClient = null;
+    this.stompConnectionPromise = null;
+    this.errorSubscription = null;
+
+    if (!client) {
+      return;
+    }
+
+    try {
+      await client.deactivate({force: true});
+    } catch (error) {
+      console.warn('채팅 STOMP 연결 종료에 실패했습니다.', error);
+    }
   }
 
   private emitSessionChange() {
@@ -280,6 +337,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     }
 
     const client = this.stompClient;
+    const generation = ++this.stompClientGeneration;
 
     this.stompConnectionPromise = new Promise<Client>((resolve, reject) => {
       let settled = false;
@@ -306,6 +364,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       };
 
       client.onConnect = () => {
+        if (!this.isCurrentStompClient(client, generation)) {
+          return;
+        }
+
         this.ensureErrorSubscription();
         this.partyStates.forEach((state, partyId) => {
           if (state.subscribers.size > 0) {
@@ -320,10 +382,18 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       };
 
       client.onDisconnect = () => {
+        if (!this.isCurrentStompClient(client, generation)) {
+          return;
+        }
+
         this.clearStompSubscriptions();
       };
 
       client.onStompError = frame => {
+        if (!this.isCurrentStompClient(client, generation)) {
+          return;
+        }
+
         const error = createStompRepositoryError(
           frame.headers.message ||
             this.parseFrameBody<StompApiErrorDto>(frame)?.message ||
@@ -338,10 +408,18 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       };
 
       client.onWebSocketClose = () => {
+        if (!this.isCurrentStompClient(client, generation)) {
+          return;
+        }
+
         this.clearStompSubscriptions();
       };
 
       client.onWebSocketError = event => {
+        if (!this.isCurrentStompClient(client, generation)) {
+          return;
+        }
+
         const error = createStompRepositoryError(
           '채팅 실시간 연결을 열지 못했습니다.',
           {
@@ -354,7 +432,9 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
       client.activate();
     }).finally(() => {
-      this.stompConnectionPromise = null;
+      if (this.isCurrentStompClient(client, generation)) {
+        this.stompConnectionPromise = null;
+      }
     });
 
     return this.stompConnectionPromise;
@@ -460,6 +540,16 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       });
 
     return state.loadPromise;
+  }
+
+  private hasActiveSubscribers() {
+    return [...this.partyStates.values()].some(
+      state => state.subscribers.size > 0,
+    );
+  }
+
+  private isCurrentStompClient(client: Client, generation: number) {
+    return this.stompClient === client && this.stompClientGeneration === generation;
   }
 
   private markLatestMessageAsRead(

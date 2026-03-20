@@ -19,8 +19,9 @@ import {
 import {loadAuthLocalAdjunct} from '../services/authLocalAdjunctService';
 
 export const useAuthSession = (): AuthContextValue => {
-  const {authRepository, memberRepository} = useRepository();
+  const {authRepository, memberRepository, taxiChatRepository} = useRepository();
   const bootstrappedMemberUidRef = useRef<string | null>(null);
+  const currentAuthUidRef = useRef<string | null>(null);
   const memberBootstrapRef = useRef<{
     uid: string;
     promise: Promise<MemberProfile>;
@@ -168,6 +169,14 @@ export const useAuthSession = (): AuthContextValue => {
     [authRepository, memberRepository],
   );
 
+  const resetTaxiChatSession = useCallback(async () => {
+    try {
+      await taxiChatRepository.resetSession();
+    } catch (error) {
+      console.warn('택시 채팅 세션 정리 실패:', error);
+    }
+  }, [taxiChatRepository]);
+
   useEffect(() => {
     return registerAuthTokenResolver(({forceRefresh} = {}) =>
       authRepository.refreshToken(forceRefresh),
@@ -182,6 +191,16 @@ export const useAuthSession = (): AuthContextValue => {
         await setAnalyticsAuthUser(authUser);
         if (cancelled) {
           return;
+        }
+
+        const nextAuthUid = authUser?.uid ?? null;
+        if (currentAuthUidRef.current !== nextAuthUid) {
+          currentAuthUidRef.current = nextAuthUid;
+          await resetTaxiChatSession();
+
+          if (cancelled) {
+            return;
+          }
         }
 
         if (!authUser) {
@@ -260,6 +279,7 @@ export const useAuthSession = (): AuthContextValue => {
 
     return () => {
       cancelled = true;
+      currentAuthUidRef.current = null;
       memberBootstrapRef.current = null;
       pendingAuthTransitionRef.current = null;
       unsubscribeAuth();
@@ -268,19 +288,21 @@ export const useAuthSession = (): AuthContextValue => {
     authRepository,
     ensureMemberBootstrap,
     rejectPendingAuthTransition,
+    resetTaxiChatSession,
     resolvePendingAuthTransition,
   ]);
 
   const signOut = useCallback(async () => {
     try {
       setState(prev => ({...prev, loading: true}));
+      await resetTaxiChatSession();
       await removeAuthSessionFcmToken(authRepository, memberRepository);
       await authRepository.signOut();
     } catch (error) {
       setState(prev => ({...prev, loading: false}));
       throw error;
     }
-  }, [authRepository, memberRepository]);
+  }, [authRepository, memberRepository, resetTaxiChatSession]);
 
   const signInWithGoogle = useCallback(async () => {
     try {

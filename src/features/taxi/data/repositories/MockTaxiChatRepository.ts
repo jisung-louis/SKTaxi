@@ -164,6 +164,15 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     }
   }
 
+  async resetSession(): Promise<void> {
+    await wait();
+
+    taxiChatStore.currentPartyId = null;
+    taxiChatStore.partiesById = {};
+    partyListeners.clear();
+    emitChange();
+  }
+
   async sendMessage(
     partyId: string,
     messageText: string,
