@@ -234,27 +234,29 @@ export const TaxiChatMessageList = ({
           return (
             <View key={item.id} style={styles.specialWrap}>
               <View style={styles.arrivedCard}>
-                <LinearGradient
-                  colors={['#2BCB7E', '#17B96E']}
-                  end={{x: 1, y: 1}}
-                  start={{x: 0, y: 0}}
-                  style={styles.arrivedHeader}>
-                  <View style={styles.arrivedHeaderRow}>
-                    <View style={styles.arrivedIconWrap}>
-                      <Icon
-                        color={COLORS.text.inverse}
-                        name="location-outline"
-                        size={14}
-                      />
+                <View style={styles.arrivedHeaderWrap}>
+                  <LinearGradient
+                    colors={['#2BCB7E', '#17B96E']}
+                    end={{x: 1, y: 1}}
+                    start={{x: 0, y: 0}}
+                    style={styles.arrivedHeader}>
+                    <View style={styles.arrivedHeaderRow}>
+                      <View style={styles.arrivedIconWrap}>
+                        <Icon
+                          color={COLORS.text.inverse}
+                          name="location-outline"
+                          size={14}
+                        />
+                      </View>
+                      <View style={styles.arrivedHeaderCopy}>
+                        <Text style={styles.arrivedHeaderTitle}>
+                          택시가 목적지에 도착했어요!
+                        </Text>
+                        <Text style={styles.arrivedHeaderTime}>{item.timeLabel}</Text>
+                      </View>
                     </View>
-                    <View style={styles.arrivedHeaderCopy}>
-                      <Text style={styles.arrivedHeaderTitle}>
-                        택시가 목적지에 도착했어요!
-                      </Text>
-                      <Text style={styles.arrivedHeaderTime}>{item.timeLabel}</Text>
-                    </View>
-                  </View>
-                </LinearGradient>
+                  </LinearGradient>
+                </View>
 
                 <View style={styles.arrivedBody}>
                   <View style={styles.arrivedInfoRow}>
@@ -521,6 +523,7 @@ const styles = StyleSheet.create({
   arrivedHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+    width: '100%',
   },
   arrivedHeaderCopy: {
     gap: 1,
@@ -540,6 +543,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
+  },
+  arrivedHeaderWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   arrivedIconWrap: {
     alignItems: 'center',

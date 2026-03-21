@@ -455,9 +455,6 @@ export const ChatScreen = () => {
           <>
             <TaxiChatHeaderNotice
               noticeLabel={data.summary.management.noticeLabel}
-              onPressSettlementNotice={() => {
-                setSettlementSheetVisible(true);
-              }}
               settlementNotice={data.summary.settlementNotice}
             />
 
