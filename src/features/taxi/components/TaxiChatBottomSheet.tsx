@@ -73,6 +73,7 @@ export const TaxiChatBottomSheet = ({
 
   return (
     <BottomSheetModal
+      android_keyboardInputMode="adjustResize"
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.background}
       enableDynamicSizing

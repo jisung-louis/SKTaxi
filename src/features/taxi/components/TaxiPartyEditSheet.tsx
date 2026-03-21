@@ -1,8 +1,8 @@
 import React from 'react';
+import {BottomSheetTextInput} from '@gorhom/bottom-sheet';
 import {
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -107,7 +107,7 @@ export const TaxiPartyEditSheet = ({
 
       <View style={styles.detailSection}>
         <Text style={styles.fieldLabel}>상세 설명</Text>
-        <TextInput
+        <BottomSheetTextInput
           multiline
           placeholder="파티 설명을 입력하세요"
           placeholderTextColor={COLORS.text.placeholder}
