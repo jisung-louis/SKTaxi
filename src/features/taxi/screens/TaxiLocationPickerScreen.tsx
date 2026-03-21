@@ -16,13 +16,12 @@ import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
   COLORS,
   RADIUS,
-  SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks';
@@ -45,16 +44,22 @@ const DEFAULT_REGION: Region = {
 const getScreenCopy = (kind: 'departure' | 'destination') => {
   if (kind === 'departure') {
     return {
-      confirmLabel: '출발지로 선택',
-      title: '출발지 선택',
-      tooltip: '지도를 눌러 출발 위치를 정확히 선택해주세요.',
+      accentColor: COLORS.brand.primary,
+      accentSoftColor: 'rgba(34,197,94,0.09)',
+      confirmLabel: '이 위치를 출발지로 선택',
+      emptyTitle: '지도를 탭해 출발지를 선택하세요',
+      title: '출발지 위치 선택',
+      tooltip: '지도를 탭해서 출발지 위치를 선택하세요',
     };
   }
 
   return {
-    confirmLabel: '도착지로 선택',
-    title: '도착지 선택',
-    tooltip: '지도를 눌러 도착 위치를 정확히 선택해주세요.',
+    accentColor: '#3B82F6',
+    accentSoftColor: 'rgba(59,130,246,0.09)',
+    confirmLabel: '이 위치를 도착지로 선택',
+    emptyTitle: '지도를 탭해 도착지를 선택하세요',
+    title: '도착지 위치 선택',
+    tooltip: '지도를 탭해서 도착지 위치를 선택하세요',
   };
 };
 
@@ -66,6 +71,7 @@ export const TaxiLocationPickerScreen = () => {
     useRoute<
       NativeStackScreenProps<TaxiStackParamList, 'TaxiLocationPicker'>['route']
     >();
+  const insets = useSafeAreaInsets();
   const {location} = useTaxiLocation();
   const {initialLocation, initialName, kind} = route.params;
   const [selectedLocation, setSelectedLocation] = React.useState(
@@ -73,6 +79,7 @@ export const TaxiLocationPickerScreen = () => {
   );
 
   const copy = React.useMemo(() => getScreenCopy(kind), [kind]);
+  const hasSelection = Boolean(selectedLocation);
 
   const initialRegion = React.useMemo<Region>(() => {
     if (selectedLocation) {
@@ -157,64 +164,105 @@ export const TaxiLocationPickerScreen = () => {
         <View style={styles.headerSpacer} />
       </View>
 
-      <View style={styles.noticeBanner}>
-        <Icon color={COLORS.status.success} name="location" size={18} />
+      <View style={[styles.noticeBanner, {backgroundColor: copy.accentColor}]}>
+        <Icon color={COLORS.text.inverse} name="location" size={16} />
         <Text style={styles.noticeLabel}>{copy.tooltip}</Text>
       </View>
 
-      <View style={styles.mapWrap}>
+      <View style={styles.mapSection}>
         <MapView
           initialRegion={initialRegion}
           onPress={handlePressMap}
-          style={StyleSheet.absoluteFill}>
+          style={styles.map}>
           {selectedLocation ? (
             <Marker
               coordinate={{
                 latitude: selectedLocation.lat,
                 longitude: selectedLocation.lng,
               }}
-              pinColor={COLORS.brand.primary}
+              pinColor={copy.accentColor}
               title={initialName.trim() || copy.title}
             />
           ) : null}
         </MapView>
-      </View>
 
-      <View style={styles.bottomCardWrap}>
-        <View style={styles.bottomCard}>
-          <Text style={styles.cardLabel}>
-            {selectedLocation ? '선택된 위치' : '아직 위치를 선택하지 않았어요'}
-          </Text>
+        <View pointerEvents="none" style={styles.bottomCardWrap}>
+          {hasSelection ? (
+            <View style={styles.selectedCard}>
+              <View
+                style={[
+                  styles.selectedCardIconWrap,
+                  {backgroundColor: copy.accentSoftColor},
+                ]}>
+                <Icon color={copy.accentColor} name="location" size={18} />
+              </View>
 
-          {selectedLocation ? (
-            <>
-              <Text style={styles.cardTitle}>{initialName.trim()}</Text>
-              <Text style={styles.cardMeta}>
-                {`${selectedLocation.lat.toFixed(6)}, ${selectedLocation.lng.toFixed(6)}`}
-              </Text>
-            </>
+              <View style={styles.selectedCardCopy}>
+                <Text style={styles.cardLabel}>선택된 위치</Text>
+                <Text style={styles.selectedCardTitle}>지도에서 선택한 위치</Text>
+                <Text style={styles.selectedCardDescription}>
+                  탭해서 위치를 변경할 수 있어요
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.selectedCardCheckWrap,
+                  {backgroundColor: copy.accentColor},
+                ]}>
+                <Icon color={COLORS.text.inverse} name="checkmark" size={14} />
+              </View>
+            </View>
           ) : (
-            <Text style={styles.cardDescription}>
-              지도를 탭해서 정확한 좌표를 지정해주세요.
-            </Text>
+            <View style={styles.emptyCard}>
+              <View style={styles.emptyCardIconWrap}>
+                <Icon color={COLORS.text.muted} name="location-outline" size={18} />
+              </View>
+              <Text style={styles.emptyCardTitle}>{copy.emptyTitle}</Text>
+              <Text style={styles.emptyCardDescription}>
+                원하는 위치를 정확하게 탭하면 핀이 꽂혀요
+              </Text>
+            </View>
           )}
         </View>
+      </View>
 
+      <View
+        style={[
+          styles.footer,
+          {
+            paddingBottom: Math.max(insets.bottom, SPACING.lg),
+          },
+        ]}>
         <TouchableOpacity
           accessibilityRole="button"
-          activeOpacity={selectedLocation ? 0.88 : 1}
-          disabled={!selectedLocation}
+          activeOpacity={hasSelection ? 0.88 : 1}
+          disabled={!hasSelection}
           onPress={handleConfirm}
           style={[
             styles.confirmButton,
-            !selectedLocation && styles.confirmButtonDisabled,
+            hasSelection
+              ? [
+                  styles.confirmButtonEnabled,
+                  {
+                    backgroundColor: copy.accentColor,
+                    shadowColor: copy.accentColor,
+                  },
+                ]
+              : styles.confirmButtonDisabled,
           ]}>
+          <Icon
+            color={hasSelection ? COLORS.text.inverse : COLORS.text.muted}
+            name="location"
+            size={16}
+            style={styles.confirmButtonIcon}
+          />
           <Text
             style={[
               styles.confirmButtonLabel,
-              !selectedLocation && styles.confirmButtonLabelDisabled,
+              !hasSelection && styles.confirmButtonLabelDisabled,
             ]}>
-            {copy.confirmLabel}
+            {hasSelection ? copy.confirmLabel : '위치를 선택해 주세요'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -223,62 +271,43 @@ export const TaxiLocationPickerScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  bottomCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderColor: COLORS.border.subtle,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    gap: 6,
-    padding: SPACING.lg,
-    ...SHADOWS.raised,
-  },
   bottomCardWrap: {
-    backgroundColor: 'transparent',
-    gap: SPACING.md,
+    bottom: SPACING.lg,
     left: SPACING.lg,
     position: 'absolute',
     right: SPACING.lg,
-    bottom: SPACING.lg,
-  },
-  cardDescription: {
-    color: COLORS.text.secondary,
-    fontSize: 14,
-    lineHeight: 20,
   },
   cardLabel: {
     color: COLORS.text.muted,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '400',
     lineHeight: 16,
-  },
-  cardMeta: {
-    color: COLORS.text.secondary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  cardTitle: {
-    color: COLORS.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 24,
   },
   confirmButton: {
     alignItems: 'center',
-    backgroundColor: COLORS.accent.blue,
     borderRadius: RADIUS.lg,
-    height: 52,
+    flexDirection: 'row',
+    height: 60,
     justifyContent: 'center',
-    ...SHADOWS.floating,
   },
   confirmButtonDisabled: {
     backgroundColor: COLORS.background.subtle,
     shadowOpacity: 0,
   },
+  confirmButtonEnabled: {
+    elevation: 8,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+  },
+  confirmButtonIcon: {
+    marginRight: SPACING.sm,
+  },
   confirmButtonLabel: {
     color: COLORS.text.inverse,
     fontSize: 16,
     fontWeight: '700',
-    lineHeight: 20,
+    lineHeight: 24,
   },
   confirmButtonLabelDisabled: {
     color: COLORS.text.muted,
@@ -289,11 +318,16 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    backgroundColor: COLORS.background.page,
+    backgroundColor: COLORS.background.surface,
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    height: 56,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 4,
   },
   headerButton: {
     alignItems: 'center',
@@ -306,29 +340,118 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: COLORS.text.primary,
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: '700',
-    lineHeight: 26,
+    lineHeight: 24,
   },
-  mapWrap: {
+  emptyCard: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    minHeight: 122,
+    paddingHorizontal: 17,
+    paddingVertical: 17,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 6,
+  },
+  emptyCardDescription: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  emptyCardIconWrap: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
+    height: 40,
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+    width: 40,
+  },
+  emptyCardTitle: {
+    color: COLORS.text.strong,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+    marginBottom: SPACING.xs,
+    textAlign: 'center',
+  },
+  footer: {
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: 17,
+  },
+  map: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  mapSection: {
     flex: 1,
-    overflow: 'hidden',
+    position: 'relative',
   },
   noticeBanner: {
     alignItems: 'center',
-    backgroundColor: COLORS.brand.primaryTint,
-    borderBottomColor: COLORS.border.accent,
-    borderBottomWidth: 1,
     flexDirection: 'row',
     gap: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     paddingVertical: 12,
   },
   noticeLabel: {
-    color: COLORS.status.success,
+    color: COLORS.text.inverse,
     flex: 1,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  selectedCard: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: 90,
+    padding: 17,
+    shadowColor: '#000000',
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 6,
+  },
+  selectedCardCheckWrap: {
+    alignItems: 'center',
+    borderRadius: RADIUS.pill,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  selectedCardCopy: {
+    flex: 1,
+    marginHorizontal: SPACING.md,
+  },
+  selectedCardDescription: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  selectedCardIconWrap: {
+    alignItems: 'center',
+    borderRadius: RADIUS.pill,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  selectedCardTitle: {
+    color: COLORS.text.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
   },
 });
