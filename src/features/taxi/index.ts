@@ -82,9 +82,6 @@ export {
   declineJoinRequest,
 } from './services/joinRequestService';
 export {
-  sendAccountMessage,
-  sendArrivedMessage,
-  sendEndMessage,
   sendMessage,
-  sendSystemMessage,
+  sendAccountMessage,
 } from './services/partyMessageService';
