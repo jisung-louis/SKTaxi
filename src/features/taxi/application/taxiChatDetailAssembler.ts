@@ -248,15 +248,30 @@ const buildItems = (
     if (message.type === 'arrived') {
       const accountData =
         message.arrivalData?.accountData ?? partyChat.settlement?.accountData;
+      const splitMemberIds = message.arrivalData?.settlementTargetMemberIds ?? [];
+      const splitMembers = partyChat.participants.filter(participant =>
+        splitMemberIds.includes(participant.id),
+      );
+      const splitMemberCount =
+        message.arrivalData?.splitMemberCount ??
+        (splitMembers.length > 0 ? splitMembers.length : undefined);
+      const splitMemberSummaryLabel =
+        splitMembers.length > 0
+          ? `${splitMembers
+              .map(participant =>
+                participant.id === currentUserId ? '나' : participant.name,
+              )
+              .join(', ')} (${splitMemberCount ?? splitMembers.length}명)`
+          : undefined;
 
       items.push({
         accountData,
         accountLabel: formatAccountLabel(accountData),
         id: message.id,
         perPersonAmount: message.arrivalData?.perPersonAmount,
-        settlementTargetMemberIds:
-          message.arrivalData?.settlementTargetMemberIds ?? [],
-        splitMemberCount: message.arrivalData?.splitMemberCount,
+        splitMemberSummaryLabel,
+        settlementTargetMemberIds: splitMemberIds,
+        splitMemberCount,
         taxiFare: message.arrivalData?.taxiFare,
         timeLabel: format(createdDate, 'a hh:mm', {locale: ko}),
         type: 'arrived-message',

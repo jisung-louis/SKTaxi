@@ -12,6 +12,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import LinearGradient from 'react-native-linear-gradient';
 
 import {
   COLORS,
@@ -101,6 +102,18 @@ const isSameGroup = (
 const copyToClipboard = (value: string, message: string) => {
   Clipboard.setString(value);
   Alert.alert('복사 완료', message);
+};
+
+const formatMaskedAccountHolder = (accountHolder: string, hideName: boolean) => {
+  if (!hideName) {
+    return accountHolder;
+  }
+
+  if (accountHolder.length <= 1) {
+    return accountHolder;
+  }
+
+  return `${accountHolder.slice(0, 1)}${'*'.repeat(accountHolder.length - 1)}`;
 };
 
 export const TaxiChatMessageList = ({
@@ -211,50 +224,83 @@ export const TaxiChatMessageList = ({
         }
 
         if (item.type === 'arrived-message') {
+          const arrivedAccountHolder = item.accountData
+            ? formatMaskedAccountHolder(
+                item.accountData.accountHolder,
+                item.accountData.hideName,
+              )
+            : undefined;
+
           return (
             <View key={item.id} style={styles.specialWrap}>
               <View style={styles.arrivedCard}>
-                <View style={styles.specialHeaderRow}>
-                  <View style={styles.specialHeaderTitleWrap}>
+                <LinearGradient
+                  colors={['#2BCB7E', '#17B96E']}
+                  end={{x: 1, y: 1}}
+                  start={{x: 0, y: 0}}
+                  style={styles.arrivedHeader}>
+                  <View style={styles.arrivedHeaderRow}>
                     <View style={styles.arrivedIconWrap}>
                       <Icon
-                        color={COLORS.status.success}
+                        color={COLORS.text.inverse}
                         name="location-outline"
-                        size={16}
+                        size={14}
                       />
                     </View>
-                    <Text style={styles.specialTitle}>{'택시 도착 & 정산'}</Text>
+                    <View style={styles.arrivedHeaderCopy}>
+                      <Text style={styles.arrivedHeaderTitle}>
+                        택시가 목적지에 도착했어요!
+                      </Text>
+                      <Text style={styles.arrivedHeaderTime}>{item.timeLabel}</Text>
+                    </View>
                   </View>
-                  <Text style={[styles.specialTimeLabel, styles.arrivedTimeLabel]}>
-                    {item.timeLabel}
-                  </Text>
-                </View>
+                </LinearGradient>
 
-                <View style={styles.arrivedMetricRow}>
-                  <View style={styles.arrivedMetricCard}>
-                    <Text style={styles.arrivedMetricLabel}>총 택시비</Text>
-                    <Text style={styles.arrivedMetricValue}>
+                <View style={styles.arrivedBody}>
+                  <View style={styles.arrivedInfoRow}>
+                    <Text style={styles.arrivedInfoLabel}>총 택시비</Text>
+                    <Text style={styles.arrivedInfoValue}>
                       {item.taxiFare
                         ? `${item.taxiFare.toLocaleString('ko-KR')}원`
                         : '미정'}
                     </Text>
                   </View>
 
-                  <View style={styles.arrivedMetricCard}>
-                    <Text style={styles.arrivedMetricLabel}>1인당 금액</Text>
-                    <Text style={styles.arrivedMetricValue}>
+                  <View style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
+                    <Text style={styles.arrivedInfoLabel}>N빵 인원</Text>
+                    <Text numberOfLines={1} style={styles.arrivedSplitMemberLabel}>
+                      {item.splitMemberSummaryLabel ??
+                        (item.splitMemberCount
+                          ? `${item.splitMemberCount}명`
+                          : '미정')}
+                    </Text>
+                  </View>
+
+                  <View style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
+                    <Text style={styles.arrivedAmountLabel}>1인당 금액</Text>
+                    <Text style={styles.arrivedAmountValue}>
                       {item.perPersonAmount
                         ? `${item.perPersonAmount.toLocaleString('ko-KR')}원`
                         : '미정'}
                     </Text>
                   </View>
-                </View>
 
-                <Text style={styles.arrivedDescription}>
-                  {item.splitMemberCount
-                    ? `총 ${item.splitMemberCount}명 기준, 정산 대상 ${item.settlementTargetMemberIds.length}명입니다.`
-                    : '정산 대상 인원을 확인해주세요.'}
-                </Text>
+                  <View style={styles.arrivedDivider} />
+
+                  {item.accountLabel ? (
+                    <View style={styles.arrivedAccountCard}>
+                      <Text style={styles.arrivedAccountCardLabel}>송금 계좌</Text>
+                      {arrivedAccountHolder ? (
+                        <Text style={styles.arrivedAccountCardHolder}>
+                          {arrivedAccountHolder}
+                        </Text>
+                      ) : null}
+                      <Text style={styles.arrivedAccountCardValue}>
+                        {item.accountLabel.replace(' ', ' · ')}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
 
                 {item.accountLabel ? (
                   <TouchableOpacity
@@ -266,19 +312,9 @@ export const TaxiChatMessageList = ({
                         '정산 계좌가 복사되었습니다.',
                       );
                     }}
-                    style={styles.arrivedAccountRow}>
-                    <View style={styles.arrivedAccountTextWrap}>
-                      <Text style={styles.arrivedAccountLabel}>정산 계좌</Text>
-                      <Text style={styles.arrivedAccountValue}>
-                        {item.accountLabel}
-                      </Text>
-                      {item.accountData ? (
-                        <Text style={styles.arrivedAccountHolderLabel}>
-                          {item.accountData.accountHolder}
-                        </Text>
-                      ) : null}
-                    </View>
-                    <Icon color={COLORS.status.success} name="copy-outline" size={16} />
+                    style={styles.arrivedCopyButton}>
+                    <Icon color={COLORS.status.success} name="copy-outline" size={14} />
+                    <Text style={styles.arrivedCopyLabel}>계좌번호 복사</Text>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -423,85 +459,135 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginTop: 2,
   },
-  arrivedAccountLabel: {
+  arrivedAccountCard: {
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: 12,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  arrivedAccountCardHolder: {
+    color: COLORS.text.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  arrivedAccountCardLabel: {
+    color: COLORS.text.placeholder,
+    fontSize: 10,
+    fontWeight: '500',
+    lineHeight: 15,
+    marginBottom: 4,
+  },
+  arrivedAccountCardValue: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 1,
+  },
+  arrivedBody: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  arrivedCard: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    width: '100%',
+    ...SHADOWS.card,
+  },
+  arrivedCopyButton: {
+    alignItems: 'center',
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    height: 41,
+    justifyContent: 'center',
+  },
+  arrivedCopyLabel: {
     color: COLORS.status.success,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
   },
-  arrivedAccountRow: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderColor: 'rgba(255,255,255,0.24)',
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: SPACING.md,
-    paddingHorizontal: SPACING.md,
+  arrivedDivider: {
+    backgroundColor: COLORS.border.subtle,
+    height: 1,
+    marginTop: 8,
+  },
+  arrivedHeader: {
+    paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  arrivedAccountTextWrap: {
-    flex: 1,
-    gap: 2,
+  arrivedHeaderCopy: {
+    gap: 1,
   },
-  arrivedAccountHolderLabel: {
-    color: 'rgba(255,255,255,0.76)',
-    fontSize: 12,
-    lineHeight: 16,
+  arrivedHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  arrivedAccountValue: {
+  arrivedHeaderTime: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 10,
+    lineHeight: 15,
+  },
+  arrivedHeaderTitle: {
     color: COLORS.text.inverse,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  arrivedCard: {
-    backgroundColor: COLORS.brand.primary,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    width: '100%',
-  },
-  arrivedDescription: {
-    color: 'rgba(255,255,255,0.88)',
     fontSize: 12,
     lineHeight: 16,
-    marginTop: SPACING.sm,
+    fontWeight: '700',
   },
   arrivedIconWrap: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.16)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
     width: 28,
   },
-  arrivedMetricCard: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: RADIUS.md,
-    flex: 1,
-    gap: 4,
-    padding: SPACING.md,
+  arrivedAmountLabel: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
   },
-  arrivedMetricLabel: {
-    color: 'rgba(255,255,255,0.76)',
+  arrivedAmountValue: {
+    color: COLORS.status.success,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  arrivedInfoLabel: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  arrivedInfoRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  arrivedInfoRowSpaced: {
+    marginTop: 8,
+  },
+  arrivedInfoValue: {
+    color: COLORS.text.primary,
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
   },
-  arrivedMetricRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  arrivedMetricValue: {
-    color: COLORS.text.inverse,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 20,
-  },
-  arrivedTimeLabel: {
-    color: 'rgba(255,255,255,0.76)',
+  arrivedSplitMemberLabel: {
+    color: COLORS.text.secondary,
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '500',
+    lineHeight: 16,
+    marginLeft: SPACING.md,
+    textAlign: 'right',
   },
   avatarCircle: {
     alignItems: 'center',

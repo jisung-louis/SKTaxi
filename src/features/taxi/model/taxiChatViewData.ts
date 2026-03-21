@@ -180,6 +180,7 @@ export interface TaxiChatArrivedMessageViewData {
   accountLabel?: string;
   id: string;
   perPersonAmount?: number;
+  splitMemberSummaryLabel?: string;
   settlementTargetMemberIds: string[];
   splitMemberCount?: number;
   taxiFare?: number;

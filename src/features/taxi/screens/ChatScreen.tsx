@@ -31,6 +31,7 @@ import {
   TAXI_CHAT_COMPOSER_BAR_HEIGHT,
   TaxiChatComposer,
 } from '../components/TaxiChatComposer';
+import {TaxiChatHeaderNotice} from '../components/TaxiChatHeaderNotice';
 import {TaxiChatHeaderMenu} from '../components/TaxiChatHeaderMenu';
 import {TaxiChatMessageList} from '../components/TaxiChatMessageList';
 import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
@@ -117,8 +118,6 @@ export const ChatScreen = () => {
   const [composerValue, setComposerValue] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
   const [actionTrayVisible, setActionTrayVisible] = React.useState(false);
-  const [settlementNoticeExpanded, setSettlementNoticeExpanded] =
-    React.useState(false);
   const [taxiCallSheetVisible, setTaxiCallSheetVisible] = React.useState(false);
   const [accountSheetVisible, setAccountSheetVisible] = React.useState(false);
   const [editSheetVisible, setEditSheetVisible] = React.useState(false);
@@ -306,7 +305,6 @@ export const ChatScreen = () => {
         fallbackMessage: '도착 처리에 실패했습니다.',
         onSuccess: () => {
           setArriveSheetVisible(false);
-          setSettlementNoticeExpanded(true);
         },
         task: async () => {
           setSessionAccountInfo(payload.account);
@@ -455,6 +453,14 @@ export const ChatScreen = () => {
           </View>
         ) : data ? (
           <>
+            <TaxiChatHeaderNotice
+              noticeLabel={data.summary.management.noticeLabel}
+              onPressSettlementNotice={() => {
+                setSettlementSheetVisible(true);
+              }}
+              settlementNotice={data.summary.settlementNotice}
+            />
+
             <View style={styles.threadWrap}>
               <TaxiChatMessageList
                 contentContainerStyle={[
@@ -464,13 +470,7 @@ export const ChatScreen = () => {
                   },
                 ]}
                 headerContent={
-                  <TaxiChatSummaryCard
-                    settlementNoticeExpanded={settlementNoticeExpanded}
-                    summary={data.summary}
-                    onToggleSettlementNotice={() => {
-                      setSettlementNoticeExpanded(current => !current);
-                    }}
-                  />
+                  <TaxiChatSummaryCard summary={data.summary} />
                 }
                 items={data.items}
               />
