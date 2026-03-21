@@ -29,7 +29,7 @@
   - Notification Center REST + unread count + SSE 실시간 동기화
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
   - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 직접 입력 + 지도 선택 포함) / 수정 / 취소 + 주요 SSE subscription
-  - Taxi Chat detail의 close/reopen/arrive/end/kick/leave/settlement confirm + ACCOUNT/ARRIVED/END 특수 메시지 screen chain
+  - Taxi Chat detail의 close/reopen/arrive/end/kick/leave/settlement confirm + ACCOUNT payload 전송 + 서버 생성 SYSTEM/ARRIVED/END 렌더링 chain
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
@@ -220,7 +220,8 @@ endpoint / realtime contract:
 - publish: `/app/chat/party:{partyId}`
 - subscribe: `/topic/chat/party:{partyId}`
 - error queue: `/user/queue/errors`
-- 특수 메시지 type: `TEXT`, `ACCOUNT`, `ARRIVED`, `END`
+- client publish type: `TEXT`, `ACCOUNT`
+- server-generated subscribe type: `SYSTEM`, `ARRIVED`, `END`
 
 현재 사용처:
 
@@ -232,7 +233,7 @@ endpoint / realtime contract:
 - Taxi Chat 화면에서 모집 마감/재개, 도착 처리, 강제 종료, 멤버 내보내기, 직접 나가기, 정산 확인
 - Taxi Chat 리더/멤버 header menu 분기와 파티 수정/취소
 - Taxi Chat `+` 액션 트레이, 택시 호출 딥링크, 계좌 전송, 정산 현황 상단 공지/관리 modal
-- Taxi Chat `ACCOUNT` / `ARRIVED` / `END` 특수 메시지 전송과 렌더링
+- Taxi Chat `ACCOUNT` payload 전송과 `SYSTEM` / `ARRIVED` / `END` 서버 생성 메시지 렌더링
 
 코드:
 
@@ -251,9 +252,10 @@ runtime note:
 - `SpringTaxiChatRepository`는 subscriber가 0명이 되거나 auth session uid가 바뀌면 STOMP client를 deactivate하고 party state를 정리한다.
 - 따라서 로그아웃 후 다른 계정 로그인 시 이전 CONNECT Authorization 세션을 재사용하지 않는다.
 - Taxi Chat detail은 `partyRepository.subscribeToParty()`의 SSE signal을 받아 `taxiChatRepository.getPartyChat()` REST snapshot을 다시 읽으므로, party status/member/settlement 변화도 chat summary에서 Spring source 기준으로 다시 반영된다.
-- `SpringTaxiChatRepository`의 특수 메시지 전송은 publish 이후 같은 room topic에서 해당 타입 message를 실제로 수신할 때까지 대기한다.
-- backend에는 client-authored `SYSTEM` message write contract가 없고, `ACCOUNT`는 member 저장 계좌 정보만 사용하며 `hideName` 필드도 없다.
-- `ARRIVED` payload는 `taxiFare` 중심 계약만 제공하므로, 프론트는 지원되지 않는 입력을 fake success 없이 blocker로 남긴다.
+- `SpringTaxiChatRepository`는 `ACCOUNT` publish 이후 같은 room topic에서 실제 `ACCOUNT` message를 수신할 때까지 대기한다.
+- leader 승인 후 `SYSTEM`, arrive 후 `ARRIVED`, cancel/end 후 `END`는 backend가 직접 생성하고 프론트는 해당 snapshot/message를 렌더링만 한다.
+- `ACCOUNT`는 `bankName`, `accountNumber`, `accountHolder`, `hideName`, `remember` payload를 그대로 전송한다.
+- `/arrive`는 `taxiFare`, `settlementTargetMemberIds`, `account { bankName, accountNumber, accountHolder, hideName }` payload를 전송한다.
 
 ---
 
@@ -294,14 +296,13 @@ runtime note:
 
 아직 남은 것:
 
-- leader 승인 후 시스템 메시지 write contract
-- `ACCOUNT` special message의 `hideName` / 임시 계좌 override payload
-- `ARRIVED` special message의 추가 계좌 payload
+- signal-only SSE + REST snapshot 구조의 재조회 비용
+- Taxi Party domain 외부의 일반 Chat / legacy 경로 수렴
 
 의미:
 
 - Taxi Home, AcceptancePending, Main tab의 my party/join request badge, leader 승인/거절, recruit(create), 파티 수정/취소와 주요 subscription은 Spring REST/SSE 기준으로 동작한다.
-- 하지만 Taxi Party domain 전체는 아직 signal-only SSE + REST snapshot 구조의 부분 이전 상태이고, 특수 메시지 payload/system message contract 부재 대응은 후속 작업이 남아 있다.
+- Taxi Party의 Phase E 사용자 기능 범위는 정리됐지만, domain 전체 관점에서는 signal-only SSE 구조와 legacy 경로가 일부 남아 있다.
 
 ### 4.2 Chat domain
 
@@ -319,7 +320,8 @@ runtime note:
 - Taxi Chat detail의 `/app/chat/{chatRoomId}`
 - Taxi Chat detail의 `/topic/chat/{chatRoomId}`
 - Taxi Chat detail의 `/user/queue/errors`
-- Taxi Chat detail의 `ACCOUNT` / `ARRIVED` / `END` 특수 메시지 write/read
+- Taxi Chat detail의 `ACCOUNT` payload write/read
+- Taxi Chat detail의 server-generated `SYSTEM` / `ARRIVED` / `END` message read/render
 
 아직 남은 것:
 
@@ -327,12 +329,10 @@ runtime note:
 - `/user/queue/chat-rooms`
 - community/custom chat detail의 Spring 이전
 - 이미지 메시지 전송의 실사용 연결
-- client-authored `SYSTEM` message write contract
-- `ACCOUNT` `hideName` / 계좌 override payload, `ARRIVED` 추가 payload
 
 의미:
 
-- Taxi Chat detail은 REST/STOMP 기준으로 동작하고, 택시 파티 전용 특수 메시지 일부(`ACCOUNT`, `ARRIVED`, `END`)도 실사용 연결됐다.
+- Taxi Chat detail은 REST/STOMP 기준으로 동작하고, 택시 파티 전용 ACCOUNT payload와 서버 생성 SYSTEM/ARRIVED/END snapshot도 실사용 연결됐다.
 - 하지만 Chat domain 전체로 보면 목록/요약/일반 채팅방은 아직 legacy/mock 경로가 남아 있다.
 
 ---
@@ -341,21 +341,14 @@ runtime note:
 
 이 섹션은 “현재 앱에서 아직 Spring으로 붙지 않은 대표 사용자 기능 API”를 정리한다.
 
-### 5.1 Taxi Party / Join Request leader flow
-
-- leader 승인 후 시스템 메시지 write contract
-- `ACCOUNT` special message의 `hideName` / 임시 계좌 override payload
-- `ARRIVED` special message의 추가 계좌 payload
-
-### 5.3 Chat
+### 5.1 Chat
 
 - `GET /v1/chat-rooms`
 - `/user/queue/chat-rooms`
 - 일반 community/custom chat 목록/상세의 Spring 이전
 - 이미지 메시지 전송의 실사용 연결
-- client-authored `SYSTEM` message write contract
 
-### 5.4 Notice / Board / Campus / 기타
+### 5.2 Notice / Board / Campus / 기타
 
 현재 다음 영역은 여전히 Spring 정식 이전 전이다.
 
