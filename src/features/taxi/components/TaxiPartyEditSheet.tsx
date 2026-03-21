@@ -93,7 +93,8 @@ export const TaxiPartyEditSheet = ({
   onSubmit,
   visible,
 }: TaxiPartyEditSheetProps) => {
-  const [detail, setDetail] = React.useState(initialDetail ?? '');
+  const detailDraftRef = React.useRef(initialDetail ?? '');
+  const [detailInputKey, setDetailInputKey] = React.useState(0);
   const [selectedDate, setSelectedDate] = React.useState(() => {
     const parsed = new Date(initialDepartureTimeISO);
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
@@ -106,7 +107,8 @@ export const TaxiPartyEditSheet = ({
 
     const parsed = new Date(initialDepartureTimeISO);
     setSelectedDate(Number.isNaN(parsed.getTime()) ? new Date() : parsed);
-    setDetail(initialDetail ?? '');
+    detailDraftRef.current = initialDetail ?? '';
+    setDetailInputKey(current => current + 1);
   }, [initialDepartureTimeISO, initialDetail, visible]);
 
   const summary = React.useMemo(() => buildSummary(selectedDate), [selectedDate]);
@@ -146,14 +148,19 @@ export const TaxiPartyEditSheet = ({
       <View style={styles.detailSection}>
         <Text style={styles.fieldLabel}>상세 설명</Text>
         <KeyboardAwareBottomSheetTextInput
+          autoCorrect={false}
+          defaultValue={detailDraftRef.current}
+          key={detailInputKey}
           multiline
           placeholder="파티 설명을 입력하세요"
           placeholderTextColor={COLORS.text.placeholder}
           selectionColor={COLORS.brand.primary}
+          spellCheck={false}
           style={styles.detailInput}
           textAlignVertical="top"
-          value={detail}
-          onChangeText={setDetail}
+          onChangeText={text => {
+            detailDraftRef.current = text;
+          }}
         />
       </View>
 
@@ -173,7 +180,7 @@ export const TaxiPartyEditSheet = ({
           onPress={() => {
             onSubmit({
               departureTime: selectedDate.toISOString(),
-              detail: detail.trim(),
+              detail: detailDraftRef.current.trim(),
             });
           }}
           style={[styles.button, styles.submitButton]}>
