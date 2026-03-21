@@ -22,6 +22,7 @@ import {
   SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
+import {useKeyboardInset} from '@/shared/hooks';
 
 interface TaxiChatBottomSheetProps {
   children: React.ReactNode;
@@ -41,6 +42,7 @@ export const TaxiChatBottomSheet = ({
   visible,
 }: TaxiChatBottomSheetProps) => {
   const insets = useSafeAreaInsets();
+  const {height: keyboardHeight} = useKeyboardInset();
   const {height: windowHeight} = useWindowDimensions();
   const modalRef = React.useRef<BottomSheetModal>(null);
 
@@ -97,7 +99,7 @@ export const TaxiChatBottomSheet = ({
       <BottomSheetScrollView
         contentContainerStyle={[
           styles.content,
-          {paddingBottom: insets.bottom + SPACING.lg},
+          {paddingBottom: insets.bottom + SPACING.lg + keyboardHeight},
           contentStyle,
         ]}
         keyboardShouldPersistTaps="handled"
