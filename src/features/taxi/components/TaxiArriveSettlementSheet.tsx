@@ -128,7 +128,7 @@ export const TaxiArriveSettlementSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>이름</Text>
-        <KeyboardAwareBottomSheetTextInput
+        <TextInput
           autoCorrect={false}
           defaultValue={accountHolder}
           key={accountHolderInputKey}
@@ -159,7 +159,7 @@ export const TaxiArriveSettlementSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>계좌번호</Text>
-        <TextInput
+        <KeyboardAwareBottomSheetTextInput
           keyboardType="number-pad"
           placeholder="계좌번호 입력"
           placeholderTextColor={COLORS.text.placeholder}
@@ -183,7 +183,7 @@ export const TaxiArriveSettlementSheet = ({
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>총 택시비</Text>
         <View style={styles.fareInputWrap}>
-          <TextInput
+          <KeyboardAwareBottomSheetTextInput
             keyboardType="number-pad"
             placeholder="예: 14000"
             placeholderTextColor={COLORS.text.placeholder}

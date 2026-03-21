@@ -100,7 +100,7 @@ export const TaxiAccountSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>이름</Text>
-        <KeyboardAwareBottomSheetTextInput
+        <TextInput
           autoCorrect={false}
           defaultValue={accountHolder}
           key={accountHolderInputKey}
@@ -131,7 +131,7 @@ export const TaxiAccountSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>계좌번호</Text>
-        <TextInput
+        <KeyboardAwareBottomSheetTextInput
           keyboardType="number-pad"
           placeholder="계좌번호 입력 (숫자만)"
           placeholderTextColor={COLORS.text.placeholder}
