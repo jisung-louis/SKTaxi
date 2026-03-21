@@ -17,7 +17,7 @@ import {
 import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
 import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
-import {KeyboardAwareBottomSheetTextInput} from './KeyboardAwareBottomSheetTextInput';
+import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 
 const BANK_NAMES: string[] = [
@@ -69,6 +69,10 @@ export const TaxiAccountSheet = ({
   const [bankName, setBankName] = React.useState('');
   const [hideName, setHideName] = React.useState(false);
   const [remember, setRemember] = React.useState(false);
+  const accountHolderInputRef = React.useRef<TextInput>(null);
+  const accountNumberInputRef = React.useRef<TextInput>(null);
+  const {createFocusHandler, handleBlur, handleScroll, scrollRef} =
+    useBottomSheetInputVisibility(visible);
 
   React.useEffect(() => {
     if (!visible) {
@@ -90,7 +94,11 @@ export const TaxiAccountSheet = ({
     accountNumber.trim().length > 0;
 
   return (
-    <TaxiChatBottomSheet onClose={onClose} visible={visible}>
+    <TaxiChatBottomSheet
+      onClose={onClose}
+      onScroll={handleScroll}
+      scrollRef={scrollRef}
+      visible={visible}>
       <View style={styles.headerRow}>
         <View style={styles.titleIconWrap}>
           <Icon color={COLORS.accent.blue} name="card-outline" size={16} />
@@ -104,8 +112,11 @@ export const TaxiAccountSheet = ({
           autoCorrect={false}
           defaultValue={accountHolder}
           key={accountHolderInputKey}
+          onBlur={handleBlur}
+          onFocus={createFocusHandler(accountHolderInputRef)}
           placeholder="이름 입력"
           placeholderTextColor={COLORS.text.placeholder}
+          ref={accountHolderInputRef}
           selectionColor={COLORS.brand.primary}
           spellCheck={false}
           style={styles.input}
@@ -131,10 +142,13 @@ export const TaxiAccountSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>계좌번호</Text>
-        <KeyboardAwareBottomSheetTextInput
+        <TextInput
           keyboardType="number-pad"
+          onBlur={handleBlur}
+          onFocus={createFocusHandler(accountNumberInputRef)}
           placeholder="계좌번호 입력 (숫자만)"
           placeholderTextColor={COLORS.text.placeholder}
+          ref={accountNumberInputRef}
           selectionColor={COLORS.brand.primary}
           style={styles.input}
           value={accountNumber}

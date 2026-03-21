@@ -17,8 +17,8 @@ import {
 import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
 import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
+import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import type {TaxiChatSettlementMemberViewData} from '../model/taxiChatViewData';
-import {KeyboardAwareBottomSheetTextInput} from './KeyboardAwareBottomSheetTextInput';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 
 const BANK_NAMES: string[] = [
@@ -71,6 +71,11 @@ export const TaxiArriveSettlementSheet = ({
   const [hideName, setHideName] = React.useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>([]);
   const [taxiFareInput, setTaxiFareInput] = React.useState('');
+  const accountHolderInputRef = React.useRef<TextInput>(null);
+  const accountNumberInputRef = React.useRef<TextInput>(null);
+  const taxiFareInputRef = React.useRef<TextInput>(null);
+  const {createFocusHandler, handleBlur, handleScroll, scrollRef} =
+    useBottomSheetInputVisibility(visible);
 
   const leaderMember = React.useMemo(
     () => members.find(member => member.isLeader) ?? null,
@@ -118,7 +123,11 @@ export const TaxiArriveSettlementSheet = ({
   };
 
   return (
-    <TaxiChatBottomSheet onClose={onClose} visible={visible}>
+    <TaxiChatBottomSheet
+      onClose={onClose}
+      onScroll={handleScroll}
+      scrollRef={scrollRef}
+      visible={visible}>
       <View style={styles.headerRow}>
         <View style={styles.titleIconWrap}>
           <Icon color={COLORS.status.success} name="location-outline" size={16} />
@@ -132,8 +141,11 @@ export const TaxiArriveSettlementSheet = ({
           autoCorrect={false}
           defaultValue={accountHolder}
           key={accountHolderInputKey}
+          onBlur={handleBlur}
+          onFocus={createFocusHandler(accountHolderInputRef)}
           placeholder="이름 입력"
           placeholderTextColor={COLORS.text.placeholder}
+          ref={accountHolderInputRef}
           selectionColor={COLORS.brand.primary}
           spellCheck={false}
           style={styles.input}
@@ -159,10 +171,13 @@ export const TaxiArriveSettlementSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>계좌번호</Text>
-        <KeyboardAwareBottomSheetTextInput
+        <TextInput
           keyboardType="number-pad"
+          onBlur={handleBlur}
+          onFocus={createFocusHandler(accountNumberInputRef)}
           placeholder="계좌번호 입력"
           placeholderTextColor={COLORS.text.placeholder}
+          ref={accountNumberInputRef}
           selectionColor={COLORS.brand.primary}
           style={styles.input}
           value={accountNumber}
@@ -183,10 +198,13 @@ export const TaxiArriveSettlementSheet = ({
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>총 택시비</Text>
         <View style={styles.fareInputWrap}>
-          <KeyboardAwareBottomSheetTextInput
+          <TextInput
             keyboardType="number-pad"
+            onBlur={handleBlur}
+            onFocus={createFocusHandler(taxiFareInputRef)}
             placeholder="예: 14000"
             placeholderTextColor={COLORS.text.placeholder}
+            ref={taxiFareInputRef}
             selectionColor={COLORS.brand.primary}
             style={styles.fareInput}
             value={taxiFareInput}

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -13,7 +14,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
-import {KeyboardAwareBottomSheetTextInput} from './KeyboardAwareBottomSheetTextInput';
+import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 import {TaxiCreateTimePicker} from './TaxiCreateTimePicker';
 
@@ -61,6 +62,9 @@ export const TaxiPartyEditSheet = ({
     const parsed = new Date(initialDepartureTimeISO);
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   });
+  const detailInputRef = React.useRef<TextInput>(null);
+  const {createFocusHandler, handleBlur, handleScroll, scrollRef} =
+    useBottomSheetInputVisibility(visible);
 
   React.useEffect(() => {
     if (!visible) {
@@ -76,7 +80,11 @@ export const TaxiPartyEditSheet = ({
   const summary = React.useMemo(() => buildSummary(selectedDate), [selectedDate]);
 
   return (
-    <TaxiChatBottomSheet onClose={onClose} visible={visible}>
+    <TaxiChatBottomSheet
+      onClose={onClose}
+      onScroll={handleScroll}
+      scrollRef={scrollRef}
+      visible={visible}>
       <View style={styles.headerRow}>
         <View style={styles.titleIconWrap}>
           <Icon color={COLORS.accent.blue} name="create-outline" size={16} />
@@ -109,13 +117,16 @@ export const TaxiPartyEditSheet = ({
 
       <View style={styles.detailSection}>
         <Text style={styles.fieldLabel}>상세 설명</Text>
-        <KeyboardAwareBottomSheetTextInput
+        <TextInput
           autoCorrect={false}
           defaultValue={detailDraftRef.current}
           key={detailInputKey}
           multiline
+          onBlur={handleBlur}
+          onFocus={createFocusHandler(detailInputRef)}
           placeholder="파티 설명을 입력하세요"
           placeholderTextColor={COLORS.text.placeholder}
+          ref={detailInputRef}
           selectionColor={COLORS.brand.primary}
           spellCheck={false}
           style={styles.detailInput}

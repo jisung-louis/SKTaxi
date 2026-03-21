@@ -3,9 +3,12 @@ import {
   BottomSheetBackdrop,
   BottomSheetModal,
   BottomSheetScrollView,
+  type BottomSheetScrollViewMethods,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
 import {
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
   StyleSheet,
   useWindowDimensions,
   type StyleProp,
@@ -24,6 +27,8 @@ interface TaxiChatBottomSheetProps {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
   onClose: () => void;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollRef?: React.RefObject<BottomSheetScrollViewMethods | null>;
   visible: boolean;
 }
 
@@ -31,6 +36,8 @@ export const TaxiChatBottomSheet = ({
   children,
   contentStyle,
   onClose,
+  onScroll,
+  scrollRef,
   visible,
 }: TaxiChatBottomSheetProps) => {
   const insets = useSafeAreaInsets();
@@ -94,6 +101,8 @@ export const TaxiChatBottomSheet = ({
           contentStyle,
         ]}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}>
         {children}
       </BottomSheetScrollView>
