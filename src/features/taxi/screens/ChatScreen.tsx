@@ -2,7 +2,9 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
+  Platform,
   StyleSheet,
   View,
 } from 'react-native';
@@ -16,7 +18,11 @@ import Animated from 'react-native-reanimated';
 import {useAccountInfo, type AccountInfo} from '@/features/user/hooks/useAccountInfo';
 import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
-import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {
+  useKeyboardInset,
+  useScreenEnterAnimation,
+  useScreenView,
+} from '@/shared/hooks';
 import {ChatHeader} from '@/shared/ui/chat';
 
 import {TaxiAccountSheet} from '../components/TaxiAccountSheet';
@@ -87,6 +93,7 @@ export const ChatScreen = () => {
   const route =
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
   const insets = useSafeAreaInsets();
+  const {isVisible: keyboardVisible} = useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {accountInfo} = useAccountInfo();
   const {
@@ -469,10 +476,15 @@ export const ChatScreen = () => {
               />
             </View>
 
-            <View style={styles.composerOverlay}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'position' : 'height'}
+              keyboardVerticalOffset={0}
+              pointerEvents="box-none"
+              style={styles.composerOverlay}>
               <TaxiChatComposer
                 actionTrayActions={data.actionTrayActions}
                 actionTrayVisible={actionTrayVisible}
+                keyboardVisible={keyboardVisible}
                 onChangeText={setComposerValue}
                 onPressAction={handleActionTrayAction}
                 onPressToggleTray={() => {
@@ -482,7 +494,7 @@ export const ChatScreen = () => {
                 placeholder={data.composerPlaceholder}
                 value={composerValue}
               />
-            </View>
+            </KeyboardAvoidingView>
           </>
         ) : null}
 

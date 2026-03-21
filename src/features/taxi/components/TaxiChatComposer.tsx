@@ -30,6 +30,7 @@ import type {
 interface TaxiChatComposerProps {
   actionTrayActions: TaxiChatActionTrayActionViewData[];
   actionTrayVisible: boolean;
+  keyboardVisible: boolean;
   onChangeText: (value: string) => void;
   onPressAction: (actionId: TaxiChatActionTrayActionId) => void;
   onPressToggleTray: () => void;
@@ -122,6 +123,7 @@ const getActionToneStyle = (
 export const TaxiChatComposer = ({
   actionTrayActions,
   actionTrayVisible,
+  keyboardVisible,
   onChangeText,
   onPressAction,
   onPressToggleTray,
@@ -132,6 +134,8 @@ export const TaxiChatComposer = ({
   const insets = useSafeAreaInsets();
   const hasTrayActions = actionTrayActions.length > 0;
   const trayProgress = useSharedValue(actionTrayVisible ? 1 : 0);
+  const rowBottomPadding = keyboardVisible ? 10 : Math.max(insets.bottom, 10);
+  const composerRowHeight = 10 + 39 + rowBottomPadding;
 
   React.useEffect(() => {
     trayProgress.value = withTiming(actionTrayVisible ? 1 : 0, {duration: 180});
@@ -165,7 +169,7 @@ export const TaxiChatComposer = ({
             styles.tray,
             trayStyle,
             {
-              bottom: insets.bottom + TAXI_CHAT_COMPOSER_BAR_HEIGHT,
+              bottom: composerRowHeight,
             },
           ]}>
           <View style={styles.trayGrid}>
@@ -202,7 +206,7 @@ export const TaxiChatComposer = ({
         style={[
           styles.row,
           {
-            paddingBottom: Math.max(insets.bottom, 10),
+            paddingBottom: rowBottomPadding,
           },
         ]}>
         {hasTrayActions ? (
