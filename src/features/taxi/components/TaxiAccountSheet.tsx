@@ -17,6 +17,7 @@ import {
 import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
 import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
+import {KeyboardAwareBottomSheetTextInput} from './KeyboardAwareBottomSheetTextInput';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 
 const BANK_NAMES: string[] = [
@@ -62,6 +63,7 @@ export const TaxiAccountSheet = ({
   visible,
 }: TaxiAccountSheetProps) => {
   const [accountHolder, setAccountHolder] = React.useState('');
+  const [accountHolderInputKey, setAccountHolderInputKey] = React.useState(0);
   const [accountNumber, setAccountNumber] = React.useState('');
   const [bankDropdownOpen, setBankDropdownOpen] = React.useState(false);
   const [bankName, setBankName] = React.useState('');
@@ -74,6 +76,7 @@ export const TaxiAccountSheet = ({
     }
 
     setAccountHolder(initialAccountInfo?.accountHolder ?? '');
+    setAccountHolderInputKey(current => current + 1);
     setAccountNumber(initialAccountInfo?.accountNumber ?? '');
     setBankName(initialAccountInfo?.bankName ?? '');
     setHideName(initialAccountInfo?.hideName ?? false);
@@ -97,12 +100,15 @@ export const TaxiAccountSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>이름</Text>
-        <TextInput
+        <KeyboardAwareBottomSheetTextInput
+          autoCorrect={false}
+          defaultValue={accountHolder}
+          key={accountHolderInputKey}
           placeholder="이름 입력"
           placeholderTextColor={COLORS.text.placeholder}
           selectionColor={COLORS.brand.primary}
+          spellCheck={false}
           style={styles.input}
-          value={accountHolder}
           onChangeText={setAccountHolder}
         />
       </View>
