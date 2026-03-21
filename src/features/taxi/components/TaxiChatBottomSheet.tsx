@@ -1,18 +1,22 @@
 import React from 'react';
 import {
-  Animated,
-  Dimensions,
-  Modal,
-  Pressable,
-  StyleProp,
+  BottomSheetBackdrop,
+  BottomSheetModal,
+  BottomSheetScrollView,
+  type BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import {
   StyleSheet,
-  View,
-  ViewStyle,
+  useWindowDimensions,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
   COLORS,
   RADIUS,
+  SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
 
@@ -29,97 +33,84 @@ export const TaxiChatBottomSheet = ({
   onClose,
   visible,
 }: TaxiChatBottomSheetProps) => {
-  const [isMounted, setIsMounted] = React.useState(visible);
-  const animationProgress = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
-  const overlayOpacity = animationProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const sheetTranslateY = animationProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [Dimensions.get('window').height, 0],
-  });
+  const insets = useSafeAreaInsets();
+  const {height: windowHeight} = useWindowDimensions();
+  const modalRef = React.useRef<BottomSheetModal>(null);
+
+  const renderBackdrop = React.useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        opacity={0.4}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
 
   React.useEffect(() => {
-    if (visible) {
-      setIsMounted(true);
-    }
-  }, [visible]);
+    const modal = modalRef.current;
 
-  React.useEffect(() => {
-    if (!isMounted) {
+    if (!modal) {
       return;
     }
 
-    const animation = Animated.timing(animationProgress, {
-      duration: 220,
-      toValue: visible ? 1 : 0,
-      useNativeDriver: true,
-    });
+    if (visible) {
+      modal.present();
+      return;
+    }
 
-    animation.start(({finished}) => {
-      if (finished && !visible) {
-        setIsMounted(false);
-      }
-    });
+    modal.dismiss();
+  }, [visible]);
 
-    return () => {
-      animation.stop();
-    };
-  }, [animationProgress, isMounted, visible]);
-
-  if (!isMounted) {
-    return null;
-  }
+  const handleDismiss = React.useCallback(() => {
+    if (visible) {
+      onClose();
+    }
+  }, [onClose, visible]);
 
   return (
-    <Modal
-      animationType="none"
-      onRequestClose={onClose}
-      transparent
-      visible={isMounted}>
-      <View style={styles.overlayWrap}>
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.overlayBackdrop, {opacity: overlayOpacity}]}
-        />
-        <Pressable
-          onPress={onClose}
-          pointerEvents={visible ? 'auto' : 'none'}
-          style={styles.overlay}
-        />
-
-        <Animated.View
-          style={[
-            styles.sheet,
-            contentStyle,
-            {transform: [{translateY: sheetTranslateY}]},
-          ]}>
-          {children}
-        </Animated.View>
-      </View>
-    </Modal>
+    <BottomSheetModal
+      backdropComponent={renderBackdrop}
+      backgroundStyle={styles.background}
+      enableDynamicSizing
+      enableOverDrag={false}
+      enablePanDownToClose
+      handleComponent={null}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      maxDynamicContentSize={windowHeight - insets.top - SPACING.xxl}
+      onDismiss={handleDismiss}
+      ref={modalRef}
+      stackBehavior="replace"
+      style={styles.sheet}>
+      <BottomSheetScrollView
+        contentContainerStyle={[
+          styles.content,
+          {paddingBottom: insets.bottom + SPACING.lg},
+          contentStyle,
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}>
+        {children}
+      </BottomSheetScrollView>
+    </BottomSheetModal>
   );
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlayBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  overlayWrap: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
+  background: {
     backgroundColor: COLORS.background.surface,
     borderTopLeftRadius: RADIUS.lg,
     borderTopRightRadius: RADIUS.lg,
+  },
+  content: {
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.lg,
-    paddingBottom: 32,
+  },
+  sheet: {
+    ...SHADOWS.raised,
   },
 });
