@@ -1,10 +1,14 @@
 import React from 'react';
-import {BottomSheetTextInput} from '@gorhom/bottom-sheet';
+import {useBottomSheetInternal} from '@gorhom/bottom-sheet';
 import {
+  type NativeSyntheticEvent,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
+  type TextInputFocusEventData,
+  type TextInputProps,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -16,6 +20,40 @@ import {
 
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 import {TaxiCreateTimePicker} from './TaxiCreateTimePicker';
+
+const KeyboardAwareBottomSheetTextInput = React.forwardRef<
+  TextInput,
+  TextInputProps
+>(({onBlur, onFocus, ...rest}, ref) => {
+  const {shouldHandleKeyboardEvents} = useBottomSheetInternal();
+
+  const handleFocus = React.useCallback(
+    (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+      shouldHandleKeyboardEvents.value = true;
+      onFocus?.(event);
+    },
+    [onFocus, shouldHandleKeyboardEvents],
+  );
+
+  const handleBlur = React.useCallback(
+    (event: NativeSyntheticEvent<TextInputFocusEventData>) => {
+      shouldHandleKeyboardEvents.value = false;
+      onBlur?.(event);
+    },
+    [onBlur, shouldHandleKeyboardEvents],
+  );
+
+  React.useEffect(() => {
+    return () => {
+      shouldHandleKeyboardEvents.value = false;
+    };
+  }, [shouldHandleKeyboardEvents]);
+
+  return <TextInput {...rest} onBlur={handleBlur} onFocus={handleFocus} ref={ref} />;
+});
+
+KeyboardAwareBottomSheetTextInput.displayName =
+  'KeyboardAwareBottomSheetTextInput';
 
 interface TaxiPartyEditSheetProps {
   initialDepartureTimeISO: string;
@@ -107,7 +145,7 @@ export const TaxiPartyEditSheet = ({
 
       <View style={styles.detailSection}>
         <Text style={styles.fieldLabel}>상세 설명</Text>
-        <BottomSheetTextInput
+        <KeyboardAwareBottomSheetTextInput
           multiline
           placeholder="파티 설명을 입력하세요"
           placeholderTextColor={COLORS.text.placeholder}
