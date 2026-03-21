@@ -21,7 +21,10 @@ import {ChatHeader} from '@/shared/ui/chat';
 
 import {TaxiAccountSheet} from '../components/TaxiAccountSheet';
 import {TaxiArriveSettlementSheet} from '../components/TaxiArriveSettlementSheet';
-import {TaxiChatComposer} from '../components/TaxiChatComposer';
+import {
+  TAXI_CHAT_COMPOSER_BAR_HEIGHT,
+  TaxiChatComposer,
+} from '../components/TaxiChatComposer';
 import {TaxiChatHeaderMenu} from '../components/TaxiChatHeaderMenu';
 import {TaxiChatMessageList} from '../components/TaxiChatMessageList';
 import {TaxiChatSummaryCard} from '../components/TaxiChatSummaryCard';
@@ -405,6 +408,8 @@ export const ChatScreen = () => {
   );
 
   const settlementMembers = data?.summary.members ?? [];
+  const threadBottomPadding =
+    TAXI_CHAT_COMPOSER_BAR_HEIGHT + insets.bottom + SPACING.md;
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -445,7 +450,12 @@ export const ChatScreen = () => {
           <>
             <View style={styles.threadWrap}>
               <TaxiChatMessageList
-                contentContainerStyle={styles.threadContent}
+                contentContainerStyle={[
+                  styles.threadContent,
+                  {
+                    paddingBottom: threadBottomPadding,
+                  },
+                ]}
                 headerContent={
                   <TaxiChatSummaryCard
                     settlementNoticeExpanded={settlementNoticeExpanded}
@@ -459,18 +469,20 @@ export const ChatScreen = () => {
               />
             </View>
 
-            <TaxiChatComposer
-              actionTrayActions={data.actionTrayActions}
-              actionTrayVisible={actionTrayVisible}
-              onChangeText={setComposerValue}
-              onPressAction={handleActionTrayAction}
-              onPressToggleTray={() => {
-                setActionTrayVisible(current => !current);
-              }}
-              onSend={handleSend}
-              placeholder={data.composerPlaceholder}
-              value={composerValue}
-            />
+            <View style={styles.composerOverlay}>
+              <TaxiChatComposer
+                actionTrayActions={data.actionTrayActions}
+                actionTrayVisible={actionTrayVisible}
+                onChangeText={setComposerValue}
+                onPressAction={handleActionTrayAction}
+                onPressToggleTray={() => {
+                  setActionTrayVisible(current => !current);
+                }}
+                onSend={handleSend}
+                placeholder={data.composerPlaceholder}
+                value={composerValue}
+              />
+            </View>
           </>
         ) : null}
 
@@ -589,6 +601,12 @@ const styles = StyleSheet.create({
   centeredState: {
     flex: 1,
     paddingHorizontal: SPACING.lg,
+  },
+  composerOverlay: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
   },
   container: {
     backgroundColor: COLORS.background.page,

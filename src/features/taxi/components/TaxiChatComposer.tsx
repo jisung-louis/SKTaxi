@@ -9,7 +9,6 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
   interpolate,
-  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -19,7 +18,6 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {
   COLORS,
   RADIUS,
-  SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
 
@@ -42,31 +40,55 @@ interface TaxiChatComposerProps {
 const AnimatedTouchableOpacity =
   Animated.createAnimatedComponent(TouchableOpacity);
 
+export const TAXI_CHAT_COMPOSER_BAR_HEIGHT = 60;
+export const TAXI_CHAT_ACTION_TRAY_HEIGHT = 130;
+
 const getActionIconName = (actionId: TaxiChatActionTrayActionId) => {
   switch (actionId) {
     case 'callTaxi':
-      return 'car-sport-outline';
+      return 'car-outline';
     case 'sendAccount':
       return 'card-outline';
     case 'close':
-      return 'pause-circle-outline';
+      return 'pause-outline';
     case 'reopen':
-      return 'play-circle-outline';
+      return 'play-outline';
     case 'arrive':
       return 'location-outline';
     case 'settlementStatus':
       return 'wallet-outline';
     case 'end':
-      return 'close-circle-outline';
+      return 'close-outline';
     default:
       return 'ellipse-outline';
   }
 };
 
 const getActionToneStyle = (
-  tone: TaxiChatActionTrayActionViewData['tone'],
+  action: TaxiChatActionTrayActionViewData,
 ) => {
-  switch (tone) {
+  switch (action.id) {
+    case 'callTaxi':
+      return {
+        backgroundColor: COLORS.accent.yellowSoft,
+        iconColor: COLORS.accent.yellow,
+      };
+    case 'sendAccount':
+      return {
+        backgroundColor: COLORS.accent.blueSoft,
+        iconColor: COLORS.accent.blue,
+      };
+    case 'reopen':
+    case 'arrive':
+      return {
+        backgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
+      };
+    default:
+      break;
+  }
+
+  switch (action.tone) {
     case 'info':
       return {
         backgroundColor: COLORS.accent.blueSoft,
@@ -114,40 +136,32 @@ export const TaxiChatComposer = ({
     trayProgress.value = withTiming(actionTrayVisible ? 1 : 0, {duration: 180});
   }, [actionTrayVisible, trayProgress]);
 
-  const toggleButtonStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      trayProgress.value,
-      [0, 1],
-      [COLORS.brand.primary, COLORS.text.primary],
-    ),
-  }));
-
   const toggleIconStyle = useAnimatedStyle(() => ({
     transform: [{rotate: `${interpolate(trayProgress.value, [0, 1], [0, 45])}deg`}],
   }));
 
   const trayStyle = useAnimatedStyle(() => ({
     opacity: trayProgress.value,
-    transform: [{translateY: interpolate(trayProgress.value, [0, 1], [24, 0])}],
+    transform: [{translateY: interpolate(trayProgress.value, [0, 1], [18, 0])}],
   }));
 
   const sendEnabled = value.trim().length > 0;
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingBottom: insets.bottom,
-        },
-      ]}>
+    <View style={styles.container}>
       {hasTrayActions ? (
         <Animated.View
           pointerEvents={actionTrayVisible ? 'auto' : 'none'}
-          style={[styles.tray, trayStyle]}>
+          style={[
+            styles.tray,
+            trayStyle,
+            {
+              bottom: insets.bottom + TAXI_CHAT_COMPOSER_BAR_HEIGHT,
+            },
+          ]}>
           <View style={styles.trayGrid}>
             {actionTrayActions.map(action => {
-              const toneStyle = getActionToneStyle(action.tone);
+              const toneStyle = getActionToneStyle(action);
 
               return (
                 <TouchableOpacity
@@ -164,7 +178,7 @@ export const TaxiChatComposer = ({
                     <Icon
                       color={toneStyle.iconColor}
                       name={getActionIconName(action.id)}
-                      size={18}
+                      size={24}
                     />
                   </View>
                   <Text style={styles.trayActionLabel}>{action.label}</Text>
@@ -175,14 +189,22 @@ export const TaxiChatComposer = ({
         </Animated.View>
       ) : null}
 
-      <View style={styles.row}>
+      <View
+        style={[
+          styles.row,
+          {
+            paddingBottom: Math.max(insets.bottom, 10),
+          },
+        ]}>
         {hasTrayActions ? (
           <AnimatedTouchableOpacity
-            accessibilityLabel="액션 메뉴 열기"
+            accessibilityLabel={
+              actionTrayVisible ? '액션 메뉴 닫기' : '액션 메뉴 열기'
+            }
             accessibilityRole="button"
             activeOpacity={0.82}
             onPress={onPressToggleTray}
-            style={[styles.leadingButton, toggleButtonStyle]}>
+            style={styles.leadingButton}>
             <Animated.View style={toggleIconStyle}>
               <Icon color={COLORS.text.inverse} name="add" size={20} />
             </Animated.View>
@@ -242,39 +264,42 @@ const styles = StyleSheet.create({
     width: 36,
   },
   container: {
-    backgroundColor: COLORS.background.surface,
-    borderTopColor: COLORS.border.subtle,
-    borderTopWidth: 1,
-    paddingHorizontal: SPACING.md,
-    paddingTop: 10,
+    overflow: 'visible',
   },
   input: {
     color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 22,
     padding: 0,
   },
   inputSurface: {
     backgroundColor: COLORS.background.subtle,
     borderRadius: RADIUS.lg,
     flex: 1,
+    height: 39,
     justifyContent: 'center',
-    minHeight: 38,
     paddingHorizontal: 14,
-    paddingVertical: 8,
   },
   leadingButton: {
     alignItems: 'center',
+    backgroundColor: COLORS.brand.primary,
     borderRadius: RADIUS.pill,
     height: 36,
     justifyContent: 'center',
     width: 36,
   },
   row: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
     flexDirection: 'row',
     gap: SPACING.sm,
+    minHeight: TAXI_CHAT_COMPOSER_BAR_HEIGHT,
+    paddingHorizontal: SPACING.md,
+    paddingTop: 10,
+    zIndex: 2,
   },
   sendButton: {
     alignItems: 'center',
@@ -291,36 +316,38 @@ const styles = StyleSheet.create({
   },
   tray: {
     backgroundColor: COLORS.background.surface,
-    borderColor: COLORS.border.subtle,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    marginBottom: SPACING.md,
-    padding: SPACING.lg,
-    ...SHADOWS.raised,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    left: 0,
+    minHeight: TAXI_CHAT_ACTION_TRAY_HEIGHT,
+    paddingBottom: SPACING.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.xl,
+    position: 'absolute',
+    right: 0,
+    zIndex: 1,
   },
   trayAction: {
     alignItems: 'center',
-    flexBasis: '50%',
+    flex: 1,
     gap: SPACING.sm,
   },
   trayActionIconWrap: {
     alignItems: 'center',
-    borderRadius: RADIUS.pill,
-    height: 44,
+    borderRadius: RADIUS.lg,
+    height: 56,
     justifyContent: 'center',
-    width: 44,
+    width: 56,
   },
   trayActionLabel: {
-    color: COLORS.text.primary,
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
+    color: COLORS.text.strong,
+    fontSize: 11,
+    fontWeight: '500',
+    lineHeight: 14,
     textAlign: 'center',
   },
   trayGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.lg,
-    rowGap: SPACING.lg,
+    gap: SPACING.md,
   },
 });
