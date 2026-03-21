@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Animated,
+  Dimensions,
   Modal,
   Pressable,
   StyleProp,
@@ -28,32 +29,74 @@ export const TaxiChatBottomSheet = ({
   onClose,
   visible,
 }: TaxiChatBottomSheetProps) => {
-  const overlayOpacity = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const [isMounted, setIsMounted] = React.useState(visible);
+  const animationProgress = React.useRef(new Animated.Value(visible ? 1 : 0)).current;
+  const overlayOpacity = animationProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+  const sheetTranslateY = animationProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [Dimensions.get('window').height, 0],
+  });
 
   React.useEffect(() => {
-    Animated.timing(overlayOpacity, {
-      duration: 180,
+    if (visible) {
+      setIsMounted(true);
+    }
+  }, [visible]);
+
+  React.useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+
+    const animation = Animated.timing(animationProgress, {
+      duration: 220,
       toValue: visible ? 1 : 0,
       useNativeDriver: true,
-    }).start();
-  }, [overlayOpacity, visible]);
+    });
+
+    animation.start(({finished}) => {
+      if (finished && !visible) {
+        setIsMounted(false);
+      }
+    });
+
+    return () => {
+      animation.stop();
+    };
+  }, [animationProgress, isMounted, visible]);
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <Modal
-      animationType="slide"
+      animationType="none"
       onRequestClose={onClose}
       transparent
-      visible={visible}>
+      visible={isMounted}>
       <View style={styles.overlayWrap}>
         <Animated.View
           pointerEvents="none"
           style={[styles.overlayBackdrop, {opacity: overlayOpacity}]}
         />
-        <Pressable onPress={onClose} style={styles.overlay} />
+        <Pressable
+          onPress={onClose}
+          pointerEvents={visible ? 'auto' : 'none'}
+          style={styles.overlay}
+        />
 
-        <View style={[styles.sheet, contentStyle]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            contentStyle,
+            {transform: [{translateY: sheetTranslateY}]},
+          ]}>
           {children}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
