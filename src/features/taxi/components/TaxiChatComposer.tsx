@@ -9,6 +9,7 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated, {
   interpolate,
+  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -136,6 +137,14 @@ export const TaxiChatComposer = ({
     trayProgress.value = withTiming(actionTrayVisible ? 1 : 0, {duration: 180});
   }, [actionTrayVisible, trayProgress]);
 
+  const toggleButtonStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      trayProgress.value,
+      [0, 1],
+      [COLORS.brand.primary, COLORS.text.primary],
+    ),
+  }));
+
   const toggleIconStyle = useAnimatedStyle(() => ({
     transform: [{rotate: `${interpolate(trayProgress.value, [0, 1], [0, 45])}deg`}],
   }));
@@ -204,7 +213,7 @@ export const TaxiChatComposer = ({
             accessibilityRole="button"
             activeOpacity={0.82}
             onPress={onPressToggleTray}
-            style={styles.leadingButton}>
+            style={[styles.leadingButton, toggleButtonStyle]}>
             <Animated.View style={toggleIconStyle}>
               <Icon color={COLORS.text.inverse} name="add" size={20} />
             </Animated.View>
