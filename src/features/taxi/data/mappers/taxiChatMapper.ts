@@ -41,6 +41,7 @@ const mapAccountData = (
     accountHolder: accountData.accountHolder,
     accountNumber: accountData.accountNumber,
     bankName: accountData.bankName,
+    hideName: Boolean(accountData.hideName),
   };
 };
 
@@ -52,8 +53,10 @@ const mapArrivalData = (
   }
 
   return {
-    memberCount: arrivalData.memberCount ?? undefined,
-    perPerson: arrivalData.perPerson ?? undefined,
+    accountData: mapAccountData(arrivalData.accountData),
+    perPersonAmount: arrivalData.perPersonAmount ?? undefined,
+    settlementTargetMemberIds: arrivalData.settlementTargetMemberIds ?? [],
+    splitMemberCount: arrivalData.splitMemberCount ?? undefined,
     taxiFare: arrivalData.taxiFare ?? undefined,
   };
 };
@@ -187,9 +190,14 @@ export const buildTaxiChatSourceData = ({
     partyStatus: mapPartyStatusDto(party.status),
     settlement: party.settlement
       ? {
+          accountData: mapAccountData(party.settlement.account),
           perPersonAmount: party.settlement.perPersonAmount ?? 0,
+          settlementTargetMemberIds:
+            party.settlement.settlementTargetMemberIds ?? [],
+          splitMemberCount: party.settlement.splitMemberCount ?? undefined,
           status:
             party.settlement.status === 'COMPLETED' ? 'completed' : 'pending',
+          taxiFare: party.settlement.taxiFare ?? undefined,
         }
       : undefined,
     tagLabel: party.tags?.[0] ?? '#택시팟',

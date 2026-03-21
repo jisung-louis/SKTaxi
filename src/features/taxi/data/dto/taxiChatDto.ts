@@ -43,11 +43,14 @@ export interface ChatAccountDataResponseDto {
   accountHolder: string;
   accountNumber: string;
   bankName: string;
+  hideName?: boolean | null;
 }
 
 export interface ChatArrivalDataResponseDto {
-  memberCount?: number | null;
-  perPerson?: number | null;
+  accountData?: ChatAccountDataResponseDto | null;
+  perPersonAmount?: number | null;
+  settlementTargetMemberIds?: string[] | null;
+  splitMemberCount?: number | null;
   taxiFare?: number | null;
 }
 
@@ -73,11 +76,19 @@ export interface ChatReadUpdateResponseDto {
   updated: boolean;
 }
 
+export interface SendChatMessageAccountPayloadDto {
+  accountHolder: string;
+  accountNumber: string;
+  bankName: string;
+  hideName?: boolean | null;
+  remember?: boolean | null;
+}
+
 export interface SendChatMessageRequestDto {
+  account?: SendChatMessageAccountPayloadDto | null;
   imageUrl?: string | null;
-  taxiFare?: number | null;
   text?: string | null;
-  type: Exclude<ChatMessageTypeDto, 'SYSTEM'>;
+  type: Extract<ChatMessageTypeDto, 'TEXT' | 'IMAGE' | 'ACCOUNT'>;
 }
 
 export interface StompApiErrorDto {

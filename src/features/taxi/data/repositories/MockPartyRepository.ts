@@ -815,9 +815,13 @@ export class MockPartyRepository implements IPartyRepository {
       ...party,
       status: 'arrived',
       settlement: {
+        account: settlementData.account,
+        splitMemberCount: settlementData.splitMemberCount,
+        settlementTargetMemberIds: settlementData.settlementTargetMemberIds,
         status: 'pending',
         perPersonAmount: settlementData.perPersonAmount,
         members: {...settlementData.members},
+        taxiFare: settlementData.taxiFare,
       },
       updatedAt: nowIso(),
     });

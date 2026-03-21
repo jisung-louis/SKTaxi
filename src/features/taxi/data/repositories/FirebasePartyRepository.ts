@@ -627,9 +627,13 @@ export class FirebasePartyRepository implements IPartyRepository {
       {
         status: 'arrived',
         settlement: {
+          account: settlementData.account,
+          splitMemberCount: settlementData.splitMemberCount,
+          settlementTargetMemberIds: settlementData.settlementTargetMemberIds,
           status: 'pending',
           perPersonAmount: settlementData.perPersonAmount,
           members: settlementData.members,
+          taxiFare: settlementData.taxiFare,
         },
         updatedAt: serverTimestamp(),
       },

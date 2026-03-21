@@ -5,6 +5,7 @@ import type {
 
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import type {
+  TaxiChatAccountMessageDraft,
   TaxiChatSessionSnapshot,
   TaxiChatSourceData,
 } from '../../model/taxiChatViewData';
@@ -14,12 +15,10 @@ export interface ITaxiChatRepository {
   getPartyChat(partyId: string): Promise<TaxiChatSourceData | null>
   getSessionSnapshot(): TaxiChatSessionSnapshot
   resetSession(): Promise<void>
-  sendAccountMessage(partyId: string): Promise<TaxiChatSourceData | null>
-  sendArrivedMessage(
+  sendAccountMessage(
     partyId: string,
-    taxiFare: number,
+    payload: TaxiChatAccountMessageDraft,
   ): Promise<TaxiChatSourceData | null>
-  sendEndMessage(partyId: string): Promise<TaxiChatSourceData | null>
   sendMessage(
     partyId: string,
     messageText: string,

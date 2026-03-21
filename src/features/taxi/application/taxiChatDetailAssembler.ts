@@ -7,6 +7,7 @@ import type {ChatThreadHeaderViewData} from '@/shared/ui/chat';
 import {
   TAXI_CHAT_CURRENT_USER_ID,
   type TaxiChatActionTrayActionViewData,
+  type TaxiChatSettlementMemberViewData,
   type TaxiChatSourceData,
   type TaxiChatSummaryManagementViewData,
   type TaxiChatSettlementNoticeViewData,
@@ -14,6 +15,25 @@ import {
   type TaxiChatViewData,
 } from '../model/taxiChatViewData';
 import {formatTaxiChatDepartureTime} from '../data/mappers/taxiChatMapper';
+
+const formatAccountLabel = (
+  accountData?: TaxiChatSourceData['latestAccountData'],
+) =>
+  accountData
+    ? `${accountData.bankName} ${accountData.accountNumber}`
+    : undefined;
+
+const buildSummaryMembers = (
+  partyChat: TaxiChatSourceData,
+  currentUserId: string,
+): TaxiChatSettlementMemberViewData[] =>
+  partyChat.participants.map(participant => ({
+    id: participant.id,
+    isCurrentUser: participant.id === currentUserId,
+    isLeader: participant.isLeader,
+    label: participant.name,
+    settled: participant.isLeader ? true : participant.settled,
+  }));
 
 const buildManagement = (
   partyChat: TaxiChatSourceData,
@@ -142,22 +162,31 @@ const buildSettlementNotice = (
     return undefined;
   }
 
-  const members = partyChat.participants.map(participant => ({
-    id: participant.id,
-    isCurrentUser: participant.id === currentUserId,
-    label: participant.name,
-    settled: participant.isLeader ? true : participant.settled,
-  }));
+  const settlementTargetIds =
+    partyChat.settlement.settlementTargetMemberIds.length > 0
+      ? partyChat.settlement.settlementTargetMemberIds
+      : partyChat.participants
+          .filter(participant => !participant.isLeader)
+          .map(participant => participant.id);
+  const members = partyChat.participants
+    .filter(participant => settlementTargetIds.includes(participant.id))
+    .map(participant => ({
+      id: participant.id,
+      isCurrentUser: participant.id === currentUserId,
+      isLeader: participant.isLeader,
+      label: participant.name,
+      settled: participant.settled,
+    }));
   const completedCount = members.filter(member => member.settled).length;
   const totalCount = members.length;
   const isCompleted =
     partyChat.settlement.status === 'completed' ||
     (totalCount > 0 && completedCount === totalCount);
+  const accountData = partyChat.settlement.accountData ?? partyChat.latestAccountData;
 
   return {
-    accountLabel: partyChat.latestAccountData
-      ? `${partyChat.latestAccountData.bankName} ${partyChat.latestAccountData.accountNumber}`
-      : undefined,
+    accountData,
+    accountLabel: formatAccountLabel(accountData),
     completedCount,
     description: isCompleted
       ? '모든 정산이 완료됐어요!'
@@ -167,8 +196,10 @@ const buildSettlementNotice = (
       partyChat.settlement.perPersonAmount > 0
         ? partyChat.settlement.perPersonAmount
         : undefined,
+    splitMemberCount: partyChat.settlement.splitMemberCount,
     statusLabel: isCompleted ? '완료' : '진행 중',
     summaryLabel: `${completedCount}/${totalCount}명 완료`,
+    taxiFare: partyChat.settlement.taxiFare,
     totalCount,
   };
 };
@@ -215,13 +246,17 @@ const buildItems = (
     }
 
     if (message.type === 'arrived') {
+      const accountData =
+        message.arrivalData?.accountData ?? partyChat.settlement?.accountData;
+
       items.push({
-        accountLabel: partyChat.latestAccountData
-          ? `${partyChat.latestAccountData.bankName} ${partyChat.latestAccountData.accountNumber}`
-          : undefined,
+        accountData,
+        accountLabel: formatAccountLabel(accountData),
         id: message.id,
-        memberCount: message.arrivalData?.memberCount,
-        perPerson: message.arrivalData?.perPerson,
+        perPersonAmount: message.arrivalData?.perPersonAmount,
+        settlementTargetMemberIds:
+          message.arrivalData?.settlementTargetMemberIds ?? [],
+        splitMemberCount: message.arrivalData?.splitMemberCount,
         taxiFare: message.arrivalData?.taxiFare,
         timeLabel: format(createdDate, 'a hh:mm', {locale: ko}),
         type: 'arrived-message',
@@ -264,12 +299,7 @@ export const buildTaxiChatViewData = ({
 }): TaxiChatViewData => {
   const management = buildManagement(partyChat, currentUserId);
   const settlementNotice = buildSettlementNotice(partyChat, currentUserId);
-  const members = partyChat.participants.map(participant => ({
-    id: participant.id,
-    isCurrentUser: participant.id === currentUserId,
-    label: participant.name,
-    settled: participant.isLeader ? true : participant.settled,
-  }));
+  const members = buildSummaryMembers(partyChat, currentUserId);
 
   return {
     actionTrayActions: buildActionTrayActions(partyChat, management),

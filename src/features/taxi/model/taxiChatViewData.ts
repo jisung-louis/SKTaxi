@@ -5,7 +5,10 @@ import type {
 } from '@/shared/ui/chat';
 
 import type {TaxiRecruitDraft} from './taxiRecruitData';
-import type {PartyLocation} from './types';
+import type {
+  AccountMessageDraft,
+  PartyLocation,
+} from './types';
 
 export const TAXI_CHAT_CURRENT_USER_ID = 'current-user';
 export const TAXI_CHAT_CURRENT_USER_NAME = '나';
@@ -38,18 +41,22 @@ export interface TaxiChatSummaryManagementViewData {
 export interface TaxiChatSettlementMemberViewData {
   id: string;
   isCurrentUser: boolean;
+  isLeader: boolean;
   label: string;
   settled: boolean;
 }
 
 export interface TaxiChatSettlementNoticeViewData {
+  accountData?: TaxiChatSourceAccountData;
   accountLabel?: string;
   completedCount: number;
   description: string;
   members: TaxiChatSettlementMemberViewData[];
   perPersonAmount?: number;
+  splitMemberCount?: number;
   statusLabel: string;
   summaryLabel: string;
+  taxiFare?: number;
   totalCount: number;
 }
 
@@ -78,21 +85,30 @@ export interface TaxiChatSourceParticipant {
 }
 
 export interface TaxiChatSourceSettlement {
+  accountData?: TaxiChatSourceAccountData;
+  splitMemberCount?: number;
+  settlementTargetMemberIds: string[];
   perPersonAmount: number;
   status: 'pending' | 'completed';
+  taxiFare?: number;
 }
 
 export interface TaxiChatSourceAccountData {
   accountHolder: string;
   accountNumber: string;
   bankName: string;
+  hideName: boolean;
 }
 
 export interface TaxiChatSourceArrivalData {
-  memberCount?: number;
-  perPerson?: number;
+  accountData?: TaxiChatSourceAccountData;
+  perPersonAmount?: number;
+  settlementTargetMemberIds: string[];
+  splitMemberCount?: number;
   taxiFare?: number;
 }
+
+export interface TaxiChatAccountMessageDraft extends AccountMessageDraft {}
 
 export interface TaxiChatSourceMessageItem {
   accountData?: TaxiChatSourceAccountData;
@@ -160,10 +176,12 @@ export interface TaxiChatAccountMessageViewData {
 }
 
 export interface TaxiChatArrivedMessageViewData {
+  accountData?: TaxiChatSourceAccountData;
   accountLabel?: string;
   id: string;
-  memberCount?: number;
-  perPerson?: number;
+  perPersonAmount?: number;
+  settlementTargetMemberIds: string[];
+  splitMemberCount?: number;
   taxiFare?: number;
   timeLabel: string;
   type: 'arrived-message';

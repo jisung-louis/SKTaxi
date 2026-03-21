@@ -7,6 +7,7 @@ import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import {
   TAXI_CHAT_CURRENT_USER_ID,
   TAXI_CHAT_CURRENT_USER_NAME,
+  type TaxiChatAccountMessageDraft,
   type TaxiChatSessionSnapshot,
   type TaxiChatSourceData,
 } from '../../model/taxiChatViewData';
@@ -209,14 +210,18 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
 
   async sendAccountMessage(
     partyId: string,
+    payload: TaxiChatAccountMessageDraft,
   ): Promise<TaxiChatSourceData | null> {
     await wait();
 
     const party = this.ensureParty(partyId);
     const accountData = {
-      accountHolder: '홍길동',
-      accountNumber: '3333-01-1234567',
-      bankName: '카카오뱅크',
+      accountHolder: payload.hideName
+        ? `${payload.accountHolder.slice(0, 1)}*${payload.accountHolder.slice(-1)}`
+        : payload.accountHolder,
+      accountNumber: payload.accountNumber,
+      bankName: payload.bankName,
+      hideName: payload.hideName,
     };
 
     party.latestAccountData = accountData;
@@ -229,51 +234,6 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
       senderName: TAXI_CHAT_CURRENT_USER_NAME,
       text: `${accountData.bankName} ${accountData.accountNumber}`,
       type: 'account',
-    });
-  }
-
-  async sendArrivedMessage(
-    partyId: string,
-    taxiFare: number,
-  ): Promise<TaxiChatSourceData | null> {
-    await wait();
-
-    const party = this.ensureParty(partyId);
-    const memberCount = party.memberCount;
-    const perPerson = memberCount > 0 ? Math.floor(taxiFare / memberCount) : 0;
-
-    party.partyStatus = 'arrived';
-
-    return this.appendMessage(partyId, {
-      arrivalData: {
-        memberCount,
-        perPerson,
-        taxiFare,
-      },
-      createdAt: new Date().toISOString(),
-      id: `${partyId}-arrived-${Date.now()}`,
-      senderId: TAXI_CHAT_CURRENT_USER_ID,
-      senderName: TAXI_CHAT_CURRENT_USER_NAME,
-      text: `파티가 도착했습니다. 정산을 진행해주세요. (1인당 ${perPerson}원)`,
-      type: 'arrived',
-    });
-  }
-
-  async sendEndMessage(
-    partyId: string,
-  ): Promise<TaxiChatSourceData | null> {
-    await wait();
-
-    const party = this.ensureParty(partyId);
-    party.partyStatus = 'ended';
-
-    return this.appendMessage(partyId, {
-      createdAt: new Date().toISOString(),
-      id: `${partyId}-end-${Date.now()}`,
-      senderId: 'system',
-      senderName: '안내',
-      text: '파티가 종료되었습니다.',
-      type: 'end',
     });
   }
 

@@ -14,40 +14,105 @@ import {
   RADIUS,
   SPACING,
 } from '@/shared/design-system/tokens';
+import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
 import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
 import type {TaxiChatSettlementMemberViewData} from '../model/taxiChatViewData';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 
+const BANK_NAMES: string[] = [
+  '카카오뱅크',
+  '토스뱅크',
+  '국민은행',
+  '신한은행',
+  '하나은행',
+  '우리은행',
+  '기업은행',
+  '농협은행',
+  'SC제일은행',
+  '씨티은행',
+  '대구은행',
+  '부산은행',
+  '경남은행',
+  '광주은행',
+  '전북은행',
+  '제주은행',
+  'SH수협은행',
+  '케이뱅크',
+];
+
 interface TaxiArriveSettlementSheetProps {
-  accountInfo?: AccountInfo | null;
+  initialAccountInfo?: AccountInfo | null;
   loading?: boolean;
   members: TaxiChatSettlementMemberViewData[];
   onClose: () => void;
-  onSubmit: (taxiFare: number) => void;
+  onSubmit: (payload: {
+    account: AccountInfo;
+    settlementTargetMemberIds: string[];
+    taxiFare: number;
+  }) => void;
   visible: boolean;
 }
 
 export const TaxiArriveSettlementSheet = ({
-  accountInfo,
+  initialAccountInfo,
   loading = false,
   members,
   onClose,
   onSubmit,
   visible,
 }: TaxiArriveSettlementSheetProps) => {
+  const [accountHolder, setAccountHolder] = React.useState('');
+  const [accountNumber, setAccountNumber] = React.useState('');
+  const [bankDropdownOpen, setBankDropdownOpen] = React.useState(false);
+  const [bankName, setBankName] = React.useState('');
+  const [hideName, setHideName] = React.useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>([]);
   const [taxiFareInput, setTaxiFareInput] = React.useState('');
+
+  const leaderMember = React.useMemo(
+    () => members.find(member => member.isLeader) ?? null,
+    [members],
+  );
+  const selectableMembers = React.useMemo(
+    () => members.filter(member => !member.isLeader),
+    [members],
+  );
+  const selectableMemberIds = React.useMemo(
+    () => selectableMembers.map(member => member.id),
+    [selectableMembers],
+  );
 
   React.useEffect(() => {
     if (!visible) {
       return;
     }
 
+    setAccountHolder(initialAccountInfo?.accountHolder ?? '');
+    setAccountNumber(initialAccountInfo?.accountNumber ?? '');
+    setBankName(initialAccountInfo?.bankName ?? '');
+    setHideName(initialAccountInfo?.hideName ?? false);
     setTaxiFareInput('');
-  }, [visible]);
+    setBankDropdownOpen(false);
+    setSelectedMemberIds(selectableMemberIds);
+  }, [initialAccountInfo, selectableMemberIds, visible]);
 
   const parsedTaxiFare = Number(taxiFareInput.replace(/,/g, '').trim());
-  const canSubmit = Number.isFinite(parsedTaxiFare) && parsedTaxiFare > 0;
+  const canSubmit =
+    bankName.trim().length > 0 &&
+    accountHolder.trim().length > 0 &&
+    accountNumber.trim().length > 0 &&
+    Number.isFinite(parsedTaxiFare) &&
+    parsedTaxiFare > 0 &&
+    selectedMemberIds.length > 0;
+
+  const toggleMember = (memberId: string) => {
+    setSelectedMemberIds(current =>
+      current.includes(memberId)
+        ? current.filter(id => id !== memberId)
+        : [...current, memberId],
+    );
+  };
 
   return (
     <TaxiChatBottomSheet onClose={onClose} visible={visible}>
@@ -60,29 +125,43 @@ export const TaxiArriveSettlementSheet = ({
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>이름</Text>
-        <View style={styles.readOnlyField}>
-          <Text style={styles.readOnlyLabel}>
-            {accountInfo?.accountHolder || '계좌 정보 미등록'}
-          </Text>
-        </View>
+        <TextInput
+          placeholder="이름 입력"
+          placeholderTextColor={COLORS.text.placeholder}
+          selectionColor={COLORS.brand.primary}
+          style={styles.input}
+          value={accountHolder}
+          onChangeText={setAccountHolder}
+        />
       </View>
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>은행명</Text>
-        <View style={styles.readOnlyField}>
-          <Text style={styles.readOnlyLabel}>
-            {accountInfo?.bankName || '계좌 정보 미등록'}
-          </Text>
-        </View>
+        <AccountBankDropdown
+          bankNames={BANK_NAMES}
+          isOpen={bankDropdownOpen}
+          selectedBankName={bankName}
+          onPressSelect={nextBankName => {
+            setBankName(nextBankName);
+            setBankDropdownOpen(false);
+          }}
+          onPressTrigger={() => {
+            setBankDropdownOpen(current => !current);
+          }}
+        />
       </View>
 
       <View style={styles.formSection}>
         <Text style={styles.fieldLabel}>계좌번호</Text>
-        <View style={styles.readOnlyField}>
-          <Text style={styles.readOnlyLabel}>
-            {accountInfo?.accountNumber || '계좌 정보 미등록'}
-          </Text>
-        </View>
+        <TextInput
+          keyboardType="number-pad"
+          placeholder="계좌번호 입력"
+          placeholderTextColor={COLORS.text.placeholder}
+          selectionColor={COLORS.brand.primary}
+          style={styles.input}
+          value={accountNumber}
+          onChangeText={setAccountNumber}
+        />
       </View>
 
       <View style={styles.toggleRow}>
@@ -90,7 +169,7 @@ export const TaxiArriveSettlementSheet = ({
           <Text style={styles.toggleTitle}>이름 가리기</Text>
           <Text style={styles.toggleDescription}>예) 홍길동 → 홍**</Text>
         </View>
-        <ToggleSwitch disabled value={Boolean(accountInfo?.hideName)} />
+        <ToggleSwitch value={hideName} onValueChange={setHideName} />
       </View>
 
       <View style={styles.divider} />
@@ -100,7 +179,7 @@ export const TaxiArriveSettlementSheet = ({
         <View style={styles.fareInputWrap}>
           <TextInput
             keyboardType="number-pad"
-            placeholder="예: 4800"
+            placeholder="예: 14000"
             placeholderTextColor={COLORS.text.placeholder}
             selectionColor={COLORS.brand.primary}
             style={styles.fareInput}
@@ -112,19 +191,67 @@ export const TaxiArriveSettlementSheet = ({
       </View>
 
       <View style={styles.formSection}>
-        <Text style={styles.fieldLabel}>{`N빵할 인원 (${members.length}명)`}</Text>
-        <View style={styles.memberList}>
-          {members.map(member => (
-            <View key={member.id} style={styles.memberRow}>
-              <View style={styles.memberCheckWrap}>
-                <Icon color={COLORS.text.inverse} name="checkmark" size={12} />
+        <View style={styles.memberHeaderRow}>
+          <Text style={styles.fieldLabel}>
+            {`정산 대상 멤버 (${selectedMemberIds.length}명 선택)`}
+          </Text>
+          <Text style={styles.memberGuide}>리더는 자동 포함됩니다.</Text>
+        </View>
+
+        {leaderMember ? (
+          <View style={[styles.memberRow, styles.memberRowLeader]}>
+            <View style={styles.memberLeft}>
+              <View style={[styles.memberCheckWrap, styles.memberCheckWrapLeader]}>
+                <Icon color={COLORS.text.inverse} name="person" size={11} />
               </View>
-              <Text style={styles.memberLabel}>
-                {member.label}
-                {member.isCurrentUser ? ' (나)' : ''}
-              </Text>
+              <View>
+                <Text style={styles.memberLabel}>
+                  {leaderMember.label}
+                  {leaderMember.isCurrentUser ? ' (나)' : ''}
+                </Text>
+                <Text style={styles.memberMeta}>리더 자동 포함</Text>
+              </View>
             </View>
-          ))}
+            <Text style={styles.leaderPill}>자동 포함</Text>
+          </View>
+        ) : null}
+
+        <View style={styles.memberList}>
+          {selectableMembers.map(member => {
+            const selected = selectedMemberIds.includes(member.id);
+
+            return (
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.84}
+                key={member.id}
+                onPress={() => {
+                  toggleMember(member.id);
+                }}
+                style={[
+                  styles.memberRow,
+                  selected ? styles.memberRowSelected : styles.memberRowUnselected,
+                ]}>
+                <View style={styles.memberLeft}>
+                  <View
+                    style={[
+                      styles.memberCheckWrap,
+                      selected
+                        ? styles.memberCheckWrapSelected
+                        : styles.memberCheckWrapUnselected,
+                    ]}>
+                    {selected ? (
+                      <Icon color={COLORS.text.inverse} name="checkmark" size={12} />
+                    ) : null}
+                  </View>
+                  <Text style={styles.memberLabel}>
+                    {member.label}
+                    {member.isCurrentUser ? ' (나)' : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -142,9 +269,20 @@ export const TaxiArriveSettlementSheet = ({
           activeOpacity={canSubmit && !loading ? 0.84 : 1}
           disabled={!canSubmit || loading}
           onPress={() => {
-            if (canSubmit) {
-              onSubmit(parsedTaxiFare);
+            if (!canSubmit) {
+              return;
             }
+
+            onSubmit({
+              account: {
+                accountHolder: accountHolder.trim(),
+                accountNumber: accountNumber.trim(),
+                bankName: bankName.trim(),
+                hideName,
+              },
+              settlementTargetMemberIds: selectedMemberIds,
+              taxiFare: parsedTaxiFare,
+            });
           }}
           style={[
             styles.button,
@@ -230,49 +368,92 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
   },
+  input: {
+    backgroundColor: COLORS.background.page,
+    borderColor: COLORS.border.subtle,
+    borderRadius: 12,
+    borderWidth: 1,
+    color: COLORS.text.primary,
+    fontSize: 14,
+    lineHeight: 20,
+    minHeight: 46,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  leaderPill: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
   memberCheckWrap: {
     alignItems: 'center',
-    backgroundColor: COLORS.brand.primary,
     borderRadius: RADIUS.pill,
     height: 20,
     justifyContent: 'center',
     width: 20,
   },
+  memberCheckWrapLeader: {
+    backgroundColor: COLORS.text.secondary,
+  },
+  memberCheckWrapSelected: {
+    backgroundColor: COLORS.brand.primary,
+  },
+  memberCheckWrapUnselected: {
+    borderColor: COLORS.border.default,
+    borderWidth: 1.5,
+  },
+  memberGuide: {
+    color: COLORS.text.muted,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  memberHeaderRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   memberLabel: {
-    color: COLORS.status.success,
+    color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
   },
+  memberLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
   memberList: {
     gap: SPACING.sm,
   },
+  memberMeta: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
   memberRow: {
     alignItems: 'center',
-    backgroundColor: COLORS.brand.primaryTint,
-    borderColor: COLORS.border.accent,
     borderRadius: 12,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: SPACING.sm,
+    justifyContent: 'space-between',
     minHeight: 46,
     paddingHorizontal: 16,
     paddingVertical: 13,
   },
-  readOnlyField: {
-    backgroundColor: COLORS.background.page,
+  memberRowLeader: {
+    backgroundColor: COLORS.background.subtle,
     borderColor: COLORS.border.subtle,
-    borderRadius: 12,
-    borderWidth: 1,
-    minHeight: 46,
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    marginBottom: SPACING.sm,
   },
-  readOnlyLabel: {
-    color: COLORS.text.primary,
-    fontSize: 14,
-    lineHeight: 20,
+  memberRowSelected: {
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.border.accent,
+  },
+  memberRowUnselected: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
   },
   submitButton: {
     backgroundColor: COLORS.brand.primary,

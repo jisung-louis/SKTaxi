@@ -821,13 +821,15 @@ export class SpringPartyRepository implements IPartyRepository {
     partyId: string,
     settlementData: SettlementData,
   ): Promise<void> {
-    const settlementTargetCount = Object.keys(settlementData.members).length;
-    const taxiFare =
-      settlementData.taxiFare ??
-      settlementData.perPersonAmount * settlementTargetCount;
-
     await taxiHomeApiClient.arriveParty(partyId, {
-      taxiFare,
+      account: {
+        accountHolder: settlementData.account.accountHolder,
+        accountNumber: settlementData.account.accountNumber,
+        bankName: settlementData.account.bankName,
+        hideName: settlementData.account.hideName,
+      },
+      settlementTargetMemberIds: settlementData.settlementTargetMemberIds,
+      taxiFare: settlementData.taxiFare,
     });
     await this.refreshActiveSubscriptions();
   }

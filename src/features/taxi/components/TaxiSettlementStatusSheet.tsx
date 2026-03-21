@@ -56,9 +56,23 @@ export const TaxiSettlementStatusSheet = ({
               {`${notice.perPersonAmount.toLocaleString('ko-KR')}원`}
             </Text>
           </View>
+          {notice.taxiFare || notice.splitMemberCount ? (
+            <View style={styles.metricCenter}>
+              {notice.taxiFare ? (
+                <Text style={styles.metricCaption}>
+                  {`총 ${notice.taxiFare.toLocaleString('ko-KR')}원`}
+                </Text>
+              ) : null}
+              {notice.splitMemberCount ? (
+                <Text style={styles.metricCaption}>
+                  {`${notice.splitMemberCount}명 정산`}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
           {notice.accountLabel ? (
             <View style={styles.metricRight}>
-              <Text style={styles.metricLabel}>내 계좌</Text>
+              <Text style={styles.metricLabel}>정산 계좌</Text>
               <Text style={styles.metricAccount}>{notice.accountLabel}</Text>
             </View>
           ) : null}
@@ -283,6 +297,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xl,
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  metricCaption: {
+    color: COLORS.text.secondary,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  metricCenter: {
+    flex: 1,
+    gap: 2,
+    paddingHorizontal: SPACING.md,
   },
   metricLabel: {
     color: COLORS.accent.purple,

@@ -45,24 +45,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
-const isSameAccountInfo = (
-  currentAccountInfo: AccountInfo | null | undefined,
-  nextAccountInfo: AccountInfo,
-) => {
-  if (!currentAccountInfo) {
-    return false;
-  }
-
-  return (
-    currentAccountInfo.accountHolder.trim() ===
-      nextAccountInfo.accountHolder.trim() &&
-    currentAccountInfo.accountNumber.trim() ===
-      nextAccountInfo.accountNumber.trim() &&
-    currentAccountInfo.bankName.trim() === nextAccountInfo.bankName.trim() &&
-    Boolean(currentAccountInfo.hideName) === Boolean(nextAccountInfo.hideName)
-  );
-};
-
 const getTaxiCallUrl = ({
   destinationLat,
   destinationLng,
@@ -103,11 +85,7 @@ export const ChatScreen = () => {
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {
-    accountInfo,
-    saveAccountInfo,
-    saving: savingAccountInfo,
-  } = useAccountInfo();
+  const {accountInfo} = useAccountInfo();
   const {
     actionInFlightId,
     cancelParty,
@@ -137,7 +115,27 @@ export const ChatScreen = () => {
   const [arriveSheetVisible, setArriveSheetVisible] = React.useState(false);
   const [settlementSheetVisible, setSettlementSheetVisible] =
     React.useState(false);
+  const [sessionAccountInfo, setSessionAccountInfo] =
+    React.useState<AccountInfo | null>(null);
   const [sendingAccount, setSendingAccount] = React.useState(false);
+
+  const snapshotAccountInfo = React.useMemo<AccountInfo | null>(() => {
+    const nextAccountInfo = data?.summary.settlementNotice?.accountData;
+
+    if (!nextAccountInfo) {
+      return null;
+    }
+
+    return {
+      accountHolder: nextAccountInfo.accountHolder,
+      accountNumber: nextAccountInfo.accountNumber,
+      bankName: nextAccountInfo.bankName,
+      hideName: nextAccountInfo.hideName,
+    };
+  }, [data?.summary.settlementNotice?.accountData]);
+
+  const resolvedAccountInfo =
+    sessionAccountInfo ?? snapshotAccountInfo ?? accountInfo;
 
   React.useEffect(() => {
     if ((data?.actionTrayActions.length ?? 0) === 0 && actionTrayVisible) {
@@ -289,7 +287,11 @@ export const ChatScreen = () => {
   );
 
   const handleSubmitArrive = React.useCallback(
-    (taxiFare: number) => {
+    (payload: {
+      account: AccountInfo;
+      settlementTargetMemberIds: string[];
+      taxiFare: number;
+    }) => {
       runAction({
         fallbackMessage: '도착 처리에 실패했습니다.',
         onSuccess: () => {
@@ -297,7 +299,8 @@ export const ChatScreen = () => {
           setSettlementNoticeExpanded(true);
         },
         task: async () => {
-          await startSettlement(taxiFare);
+          setSessionAccountInfo(payload.account);
+          await startSettlement(payload);
         },
         title: '도착 처리 실패',
       }).catch(() => undefined);
@@ -365,13 +368,13 @@ export const ChatScreen = () => {
       accountNumber,
       bankName,
       hideName,
-      saveAccountInfo: shouldSaveAccountInfo,
+      remember,
     }: {
       accountHolder: string;
       accountNumber: string;
       bankName: string;
       hideName: boolean;
-      saveAccountInfo: boolean;
+      remember: boolean;
     }) => {
       const nextAccountInfo: AccountInfo = {
         accountHolder,
@@ -379,32 +382,15 @@ export const ChatScreen = () => {
         bankName,
         hideName,
       };
-      const hasAccountInfoChanges = !isSameAccountInfo(accountInfo, nextAccountInfo);
-
-      if (hideName) {
-        Alert.alert(
-          '계약 미지원',
-          'Spring ACCOUNT 특수 메시지 contract에는 hideName 필드가 없어 채팅에서 이름 가리기 전송을 아직 지원하지 않습니다.',
-        );
-        return;
-      }
-
-      if (hasAccountInfoChanges && !shouldSaveAccountInfo) {
-        Alert.alert(
-          '계약 미지원',
-          '채팅 ACCOUNT 특수 메시지는 저장된 내 계좌 정보로만 전송할 수 있습니다. 변경한 값을 함께 보내는 contract가 없어서, 전송하려면 `계좌 정보 저장하기`를 먼저 선택해야 합니다.',
-        );
-        return;
-      }
 
       setSendingAccount(true);
 
       try {
-        if (hasAccountInfoChanges) {
-          await saveAccountInfo(nextAccountInfo);
-        }
-
-        await sendAccountMessage();
+        await sendAccountMessage({
+          ...nextAccountInfo,
+          remember,
+        });
+        setSessionAccountInfo(nextAccountInfo);
         setAccountSheetVisible(false);
       } catch (submitError) {
         Alert.alert(
@@ -415,7 +401,7 @@ export const ChatScreen = () => {
         setSendingAccount(false);
       }
     },
-    [accountInfo, saveAccountInfo, sendAccountMessage],
+    [sendAccountMessage],
   );
 
   const settlementMembers = data?.summary.members ?? [];
@@ -530,8 +516,8 @@ export const ChatScreen = () => {
             />
 
             <TaxiAccountSheet
-              initialAccountInfo={accountInfo}
-              loading={sendingAccount || savingAccountInfo}
+              initialAccountInfo={resolvedAccountInfo}
+              loading={sendingAccount}
               onClose={() => {
                 setAccountSheetVisible(false);
               }}
@@ -564,7 +550,7 @@ export const ChatScreen = () => {
             />
 
             <TaxiArriveSettlementSheet
-              accountInfo={accountInfo}
+              initialAccountInfo={resolvedAccountInfo}
               loading={actionInFlightId === 'arrive'}
               members={settlementMembers}
               onClose={() => {

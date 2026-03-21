@@ -165,11 +165,27 @@ export const TaxiChatSummaryCard = ({
                   </View>
                   {summary.settlementNotice.accountLabel ? (
                     <View style={styles.noticeMetricRight}>
-                      <Text style={styles.noticeMetricLabel}>내 계좌</Text>
+                      <Text style={styles.noticeMetricLabel}>정산 계좌</Text>
                       <Text style={styles.noticeMetricValueRight}>
                         {summary.settlementNotice.accountLabel}
                       </Text>
                     </View>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {summary.settlementNotice.taxiFare ||
+              summary.settlementNotice.splitMemberCount ? (
+                <View style={styles.noticeMetaStrip}>
+                  {summary.settlementNotice.taxiFare ? (
+                    <Text style={styles.noticeMetaLabel}>
+                      {`총 ${summary.settlementNotice.taxiFare.toLocaleString('ko-KR')}원`}
+                    </Text>
+                  ) : null}
+                  {summary.settlementNotice.splitMemberCount ? (
+                    <Text style={styles.noticeMetaLabel}>
+                      {`${summary.settlementNotice.splitMemberCount}명 정산`}
+                    </Text>
                   ) : null}
                 </View>
               ) : null}
@@ -378,6 +394,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     flex: 1,
     marginLeft: SPACING.md,
+  },
+  noticeMetaLabel: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  noticeMetaStrip: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
   },
   noticeMetricValue: {
     color: '#7E22CE',

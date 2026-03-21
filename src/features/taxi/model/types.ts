@@ -9,8 +9,19 @@ export interface PartySettlementMember {
   settledAt?: unknown;
 }
 
+export interface SettlementAccountData {
+  accountHolder: string;
+  accountNumber: string;
+  bankName: string;
+  hideName: boolean;
+}
+
 export interface PartySettlement {
+  account?: SettlementAccountData;
+  splitMemberCount?: number;
+  settlementTargetMemberIds: string[];
   status: 'pending' | 'completed';
+  taxiFare?: number;
   perPersonAmount: number;
   members: Record<string, PartySettlementMember>;
 }
@@ -59,26 +70,26 @@ export interface JoinRequestStatus {
 }
 
 export interface SettlementData {
+  account: SettlementAccountData;
+  splitMemberCount: number;
+  settlementTargetMemberIds: string[];
   perPersonAmount: number;
   members: Record<string, PartySettlementMember>;
-  taxiFare?: number;
+  taxiFare: number;
 }
 
-export interface AccountMessageData {
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  hideName: boolean;
+export interface AccountMessageData extends SettlementAccountData {}
+
+export interface AccountMessageDraft extends SettlementAccountData {
+  remember: boolean;
 }
 
 export interface ArrivalMessageData {
   taxiFare: number;
-  perPerson: number;
-  memberCount: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  hideName: boolean;
+  splitMemberCount: number;
+  perPersonAmount: number;
+  settlementTargetMemberIds: string[];
+  accountData: SettlementAccountData;
 }
 
 export interface PartyMessage {

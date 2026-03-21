@@ -186,6 +186,12 @@ export const TaxiChatMessageList = ({
                   {item.accountData.accountHolder}
                 </Text>
 
+                {item.accountData.hideName ? (
+                  <View style={styles.hiddenNamePill}>
+                    <Text style={styles.hiddenNamePillLabel}>이름 숨김</Text>
+                  </View>
+                ) : null}
+
                 <TouchableOpacity
                   accessibilityRole="button"
                   activeOpacity={0.84}
@@ -237,16 +243,16 @@ export const TaxiChatMessageList = ({
                   <View style={styles.arrivedMetricCard}>
                     <Text style={styles.arrivedMetricLabel}>1인당 금액</Text>
                     <Text style={styles.arrivedMetricValue}>
-                      {item.perPerson
-                        ? `${item.perPerson.toLocaleString('ko-KR')}원`
+                      {item.perPersonAmount
+                        ? `${item.perPersonAmount.toLocaleString('ko-KR')}원`
                         : '미정'}
                     </Text>
                   </View>
                 </View>
 
                 <Text style={styles.arrivedDescription}>
-                  {item.memberCount
-                    ? `${item.memberCount}명이 정산 대상입니다.`
+                  {item.splitMemberCount
+                    ? `총 ${item.splitMemberCount}명 기준, 정산 대상 ${item.settlementTargetMemberIds.length}명입니다.`
                     : '정산 대상 인원을 확인해주세요.'}
                 </Text>
 
@@ -266,6 +272,11 @@ export const TaxiChatMessageList = ({
                       <Text style={styles.arrivedAccountValue}>
                         {item.accountLabel}
                       </Text>
+                      {item.accountData ? (
+                        <Text style={styles.arrivedAccountHolderLabel}>
+                          {item.accountData.accountHolder}
+                        </Text>
+                      ) : null}
                     </View>
                     <Icon color={COLORS.status.success} name="copy-outline" size={16} />
                   </TouchableOpacity>
@@ -383,6 +394,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
+  hiddenNamePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
+    marginTop: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  hiddenNamePillLabel: {
+    color: COLORS.text.secondary,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
   accountIconWrap: {
     alignItems: 'center',
     backgroundColor: COLORS.accent.blueSoft,
@@ -419,6 +444,11 @@ const styles = StyleSheet.create({
   arrivedAccountTextWrap: {
     flex: 1,
     gap: 2,
+  },
+  arrivedAccountHolderLabel: {
+    color: 'rgba(255,255,255,0.76)',
+    fontSize: 12,
+    lineHeight: 16,
   },
   arrivedAccountValue: {
     color: COLORS.text.inverse,

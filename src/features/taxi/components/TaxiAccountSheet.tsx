@@ -49,7 +49,7 @@ interface TaxiAccountSheetProps {
     accountNumber: string;
     bankName: string;
     hideName: boolean;
-    saveAccountInfo: boolean;
+    remember: boolean;
   }) => void;
   visible: boolean;
 }
@@ -66,7 +66,7 @@ export const TaxiAccountSheet = ({
   const [bankDropdownOpen, setBankDropdownOpen] = React.useState(false);
   const [bankName, setBankName] = React.useState('');
   const [hideName, setHideName] = React.useState(false);
-  const [saveAccountInfo, setSaveAccountInfo] = React.useState(false);
+  const [remember, setRemember] = React.useState(false);
 
   React.useEffect(() => {
     if (!visible) {
@@ -77,7 +77,7 @@ export const TaxiAccountSheet = ({
     setAccountNumber(initialAccountInfo?.accountNumber ?? '');
     setBankName(initialAccountInfo?.bankName ?? '');
     setHideName(initialAccountInfo?.hideName ?? false);
-    setSaveAccountInfo(false);
+    setRemember(false);
     setBankDropdownOpen(false);
   }, [initialAccountInfo, visible]);
 
@@ -148,15 +148,15 @@ export const TaxiAccountSheet = ({
         accessibilityRole="button"
         activeOpacity={0.84}
         onPress={() => {
-          setSaveAccountInfo(current => !current);
+          setRemember(current => !current);
         }}
         style={styles.checkboxRow}>
         <View
           style={[
             styles.checkbox,
-            saveAccountInfo ? styles.checkboxSelected : null,
+            remember ? styles.checkboxSelected : null,
           ]}>
-          {saveAccountInfo ? (
+          {remember ? (
             <Icon color={COLORS.text.inverse} name="checkmark" size={12} />
           ) : null}
         </View>
@@ -187,7 +187,7 @@ export const TaxiAccountSheet = ({
               accountNumber: accountNumber.trim(),
               bankName: bankName.trim(),
               hideName,
-              saveAccountInfo,
+              remember,
             });
           }}
           style={[

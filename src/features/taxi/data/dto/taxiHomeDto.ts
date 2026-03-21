@@ -45,10 +45,21 @@ export interface PartySettlementMemberResponseDto {
   settledAt?: string | null;
 }
 
+export interface SettlementAccountResponseDto {
+  accountHolder: string;
+  accountNumber: string;
+  bankName: string;
+  hideName?: boolean | null;
+}
+
 export interface SettlementSummaryResponseDto {
+  account?: SettlementAccountResponseDto | null;
   memberSettlements?: PartySettlementMemberResponseDto[] | null;
   perPersonAmount?: number | null;
+  settlementTargetMemberIds?: string[] | null;
+  splitMemberCount?: number | null;
   status: string;
+  taxiFare?: number | null;
 }
 
 export interface MyPartyResponseDto {
@@ -100,6 +111,8 @@ export interface UpdatePartyRequestDto {
 }
 
 export interface ArrivePartyRequestDto {
+  account: SettlementAccountResponseDto;
+  settlementTargetMemberIds: string[];
   taxiFare: number;
 }
 

@@ -4,6 +4,7 @@ import type {
   PartyDetailResponseDto,
   PartySettlementMemberResponseDto,
   PartyStatusDto,
+  SettlementAccountResponseDto,
   SettlementSummaryResponseDto,
 } from '../dto/taxiHomeDto';
 import type {
@@ -12,6 +13,7 @@ import type {
   Party,
   PartySettlement,
   PartySettlementMember,
+  SettlementAccountData,
 } from '../../model/types';
 
 export const ACTIVE_PARTY_STATUSES: PartyStatusDto[] = [
@@ -40,6 +42,21 @@ const mapPartySettlementMember = (
   settledAt: normalizeDate(dto.settledAt),
 });
 
+const mapSettlementAccount = (
+  dto?: SettlementAccountResponseDto | null,
+): SettlementAccountData | undefined => {
+  if (!dto) {
+    return undefined;
+  }
+
+  return {
+    accountHolder: dto.accountHolder,
+    accountNumber: dto.accountNumber,
+    bankName: dto.bankName,
+    hideName: Boolean(dto.hideName),
+  };
+};
+
 const mapPartySettlement = (
   dto?: SettlementSummaryResponseDto | null,
 ): PartySettlement | undefined => {
@@ -48,6 +65,7 @@ const mapPartySettlement = (
   }
 
   return {
+    account: mapSettlementAccount(dto.account),
     members: (dto.memberSettlements ?? []).reduce<
       Record<string, PartySettlementMember>
     >((accumulator, memberSettlement) => {
@@ -56,7 +74,10 @@ const mapPartySettlement = (
       return accumulator;
     }, {}),
     perPersonAmount: dto.perPersonAmount ?? 0,
+    settlementTargetMemberIds: dto.settlementTargetMemberIds ?? [],
+    splitMemberCount: dto.splitMemberCount ?? undefined,
     status: dto.status === 'COMPLETED' ? 'completed' : 'pending',
+    taxiFare: dto.taxiFare ?? undefined,
   };
 };
 

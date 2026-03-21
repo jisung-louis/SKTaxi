@@ -7,6 +7,7 @@ import {useAuth} from '@/features/auth';
 
 import {
   TAXI_CHAT_CURRENT_USER_ID,
+  type TaxiChatAccountMessageDraft,
   type TaxiChatSourceData,
   type TaxiChatViewData,
 } from '../model/taxiChatViewData';
@@ -14,17 +15,36 @@ import {buildTaxiChatViewData} from '../application/taxiChatDetailAssembler';
 
 const buildSettlementDraft = (
   partyChat: TaxiChatSourceData,
-  taxiFare: number,
+  payload: {
+    account: {
+      accountHolder: string;
+      accountNumber: string;
+      bankName: string;
+      hideName: boolean;
+    };
+    settlementTargetMemberIds: string[];
+    taxiFare: number;
+  },
 ) => {
   const settlementTargets = partyChat.participants.filter(
-    participant => !participant.isLeader,
+    participant =>
+      !participant.isLeader &&
+      payload.settlementTargetMemberIds.includes(participant.id),
   );
 
   if (settlementTargets.length === 0) {
     throw new Error('동승 멤버가 있어야 도착 처리할 수 있습니다.');
   }
 
+  const splitMemberCount = settlementTargets.length + 1;
+
   return {
+    account: {
+      accountHolder: payload.account.accountHolder,
+      accountNumber: payload.account.accountNumber,
+      bankName: payload.account.bankName,
+      hideName: payload.account.hideName,
+    },
     members: settlementTargets.reduce<Record<string, {settled: boolean}>>(
       (accumulator, participant) => {
         accumulator[participant.id] = {
@@ -34,8 +54,10 @@ const buildSettlementDraft = (
       },
       {},
     ),
-    perPersonAmount: Math.floor(taxiFare / settlementTargets.length),
-    taxiFare,
+    perPersonAmount: Math.floor(payload.taxiFare / splitMemberCount),
+    settlementTargetMemberIds: settlementTargets.map(participant => participant.id),
+    splitMemberCount,
+    taxiFare: payload.taxiFare,
   };
 };
 
@@ -205,27 +227,8 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
-    await runPartyAction('end', async () => {
-      await partyRepository.endParty(partyId);
-
-      try {
-        await taxiChatRepository.sendEndMessage(partyId);
-      } catch (sendEndError) {
-        await refreshPartySnapshot();
-        throw new Error(
-          sendEndError instanceof Error && sendEndError.message
-            ? `파티 종료 상태는 반영됐지만 종료 메시지 전송에 실패했습니다. ${sendEndError.message}`
-            : '파티 종료 상태는 반영됐지만 종료 메시지 전송에 실패했습니다.',
-        );
-      }
-    });
-  }, [
-    partyId,
-    partyRepository,
-    refreshPartySnapshot,
-    runPartyAction,
-    taxiChatRepository,
-  ]);
+    await runPartyAction('end', () => partyRepository.endParty(partyId));
+  }, [partyId, partyRepository, runPartyAction]);
 
   const kickMember = React.useCallback(
     async (memberId: string) => {
@@ -254,41 +257,32 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
   );
 
   const startSettlement = React.useCallback(
-    async (taxiFare: number) => {
+    async (payload: {
+      account: {
+        accountHolder: string;
+        accountNumber: string;
+        bankName: string;
+        hideName: boolean;
+      };
+      settlementTargetMemberIds: string[];
+      taxiFare: number;
+    }) => {
       if (!partyId || !sourceData) {
         return;
       }
 
-      if (!Number.isFinite(taxiFare) || taxiFare <= 0) {
+      if (!Number.isFinite(payload.taxiFare) || payload.taxiFare <= 0) {
         throw new Error('택시 총액을 1원 이상 숫자로 입력해주세요.');
       }
 
-      await runPartyAction('arrive', async () => {
-        await partyRepository.startSettlement(
+      await runPartyAction('arrive', () =>
+        partyRepository.startSettlement(
           partyId,
-          buildSettlementDraft(sourceData, taxiFare),
-        );
-
-        try {
-          await taxiChatRepository.sendArrivedMessage(partyId, taxiFare);
-        } catch (sendArrivedError) {
-          await refreshPartySnapshot();
-          throw new Error(
-            sendArrivedError instanceof Error && sendArrivedError.message
-              ? `도착/정산 상태는 반영됐지만 ARRIVED 메시지 전송에 실패했습니다. ${sendArrivedError.message}`
-              : '도착/정산 상태는 반영됐지만 ARRIVED 메시지 전송에 실패했습니다.',
-          );
-        }
-      });
+          buildSettlementDraft(sourceData, payload),
+        ),
+      );
     },
-    [
-      partyId,
-      partyRepository,
-      refreshPartySnapshot,
-      runPartyAction,
-      sourceData,
-      taxiChatRepository,
-    ],
+    [partyId, partyRepository, runPartyAction, sourceData],
   );
 
   const leaveParty = React.useCallback(async () => {
@@ -318,14 +312,17 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     [partyId, taxiChatRepository],
   );
 
-  const sendAccountMessage = React.useCallback(async () => {
-    if (!partyId) {
-      return;
-    }
+  const sendAccountMessage = React.useCallback(
+    async (payload: TaxiChatAccountMessageDraft) => {
+      if (!partyId) {
+        return;
+      }
 
-    await taxiChatRepository.sendAccountMessage(partyId);
-    await refreshPartySnapshot();
-  }, [partyId, refreshPartySnapshot, taxiChatRepository]);
+      await taxiChatRepository.sendAccountMessage(partyId, payload);
+      await refreshPartySnapshot();
+    },
+    [partyId, refreshPartySnapshot, taxiChatRepository],
+  );
 
   const updateParty = React.useCallback(
     async ({
