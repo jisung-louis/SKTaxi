@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-21
+> 최종 수정일: 2026-03-22
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md)
 
 ---
@@ -466,6 +466,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - `ChatScreen` 하단 `+` 액션 트레이는 `택시 호출`, `계좌 전송`, `모집 마감/재개`, `택시 도착`, `정산 현황`, `파티 종료`를 파티 상태와 리더 여부에 따라 분기한다.
 - `택시 호출`은 카카오T / Uber / 티머니GO 딥링크를 `canOpenURL/openURL`로 연결하고, 실패 시 앱 설치 안내를 노출한다.
 - `계좌 전송`은 `ACCOUNT` payload 전체를 STOMP로 전송하고, repository는 실제 `ACCOUNT` message 수신까지 대기해 반영한다.
+- Taxi 홈 파티 목록은 `OPEN`과 `CLOSED`를 각각 조회해 merge하고, `CLOSED`는 비활성 카드로 노출한다.
 - 파티 도착/강퇴/멤버별 정산 확인은 `SpringPartyRepository` 경계에서 각각 `PATCH /v1/parties/{id}/arrive`, `DELETE /v1/parties/{id}/members/{memberId}`, `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`으로 연결됐다.
 - direct leave는 더 이상 `SpringTaxiChatRepository` 전용 책임이 아니고, `DELETE /v1/parties/{id}/members/me`를 `SpringPartyRepository.leaveParty()`로 옮겨 party domain command로 정리했다.
 - leader 모집 상태 전이는 `PATCH /v1/parties/{id}/close`, `PATCH /v1/parties/{id}/reopen`, `PATCH /v1/parties/{id}/end`까지 screen chain에 연결됐다.
@@ -473,6 +474,8 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - `택시 도착`, `파티 종료`, `파티 취소`, leader 승인 후 시스템 안내는 클라이언트 publish가 아니라 backend가 생성한 `ARRIVED` / `END` / `SYSTEM` message를 렌더링하는 흐름으로 정리됐다.
 - `TaxiAccountSheet` 입력값은 그대로 `ACCOUNT` payload로 이어지고, `TaxiArriveSettlementSheet`는 실제 멤버 선택 상태를 들고 `settlementTargetMemberIds`를 leader 제외 기준으로 전송한다.
 - `ChatArrivalDataResponse` / `SettlementSummaryResponse`의 `hideName`, `splitMemberCount`, `settlementTargetMemberIds`, `accountData`가 mapper/assembler를 거쳐 상단 정산 공지와 ARRIVED message card에 반영된다.
+- `SpringTaxiChatRepository`의 ACCOUNT pending은 room event 수신뿐 아니라 duplicate topic frame과 REST snapshot fallback으로도 해제해, 실기기에서 성공 후 `전송 중...`이 고착되지 않게 보강했다.
+- 멤버 `파티 나가기`는 성공 직후 leave guard를 세워 stale refresh/SSE callback을 무시하고 `resetSession()` 후 화면을 빠져나오게 정리했다.
 
 현재 아직 남은 것:
 

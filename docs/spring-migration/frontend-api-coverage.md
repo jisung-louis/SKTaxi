@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-21
+> 최종 수정일: 2026-03-22
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -156,6 +156,7 @@ endpoint:
 현재 사용처:
 
 - Taxi Home 파티 목록 조회
+- Taxi Home `OPEN + CLOSED` 파티 목록 merge 조회
 - 내 활성 파티 여부 반영
 - 내 pending join request 상태 반영
 - Main tab의 `My Party` / `JoinRequestCount`
@@ -189,6 +190,7 @@ endpoint:
 runtime note:
 
 - `SpringPartyRepository`는 `GET /v1/sse/parties`, `GET /v1/sse/parties/{partyId}/join-requests`, `GET /v1/sse/members/me/join-requests`를 signal transport로 사용하고, 실제 domain state는 REST snapshot으로 다시 읽는다.
+- Taxi Home 목록은 `GET /v1/parties?status=OPEN`과 `GET /v1/parties?status=CLOSED`를 각각 호출한 뒤 프론트에서 merge한다.
 - 따라서 `useMyParty`, `JoinRequestProvider`, `usePendingJoinRequest`, `useJoinRequestStatus`, `useParty`, `subscribeToJoinRequests()`는 `SSE signal -> REST refresh` 기준으로 동기화된다.
 - leader action 이후 화면 반영 기준은 optimistic mutation이 아니라 `REST mutation -> repository refresh + SSE follow-up signal`이다.
 - `PARTY_JOIN_REQUEST` 알림 정리는 `notification.data.requestId` 기준으로 삭제해, 같은 party의 다른 pending 요청 알림을 같이 지우지 않는다.
@@ -253,9 +255,11 @@ runtime note:
 - 따라서 로그아웃 후 다른 계정 로그인 시 이전 CONNECT Authorization 세션을 재사용하지 않는다.
 - Taxi Chat detail은 `partyRepository.subscribeToParty()`의 SSE signal을 받아 `taxiChatRepository.getPartyChat()` REST snapshot을 다시 읽으므로, party status/member/settlement 변화도 chat summary에서 Spring source 기준으로 다시 반영된다.
 - `SpringTaxiChatRepository`는 `ACCOUNT` publish 이후 같은 room topic에서 실제 `ACCOUNT` message를 수신할 때까지 대기한다.
+- 실기기 보강으로 ACCOUNT pending은 duplicate topic frame과 REST snapshot fallback으로도 해제한다. dev 환경에서는 publish/topic/error-queue/pending-clear 시점 로그를 남긴다.
 - leader 승인 후 `SYSTEM`, arrive 후 `ARRIVED`, cancel/end 후 `END`는 backend가 직접 생성하고 프론트는 해당 snapshot/message를 렌더링만 한다.
 - `ACCOUNT`는 `bankName`, `accountNumber`, `accountHolder`, `hideName`, `remember` payload를 그대로 전송한다.
 - `/arrive`는 `taxiFare`, `settlementTargetMemberIds`, `account { bankName, accountNumber, accountHolder, hideName }` payload를 전송한다.
+- 멤버 `DELETE /v1/parties/{id}/members/me` 성공 후에는 leave guard로 stale refresh/SSE callback을 무시하고 chat session을 정리한다.
 
 ---
 
