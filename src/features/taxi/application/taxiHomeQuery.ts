@@ -401,9 +401,24 @@ const buildTaxiHomeSourceData = ({
   ),
   primaryActionLabel: '새 파티 만들기',
   searchPlaceholder: '출발지 검색',
-  sectionTitle: '모집 중인 파티',
+  sectionTitle: '택시 파티',
   sortOptions: TAXI_HOME_SORTS,
 });
+
+const mergePartySummaries = (
+  ...partyGroups: PartySummaryResponseDto[][]
+): PartySummaryResponseDto[] => {
+  const partyById = new Map<string, PartySummaryResponseDto>();
+
+  partyGroups.flat().forEach(party => {
+    partyById.set(party.id, party);
+  });
+
+  return [...partyById.values()].sort(
+    (left, right) =>
+      new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime(),
+  );
+};
 
 export interface TaxiHomeQueryResult {
   activePartyId: string | null;
@@ -447,31 +462,37 @@ export async function createTaxiHomeJoinRequest(
 }
 
 export async function loadTaxiHomeQueryResult(): Promise<TaxiHomeQueryResult> {
-  const [partiesResponse, personalTaxiState] = await Promise.all([
-    taxiHomeApiClient.getOpenParties(),
-    loadPersonalTaxiState().catch(error => {
-      if (!canFallbackOnPersonalTaxiStateError(error)) {
-        throw error;
-      }
+  const [openPartiesResponse, closedPartiesResponse, personalTaxiState] =
+    await Promise.all([
+      taxiHomeApiClient.getOpenParties(),
+      taxiHomeApiClient.getClosedParties(),
+      loadPersonalTaxiState().catch(error => {
+        if (!canFallbackOnPersonalTaxiStateError(error)) {
+          throw error;
+        }
 
-      console.warn(
-        '내 파티 상태 조회 실패, read-only fallback으로 계속합니다.',
-        error,
-      );
-      return {
-        activePartyId: null,
-        pendingJoinRequestsByPartyId: new Map(),
-        resolved: false,
-      } as PersonalTaxiState;
-    }),
-  ]);
+        console.warn(
+          '내 파티 상태 조회 실패, read-only fallback으로 계속합니다.',
+          error,
+        );
+        return {
+          activePartyId: null,
+          pendingJoinRequestsByPartyId: new Map(),
+          resolved: false,
+        } as PersonalTaxiState;
+      }),
+    ]);
+  const parties = mergePartySummaries(
+    openPartiesResponse.data.content,
+    closedPartiesResponse.data.content,
+  );
 
   return {
     activePartyId: personalTaxiState.activePartyId,
     hasActiveParty: Boolean(personalTaxiState.activePartyId),
     source: buildTaxiHomeSourceData({
       activePartyId: personalTaxiState.activePartyId,
-      parties: partiesResponse.data.content,
+      parties,
       pendingJoinRequestsByPartyId:
         personalTaxiState.pendingJoinRequestsByPartyId,
       personalStateResolved: personalTaxiState.resolved,

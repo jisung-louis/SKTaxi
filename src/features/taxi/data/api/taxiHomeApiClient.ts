@@ -12,6 +12,7 @@ import type {
   PartyDetailResponseDto,
   PartyPageResponseDto,
   JoinRequestStatusDto,
+  PartyStatusDto,
   SettlementConfirmResponseDto,
   UpdatePartyRequestDto,
 } from '../dto/taxiHomeDto';
@@ -82,17 +83,25 @@ export class TaxiHomeApiClient {
     );
   }
 
-  getOpenParties() {
+  getPartiesByStatus(status: PartyStatusDto) {
     return httpClient.get<ApiSuccessResponse<PartyPageResponseDto>>(
       '/v1/parties',
       {
         params: {
           size: 50,
           sort: 'createdAt,desc',
-          status: 'OPEN',
+          status,
         },
       },
     );
+  }
+
+  getOpenParties() {
+    return this.getPartiesByStatus('OPEN');
+  }
+
+  getClosedParties() {
+    return this.getPartiesByStatus('CLOSED');
   }
 
   getParty(partyId: string) {
