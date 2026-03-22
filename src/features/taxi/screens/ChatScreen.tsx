@@ -55,6 +55,20 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const logAccountSheetEvent = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][account-sheet]', {
+    event,
+    ...details,
+  });
+};
+
 const getTaxiCallUrl = ({
   destinationLat,
   destinationLng,
@@ -414,6 +428,11 @@ export const ChatScreen = () => {
         hideName,
       };
 
+      logAccountSheetEvent('submit-start', {
+        bankName,
+        hideName,
+        remember,
+      });
       setSendingAccount(true);
 
       try {
@@ -421,14 +440,31 @@ export const ChatScreen = () => {
           ...nextAccountInfo,
           remember,
         });
+        logAccountSheetEvent('submit-success', {
+          bankName,
+          hideName,
+          remember,
+        });
         setSessionAccountInfo(nextAccountInfo);
         setAccountSheetVisible(false);
       } catch (submitError) {
+        logAccountSheetEvent('submit-error', {
+          bankName,
+          error:
+            submitError instanceof Error ? submitError.message : submitError,
+          hideName,
+          remember,
+        });
         Alert.alert(
           '계좌 전송 실패',
           getErrorMessage(submitError, '계좌 정보를 전송하지 못했습니다.'),
         );
       } finally {
+        logAccountSheetEvent('submit-finally', {
+          bankName,
+          hideName,
+          remember,
+        });
         setSendingAccount(false);
       }
     },

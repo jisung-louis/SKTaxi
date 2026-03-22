@@ -18,6 +18,20 @@ const wait = (timeoutMs: number) =>
     setTimeout(resolve, timeoutMs);
   });
 
+const logAccountHookEvent = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][account-hook]', {
+    event,
+    ...details,
+  });
+};
+
 const buildSettlementDraft = (
   partyChat: TaxiChatSourceData,
   payload: {
@@ -382,8 +396,20 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
         return;
       }
 
+      logAccountHookEvent('send-start', {
+        bankName: payload.bankName,
+        hideName: payload.hideName,
+        partyId,
+        remember: payload.remember,
+      });
       await taxiChatRepository.sendAccountMessage(partyId, payload);
+      logAccountHookEvent('send-finished', {
+        partyId,
+      });
       await refreshPartySnapshot();
+      logAccountHookEvent('refresh-finished', {
+        partyId,
+      });
     },
     [partyId, refreshPartySnapshot, taxiChatRepository],
   );
