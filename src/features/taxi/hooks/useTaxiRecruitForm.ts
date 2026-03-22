@@ -552,7 +552,7 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
       helperText: departureHint?.text ?? null,
       helperTone: departureHint?.tone ?? null,
       mapActionDisabled: !normalizeLocationName(customDeparture),
-      mapActionLabel: departureCustomLocation ? '변경' : '지도에서 선택',
+      mapActionLabel: departureCustomLocation ? '변경' : '지도 선택',
       mode: departureMode,
       options: DEPARTURE_OPTIONS,
       selectedLabel:
@@ -576,7 +576,7 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
       helperText: destinationHint?.text ?? null,
       helperTone: destinationHint?.tone ?? null,
       mapActionDisabled: !normalizeLocationName(customDestination),
-      mapActionLabel: destinationCustomLocation ? '변경' : '지도에서 선택',
+      mapActionLabel: destinationCustomLocation ? '변경' : '지도 선택',
       mode: destinationMode,
       options: DESTINATION_OPTIONS,
       selectedLabel:

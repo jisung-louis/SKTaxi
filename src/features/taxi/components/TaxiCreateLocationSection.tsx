@@ -221,7 +221,7 @@ export const TaxiCreateLocationSection = ({
                     ? COLORS.status.success
                     : COLORS.accent.blue
                 }
-                name="map-outline"
+                name="location"
                 size={16}
               />
               <Text
