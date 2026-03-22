@@ -46,7 +46,6 @@ const buildSettlementSubtitle = (
   return segments.join(' · ') || settlementNotice.description;
 };
 
-const SETTLEMENT_HEADER_HEIGHT = 54;
 const SETTLEMENT_NOTICE_DURATION = 160;
 
 export const TaxiChatHeaderNotice = ({
@@ -97,12 +96,6 @@ export const TaxiChatHeaderNotice = ({
         rotate: `${interpolate(progress.value, [0, 1], [0, 180])}deg`,
       },
     ],
-  }));
-
-  const spacerAnimatedStyle = useAnimatedStyle(() => ({
-    height:
-      SETTLEMENT_HEADER_HEIGHT +
-      interpolate(progress.value, [0, 1], [0, expandedContentHeight]),
   }));
 
   if (settlementNotice) {
@@ -218,7 +211,7 @@ export const TaxiChatHeaderNotice = ({
             </View>
           </Animated.View>
         </View>
-        <Animated.View style={spacerAnimatedStyle} />
+        <Animated.View style={styles.emptySpacer} />
       </>
     );
   }
@@ -227,6 +220,9 @@ export const TaxiChatHeaderNotice = ({
 };
 
 const styles = StyleSheet.create({
+  emptySpacer: {
+    height: 48,
+  },
   settlementCopy: {
     flex: 1,
     gap: 1,
