@@ -19,8 +19,9 @@ interface TaxiChatHeaderMenuProps {
   canCancelParty: boolean;
   canEditParty: boolean;
   canLeave: boolean;
+  destructiveActionLabel: string;
   notificationEnabled: boolean;
-  onCancelParty: () => void;
+  onPressDestructiveAction: () => void;
   onClose: () => void;
   onEditParty: () => void;
   onLeaveParty: () => void;
@@ -49,8 +50,9 @@ export const TaxiChatHeaderMenu = ({
   canCancelParty,
   canEditParty,
   canLeave,
+  destructiveActionLabel,
   notificationEnabled,
-  onCancelParty,
+  onPressDestructiveAction,
   onClose,
   onEditParty,
   onLeaveParty,
@@ -106,11 +108,11 @@ export const TaxiChatHeaderMenu = ({
             activeOpacity={0.82}
             onPress={() => {
               onClose();
-              onCancelParty();
+              onPressDestructiveAction();
             }}
             style={styles.actionRow}>
             <Icon color={COLORS.status.danger} name="close-circle-outline" size={15} />
-            <Text style={styles.leaveLabel}>파티 없애기</Text>
+            <Text style={styles.leaveLabel}>{destructiveActionLabel}</Text>
           </TouchableOpacity>
         ) : null}
 

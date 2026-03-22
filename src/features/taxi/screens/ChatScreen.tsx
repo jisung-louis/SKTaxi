@@ -227,6 +227,25 @@ export const ChatScreen = () => {
     ]);
   }, [cancelParty, navigation, runAction]);
 
+  const handleEndParty = React.useCallback(() => {
+    Alert.alert('파티 종료', '정산을 마무리하고 파티를 종료할까요?', [
+      {text: '취소', style: 'cancel'},
+      {
+        text: '파티 종료',
+        style: 'destructive',
+        onPress: () => {
+          runAction({
+            fallbackMessage: '파티 종료에 실패했습니다.',
+            task: async () => {
+              await endParty();
+            },
+            title: '파티 종료 실패',
+          }).catch(() => undefined);
+        },
+      },
+    ]);
+  }, [endParty, runAction]);
+
   const handleActionTrayAction = React.useCallback(
     (actionId: TaxiChatActionTrayActionId) => {
       setActionTrayVisible(false);
@@ -497,8 +516,13 @@ export const ChatScreen = () => {
             canCancelParty={data.menu.canCancelParty}
             canEditParty={data.menu.canEditParty}
             canLeave={Boolean(data.menu.canLeave)}
+            destructiveActionLabel={
+              data.summary.partyStatus === 'open' ||
+              data.summary.partyStatus === 'closed'
+                ? '파티 없애기'
+                : '파티 종료'
+            }
             notificationEnabled={data.menu.notificationEnabled}
-            onCancelParty={handleCancelParty}
             onClose={() => setMenuVisible(false)}
             onEditParty={() => {
               if (!data.menu.canEditParty) {
@@ -507,6 +531,17 @@ export const ChatScreen = () => {
               }
 
               setEditSheetVisible(true);
+            }}
+            onPressDestructiveAction={() => {
+              if (
+                data.summary.partyStatus === 'open' ||
+                data.summary.partyStatus === 'closed'
+              ) {
+                handleCancelParty();
+                return;
+              }
+
+              handleEndParty();
             }}
             onLeaveParty={handleLeaveParty}
             onToggleNotification={() => {
