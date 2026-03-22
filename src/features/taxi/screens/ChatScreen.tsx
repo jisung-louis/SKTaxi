@@ -452,7 +452,7 @@ export const ChatScreen = () => {
             />
           </View>
         ) : data ? (
-          <>
+          <View style={styles.threadContainer}>
             <TaxiChatHeaderNotice settlementNotice={data.summary.settlementNotice} />
 
             <View style={styles.threadWrap}>
@@ -489,7 +489,7 @@ export const ChatScreen = () => {
                 value={composerValue}
               />
             </KeyboardAvoidingView>
-          </>
+          </View>
         ) : null}
 
         {data ? (
@@ -624,6 +624,9 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   screen: {
+    flex: 1,
+  },
+  threadContainer: {
     flex: 1,
   },
   threadContent: {

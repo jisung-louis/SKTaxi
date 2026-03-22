@@ -4,6 +4,7 @@ export const COLORS = {
     surface: '#FFFFFF',
     subtle: '#F3F4F6',
     gray: '#E5E7EB',
+    grayLight: '#EDEEF0',
   },
   text: {
     primary: '#111827',

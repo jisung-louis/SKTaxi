@@ -17,6 +17,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {
   COLORS,
   RADIUS,
+  TYPOGRAPHY,
   SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
@@ -233,92 +234,98 @@ export const TaxiChatMessageList = ({
 
           return (
             <View key={item.id} style={styles.specialWrap}>
-              <View style={styles.arrivedCard}>
-                <View style={styles.arrivedHeaderWrap}>
-                  <LinearGradient
-                    colors={['#2BCB7E', '#17B96E']}
-                    end={{x: 1, y: 1}}
-                    start={{x: 0, y: 0}}
-                    style={styles.arrivedHeader}>
-                    <View style={styles.arrivedHeaderRow}>
-                      <View style={styles.arrivedIconWrap}>
-                        <Icon
-                          color={COLORS.text.inverse}
-                          name="location-outline"
-                          size={14}
-                        />
-                      </View>
-                      <View style={styles.arrivedHeaderCopy}>
-                        <Text style={styles.arrivedHeaderTitle}>
-                          택시가 목적지에 도착했어요!
-                        </Text>
-                        <Text style={styles.arrivedHeaderTime}>{item.timeLabel}</Text>
-                      </View>
+              <View style={styles.arrivedCardStack}>
+                <LinearGradient
+                  colors={['#2BCB7E', '#17B96E']}
+                  end={{x: 1, y: 1}}
+                  start={{x: 0, y: 0}}
+                  style={styles.arrivedHeaderCard}>
+                  <View style={styles.arrivedHeaderRow}>
+                    <View style={styles.arrivedIconWrap}>
+                      <Icon
+                        color={COLORS.text.inverse}
+                        name="location"
+                        size={20}
+                      />
                     </View>
-                  </LinearGradient>
-                </View>
-
-                <View style={styles.arrivedBody}>
-                  <View style={styles.arrivedInfoRow}>
-                    <Text style={styles.arrivedInfoLabel}>총 택시비</Text>
-                    <Text style={styles.arrivedInfoValue}>
-                      {item.taxiFare
-                        ? `${item.taxiFare.toLocaleString('ko-KR')}원`
-                        : '미정'}
-                    </Text>
+                    <View style={styles.arrivedHeaderCopy}>
+                      <Text style={styles.arrivedHeaderTitle}>
+                        택시가 목적지에 도착했어요!
+                      </Text>
+                      <Text style={styles.arrivedHeaderTime}>{item.timeLabel}</Text>
+                    </View>
                   </View>
+                </LinearGradient>
 
-                  <View style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
-                    <Text style={styles.arrivedInfoLabel}>N빵 인원</Text>
-                    <Text numberOfLines={1} style={styles.arrivedSplitMemberLabel}>
-                      {item.splitMemberSummaryLabel ??
-                        (item.splitMemberCount
-                          ? `${item.splitMemberCount}명`
-                          : '미정')}
-                    </Text>
-                  </View>
-
-                  <View style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
-                    <Text style={styles.arrivedAmountLabel}>1인당 금액</Text>
-                    <Text style={styles.arrivedAmountValue}>
-                      {item.perPersonAmount
-                        ? `${item.perPersonAmount.toLocaleString('ko-KR')}원`
-                        : '미정'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.arrivedDivider} />
-
-                  {item.accountLabel ? (
-                    <View style={styles.arrivedAccountCard}>
-                      <Text style={styles.arrivedAccountCardLabel}>송금 계좌</Text>
-                      {arrivedAccountHolder ? (
-                        <Text style={styles.arrivedAccountCardHolder}>
-                          {arrivedAccountHolder}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.arrivedAccountCardValue}>
-                        {item.accountLabel.replace(' ', ' · ')}
+                <View style={styles.arrivedBodyCard}>
+                  <View style={styles.arrivedBody}>
+                    <View style={styles.arrivedInfoRow}>
+                      <Text style={styles.arrivedInfoLabel}>총 택시비</Text>
+                      <Text style={styles.arrivedInfoValue}>
+                        {item.taxiFare
+                          ? `${item.taxiFare.toLocaleString('ko-KR')}원`
+                          : '미정'}
                       </Text>
                     </View>
+
+                    <View
+                      style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
+                      <Text style={styles.arrivedInfoLabel}>N빵 인원</Text>
+                      <Text numberOfLines={1} style={styles.arrivedSplitMemberLabel}>
+                        {item.splitMemberSummaryLabel ??
+                          (item.splitMemberCount
+                            ? `${item.splitMemberCount}명`
+                            : '미정')}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={[styles.arrivedInfoRow, styles.arrivedInfoRowSpaced]}>
+                      <Text style={styles.arrivedAmountLabel}>1인당 금액</Text>
+                      <Text style={styles.arrivedAmountValue}>
+                        {item.perPersonAmount
+                          ? `${item.perPersonAmount.toLocaleString('ko-KR')}원`
+                          : '미정'}
+                      </Text>
+                    </View>
+
+                    <View style={styles.arrivedDivider} />
+
+                    {item.accountLabel ? (
+                      <View style={styles.arrivedAccountCard}>
+                        <Text style={styles.arrivedAccountCardLabel}>송금 계좌</Text>
+                        {arrivedAccountHolder ? (
+                          <Text style={styles.arrivedAccountCardHolder}>
+                            {arrivedAccountHolder}
+                          </Text>
+                        ) : null}
+                        <Text style={styles.arrivedAccountCardValue}>
+                          {item.accountLabel.replace(' ', ' · ')}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+
+                  {item.accountLabel ? (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      activeOpacity={0.84}
+                      onPress={() => {
+                        copyToClipboard(
+                          item.accountLabel!,
+                          '정산 계좌가 복사되었습니다.',
+                        );
+                      }}
+                      style={styles.arrivedCopyButton}>
+                      <Icon
+                        color={COLORS.status.success}
+                        name="copy-outline"
+                        size={14}
+                      />
+                      <Text style={styles.arrivedCopyLabel}>계좌번호 복사</Text>
+                    </TouchableOpacity>
                   ) : null}
                 </View>
-
-                {item.accountLabel ? (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    activeOpacity={0.84}
-                    onPress={() => {
-                      copyToClipboard(
-                        item.accountLabel!,
-                        '정산 계좌가 복사되었습니다.',
-                      );
-                    }}
-                    style={styles.arrivedCopyButton}>
-                    <Icon color={COLORS.status.success} name="copy-outline" size={14} />
-                    <Text style={styles.arrivedCopyLabel}>계좌번호 복사</Text>
-                  </TouchableOpacity>
-                ) : null}
               </View>
             </View>
           );
@@ -491,14 +498,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  arrivedCard: {
+  arrivedBodyCard: {
     backgroundColor: COLORS.background.surface,
-    borderColor: COLORS.border.subtle,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: RADIUS.lg,
+    borderBottomRightRadius: RADIUS.lg,
+    borderTopWidth: 0,
     overflow: 'hidden',
     width: '100%',
-    ...SHADOWS.card,
   },
   arrivedCopyButton: {
     alignItems: 'center',
@@ -520,41 +528,45 @@ const styles = StyleSheet.create({
     height: 1,
     marginTop: 8,
   },
-  arrivedHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+  arrivedHeaderCard: {
+    alignSelf: 'stretch',
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
     width: '100%',
   },
   arrivedHeaderCopy: {
-    gap: 1,
+    gap: 2,
   },
   arrivedHeaderRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   arrivedHeaderTime: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 10,
-    lineHeight: 15,
+    ...TYPOGRAPHY.caption2,
   },
   arrivedHeaderTitle: {
     color: COLORS.text.inverse,
-    fontSize: 12,
-    lineHeight: 16,
+    ...TYPOGRAPHY.body1,
     fontWeight: '700',
   },
-  arrivedHeaderWrap: {
+  arrivedCardStack: {
     alignSelf: 'stretch',
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
     width: '100%',
+    ...SHADOWS.card,
   },
   arrivedIconWrap: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: RADIUS.pill,
-    height: 28,
+    height: 40,
     justifyContent: 'center',
-    width: 28,
+    width: 40,
   },
   arrivedAmountLabel: {
     color: COLORS.text.secondary,
@@ -754,6 +766,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   specialWrap: {
+    alignSelf: 'stretch',
     marginBottom: SPACING.md,
   },
   systemMessageLabel: {
@@ -761,6 +774,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
+    backgroundColor: COLORS.background.grayLight,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
   },
   systemMessageWrap: {
     alignItems: 'center',
