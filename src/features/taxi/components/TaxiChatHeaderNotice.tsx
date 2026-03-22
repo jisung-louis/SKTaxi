@@ -20,6 +20,7 @@ import {
   SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
+import {ToneBadge} from '@/shared/design-system/components';
 
 import type {TaxiChatSettlementNoticeViewData} from '../model/taxiChatViewData';
 
@@ -172,25 +173,11 @@ export const TaxiChatHeaderNotice = ({
                 {settlementNotice.members.map(member => (
                   <View key={member.id} style={styles.settlementMemberRow}>
                     <View style={styles.settlementMemberLeft}>
-                      <View
-                        style={[
-                          styles.settlementMemberIconWrap,
-                          member.settled
-                            ? styles.settlementMemberIconWrapDone
-                            : null,
-                        ]}>
-                        <Icon
-                          color={
-                            member.settled
-                              ? COLORS.status.success
-                              : COLORS.text.muted
-                          }
-                          name={
-                            member.settled ? 'checkmark-outline' : 'ellipse-outline'
-                          }
-                          size={10}
-                        />
-                      </View>
+                      <ToneBadge
+                        label={member.settled ? '정산 완료' : '정산 중'}
+                        style={styles.settlementMemberBadge}
+                        tone={member.settled ? 'green' : 'orange'}
+                      />
 
                       <View style={styles.settlementMemberLabelRow}>
                         <Text style={styles.settlementMemberLabel}>{member.label}</Text>
@@ -273,21 +260,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 16,
   },
+  settlementMemberBadge: {
+    minHeight: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
   settlementMemberCurrentUser: {
     color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
-  },
-  settlementMemberIconWrap: {
-    alignItems: 'center',
-    backgroundColor: COLORS.background.gray,
-    borderRadius: RADIUS.pill,
-    height: 16,
-    justifyContent: 'center',
-    width: 16,
-  },
-  settlementMemberIconWrapDone: {
-    backgroundColor: COLORS.brand.primarySoft,
   },
   settlementMemberLabel: {
     color: COLORS.text.secondary,
