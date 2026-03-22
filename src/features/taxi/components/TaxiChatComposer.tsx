@@ -339,6 +339,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     zIndex: 1,
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
   },
   trayAction: {
     alignItems: 'center',
