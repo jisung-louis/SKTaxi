@@ -13,6 +13,11 @@ import {
 } from '../model/taxiChatViewData';
 import {buildTaxiChatViewData} from '../application/taxiChatDetailAssembler';
 
+const wait = (timeoutMs: number) =>
+  new Promise<void>(resolve => {
+    setTimeout(resolve, timeoutMs);
+  });
+
 const buildSettlementDraft = (
   partyChat: TaxiChatSourceData,
   payload: {
@@ -75,6 +80,11 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     null,
   );
   const hasDataRef = React.useRef(false);
+  const isLeavingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    isLeavingRef.current = false;
+  }, [partyId]);
 
   const data = React.useMemo<TaxiChatViewData | null>(() => {
     if (!sourceData) {
@@ -97,6 +107,10 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
   }, []);
 
   const refreshPartySnapshot = React.useCallback(async () => {
+    if (isLeavingRef.current) {
+      return;
+    }
+
     if (!partyId) {
       setSourceData(null);
       setError('파티 채팅방 정보를 찾을 수 없습니다.');
@@ -115,6 +129,10 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
   }, [applyPartyChat, partyId, taxiChatRepository]);
 
   const reload = React.useCallback(async () => {
+    if (isLeavingRef.current) {
+      return;
+    }
+
     if (!partyId) {
       setSourceData(null);
       setError('파티 채팅방 정보를 찾을 수 없습니다.');
@@ -149,6 +167,10 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
 
     const unsubscribe = taxiChatRepository.subscribeToPartyChat(partyId, {
       onData: partyChat => {
+        if (isLeavingRef.current) {
+          return;
+        }
+
         if (!partyChat) {
           setSourceData(null);
           setError('파티 채팅방 정보를 찾을 수 없습니다.');
@@ -160,6 +182,10 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
         setLoading(false);
       },
       onError: loadError => {
+        if (isLeavingRef.current) {
+          return;
+        }
+
         console.error('파티 채팅 실시간 연결에 실패했습니다.', loadError);
 
         if (!hasDataRef.current) {
@@ -182,23 +208,43 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
 
     return partyRepository.subscribeToParty(partyId, {
       onData: () => {
+        if (isLeavingRef.current) {
+          return;
+        }
+
         refreshPartySnapshot().catch(syncError => {
           console.warn('파티 상태 변경 후 채팅 스냅샷을 갱신하지 못했습니다.', syncError);
         });
       },
       onError: syncError => {
+        if (isLeavingRef.current) {
+          return;
+        }
+
         console.warn('파티 상태 SSE 신호를 처리하지 못했습니다.', syncError);
       },
     });
   }, [partyId, partyRepository, refreshPartySnapshot]);
 
   const runPartyAction = React.useCallback(
-    async (actionId: string, action: () => Promise<void>) => {
+    async (
+      actionId: string,
+      action: () => Promise<void>,
+      options?: {followUpRefreshDelayMs?: number},
+    ) => {
       setActionInFlightId(actionId);
 
       try {
         await action();
         await refreshPartySnapshot();
+
+        if (options?.followUpRefreshDelayMs && !isLeavingRef.current) {
+          await wait(options.followUpRefreshDelayMs);
+
+          if (!isLeavingRef.current) {
+            await refreshPartySnapshot();
+          }
+        }
       } finally {
         setActionInFlightId(null);
       }
@@ -211,7 +257,13 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
-    await runPartyAction('close', () => partyRepository.closeParty(partyId));
+    await runPartyAction(
+      'close',
+      () => partyRepository.closeParty(partyId),
+      {
+        followUpRefreshDelayMs: 400,
+      },
+    );
   }, [partyId, partyRepository, runPartyAction]);
 
   const reopenParty = React.useCallback(async () => {
@@ -219,7 +271,13 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
-    await runPartyAction('reopen', () => partyRepository.reopenParty(partyId));
+    await runPartyAction(
+      'reopen',
+      () => partyRepository.reopenParty(partyId),
+      {
+        followUpRefreshDelayMs: 400,
+      },
+    );
   }, [partyId, partyRepository, runPartyAction]);
 
   const endParty = React.useCallback(async () => {
@@ -290,12 +348,18 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
+    isLeavingRef.current = true;
     setActionInFlightId('leave');
 
     try {
       await partyRepository.leaveParty(partyId);
-      setSourceData(null);
       await taxiChatRepository.resetSession();
+      setSourceData(null);
+      setError(null);
+      setLoading(false);
+    } catch (leaveError) {
+      isLeavingRef.current = false;
+      throw leaveError;
     } finally {
       setActionInFlightId(null);
     }

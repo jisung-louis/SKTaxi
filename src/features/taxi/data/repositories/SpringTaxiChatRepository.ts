@@ -42,6 +42,7 @@ interface PartyChatState {
 interface PendingSpecialMessageRequest {
   reject: (error: Error) => void;
   resolve: (value: TaxiChatSourceData | null) => void;
+  snapshotFallbackTimeoutId: ReturnType<typeof setTimeout> | null;
   timeoutId: ReturnType<typeof setTimeout>;
 }
 
@@ -99,6 +100,20 @@ const createStompRepositoryError = (
       context,
     },
   );
+
+const logAccountMessageLifecycle = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][account-message]', {
+    event,
+    ...details,
+  });
+};
 
 export class SpringTaxiChatRepository implements ITaxiChatRepository {
   private readonly pendingSpecialMessageRequests = new Map<
@@ -286,6 +301,110 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     return `${partyId}:account`;
   }
 
+  private getLatestAccountMessage(
+    source: TaxiChatSourceData | null | undefined,
+  ) {
+    if (!source) {
+      return undefined;
+    }
+
+    return [...source.messages]
+      .reverse()
+      .find(message => message.type === 'account' && message.accountData);
+  }
+
+  private matchesAccountPayload(
+    message: ChatMessageResponseDto | TaxiChatSourceData['messages'][number],
+    payload: SendChatMessageRequestDto,
+  ) {
+    if (payload.type !== 'ACCOUNT' || !payload.account || !message.accountData) {
+      return false;
+    }
+
+    const {account} = payload;
+    const {accountData} = message;
+
+    if (
+      accountData.bankName !== account.bankName ||
+      accountData.accountNumber !== account.accountNumber ||
+      Boolean(accountData.hideName) !== Boolean(account.hideName)
+    ) {
+      return false;
+    }
+
+    if (account.hideName) {
+      return true;
+    }
+
+    return accountData.accountHolder === account.accountHolder;
+  }
+
+  private queueAccountSnapshotFallback(params: {
+    key: string;
+    partyId: string;
+    payload: SendChatMessageRequestDto;
+    previousLatestAccountMessageId?: string;
+  }) {
+    const timeoutId = setTimeout(() => {
+      this.resolveAccountMessageFromSnapshot(params).catch(error => {
+        logAccountMessageLifecycle('snapshot-fallback-error', {
+          error,
+          partyId: params.partyId,
+        });
+      });
+    }, 1500);
+
+    const pendingRequest = this.pendingSpecialMessageRequests.get(params.key);
+
+    if (pendingRequest) {
+      pendingRequest.snapshotFallbackTimeoutId = timeoutId;
+    } else {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  private async resolveAccountMessageFromSnapshot({
+    key,
+    partyId,
+    payload,
+    previousLatestAccountMessageId,
+  }: {
+    key: string;
+    partyId: string;
+    payload: SendChatMessageRequestDto;
+    previousLatestAccountMessageId?: string;
+  }) {
+    if (!this.pendingSpecialMessageRequests.has(key)) {
+      return;
+    }
+
+    logAccountMessageLifecycle('snapshot-fallback-start', {
+      partyId,
+      previousLatestAccountMessageId,
+    });
+
+    const source = await this.loadPartyChat(partyId, true);
+    const latestAccountMessage = this.getLatestAccountMessage(source);
+
+    if (
+      !latestAccountMessage ||
+      latestAccountMessage.id === previousLatestAccountMessageId ||
+      !this.matchesAccountPayload(latestAccountMessage, payload)
+    ) {
+      logAccountMessageLifecycle('snapshot-fallback-miss', {
+        latestAccountMessageId: latestAccountMessage?.id,
+        partyId,
+      });
+      return;
+    }
+
+    logAccountMessageLifecycle('snapshot-fallback-hit', {
+      latestAccountMessageId: latestAccountMessage.id,
+      partyId,
+    });
+    this.clearPendingSpecialMessageRequest(key);
+  }
+
   private clearPendingSpecialMessageRequest(
     key: string,
     error?: Error,
@@ -297,7 +416,15 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     }
 
     clearTimeout(pendingRequest.timeoutId);
+    if (pendingRequest.snapshotFallbackTimeoutId) {
+      clearTimeout(pendingRequest.snapshotFallbackTimeoutId);
+    }
     this.pendingSpecialMessageRequests.delete(key);
+
+    logAccountMessageLifecycle('pending-clear', {
+      error: error?.message,
+      key,
+    });
 
     if (error) {
       pendingRequest.reject(error);
@@ -315,6 +442,9 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
   ): Promise<TaxiChatSourceData | null> {
     const client = await this.ensureStompClient();
     const key = this.buildSpecialMessageKey(partyId);
+    const previousLatestAccountMessageId = this.getLatestAccountMessage(
+      this.partyStates.get(partyId)?.source,
+    )?.id;
 
     this.clearPendingSpecialMessageRequest(
       key,
@@ -324,8 +454,12 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     const responsePromise = new Promise<TaxiChatSourceData | null>(
       (resolve, reject) => {
         const timeoutId = setTimeout(() => {
-          this.pendingSpecialMessageRequests.delete(key);
-          reject(
+          logAccountMessageLifecycle('timeout', {
+            chatMessageType: payload.type,
+            partyId,
+          });
+          this.clearPendingSpecialMessageRequest(
+            key,
             createStompRepositoryError(
               '특수 메시지 전송 결과를 제시간에 확인하지 못했습니다.',
               {
@@ -339,14 +473,25 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         this.pendingSpecialMessageRequests.set(key, {
           reject,
           resolve,
+          snapshotFallbackTimeoutId: null,
           timeoutId,
         });
       },
     );
 
+    logAccountMessageLifecycle('publish', {
+      partyId,
+      previousLatestAccountMessageId,
+    });
     client.publish({
       body: JSON.stringify(payload),
       destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
+    });
+    this.queueAccountSnapshotFallback({
+      key,
+      partyId,
+      payload,
+      previousLatestAccountMessageId,
     });
 
     return responsePromise;
@@ -430,6 +575,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           apiErrorCode: payload?.errorCode,
         });
 
+        logAccountMessageLifecycle('error-queue', {
+          apiErrorCode: payload?.errorCode,
+          message,
+        });
         this.pendingSpecialMessageRequests.forEach((_, key) => {
           this.clearPendingSpecialMessageRequest(key, error);
         });
@@ -603,18 +752,33 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     const state = this.getOrCreatePartyState(partyId);
     const mappedMessage = mapTaxiChatMessageDto(message);
+    const specialMessageKey = this.buildSpecialMessageKey(partyId);
+
+    if (mappedMessage.type === 'account') {
+      logAccountMessageLifecycle('topic-received', {
+        messageId: message.id,
+        partyId,
+      });
+    }
 
     if (!state.source) {
       await this.loadPartyChat(partyId, true);
       if (mappedMessage.type === 'account') {
         this.clearPendingSpecialMessageRequest(
-          this.buildSpecialMessageKey(partyId),
+          specialMessageKey,
         );
       }
       return;
     }
 
     if (state.source.messages.some(item => item.id === message.id)) {
+      if (mappedMessage.type === 'account') {
+        logAccountMessageLifecycle('topic-duplicate', {
+          messageId: message.id,
+          partyId,
+        });
+        this.clearPendingSpecialMessageRequest(specialMessageKey);
+      }
       return;
     }
 
@@ -633,7 +797,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     if (mappedMessage.type === 'account') {
       this.clearPendingSpecialMessageRequest(
-        this.buildSpecialMessageKey(partyId),
+        specialMessageKey,
       );
     }
     await this.markLatestMessageAsRead(partyId, message.createdAt);
