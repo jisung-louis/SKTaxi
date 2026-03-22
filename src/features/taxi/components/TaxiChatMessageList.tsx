@@ -21,6 +21,7 @@ import {
   SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
+import Button from '@/shared/ui/Button';
 
 import type {
   TaxiChatTextMessageViewData,
@@ -31,6 +32,7 @@ interface TaxiChatMessageListProps {
   contentContainerStyle?: StyleProp<ViewStyle>;
   headerContent?: React.ReactNode;
   items: TaxiChatThreadItemViewData[];
+  onPressEndPartyExit?: () => void;
 }
 
 const renderAvatar = (avatar?: TaxiChatTextMessageViewData['avatar']) => {
@@ -121,6 +123,7 @@ export const TaxiChatMessageList = ({
   contentContainerStyle,
   headerContent,
   items,
+  onPressEndPartyExit,
 }: TaxiChatMessageListProps) => {
   const scrollViewRef = React.useRef<ScrollView>(null);
 
@@ -164,12 +167,25 @@ export const TaxiChatMessageList = ({
           return (
             <View key={item.id} style={styles.specialWrap}>
               <View style={styles.endCard}>
-                <Icon
-                  color={COLORS.status.success}
-                  name="checkmark-circle-outline"
-                  size={18}
-                />
-                <Text style={styles.endCardLabel}>{item.text}</Text>
+                <View style={styles.endCardContent}>
+                  <Icon
+                    color={COLORS.status.success}
+                    name="checkmark-circle-outline"
+                    size={18}
+                  />
+                  <Text style={styles.endCardLabel}>{item.text}</Text>
+                </View>
+
+                {onPressEndPartyExit ? (
+                  <Button
+                    onPress={onPressEndPartyExit}
+                    size="small"
+                    style={styles.endLeaveButton}
+                    textStyle={styles.endLeaveButtonText}
+                    title="파티 나가기"
+                    variant="secondary"
+                  />
+                ) : null}
               </View>
             </View>
           );
@@ -661,23 +677,34 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm,
   },
   endCard: {
-    alignItems: 'center',
     backgroundColor: COLORS.brand.primaryTint,
     borderColor: COLORS.border.accent,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    justifyContent: 'center',
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     width: '100%',
+  },
+  endCardContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    justifyContent: 'center',
   },
   endCardLabel: {
     color: COLORS.status.success,
     fontSize: 13,
     fontWeight: '700',
     lineHeight: 18,
+  },
+  endLeaveButton: {
+    alignSelf: 'stretch',
+    borderColor: COLORS.status.danger,
+    marginTop: SPACING.md,
+  },
+  endLeaveButtonText: {
+    color: COLORS.status.danger,
+    fontWeight: '700',
   },
   incomingBubble: {
     backgroundColor: COLORS.background.surface,

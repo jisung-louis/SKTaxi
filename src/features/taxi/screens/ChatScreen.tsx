@@ -161,6 +161,10 @@ export const ChatScreen = () => {
     navigation.navigate('TaxiMain');
   }, [navigation]);
 
+  const handleGoBackOnly = React.useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
+
   const runAction = React.useCallback(
     async ({
       fallbackMessage,
@@ -486,6 +490,7 @@ export const ChatScreen = () => {
                   <TaxiChatSummaryCard summary={data.summary} />
                 }
                 items={data.items}
+                onPressEndPartyExit={handleGoBackOnly}
               />
             </View>
 
@@ -533,6 +538,11 @@ export const ChatScreen = () => {
               setEditSheetVisible(true);
             }}
             onPressDestructiveAction={() => {
+              if (data.summary.partyStatus === 'ended') {
+                handleGoBackOnly();
+                return;
+              }
+
               if (
                 data.summary.partyStatus === 'open' ||
                 data.summary.partyStatus === 'closed'
