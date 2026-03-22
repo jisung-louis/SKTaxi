@@ -11,7 +11,7 @@ import MapView, {
   type MapPressEvent,
   type Region,
 } from 'react-native-maps';
-import {CommonActions, useNavigation, useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import type {
   NativeStackNavigationProp,
   NativeStackScreenProps,
@@ -28,6 +28,7 @@ import {useScreenView} from '@/shared/hooks';
 
 import {useTaxiLocation} from '../hooks/useTaxiLocation';
 import type {TaxiStackParamList} from '../model/navigation';
+import { StackHeader } from '@/shared/design-system/components/StackHeader';
 
 type TaxiLocationPickerNavigationProp = NativeStackNavigationProp<
   TaxiStackParamList,
@@ -129,40 +130,27 @@ export const TaxiLocationPickerScreen = () => {
       return;
     }
 
-    navigation.dispatch(
-      CommonActions.navigate({
-        merge: true,
-        name: 'Recruit',
-        params: {
-          selection: {
-            kind,
-            location: {
-              ...selectedLocation,
-              name: normalizedName,
-            },
+    navigation.popTo(
+      'Recruit',
+      {
+        selection: {
+          kind,
+          location: {
+            ...selectedLocation,
+            name: normalizedName,
           },
-          selectionToken: `${kind}-${Date.now()}`,
         },
-      }),
+        selectionToken: `${kind}-${Date.now()}`,
+      },
+      {
+        merge: true,
+      },
     );
-    navigation.goBack();
   }, [initialName, kind, navigation, selectedLocation]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          accessibilityLabel="뒤로 가기"
-          accessibilityRole="button"
-          activeOpacity={0.84}
-          onPress={navigation.goBack}
-          style={styles.headerButton}>
-          <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
-        </TouchableOpacity>
-
-        <Text style={styles.headerTitle}>{copy.title}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      <StackHeader title={copy.title} onPressBack={navigation.goBack} />
 
       <View style={[styles.noticeBanner, {backgroundColor: copy.accentColor}]}>
         <Icon color={COLORS.text.inverse} name="location" size={16} />
