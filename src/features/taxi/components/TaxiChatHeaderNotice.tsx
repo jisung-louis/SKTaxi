@@ -17,7 +17,6 @@ import {
 import type {TaxiChatSettlementNoticeViewData} from '../model/taxiChatViewData';
 
 interface TaxiChatHeaderNoticeProps {
-  noticeLabel?: string;
   settlementNotice?: TaxiChatSettlementNoticeViewData;
 }
 
@@ -41,7 +40,6 @@ const buildSettlementSubtitle = (
 };
 
 export const TaxiChatHeaderNotice = ({
-  noticeLabel,
   settlementNotice,
 }: TaxiChatHeaderNoticeProps) => {
   const [expanded, setExpanded] = React.useState(false);
@@ -165,41 +163,10 @@ export const TaxiChatHeaderNotice = ({
     );
   }
 
-  if (!noticeLabel) {
-    return null;
-  }
-
-  return (
-    <View style={styles.wrap}>
-      <View style={styles.noticePill}>
-        <Text numberOfLines={1} style={styles.noticeLabel}>
-          {noticeLabel}
-        </Text>
-      </View>
-    </View>
-  );
+  return null;
 };
 
 const styles = StyleSheet.create({
-  noticeLabel: {
-    color: COLORS.text.placeholder,
-    fontSize: 11,
-    lineHeight: 16.5,
-  },
-  noticePill: {
-    alignItems: 'center',
-    alignSelf: 'center',
-    backgroundColor: 'rgba(243,244,246,0.8)',
-    borderRadius: RADIUS.pill,
-    minHeight: 24.5,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  wrap: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: 12,
-  },
   settlementCopy: {
     flex: 1,
     gap: 1,

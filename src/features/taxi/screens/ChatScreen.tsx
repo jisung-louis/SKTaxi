@@ -453,10 +453,7 @@ export const ChatScreen = () => {
           </View>
         ) : data ? (
           <>
-            <TaxiChatHeaderNotice
-              noticeLabel={data.summary.management.noticeLabel}
-              settlementNotice={data.summary.settlementNotice}
-            />
+            <TaxiChatHeaderNotice settlementNotice={data.summary.settlementNotice} />
 
             <View style={styles.threadWrap}>
               <TaxiChatMessageList

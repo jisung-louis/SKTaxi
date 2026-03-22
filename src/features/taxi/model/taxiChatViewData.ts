@@ -35,7 +35,6 @@ export interface TaxiChatSummaryManagementViewData {
   canLeave: boolean;
   canManageSettlement: boolean;
   isLeader: boolean;
-  noticeLabel?: string;
 }
 
 export interface TaxiChatSettlementMemberViewData {

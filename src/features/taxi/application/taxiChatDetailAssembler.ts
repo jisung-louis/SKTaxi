@@ -40,28 +40,9 @@ const buildManagement = (
   currentUserId: string,
 ): TaxiChatSummaryManagementViewData => {
   const isLeader = partyChat.leaderId === currentUserId;
-  const nonLeaderParticipants = partyChat.participants.filter(
-    participant => !participant.isLeader,
-  );
   const canLeave =
     !isLeader &&
     (partyChat.partyStatus === 'open' || partyChat.partyStatus === 'closed');
-
-  const noticeLabel = (() => {
-    if (
-      isLeader &&
-      (partyChat.partyStatus === 'open' || partyChat.partyStatus === 'closed') &&
-      nonLeaderParticipants.length === 0
-    ) {
-      return '동승 멤버가 있어야 택시 도착 처리를 진행할 수 있습니다.';
-    }
-
-    if (!isLeader && partyChat.partyStatus === 'arrived') {
-      return '정산 현황은 상단 공지에서 확인할 수 있습니다.';
-    }
-
-    return undefined;
-  })();
 
   return {
     canCancelParty: isLeader,
@@ -71,7 +52,6 @@ const buildManagement = (
     canLeave,
     canManageSettlement: isLeader && partyChat.partyStatus === 'arrived',
     isLeader,
-    noticeLabel,
   };
 };
 
