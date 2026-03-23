@@ -558,8 +558,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 이번 스레드에서 확인된 일반 Chat backend 계약:
 
-- 로컬 `http://localhost:8080/v3/api-docs`는 이 작업 시점에 connection refused였다.
-- 그래서 실제 구현은 `/Users/jisung/skuri-backend` 코드와 `docs/spring-migration/api-specification.md`를 대조해 맞췄다.
+- 이번 실기기 보강 시점에는 로컬 `http://localhost:8080/v3/api-docs`를 다시 확인할 수 있었고, 실제 구현은 OpenAPI와 `/Users/jisung/skuri-backend` 코드, `docs/spring-migration/api-specification.md`를 대조해 맞췄다.
 - backend는 `GET /v1/chat-rooms`에서 보이는 public room + joined private room summary를 반환하고, 미참여 public room의 detail 조회는 허용한다.
 - 반면 `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 여전히 `ChatRoomMember`를 요구하므로, 미참여 public room은 detail preview와 join CTA까지만 열 수 있다.
 - backend에는 `POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`, `CHAT_ROOM_REMOVED` summary event, 공개방 seed/backfill이 이미 추가됐다.
