@@ -44,7 +44,9 @@ export const CommunityScreen = () => {
   const route = useRoute<CommunityRouteProp>();
   const {width: windowWidth} = useWindowDimensions();
   const [selectedSegment, setSelectedSegment] =
-    React.useState<CommunitySegmentId>('board');
+    React.useState<CommunitySegmentId>(
+      route.params?.initialSegment === 'chat' ? 'chat' : 'board',
+    );
   const screenAnimatedStyle = useScreenEnterAnimation();
   const pageWidth = Math.max(windowWidth, 1);
   const pagerTranslateX = useSharedValue(0);
@@ -86,6 +88,17 @@ export const CommunityScreen = () => {
     route.params?.fromHashtag,
     route.params?.searchText,
   ]);
+
+  React.useEffect(() => {
+    if (!route.params?.initialSegment) {
+      return;
+    }
+
+    setSelectedSegment(route.params.initialSegment);
+    navigation.setParams({
+      initialSegment: undefined,
+    });
+  }, [navigation, route.params?.initialSegment]);
 
   const activeSearchLabel = boardFilters.searchText
     ? boardFilters.searchText.startsWith('#')

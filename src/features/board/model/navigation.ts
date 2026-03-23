@@ -2,6 +2,7 @@ export type BoardStackParamList = {
   BoardMain:
     | {
         fromHashtag?: boolean;
+        initialSegment?: 'board' | 'chat';
         searchText?: string;
       }
     | undefined;

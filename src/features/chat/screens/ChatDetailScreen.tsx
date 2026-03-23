@@ -63,14 +63,18 @@ export const ChatDetailScreen = () => {
   const [composerValue, setComposerValue] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
 
-  const handlePressBack = React.useCallback(() => {
+  const navigateToCommunityChat = React.useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
 
-    navigation.navigate('BoardMain');
+    navigation.navigate('BoardMain', {
+      initialSegment: 'chat',
+    });
   }, [navigation]);
+
+  const handlePressBack = navigateToCommunityChat;
 
   const handleSend = React.useCallback(
     async (messageText: string) => {
@@ -112,6 +116,8 @@ export const ChatDetailScreen = () => {
           leaveRoom()
             .then(() => {
               setComposerValue('');
+              setMenuVisible(false);
+              navigateToCommunityChat();
             })
             .catch(leaveError => {
               Alert.alert(
@@ -124,7 +130,7 @@ export const ChatDetailScreen = () => {
         },
       },
     ]);
-  }, [leaveRoom]);
+  }, [leaveRoom, navigateToCommunityChat]);
 
   const handleReport = React.useCallback(() => {
     Alert.alert('신고하기', '신고 기능은 다음 단계에서 연결할 예정입니다.');

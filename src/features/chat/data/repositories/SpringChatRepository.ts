@@ -91,6 +91,42 @@ const toMillis = (value: unknown) => {
   return Number.isFinite(millis) ? millis : 0;
 };
 
+const toIsoString = (value: unknown) => {
+  const millis = toMillis(value);
+
+  if (millis <= 0) {
+    return null;
+  }
+
+  return new Date(millis).toISOString();
+};
+
+const resolveReadRequestLastReadAt = (room?: ChatRoom | null) => {
+  const clientNow = new Date().toISOString();
+  const lastVisibleAt = room?.lastMessage?.createdAt ?? room?.updatedAt;
+  const lastVisibleIso = toIsoString(lastVisibleAt);
+
+  if (!lastVisibleIso) {
+    return clientNow;
+  }
+
+  return toMillis(lastVisibleIso) > toMillis(clientNow)
+    ? lastVisibleIso
+    : clientNow;
+};
+
+const hasReadThroughRoom = (room: ChatRoom, lastReadAt: unknown) => {
+  const lastVisibleMillis = toMillis(
+    room.lastMessage?.createdAt ?? room.updatedAt,
+  );
+
+  if (lastVisibleMillis <= 0) {
+    return true;
+  }
+
+  return toMillis(lastReadAt) >= lastVisibleMillis;
+};
+
 const sortChatRooms = (left: ChatRoom, right: ChatRoom) => {
   const rightMillis = toMillis(right.lastMessage?.createdAt ?? right.updatedAt);
   const leftMillis = toMillis(left.lastMessage?.createdAt ?? left.updatedAt);
@@ -557,20 +593,27 @@ export class SpringChatRepository implements IChatRepository {
   }
 
   async updateLastReadAt(_userId: string, chatRoomId: string): Promise<void> {
-    const response = await chatApiClient.markAsRead(chatRoomId, {
-      lastReadAt: new Date().toISOString(),
-    });
     const existing = this.roomCache.get(chatRoomId);
+    const response = await chatApiClient.markAsRead(chatRoomId, {
+      lastReadAt: resolveReadRequestLastReadAt(existing),
+    });
 
     if (existing) {
+      const nextLastReadAt = response.data.lastReadAt;
+      const shouldClearUnread = hasReadThroughRoom(existing, nextLastReadAt);
+
       this.roomCache.set(chatRoomId, {
         ...existing,
-        lastReadAt: response.data.lastReadAt,
-        unreadCount: 0,
+        lastReadAt: nextLastReadAt,
+        unreadCount: shouldClearUnread ? 0 : existing.unreadCount,
       });
       this.publishRoom(chatRoomId);
       this.publishLists();
       this.publishStates();
+
+      if (response.data.updated || !shouldClearUnread) {
+        this.loadChatRoom(chatRoomId, true).catch(() => undefined);
+      }
     } else {
       await this.loadChatRoom(chatRoomId, true);
     }
