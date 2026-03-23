@@ -1,9 +1,14 @@
 import React from 'react';
 
-import type {ContentDetailViewData} from '@/shared/types/contentDetailViewData';
+import type {
+  ContentDetailBodyBlockViewData,
+  ContentDetailViewData,
+} from '@/shared/types/contentDetailViewData';
 
-import type {NoticeDetailSourceItem} from '../model/noticeDetailData';
-import {noticeDetailRepository} from '../data/repositories/noticeDetailRepository';
+import {normalizeNoticeHtml} from '../model/selectors';
+import type {Notice, NoticeCommentTreeNode} from '../model/types';
+import {useNoticeComments} from './useNoticeComments';
+import {useNoticeDetail} from './useNoticeDetail';
 
 const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
   '공모/행사': '행사',
@@ -16,14 +21,18 @@ const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
   학사: '학사',
 };
 
-const CATEGORY_TONE_MAP: Record<string, ContentDetailViewData['metaBadges'][number]['tone']> =
-  {
-    시설: 'gray',
-    장학: 'purple',
-    취업: 'orange',
-    행사: 'pink',
-    학사: 'blue',
-  };
+const CATEGORY_TONE_MAP: Record<
+  string,
+  ContentDetailViewData['metaBadges'][number]['tone']
+> = {
+  시설: 'gray',
+  장학: 'purple',
+  취업: 'orange',
+  행사: 'pink',
+  학사: 'blue',
+};
+
+const RECENT_NOTICE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const formatNoticeDateLabel = (value: string) => {
   const date = new Date(value);
@@ -39,35 +48,121 @@ const formatNoticeDateLabel = (value: string) => {
   return `${year}-${month}-${day}`;
 };
 
-const toCategoryLabel = (category: string) => {
-  return CATEGORY_DISPLAY_LABEL_MAP[category] ?? category;
-};
+const toCategoryLabel = (category: string) =>
+  CATEGORY_DISPLAY_LABEL_MAP[category] ?? category;
 
 const getCategoryTone = (
   categoryLabel: string,
-): ContentDetailViewData['metaBadges'][number]['tone'] => {
-  return CATEGORY_TONE_MAP[categoryLabel] ?? 'gray';
+): ContentDetailViewData['metaBadges'][number]['tone'] =>
+  CATEGORY_TONE_MAP[categoryLabel] ?? 'gray';
+
+const flattenComments = (
+  comments: NoticeCommentTreeNode[],
+): NoticeCommentTreeNode[] =>
+  comments.flatMap(comment => [comment, ...flattenComments(comment.replies)]);
+
+const decodeHtmlEntities = (value: string) =>
+  value
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
+
+const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
+  const html = normalizeNoticeHtml(notice.contentDetail || notice.content || '');
+
+  if (!html.trim()) {
+    return [
+      {
+        id: `${notice.id}-body-1`,
+        text: notice.title,
+        type: 'paragraph' as const,
+      },
+    ];
+  }
+
+  const tokenized = html
+    .replace(
+      /<img[^>]*src=["']([^"']+)["'][^>]*>/gi,
+      (_match, imageUrl) => `\n[[IMG:${imageUrl}]]\n`,
+    )
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|section|article|h[1-6])>/gi, '\n\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<[^>]+>/g, '');
+
+  const blocks = tokenized
+    .split(/(\[\[IMG:[^\]]+\]\])/g)
+    .reduce<ContentDetailBodyBlockViewData[]>((accumulator, segment, index) => {
+      const imageMatch = segment.match(/^\[\[IMG:(.+)\]\]$/);
+
+      if (imageMatch) {
+        accumulator.push({
+          id: `${notice.id}-image-${index + 1}`,
+          imageUrl: imageMatch[1] ?? '',
+          type: 'image',
+        });
+        return accumulator;
+      }
+
+      decodeHtmlEntities(segment)
+        .split(/\n{2,}/)
+        .map(paragraph => paragraph.trim())
+        .filter(Boolean)
+        .forEach((paragraph, paragraphIndex) => {
+          accumulator.push({
+            id: `${notice.id}-paragraph-${index + 1}-${paragraphIndex + 1}`,
+            text: paragraph,
+            type: 'paragraph',
+          });
+        });
+
+      return accumulator;
+    }, []);
+
+  return blocks.length > 0
+    ? blocks
+    : [
+        {
+          id: `${notice.id}-body-fallback`,
+          text: notice.content,
+          type: 'paragraph' as const,
+        },
+      ];
 };
 
-const toViewData = (notice: NoticeDetailSourceItem): ContentDetailViewData => {
+const isRecentNotice = (postedAt: unknown) => {
+  const millis = new Date(String(postedAt)).getTime();
+
+  return Number.isFinite(millis) && Date.now() - millis <= RECENT_NOTICE_WINDOW_MS;
+};
+
+const toViewData = (
+  notice: Notice,
+  comments: NoticeCommentTreeNode[],
+): ContentDetailViewData => {
   const categoryLabel = toCategoryLabel(notice.category);
 
   return {
-    attachments: notice.attachments.map(attachment => ({
-      fileName: attachment.fileName,
-      id: attachment.id,
-      sizeLabel: attachment.sizeLabel,
+    attachments: notice.contentAttachments.map((attachment, index) => ({
+      fileName: attachment.name,
+      id: `${notice.id}-attachment-${index + 1}`,
+      sizeLabel: '첨부파일',
     })),
-    bodyBlocks: notice.bodyBlocks,
+    bodyBlocks: buildBodyBlocks(notice),
     commentInputPlaceholder: '댓글을 입력하세요...',
-    comments: notice.comments.map(comment => ({
-      authorLabel: comment.authorName,
+    comments: flattenComments(comments).map(comment => ({
+      authorLabel: comment.isAnonymous
+        ? `익명${comment.anonymousOrder ?? ''}`
+        : comment.userDisplayName,
       body: comment.content,
-      dateLabel: formatNoticeDateLabel(comment.postedAt),
+      dateLabel: formatNoticeDateLabel(comment.createdAt.toISOString()),
       id: comment.id,
-      likeCount: comment.likeCount,
+      likeCount: 0,
     })),
-    dateLabel: formatNoticeDateLabel(notice.postedAt),
+    dateLabel: formatNoticeDateLabel(String(notice.postedAt)),
     emptyCommentsLabel: '첫 댓글을 남겨보세요!',
     metaBadges: [
       {
@@ -75,7 +170,7 @@ const toViewData = (notice: NoticeDetailSourceItem): ContentDetailViewData => {
         label: categoryLabel,
         tone: getCategoryTone(categoryLabel),
       },
-      ...(notice.isNew
+      ...(isRecentNotice(notice.postedAt)
         ? [
             {
               id: `${notice.id}-new`,
@@ -87,12 +182,12 @@ const toViewData = (notice: NoticeDetailSourceItem): ContentDetailViewData => {
     ],
     reactions: [
       {
-        count: notice.likeCount,
+        count: notice.likeCount ?? 0,
         iconName: 'heart-outline',
         id: `${notice.id}-likes`,
       },
       {
-        count: notice.bookmarkCount,
+        count: 0,
         iconName: 'bookmark-outline',
         id: `${notice.id}-bookmarks`,
       },
@@ -101,74 +196,33 @@ const toViewData = (notice: NoticeDetailSourceItem): ContentDetailViewData => {
   };
 };
 
-const getErrorMessage = (error: unknown) => {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-
-  return '공지사항을 다시 불러와주세요.';
-};
-
 export const useNoticeDetailData = (noticeId?: string) => {
-  const [data, setData] = React.useState<ContentDetailViewData | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [notFound, setNotFound] = React.useState(false);
-  const requestIdRef = React.useRef(0);
+  const {error: detailError, loading: detailLoading, notice, refresh} =
+    useNoticeDetail(noticeId);
+  const {
+    comments,
+    error: commentsError,
+    loading: commentsLoading,
+  } = useNoticeComments(noticeId ?? '');
 
-  const loadDetail = React.useCallback(async () => {
-    const currentRequestId = requestIdRef.current + 1;
-    requestIdRef.current = currentRequestId;
-    setLoading(true);
+  const data = React.useMemo(
+    () => (notice ? toViewData(notice, comments) : null),
+    [comments, notice],
+  );
 
-    try {
-      if (!noticeId) {
-        setData(null);
-        setNotFound(true);
-        setError(null);
-        return;
-      }
-
-      const notice = await noticeDetailRepository.getNoticeDetail(noticeId);
-
-      if (currentRequestId !== requestIdRef.current) {
-        return;
-      }
-
-      if (!notice) {
-        setData(null);
-        setNotFound(true);
-        setError(null);
-        return;
-      }
-
-      setData(toViewData(notice));
-      setNotFound(false);
-      setError(null);
-    } catch (loadError) {
-      if (currentRequestId !== requestIdRef.current) {
-        return;
-      }
-
-      setError(getErrorMessage(loadError));
-      setData(null);
-      setNotFound(false);
-    } finally {
-      if (currentRequestId === requestIdRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [noticeId]);
-
-  React.useEffect(() => {
-    loadDetail().catch(() => undefined);
-  }, [loadDetail]);
+  const error = detailError ?? commentsError ?? null;
+  const loading =
+    detailLoading || (Boolean(noticeId) && commentsLoading && !notice);
+  const notFound = !loading && !error && !notice;
+  const reload = React.useCallback(async () => {
+    refresh();
+  }, [refresh]);
 
   return {
     data,
     error,
     loading,
     notFound,
-    reload: loadDetail,
+    reload,
   };
 };

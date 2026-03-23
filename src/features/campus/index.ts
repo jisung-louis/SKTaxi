@@ -1,11 +1,3 @@
-export {
-  FirebaseAcademicRepository,
-  FirestoreAcademicRepository,
-} from './data/repositories/FirebaseAcademicRepository';
-export {
-  FirebaseCafeteriaRepository,
-  FirestoreCafeteriaRepository,
-} from './data/repositories/FirebaseCafeteriaRepository';
 export type { IAcademicRepository } from './data/repositories/IAcademicRepository';
 export type { ICafeteriaRepository } from './data/repositories/ICafeteriaRepository';
 export type {ICafeteriaDetailRepository} from './data/repositories/ICafeteriaDetailRepository';

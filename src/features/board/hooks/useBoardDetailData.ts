@@ -4,10 +4,11 @@ import {ko} from 'date-fns/locale';
 
 import type {ContentDetailViewData} from '@/shared/types/contentDetailViewData';
 
-import type {BoardDetailSourceItem} from '../model/boardDetailData';
-import {boardDetailRepository} from '../data/repositories/boardDetailRepository';
+import type {BoardCommentTreeNode} from '../data/repositories/IBoardRepository';
+import type {BoardPost} from '../model/types';
+import {useBoardRepository} from './useBoardRepository';
 
-const CATEGORY_LABEL_MAP: Record<BoardDetailSourceItem['category'], string> = {
+const CATEGORY_LABEL_MAP: Record<BoardPost['category'], string> = {
   announcement: '정보게시판',
   general: '자유게시판',
   question: '질문게시판',
@@ -24,18 +25,45 @@ const formatBoardDateLabel = (value: string) => {
   return format(date, 'M월 d일', {locale: ko});
 };
 
-const toViewData = (post: BoardDetailSourceItem): ContentDetailViewData => ({
+const splitParagraphs = (content: string) =>
+  content
+    .split(/\n{2,}/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean);
+
+const flattenComments = (
+  comments: BoardCommentTreeNode[],
+): BoardCommentTreeNode[] =>
+  comments.flatMap(comment => [comment, ...flattenComments(comment.replies)]);
+
+const toViewData = (
+  post: BoardPost,
+  comments: BoardCommentTreeNode[],
+): ContentDetailViewData => ({
   authorLabel: post.authorName,
-  bodyBlocks: post.bodyBlocks,
+  bodyBlocks: [
+    ...splitParagraphs(post.content).map((paragraph, index) => ({
+      id: `${post.id}-paragraph-${index + 1}`,
+      text: paragraph,
+      type: 'paragraph' as const,
+    })),
+    ...(post.images ?? []).map((image, index) => ({
+      aspectRatio:
+        image.width && image.height ? image.width / image.height : undefined,
+      id: `${post.id}-image-${index + 1}`,
+      imageUrl: image.url,
+      type: 'image' as const,
+    })),
+  ],
   commentInputPlaceholder: '댓글을 입력하세요...',
-  comments: post.comments.map(comment => ({
+  comments: flattenComments(comments).map(comment => ({
     authorLabel: comment.authorName,
     body: comment.content,
-    dateLabel: formatBoardDateLabel(comment.postedAt),
+    dateLabel: formatBoardDateLabel(comment.createdAt.toISOString()),
     id: comment.id,
-    likeCount: comment.likeCount,
+    likeCount: 0,
   })),
-  dateLabel: formatBoardDateLabel(post.createdAt),
+  dateLabel: formatBoardDateLabel(post.createdAt.toISOString()),
   emptyCommentsLabel: '첫 댓글을 남겨보세요!',
   metaBadges: [
     {
@@ -68,6 +96,7 @@ const getErrorMessage = (error: unknown) => {
 };
 
 export const useBoardDetailData = (postId?: string) => {
+  const boardRepository = useBoardRepository();
   const [data, setData] = React.useState<ContentDetailViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -87,7 +116,10 @@ export const useBoardDetailData = (postId?: string) => {
         return;
       }
 
-      const post = await boardDetailRepository.getBoardDetail(postId);
+      const [post, comments] = await Promise.all([
+        boardRepository.getPost(postId),
+        boardRepository.getComments(postId),
+      ]);
 
       if (currentRequestId !== requestIdRef.current) {
         return;
@@ -100,7 +132,7 @@ export const useBoardDetailData = (postId?: string) => {
         return;
       }
 
-      setData(toViewData(post));
+      setData(toViewData(post, comments));
       setNotFound(false);
       setError(null);
     } catch (loadError) {
@@ -116,7 +148,7 @@ export const useBoardDetailData = (postId?: string) => {
         setLoading(false);
       }
     }
-  }, [postId]);
+  }, [boardRepository, postId]);
 
   React.useEffect(() => {
     loadDetail().catch(() => undefined);

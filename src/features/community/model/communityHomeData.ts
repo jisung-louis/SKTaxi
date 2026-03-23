@@ -52,5 +52,5 @@ export interface CommunityChatRoomSourceItem {
 export interface CommunityBoardPageResult {
   featuredPost?: CommunityBoardSourceItem;
   items: CommunityBoardSourceItem[];
-  nextCursor?: string;
+  nextCursor?: unknown;
 }

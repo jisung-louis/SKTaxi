@@ -1,9 +1,5 @@
 export { NoticeSettingsPanel } from './components';
 
-export {
-  FirebaseNoticeRepository,
-  FirestoreNoticeRepository,
-} from './data/repositories/FirebaseNoticeRepository';
 export type {
   INoticeRepository,
   NoticeListPage,

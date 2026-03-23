@@ -12,8 +12,10 @@ import type {
   CommunityBoardSearchFilters,
   CommunityBoardSourceItem,
 } from '../model/communityHomeData';
-import {communityHomeRepository} from '../data/repositories/communityHomeRepository';
 import type {CommunityStackParamList} from '@/app/navigation/types';
+import {useBoardRepository} from '@/features/board';
+
+import {loadCommunityBoardPage} from '../application/communityBoardQuery';
 
 const PAGE_SIZE = 5;
 
@@ -74,6 +76,7 @@ const getErrorMessage = (error: unknown) => {
 export const useCommunityBoardData = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<CommunityStackParamList>>();
+  const boardRepository = useBoardRepository();
   const [searchFilters, setSearchFilters] =
     React.useState<CommunityBoardSearchFilters>(DEFAULT_FILTERS);
   const [items, setItems] = React.useState<CommunityBoardPostViewData[]>([]);
@@ -83,7 +86,7 @@ export const useCommunityBoardData = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
-  const [nextCursor, setNextCursor] = React.useState<string | undefined>(
+  const [nextCursor, setNextCursor] = React.useState<unknown>(
     undefined,
   );
   const [searchVisible, setSearchVisible] = React.useState(false);
@@ -93,7 +96,7 @@ export const useCommunityBoardData = () => {
     Boolean(searchFilters.searchText) || Boolean(searchFilters.category);
 
   const fetchBoardPage = React.useCallback(
-    async (mode: 'initial' | 'refresh' | 'loadMore', cursor?: string) => {
+    async (mode: 'initial' | 'refresh' | 'loadMore', cursor?: unknown) => {
       const currentRequestId = requestIdRef.current + 1;
       requestIdRef.current = currentRequestId;
 
@@ -110,7 +113,8 @@ export const useCommunityBoardData = () => {
       }
 
       try {
-        const result = await communityHomeRepository.getBoardPosts({
+        const result = await loadCommunityBoardPage({
+          boardRepository,
           cursor,
           filters: searchFilters,
           limit: PAGE_SIZE,
@@ -154,7 +158,7 @@ export const useCommunityBoardData = () => {
         setRefreshing(false);
       }
     },
-    [hasActiveSearch, searchFilters],
+    [boardRepository, hasActiveSearch, searchFilters],
   );
 
   React.useEffect(() => {

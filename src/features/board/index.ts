@@ -2,10 +2,6 @@ export {
   ImageSelector,
 } from './components';
 
-export {
-  FirebaseBoardRepository,
-  FirestoreBoardRepository,
-} from './data/repositories/FirebaseBoardRepository';
 export type {
   BoardCommentTreeNode,
   BoardFilterOptions,
