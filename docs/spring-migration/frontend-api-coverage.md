@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-22
+> 최종 수정일: 2026-03-23
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -34,7 +34,7 @@
   - Taxi Party domain 전체
   - Chat domain 전체
 - 아직 미연결
-  - 일반 community/custom chat REST/STOMP
+  - 일반 공개 채팅방 join/leave/create 사용자 계약
   - Board / Notice / Campus 등 나머지 도메인
 
 즉, endpoint 단위로는 꽤 연결됐지만,
@@ -263,6 +263,60 @@ runtime note:
 - `/arrive`는 `taxiFare`, `settlementTargetMemberIds`, `account { bankName, accountNumber, accountHolder, hideName }` payload를 전송한다.
 - 멤버 `DELETE /v1/parties/{id}/members/me` 성공 후에는 leave guard로 stale refresh/SSE callback을 무시하고 chat session을 정리한다.
 
+### 3.6 General Chat list/detail + summary realtime
+
+상태:
+
+- joined room 기준 연결 완료
+
+endpoint / realtime contract:
+
+- `GET /v1/chat-rooms?joined=true`
+- `GET /v1/chat-rooms?type=UNIVERSITY|DEPARTMENT|GAME|CUSTOM&joined=true`
+- `GET /v1/chat-rooms/{chatRoomId}`
+- `GET /v1/chat-rooms/{chatRoomId}/messages`
+- `PATCH /v1/chat-rooms/{chatRoomId}/settings`
+- `PATCH /v1/chat-rooms/{chatRoomId}/read`
+- STOMP endpoint:
+  - SockJS/web: `/ws`
+  - RN native WebSocket: `/ws-native`
+- publish: `/app/chat/{chatRoomId}`
+- subscribe room: `/topic/chat/{chatRoomId}`
+- subscribe room summary: `/user/queue/chat-rooms`
+- subscribe error: `/user/queue/errors`
+
+현재 사용처:
+
+- Community chat room list
+- Community chat room detail
+- 일반 Chat 메시지 이력 조회
+- 일반 Chat 실시간 메시지 수신/전송
+- 일반 Chat 음소거 토글
+- 일반 Chat 방 열람 중 읽음 처리
+- Community tab unread badge
+- room summary / room unread / last message 동기화
+
+코드:
+
+- `src/features/chat/data/api/chatApiClient.ts`
+- `src/features/chat/data/repositories/SpringChatRepository.ts`
+- `src/features/chat/hooks/useChatRooms.ts`
+- `src/features/chat/hooks/useChatRoom.ts`
+- `src/features/chat/hooks/useChatMessages.ts`
+- `src/features/chat/hooks/useChatDetailData.ts`
+- `src/features/chat/hooks/useCommunityTabUnreadIndicator.ts`
+- `src/features/community/hooks/useCommunityChatData.ts`
+- `src/di/RepositoryProvider.tsx`
+
+runtime note:
+
+- 일반 Chat도 중앙 DI `chatRepository`를 source of truth로 사용한다.
+- 목록/상세/읽음 상태/알림 상태는 `SpringChatRepository` 내부 room cache 하나를 기준으로 맞춘다.
+- `/user/queue/chat-rooms` event가 오면 room summary를 cache에 merge하고 목록/상세/탭 unread subscriber에 동시에 publish한다.
+- backend는 `PATCH /read`, `PATCH /settings` 후 summary event를 보내지 않으므로 프론트가 성공 응답을 cache에 patch해 unread/mute/summary 일관성을 유지한다.
+- `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 backend에서 `ChatRoomMember`를 요구한다.
+- 그래서 현재 프론트는 `joined=true` room list를 source of truth로 사용하고, 비참여 공개방 진입 플로우는 backend 계약 확보 전까지 열지 않는다.
+
 ---
 
 ## 4. 부분 연결 API
@@ -328,18 +382,25 @@ runtime note:
 - Taxi Chat detail의 `/user/queue/errors`
 - Taxi Chat detail의 `ACCOUNT` payload write/read
 - Taxi Chat detail의 server-generated `SYSTEM` / `ARRIVED` / `END` message read/render
+- 일반 Chat의 `GET /v1/chat-rooms?joined=true`
+- 일반 Chat의 `GET /v1/chat-rooms/{chatRoomId}`
+- 일반 Chat의 `GET /v1/chat-rooms/{chatRoomId}/messages`
+- 일반 Chat의 `PATCH /v1/chat-rooms/{chatRoomId}/settings`
+- 일반 Chat의 `PATCH /v1/chat-rooms/{chatRoomId}/read`
+- 일반 Chat의 `/app/chat/{chatRoomId}`
+- 일반 Chat의 `/topic/chat/{chatRoomId}`
+- 일반 Chat의 `/user/queue/chat-rooms`
+- 일반 Chat의 `/user/queue/errors`
 
 아직 남은 것:
 
-- `GET /v1/chat-rooms`
-- `/user/queue/chat-rooms`
-- community/custom chat detail의 Spring 이전
+- 일반 공개 채팅방 join/leave/create 사용자 계약
 - 이미지 메시지 전송의 실사용 연결
 
 의미:
 
-- Taxi Chat detail은 REST/STOMP 기준으로 동작하고, 택시 파티 전용 ACCOUNT payload와 서버 생성 SYSTEM/ARRIVED/END snapshot도 실사용 연결됐다.
-- 하지만 Chat domain 전체로 보면 목록/요약/일반 채팅방은 아직 legacy/mock 경로가 남아 있다.
+- Taxi Chat detail과 joined 일반 Chat은 모두 REST/STOMP 기준으로 동작하고, 일반 Chat의 room summary/unread/tab indicator도 `/user/queue/chat-rooms` 기준으로 맞춰진다.
+- 하지만 Chat domain 전체로 보면 공개 일반 채팅방 membership lifecycle과 이미지 메시지 실사용 연결은 아직 남아 있다.
 
 ---
 
@@ -349,9 +410,7 @@ runtime note:
 
 ### 5.1 Chat
 
-- `GET /v1/chat-rooms`
-- `/user/queue/chat-rooms`
-- 일반 community/custom chat 목록/상세의 Spring 이전
+- 일반 공개 채팅방 join/leave/create 사용자 계약
 - 이미지 메시지 전송의 실사용 연결
 
 ### 5.2 Notice / Board / Campus / 기타

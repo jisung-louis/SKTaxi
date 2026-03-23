@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-22
+> 최종 수정일: 2026-03-23
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md)
 
 ---
@@ -30,6 +30,9 @@
 - Taxi Party는 Spring REST/SSE + 중앙 DI 기준으로 my party / join request / leader 승인·거절 / recruit(create) / 지도 선택 기반 자유 입력 좌표 정책 / ChatScreen 고급 상태전이 chain까지 구현 완료
 - Taxi Chat detail은 Spring REST/STOMP + 중앙 DI 기준으로 리더/멤버 메뉴, 수정/취소, ACCOUNT payload, arrive/end/cancel 서버 생성 메시지 흐름, 정산 현황 상단 공지 UI까지 구현 완료
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
+- 일반 Chat(joined room 기준)은 Spring REST/STOMP + 중앙 DI 기준으로 list/detail/messages/read/mute 및 `/user/queue/chat-rooms` summary realtime 연결 완료
+- Community chat screen chain은 더 이상 mock `communityHomeRepository`/`chatDetailRepository`를 source of truth로 사용하지 않는다.
+- 다만 공개 일반 채팅방의 join/leave/create 계약은 backend에 없어, 비참여 공개방 입장 플로우는 아직 닫히지 않았다.
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
@@ -44,6 +47,9 @@
 - Taxi Party의 주요 subscription은 SSE signal + Spring REST snapshot 재조회 기준으로 동기화된다.
 - Taxi Chat detail도 mock singleton이 아니라 Spring REST/STOMP를 source of truth로 사용하기 시작했다.
 - Taxi Chat detail의 STOMP client는 로그아웃/계정 전환 시 이전 Authorization 세션을 재사용하지 않도록 정리된다.
+- 일반 Chat도 중앙 DI `chatRepository`를 기준으로 요약 목록/상세/메시지/read/mute 상태를 Spring source of truth로 읽는다.
+- 일반 Chat room summary/unread/tab indicator는 `/user/queue/chat-rooms` 이벤트와 REST snapshot을 함께 사용해 같은 room cache를 기준으로 동기화된다.
+- 다만 공개 일반 채팅방의 membership lifecycle은 backend contract 부재로 여전히 남아 있다.
 
 ---
 
@@ -56,7 +62,7 @@
 | Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료                                 |
 | Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                               |
 | Phase E. Taxi Party 정식 이전                         | 완료           | recruit 지도 선택 기반 자유 입력, Chat header/action tray, ACCOUNT/ARRIVE payload, 서버 생성 SYSTEM/ARRIVED/END 흐름까지 반영 완료 |
-| Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail REST + STOMP 연결, 일반 chat 영역은 미완                                  |
+| Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail + joined 일반 chat list/detail/messages/read/mute + summary realtime 완료, 공개 일반 chat join/leave/create 계약은 backend 미지원 |
 | Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                          |
 | Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                                   |
 
@@ -484,6 +490,93 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 ---
 
+### 4.13 Phase F 구현
+
+이번 스레드에서는 일반 Chat의 source of truth를 mock/Firebase에서 Spring 기준으로 옮겼다.
+
+추가/갱신한 대표 파일:
+
+- `src/features/chat/data/api/chatApiClient.ts`
+- `src/features/chat/data/dto/chatDto.ts`
+- `src/features/chat/data/mappers/chatMapper.ts`
+- `src/features/chat/data/repositories/SpringChatRepository.ts`
+- `src/features/chat/application/chatDetailAssembler.ts`
+- `src/features/community/application/communityChatQuery.ts`
+- `src/features/chat/hooks/useChatRooms.ts`
+- `src/features/chat/hooks/useChatRoom.ts`
+- `src/features/chat/hooks/useChatMessages.ts`
+- `src/features/chat/hooks/useChatActions.ts`
+- `src/features/chat/hooks/useCommunityTabUnreadIndicator.ts`
+- `src/features/chat/hooks/useChatDetailData.ts`
+- `src/features/community/hooks/useCommunityChatData.ts`
+- `src/di/RepositoryProvider.tsx`
+- `src/shared/realtime/minimalStompClient.ts`
+- `src/shared/realtime/index.ts`
+
+정리한 legacy 경로:
+
+- `src/features/chat/data/repositories/MockChatRepository.ts`
+- `src/features/chat/data/repositories/FirebaseChatRepository.ts`
+- `src/features/chat/data/repositories/MockChatDetailRepository.ts`
+- `src/features/chat/data/repositories/chatDetailRepository.ts`
+- `src/features/chat/data/composition/chatRuntime.ts`
+- `src/features/chat/mocks/chatDetail.mock.ts`
+
+이번 단계에서 실제로 사용한 일반 Chat contract:
+
+- REST
+  - `GET /v1/chat-rooms?joined=true`
+  - `GET /v1/chat-rooms?type=UNIVERSITY|DEPARTMENT|GAME|CUSTOM&joined=true`
+  - `GET /v1/chat-rooms/{chatRoomId}`
+  - `GET /v1/chat-rooms/{chatRoomId}/messages`
+  - `PATCH /v1/chat-rooms/{chatRoomId}/read`
+  - `PATCH /v1/chat-rooms/{chatRoomId}/settings`
+- STOMP
+  - endpoint: `/ws-native`
+  - publish: `/app/chat/{chatRoomId}`
+  - subscribe room: `/topic/chat/{chatRoomId}`
+  - subscribe summary: `/user/queue/chat-rooms`
+  - subscribe error: `/user/queue/errors`
+
+이번 구현의 핵심 변화:
+
+- `RepositoryProvider`의 기본 `chatRepository`를 `SpringChatRepository`로 교체했다.
+- 일반 Chat 목록/상세/메시지/read/mute 상태를 하나의 room cache와 mapper 경계로 수렴했다.
+- `useCommunityChatData()`는 더 이상 mock `communityHomeRepository`에서 채팅 요약을 읽지 않고 `useChatRooms('all')` 결과를 query layer에서 조합한다.
+- `useChatDetailData()`는 mock detail repository 대신 `useChatRoom()` + `useChatMessages()` + `useChatActions()`를 조합해 Spring source를 읽는다.
+- room unread / last message / room summary / community tab indicator는 모두 `SpringChatRepository` cache와 `/user/queue/chat-rooms` event를 기준으로 동기화한다.
+- read/mute는 backend가 summary event를 보내지 않는 계약이므로 `PATCH /read`, `PATCH /settings` 성공 직후 repository cache를 로컬 patch해 일관성을 유지한다.
+- taxi 전용 STOMP 유틸을 일반화해 `src/shared/realtime/minimalStompClient.ts`로 올리고 Taxi/일반 chat이 같은 transport를 재사용한다.
+
+이번 스레드에서 확인된 backend 계약 caveat:
+
+- 로컬 `http://localhost:8080/v3/api-docs`는 이 작업 시점에 connection refused였다.
+- 그래서 실제 구현은 `/Users/jisung/skuri-backend` 코드와 `docs/spring-migration/api-specification.md`를 대조해 맞췄다.
+- backend는 `GET /v1/chat-rooms`에서 공개방을 노출하지만, `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 `ChatRoomMember`를 요구한다.
+- 현재 backend에는 일반 공개 채팅방용 join/leave/create 사용자 계약이 없어, 비참여 공개방 입장 플로우는 frontend만으로 완결할 수 없다.
+
+### 4.14 Phase F 결과
+
+현재 가능한 것:
+
+- `RepositoryProvider`의 `chatRepository` 기본 구현은 `SpringChatRepository`다.
+- 일반 Chat 목록은 `GET /v1/chat-rooms?joined=true` 계열 응답을 기준으로 렌더링된다.
+- 일반 Chat 상세는 `GET /v1/chat-rooms/{id}` 응답을 기준으로 room mute/lastRead/isJoined/unreadCount를 읽는다.
+- 일반 Chat 메시지 이력은 `GET /v1/chat-rooms/{id}/messages` cursor pagination을 사용하고, 화면에는 시간 오름차순으로 재정렬해 렌더링한다.
+- 일반 Chat 신규 메시지는 `/topic/chat/{id}` topic subscribe로 수신하고, 같은 frame으로 room last message/updatedAt cache도 갱신한다.
+- 일반 Chat room summary는 `/user/queue/chat-rooms` 이벤트를 받아 목록/상세/알림 설정/읽음 상태 구독자에게 동시에 반영된다.
+- Community tab unread indicator는 전체 joined 일반 chat의 `unreadCount` 합계를 기준으로 계산된다.
+- Community chat screen chain은 Spring room summary를 읽고, room open 시 `ChatDetail`로 이동한다.
+- 일반 Chat read/mute 변경은 각각 `PATCH /read`, `PATCH /settings` 성공 직후 room cache를 patch하므로 room unread, room summary, tab indicator가 서로 어긋나지 않는다.
+
+현재 아직 남은 것:
+
+- 공개 일반 채팅방의 join/leave/create 사용자 계약은 backend 미지원이라, 비참여 공개방의 “입장 후 메시지 읽기/전송” 플로우는 아직 구현할 수 없다.
+- 일반 Chat 이미지 업로드/이미지 메시지 실사용 연결은 아직 남아 있다.
+- Board/Notice/Campus 등 다른 미이전 도메인과 남은 mock 화면 체인 정리는 다음 phase 범위다.
+
+---
+
 ## 5. 현재 남아 있는 구조 상태
 
 현재 앱은 여전히 아래 두 구조가 혼재한다.
@@ -508,7 +601,8 @@ Phase D 반영 후 구조 상태:
 - Taxi Party의 전역 상태(`useMyParty`, `JoinRequestProvider`, `useJoinRequestStatus`, `useJoinRequestModal`)는 중앙 DI `partyRepository`/`notificationActionRepository` 기준으로 수렴했다.
 - RecruitScreen도 더 이상 `taxiRecruitRepository` mock singleton을 source of truth로 사용하지 않고 중앙 `partyRepository`를 통해 `/v1/parties`를 호출한다.
 - Taxi Chat detail은 중앙 DI `taxiChatRepository`와 assembler로 수렴했고, feature-local taxi chat singleton은 더 이상 source of truth가 아니다.
-- 다만 Taxi domain 전체의 최종 도메인 경계 수렴은 Phase F의 일반 chat 이전과 Phase H의 legacy 정리까지 남아 있다.
+- 일반 Chat도 중앙 DI `chatRepository`와 query/assembler 경계로 수렴했고, feature-local general chat mock repository는 제거됐다.
+- 다만 Chat domain의 최종 수렴은 공개 일반 채팅방 membership 계약 보강과 Phase H의 남은 legacy 정리까지 이어진다.
 
 ---
 
@@ -516,14 +610,14 @@ Phase D 반영 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. 일반 Chat 정식 이전
+1. 일반 공개 채팅방 join/leave/create backend 계약 보강
 2. 남은 mock 화면 체인 정리
-3. Taxi/Chat domain의 signal-only SSE 비용과 legacy service surface 정리
+3. Chat 이미지 메시지 업로드와 Taxi/Chat domain의 signal-only realtime 비용 정리
 
 이 순서를 권장하는 이유:
 
-- Notification domain은 Phase D에서 닫혔고, Taxi Party의 Phase E 범위도 frontend contract 기준으로 정리됐으므로 다음 병목은 일반 Chat 이전과 남은 legacy 경로 수렴이다.
-- Taxi Chat detail은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 일반 chat list/summary/custom room 이전으로 이어가는 편이 자연스럽다.
+- Notification domain은 Phase D에서 닫혔고, Taxi Party의 Phase E 범위도 frontend contract 기준으로 정리됐으므로 다음 병목은 일반 공개 Chat membership 계약과 남은 legacy 경로 수렴이다.
+- Taxi Chat detail과 joined 일반 Chat은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 공개 일반 채팅방 join lifecycle과 이미지 메시지 실사용 연결로 이어가는 편이 자연스럽다.
 - 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 
 ---
@@ -593,8 +687,8 @@ Phase D 반영 후 구조 상태:
 
 - Notification SSE는 `xhrSseStream` 기반 concrete client가 연결된 상태다.
 - Taxi Party SSE도 같은 `xhrSseStream` 기반 concrete client를 signal transport로 재사용한다.
-- Taxi Chat detail은 `@stomp/stompjs`를 사용한 concrete STOMP client가 연결된 상태고, subscriber 0건 또는 auth uid 변경 시 해당 client를 정리한다.
-- 일반 chat summary realtime은 이 공통 레이어를 재사용하는 다음 phase 작업으로 남아 있다.
+- Taxi Chat detail은 shared STOMP transport를 재사용하는 concrete client가 연결된 상태고, subscriber 0건 또는 auth uid 변경 시 해당 client를 정리한다.
+- 일반 Chat도 같은 shared STOMP transport를 사용해 `/topic/chat/{chatRoomId}`와 `/user/queue/chat-rooms`를 구독한다.
 
 ---
 
@@ -608,4 +702,4 @@ Phase D 반영 후 구조 상태:
 - Phase D는 Notification realtime까지 완료
 - Phase E는 recruit map picker + ChatScreen action tray/정산 현황 + 새 backend contract 반영까지 완료 상태
 - Phase D blocker fix까지 반영되어 close 가능 상태
-- Phase F는 Taxi Chat detail 범위에서 부분 진행 상태
+- Phase F는 Taxi Chat detail + joined 일반 Chat 범위까지 부분 진행 상태
