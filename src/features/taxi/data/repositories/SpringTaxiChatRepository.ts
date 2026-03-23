@@ -49,12 +49,20 @@ interface PendingSpecialMessageRequest {
 const MESSAGES_PAGE_SIZE = 100;
 const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 const STOMP_CONNECT_TIMEOUT_MS = 10000;
-const STOMP_PROTOCOLS = ['v12.stomp', 'v11.stomp', 'v10.stomp'] as const;
 
-const buildSockJsWebSocketPath = (endpointPath = '/ws') =>
-  endpointPath.endsWith('/websocket')
-    ? endpointPath
-    : `${endpointPath.replace(/\/$/, '')}/websocket`;
+const buildNativeStompWebSocketPath = (endpointPath = '/ws') => {
+  const normalizedPath = endpointPath.replace(/\/$/, '');
+
+  if (normalizedPath.endsWith('/websocket')) {
+    return normalizedPath.replace(/\/websocket$/, '-native');
+  }
+
+  if (normalizedPath.endsWith('-native')) {
+    return normalizedPath;
+  }
+
+  return `${normalizedPath}-native`;
+};
 
 const clonePartySource = (
   source: TaxiChatSourceData,
@@ -730,15 +738,12 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
         try {
           const options = await chatSocketClient.buildConnectionOptions({
-            endpointPath: buildSockJsWebSocketPath(),
+            endpointPath: buildNativeStompWebSocketPath(),
           });
 
-          client.brokerURL = undefined;
+          client.brokerURL = options.url;
           client.connectHeaders = options.connectHeaders;
-          client.webSocketFactory = () =>
-            new WebSocket(options.url, [...STOMP_PROTOCOLS], {
-              headers: options.connectHeaders,
-            });
+          client.webSocketFactory = undefined;
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
