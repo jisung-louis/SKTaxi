@@ -1,4 +1,9 @@
-import {Client, type IMessage, type StompSubscription} from '@stomp/stompjs';
+import {
+  Client,
+  Versions,
+  type IMessage,
+  type StompSubscription,
+} from '@stomp/stompjs';
 
 import type {
   SubscriptionCallbacks,
@@ -49,6 +54,7 @@ interface PendingSpecialMessageRequest {
 const MESSAGES_PAGE_SIZE = 100;
 const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 const STOMP_CONNECT_TIMEOUT_MS = 10000;
+const STOMP_NATIVE_PROTOCOL = 'v12.stomp';
 
 const buildNativeStompWebSocketPath = (endpointPath = '/ws') => {
   const normalizedPath = endpointPath.replace(/\/$/, '');
@@ -741,9 +747,11 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             endpointPath: buildNativeStompWebSocketPath(),
           });
 
-          client.brokerURL = options.url;
+          client.brokerURL = undefined;
           client.connectHeaders = options.connectHeaders;
-          client.webSocketFactory = undefined;
+          client.stompVersions = new Versions(['1.2']);
+          client.webSocketFactory = () =>
+            new WebSocket(options.url, STOMP_NATIVE_PROTOCOL);
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
@@ -755,6 +763,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             currentPartyId: this.currentPartyId,
             generation,
             headerKeys: Object.keys(options.connectHeaders),
+            protocol: STOMP_NATIVE_PROTOCOL,
             url: options.url,
           });
         } catch (error) {
