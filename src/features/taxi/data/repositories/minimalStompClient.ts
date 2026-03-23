@@ -18,7 +18,7 @@ export interface StompSocket {
   onerror: ((event?: any) => void) | null;
   onmessage: ((event?: {data?: string | ArrayBuffer}) => void) | null;
   onopen: ((event?: any) => void) | null;
-  send: (data: string) => void;
+  send: (data: string | ArrayBuffer | ArrayBufferView) => void;
 }
 
 interface PublishParams {
@@ -103,6 +103,8 @@ const serializeFrame = ({
 
   return `${command}\n${headerLines.join('\n')}\n\n${body}${NULL_BYTE}`;
 };
+
+const encodeFrame = (frame: string) => new TextEncoder().encode(frame).buffer;
 
 export class MinimalStompClient {
   public beforeConnect: () => Promise<void> | void = () => undefined;
@@ -385,11 +387,13 @@ export class MinimalStompClient {
 
     this.debug(`>>> ${command}`);
     socket.send(
-      serializeFrame({
-        body,
-        command,
-        headers,
-      }),
+      encodeFrame(
+        serializeFrame({
+          body,
+          command,
+          headers,
+        }),
+      ),
     );
   }
 }
