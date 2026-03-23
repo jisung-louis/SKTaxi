@@ -1,6 +1,14 @@
 import type { ICafeteriaRepository } from './ICafeteriaRepository';
-import type { WeeklyMenu } from '../../model/cafeteria';
-import { cafeteriaDetailMockData } from '../../mocks/cafeteriaDetail.mock';
+import {
+  formatLocalDateKey,
+  type WeeklyMenu,
+} from '../../model/cafeteria';
+
+const MOCK_WEEKLY_MENU_TITLES = {
+  rollNoodles: ['계란라면(신)', '유부우동', '치즈순살돈가스버거'],
+  theBab: ['새우볶음밥', '마그마폭립덮밥', '치킨마요덮밥'],
+  fryRice: ['카레돈까스', '치킨치즈까스', '왕돈까스'],
+} as const;
 
 const buildCurrentWeekMenu = (): WeeklyMenu => {
   const now = new Date();
@@ -11,14 +19,8 @@ const buildCurrentWeekMenu = (): WeeklyMenu => {
   const dayKeys = Array.from({ length: 5 }, (_, index) => {
     const day = new Date(weekStartDate);
     day.setDate(weekStartDate.getDate() + index);
-    return day.toISOString().slice(0, 10);
+    return formatLocalDateKey(day);
   });
-
-  const pickTitles = (categoryId: string) =>
-    cafeteriaDetailMockData.categories
-      .find(category => category.id === categoryId)
-      ?.items.slice(0, 3)
-      .map(item => item.title) ?? [];
 
   const fillMenu = (titles: string[]) =>
     dayKeys.reduce<Record<string, string[]>>((accumulator, dateKey) => {
@@ -31,11 +33,11 @@ const buildCurrentWeekMenu = (): WeeklyMenu => {
 
   return {
     id: `${weekStartDate.getFullYear()}-W${String(Math.ceil((weekStartDate.getDate() + 6) / 7)).padStart(2, '0')}`,
-    weekStart: weekStartDate.toISOString().slice(0, 10),
-    weekEnd: weekEndDate.toISOString().slice(0, 10),
-    rollNoodles: fillMenu(pickTitles('rollNoodles')),
-    theBab: fillMenu(pickTitles('theBab')),
-    fryRice: fillMenu(pickTitles('fryRice')),
+    weekStart: formatLocalDateKey(weekStartDate),
+    weekEnd: formatLocalDateKey(weekEndDate),
+    rollNoodles: fillMenu([...MOCK_WEEKLY_MENU_TITLES.rollNoodles]),
+    theBab: fillMenu([...MOCK_WEEKLY_MENU_TITLES.theBab]),
+    fryRice: fillMenu([...MOCK_WEEKLY_MENU_TITLES.fryRice]),
     createdAt: new Date(weekStartDate),
     updatedAt: new Date(),
   };

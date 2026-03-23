@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useCafeteriaRepository } from '@/di/useRepository';
 
-import { WeeklyMenu, getAllMenuItems, getMenuForDate } from '../model/cafeteria';
+import {
+  formatLocalDateKey,
+  WeeklyMenu,
+  getAllMenuItems,
+  getMenuForDate,
+} from '../model/cafeteria';
 
 /** 오늘/전체 메뉴 (문자열 배열로 변환된 형태) */
 export interface ProcessedMenu {
@@ -71,17 +76,13 @@ export function useCafeteriaMenu(): UseCafeteriaMenuResult {
   }, [fetchMenu]);
 
   // 현재 날짜를 YYYY-MM-DD 형식으로 반환
-  const getCurrentDateString = (): string => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getCurrentDateString = (): string => formatLocalDateKey(new Date());
 
   // 현재 날짜에 맞는 메뉴를 반환하는 함수
   const getMenuForToday = (): ProcessedMenu | null => {
-    if (!menu) return null;
+    if (!menu) {
+      return null;
+    }
 
     const today = getCurrentDateString();
 
@@ -99,7 +100,9 @@ export function useCafeteriaMenu(): UseCafeteriaMenuResult {
 
   // 모든 날짜의 메뉴를 합쳐서 반환 (미리보기용)
   const getAllMenu = (): ProcessedMenu | null => {
-    if (!menu) return null;
+    if (!menu) {
+      return null;
+    }
 
     return {
       id: menu.id,
@@ -115,7 +118,9 @@ export function useCafeteriaMenu(): UseCafeteriaMenuResult {
 
   // 주차 정보를 파싱해서 "10월 넷째 주" 형태로 변환 (ISO 주차 기준)
   const getWeekDisplayName = (): string => {
-    if (!menu) return '';
+    if (!menu) {
+      return '';
+    }
 
     const weekStart = new Date(menu.weekStart);
     const month = weekStart.getMonth() + 1; // 0-based이므로 +1

@@ -1,24 +1,60 @@
 import type { ICourseRepository } from './ICourseRepository';
 import type { Course } from '../../model/types';
+import {createTimetableDetailMockData} from '../../mocks/timetableDetail.mock';
 
-const mockCourses: Course[] = [
-  {
-    id: 'mock-course-1',
-    grade: 3,
-    category: '전공선택',
-    code: 'CS301',
-    division: '001',
-    name: '모바일 프로그래밍',
-    credits: 3,
-    professor: '김성결',
-    schedule: [{ dayOfWeek: 2, startPeriod: 3, endPeriod: 5 }],
-    location: '공학관 302',
-    semester: '2026-1',
-    department: '컴퓨터공학과',
-    createdAt: new Date(),
-    updatedAt: new Date(),
+const DAY_OF_WEEK_MAP = {
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
+} as const;
+
+const parseCourseCode = (value: string) => {
+  const match = value.match(/^(.*?)\s*\(([^)]+)\)$/);
+
+  return {
+    code: match?.[1]?.trim() || value,
+    division: match?.[2]?.trim() || '001',
+  };
+};
+
+const mockCourses: Course[] = createTimetableDetailMockData().flatMap(
+  semesterRecord => {
+    const toCourse = (
+      record: (typeof semesterRecord.courses)[number],
+      index: number,
+    ): Course => {
+      const {code, division} = parseCourseCode(record.code);
+
+      return {
+        id: record.id,
+        grade: 3,
+        category: '전공선택',
+        code,
+        createdAt: new Date(),
+        credits: record.credits,
+        department: '컴퓨터공학과',
+        division,
+        location: record.locationLabel ?? '온라인',
+        name: record.name,
+        professor: record.professor,
+        schedule: record.schedules.map(schedule => ({
+          dayOfWeek: DAY_OF_WEEK_MAP[schedule.day],
+          endPeriod: schedule.endPeriod,
+          startPeriod: schedule.startPeriod,
+        })),
+        semester: semesterRecord.id,
+        updatedAt: new Date(Date.now() + index),
+      };
+    };
+
+    return [...semesterRecord.catalogCourses, ...semesterRecord.courses].map(
+      toCourse,
+    );
   },
-];
+);
 
 export class MockCourseRepository implements ICourseRepository {
   async getCoursesBySemester(semester: string): Promise<Course[]> {

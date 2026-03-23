@@ -3,7 +3,7 @@ import React from 'react';
 import {useAcademicRepository} from '@/di/useRepository';
 import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
-import type {AcademicSchedule} from '../model/academic';
+import {toAcademicCalendarEventSource} from '../application/academicCalendarEventMapper';
 import {
   getAcademicCalendarEventTone,
   ACADEMIC_CALENDAR_STATUS_TONES,
@@ -27,51 +27,6 @@ import {
 
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-const resolveAcademicEventKind = (
-  schedule: AcademicSchedule,
-): AcademicCalendarEventSource['kind'] => {
-  const normalizedDescription = schedule.description?.trim().toLowerCase();
-
-  if (
-    normalizedDescription === 'holiday' ||
-    normalizedDescription === 'semester' ||
-    normalizedDescription === 'registration' ||
-    normalizedDescription === 'exam' ||
-    normalizedDescription === 'closure'
-  ) {
-    return normalizedDescription;
-  }
-
-  if (/시험/.test(schedule.title)) {
-    return 'exam';
-  }
-
-  if (/수강|신청|등록/.test(schedule.title)) {
-    return 'registration';
-  }
-
-  if (/휴강|방학|종강/.test(schedule.title)) {
-    return 'closure';
-  }
-
-  if (/개강|학기/.test(schedule.title)) {
-    return 'semester';
-  }
-
-  return 'semester';
-};
-
-const toAcademicCalendarEventSource = (
-  schedule: AcademicSchedule,
-): AcademicCalendarEventSource => ({
-  endDate: schedule.endDate,
-  id: schedule.id,
-  isImportant: Boolean(schedule.isPrimary),
-  kind: resolveAcademicEventKind(schedule),
-  startDate: schedule.startDate,
-  title: schedule.title,
-});
 
 const getToneByWeekday = (weekday: number) => {
   if (weekday === 0) {

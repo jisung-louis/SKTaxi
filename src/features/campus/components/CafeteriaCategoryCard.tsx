@@ -26,38 +26,46 @@ export const CafeteriaCategoryCard = ({
 
       <View style={styles.body}>
         {category.items.map((item, index) => (
-          <View
-            key={item.id}
-            style={[styles.itemRow, index > 0 ? styles.itemRowBorder : undefined]}>
-            <View style={styles.itemMain}>
-              <View style={styles.titleRow}>
-                <Text style={styles.itemTitle}>{item.title}</Text>
-                {item.badges.map(badge => (
-                  <View
-                    key={badge.id}
-                    style={[
-                      styles.badge,
-                      {backgroundColor: badge.backgroundColor},
-                    ]}>
-                    <Text style={[styles.badgeLabel, {color: badge.textColor}]}>
-                      {badge.label}
-                    </Text>
-                  </View>
-                ))}
+          <View key={item.id}>
+            <View
+              style={[
+                styles.itemRow,
+                index > 0 ? styles.itemRowBorder : undefined,
+              ]}>
+              <View style={styles.itemMain}>
+                <View style={styles.titleRow}>
+                  <Text style={styles.itemTitle}>{item.title}</Text>
+                  {item.badges.map(badge => (
+                    <View
+                      key={badge.id}
+                      style={[
+                        styles.badge,
+                        {backgroundColor: badge.backgroundColor},
+                      ]}>
+                      <Text
+                        style={[styles.badgeLabel, {color: badge.textColor}]}>
+                        {badge.label}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <Text style={styles.priceLabel}>{item.priceLabel}</Text>
               </View>
 
-              <Text style={styles.priceLabel}>{item.priceLabel}</Text>
-            </View>
-
-            <View style={styles.reactionRow}>
-              <CafeteriaReactionChip
-                countLabel={item.primaryReaction.countLabel}
-                iconName={item.primaryReaction.iconName}
-              />
-              <CafeteriaReactionChip
-                countLabel={item.negativeReaction.countLabel}
-                iconName={item.negativeReaction.iconName}
-              />
+              {item.primaryReaction.countLabel.trim().length > 0 ||
+              item.negativeReaction.countLabel.trim().length > 0 ? (
+                <View style={styles.reactionRow}>
+                  <CafeteriaReactionChip
+                    countLabel={item.primaryReaction.countLabel}
+                    iconName={item.primaryReaction.iconName}
+                  />
+                  <CafeteriaReactionChip
+                    countLabel={item.negativeReaction.countLabel}
+                    iconName={item.negativeReaction.iconName}
+                  />
+                </View>
+              ) : null}
             </View>
           </View>
         ))}

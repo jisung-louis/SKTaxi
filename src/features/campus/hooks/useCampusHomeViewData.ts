@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import {useRepository} from '@/di/useRepository';
+import {useAuth} from '@/features/auth';
+
+import {loadCampusHomeQueryResult} from '../application/campusHomeQuery';
 import type { CampusHomeViewData } from '../model/campusHome';
-import { useCampusHomeRepository } from './useCampusHomeRepository';
 
 export interface UseCampusHomeViewDataResult {
   data: CampusHomeViewData | null;
@@ -11,7 +14,16 @@ export interface UseCampusHomeViewDataResult {
 }
 
 export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
-  const campusHomeRepository = useCampusHomeRepository();
+  const {
+    academicRepository,
+    cafeteriaRepository,
+    courseRepository,
+    noticeRepository,
+    timetableRepository,
+    userRepository,
+  } = useRepository();
+  const {user} = useAuth();
+  const effectiveUserId = user?.uid ?? 'current-user';
 
   const [data, setData] = useState<CampusHomeViewData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +34,15 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
       setLoading(true);
       setError(null);
 
-      const result = await campusHomeRepository.getCampusHomeViewData();
+      const result = await loadCampusHomeQueryResult({
+        academicRepository,
+        cafeteriaRepository,
+        courseRepository,
+        currentUserId: effectiveUserId,
+        noticeRepository,
+        timetableRepository,
+        userRepository,
+      });
       setData(result);
     } catch (err) {
       console.error('캠퍼스 홈 데이터 조회 실패:', err);
@@ -30,7 +50,15 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
     } finally {
       setLoading(false);
     }
-  }, [campusHomeRepository]);
+  }, [
+    academicRepository,
+    cafeteriaRepository,
+    courseRepository,
+    effectiveUserId,
+    noticeRepository,
+    timetableRepository,
+    userRepository,
+  ]);
 
   useEffect(() => {
     loadCampusHomeViewData();

@@ -1,16 +1,14 @@
 import React from 'react';
 
+import {useCafeteriaRepository} from '@/di/useRepository';
 import {COLORS} from '@/shared/design-system/tokens';
 
-import {cafeteriaDetailRepository} from '../data/repositories/cafeteriaDetailRepository';
+import {buildCafeteriaDetailSections} from '../application/cafeteriaMenuAssembler';
 import type {
   CafeteriaMenuBadgeTone,
-  CafeteriaMenuItemSource,
-  CafeteriaDetailSource,
 } from '../model/cafeteriaDetailSource';
+import {formatLocalDateKey} from '../model/cafeteria';
 import type {CafeteriaDetailScreenViewData} from '../model/cafeteriaDetailViewData';
-
-const formatPriceLabel = (price: number) => `${price.toLocaleString('ko-KR')}원`;
 
 const getBadgeToneColors = (tone: CafeteriaMenuBadgeTone) => {
   if (tone === 'blue') {
@@ -26,42 +24,42 @@ const getBadgeToneColors = (tone: CafeteriaMenuBadgeTone) => {
   };
 };
 
-const toMenuItemViewData = (item: CafeteriaMenuItemSource) => ({
-  badges: (item.badges ?? []).map(badge => {
-    const colors = getBadgeToneColors(badge.tone);
-
-    return {
-      backgroundColor: colors.backgroundColor,
-      id: badge.id,
-      label: badge.label,
-      textColor: colors.textColor,
-    };
-  }),
-  id: item.id,
-  priceLabel: formatPriceLabel(item.price),
-  primaryReaction: {
-    countLabel: `${item.positiveCount}`,
-    iconName: 'thumbs-up-outline',
-  },
-  negativeReaction: {
-    countLabel: `${item.secondaryCount}`,
-    iconName: 'thumbs-down-outline',
-  },
-  title: item.title,
-});
-
 const toScreenViewData = (
-  source: CafeteriaDetailSource,
+  sections: ReturnType<typeof buildCafeteriaDetailSections>,
 ): CafeteriaDetailScreenViewData => ({
-  categories: source.categories.map(category => ({
+  categories: sections.map(category => ({
     id: category.id,
-    items: category.items.map(toMenuItemViewData),
+    items: category.items.map(item => ({
+      badges: item.badges.map(badge => {
+        const colors = getBadgeToneColors(badge.tone);
+
+        return {
+          backgroundColor: colors.backgroundColor,
+          id: badge.id,
+          label: badge.label,
+          textColor: colors.textColor,
+        };
+      }),
+      id: item.id,
+      negativeReaction: {
+        countLabel: '',
+        iconName: 'thumbs-down-outline',
+      },
+      priceLabel: item.metaLabel,
+      primaryReaction: {
+        countLabel: '',
+        iconName: 'thumbs-up-outline',
+      },
+      title: item.title,
+    })),
     title: category.title,
   })),
   title: '학식 메뉴',
 });
 
 export const useCafeteriaDetailData = () => {
+  const cafeteriaRepository = useCafeteriaRepository();
+
   const [data, setData] = React.useState<CafeteriaDetailScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -71,15 +69,27 @@ export const useCafeteriaDetailData = () => {
       setLoading(true);
       setError(undefined);
 
-      const source = await cafeteriaDetailRepository.getMenu();
-      setData(toScreenViewData(source));
+      const menu = await cafeteriaRepository.getCurrentWeekMenu();
+
+      if (!menu) {
+        setData(undefined);
+        setError('이번 주 학식 메뉴가 없습니다.');
+        return;
+      }
+
+      const sections = buildCafeteriaDetailSections({
+        currentDate: formatLocalDateKey(new Date()),
+        menu,
+      });
+
+      setData(toScreenViewData(sections));
     } catch (caughtError) {
       console.error('Failed to fetch cafeteria detail menu', caughtError);
       setError('학식 메뉴를 불러오지 못했습니다.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [cafeteriaRepository]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

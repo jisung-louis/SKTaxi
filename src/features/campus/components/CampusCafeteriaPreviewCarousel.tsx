@@ -37,48 +37,54 @@ export const CampusCafeteriaPreviewCarousel = ({
       contentContainerStyle={styles.listContent}
       data={items}
       keyExtractor={item => item.id}
-      renderItem={({item}) => (
-        <TouchableOpacity
-          activeOpacity={0.82}
-          onPress={onPressItem}
-          style={styles.card}>
-          <View style={styles.cardContent}>
-            <LinearGradient
-              colors={['#FB923C', '#F97316']}
-              end={{x: 1, y: 1}}
-              start={{x: 0, y: 0}}
-              style={styles.iconBox}>
-              <Icon
-                color={COLORS.text.inverse}
-                name="restaurant-outline"
-                size={28}
-              />
-            </LinearGradient>
+      renderItem={({item}) => {
+        const hasLikeCount = item.likeCountLabel.trim().length > 0;
 
-            <View style={styles.textGroup}>
-              <View style={styles.categoryPill}>
-                <Text numberOfLines={1} style={styles.categoryLabel}>
-                  {item.categoryLabel}
-                </Text>
-              </View>
-
-              <Text numberOfLines={1} style={styles.title}>
-                {item.title}
-              </Text>
-              <Text style={styles.price}>{item.priceLabel}</Text>
-
-              <View style={styles.likeRow}>
+        return (
+          <TouchableOpacity
+            activeOpacity={0.82}
+            onPress={onPressItem}
+            style={styles.card}>
+            <View style={styles.cardContent}>
+              <LinearGradient
+                colors={['#FB923C', '#F97316']}
+                end={{x: 1, y: 1}}
+                start={{x: 0, y: 0}}
+                style={styles.iconBox}>
                 <Icon
-                  color={COLORS.text.muted}
-                  name="thumbs-up-outline"
-                  size={12}
+                  color={COLORS.text.inverse}
+                  name="restaurant-outline"
+                  size={28}
                 />
-                <Text style={styles.likeCount}>{item.likeCountLabel}</Text>
+              </LinearGradient>
+
+              <View style={styles.textGroup}>
+                <View style={styles.categoryPill}>
+                  <Text numberOfLines={1} style={styles.categoryLabel}>
+                    {item.categoryLabel}
+                  </Text>
+                </View>
+
+                <Text numberOfLines={1} style={styles.title}>
+                  {item.title}
+                </Text>
+                <Text style={styles.price}>{item.priceLabel}</Text>
+
+                {hasLikeCount ? (
+                  <View style={styles.likeRow}>
+                    <Icon
+                      color={COLORS.text.muted}
+                      name="thumbs-up-outline"
+                      size={12}
+                    />
+                    <Text style={styles.likeCount}>{item.likeCountLabel}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      )}
+          </TouchableOpacity>
+        );
+      }}
       showsHorizontalScrollIndicator={false}
       style={styles.list}
     />

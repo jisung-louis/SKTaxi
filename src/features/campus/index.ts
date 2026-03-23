@@ -1,9 +1,5 @@
 export type { IAcademicRepository } from './data/repositories/IAcademicRepository';
 export type { ICafeteriaRepository } from './data/repositories/ICafeteriaRepository';
-export type {ICafeteriaDetailRepository} from './data/repositories/ICafeteriaDetailRepository';
-export type {
-  ICampusHomeRepository,
-} from './data/repositories/ICampusHomeRepository';
 
 export { useAcademicSchedules } from './hooks/useAcademicSchedules';
 export type { UseAcademicSchedulesResult } from './hooks/useAcademicSchedules';
@@ -13,22 +9,10 @@ export type {
   ProcessedMenu,
   UseCafeteriaMenuResult,
 } from './hooks/useCafeteriaMenu';
-export { useCampusHomeRepository } from './hooks/useCampusHomeRepository';
 export { useCampusHomeViewData } from './hooks/useCampusHomeViewData';
 export type {
   UseCampusHomeViewDataResult,
 } from './hooks/useCampusHomeViewData';
-
-export {
-  MockCampusHomeRepository,
-  mockCampusHomeRepository,
-} from './mocks/MockCampusHomeRepository';
-export {MockCafeteriaDetailRepository} from './data/repositories/MockCafeteriaDetailRepository';
-export {
-  createCrossBoundaryCampusHomeViewData,
-  createDefaultCampusHomeViewData,
-  createNoCourseCampusHomeViewData,
-} from './mocks/campusHomeViewData';
 
 export type {
   AcademicSchedule,
@@ -52,15 +36,13 @@ export type {
 } from './model/campusHome';
 export {
   CAFETERIA_CATEGORIES,
+  formatLocalDateKey,
   getAllMenuItems,
   getMenuForDate,
 } from './model/cafeteria';
 export type {
   CafeteriaCategoryId,
-  CafeteriaCategorySource,
-  CafeteriaDetailSource,
-  CafeteriaMenuBadgeSource,
-  CafeteriaMenuItemSource,
+  CafeteriaMenuBadgeTone,
 } from './model/cafeteriaDetailSource';
 export type {
   CafeteriaCategorySectionViewData,
