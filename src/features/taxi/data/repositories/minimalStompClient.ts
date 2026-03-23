@@ -332,7 +332,7 @@ export class MinimalStompClient {
       this.onWebSocketError(event);
     };
     socket.onmessage = event => {
-      this.handleIncomingData(event.data);
+      this.handleIncomingData(event?.data);
     };
     socket.onclose = event => {
       const wasConnected = this.connectedState;
