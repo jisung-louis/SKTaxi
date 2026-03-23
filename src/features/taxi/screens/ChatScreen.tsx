@@ -511,7 +511,7 @@ export const ChatScreen = () => {
             />
           </View>
         ) : data ? (
-          <View style={styles.threadContainer}>
+          <>
             <TaxiChatHeaderNotice settlementNotice={data.summary.settlementNotice} />
 
             <View style={styles.threadWrap}>
@@ -549,7 +549,7 @@ export const ChatScreen = () => {
                 value={composerValue}
               />
             </KeyboardAvoidingView>
-          </View>
+          </>
         ) : null}
 
         {data ? (

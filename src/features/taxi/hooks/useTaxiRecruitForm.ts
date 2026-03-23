@@ -79,13 +79,21 @@ const formatTagValue = (value: string) => {
   return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
 };
 
+const buildInitialPickerDate = () => {
+  const initialDate = new Date();
+  initialDate.setSeconds(0, 0);
+  initialDate.setMinutes(initialDate.getMinutes() + 1);
+
+  return initialDate;
+};
+
 const buildSelectedDate = (hour: number, minute: number, now: Date) => {
   const selectedDate = new Date(now);
   selectedDate.setHours(hour, minute, 0, 0);
 
   const selectedMinutes = hour * 60 + minute;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const isTomorrow = selectedMinutes < currentMinutes;
+  const isTomorrow = selectedMinutes <= currentMinutes;
 
   if (isTomorrow) {
     selectedDate.setDate(selectedDate.getDate() + 1);
@@ -272,7 +280,7 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [maxMembers, setMaxMembers] = React.useState(4);
 
-  const initialDate = React.useMemo(() => new Date(), []);
+  const initialDate = React.useMemo(() => buildInitialPickerDate(), []);
   const [selectedHour, setSelectedHour] = React.useState(
     initialDate.getHours(),
   );
