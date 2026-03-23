@@ -30,9 +30,12 @@ export interface CommunityChatRoomViewData {
   isJoined: boolean;
   memberCountLabel: string;
   previewLabel: string;
-  statusBackgroundColor: string;
-  statusLabel: string;
-  statusTextColor: string;
+  previewStatusBackgroundColor?: string;
+  previewStatusLabel?: string;
+  previewStatusTextColor?: string;
+  titleStatusBackgroundColor?: string;
+  titleStatusLabel?: string;
+  titleStatusTextColor?: string;
   timeLabel: string;
   title: string;
   unreadCount: number;

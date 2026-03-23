@@ -20,6 +20,8 @@ export const CommunityChatRoomCard = ({
   item,
   onPress,
 }: CommunityChatRoomCardProps) => {
+  const previewText = item.previewLabel || item.description;
+
   return (
     <TouchableOpacity
       accessibilityRole="button"
@@ -33,31 +35,50 @@ export const CommunityChatRoomCard = ({
 
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={styles.title}>
-            {item.title}
-          </Text>
-          <Text style={styles.timeLabel}>{item.timeLabel}</Text>
-        </View>
-
-        <View style={styles.statusRow}>
-          <Text numberOfLines={1} style={styles.description}>
-            {item.description}
-          </Text>
-          <View
-            style={[
-              styles.statusPill,
-              {backgroundColor: item.statusBackgroundColor},
-            ]}>
-            <Text style={[styles.statusLabel, {color: item.statusTextColor}]}>
-              {item.statusLabel}
+          <View style={styles.titleGroup}>
+            <Text numberOfLines={1} style={styles.title}>
+              {item.title}
             </Text>
+            {item.titleStatusLabel ? (
+              <View
+                style={[
+                  styles.statusPill,
+                  {backgroundColor: item.titleStatusBackgroundColor},
+                ]}>
+                <Text
+                  style={[
+                    styles.statusLabel,
+                    {color: item.titleStatusTextColor},
+                  ]}>
+                  {item.titleStatusLabel}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <View style={styles.metaRow}>
+            <Text style={styles.timeLabel}>{item.timeLabel}</Text>
           </View>
         </View>
 
         <View style={styles.subtitleRow}>
           <Text numberOfLines={1} style={styles.subtitle}>
-            {item.previewLabel}
+            {previewText}
           </Text>
+          {item.previewStatusLabel ? (
+            <View
+              style={[
+                styles.statusPill,
+                {backgroundColor: item.previewStatusBackgroundColor},
+              ]}>
+              <Text
+                style={[
+                  styles.statusLabel,
+                  {color: item.previewStatusTextColor},
+                ]}>
+                {item.previewStatusLabel}
+              </Text>
+            </View>
+          ) : null}
           {item.unreadCount > 0 ? (
             <View style={styles.badge}>
               <Text style={styles.badgeLabel}>{item.unreadCount}</Text>
@@ -83,13 +104,6 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     ...SHADOWS.card,
   },
-  description: {
-    color: COLORS.text.secondary,
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    marginRight: SPACING.sm,
-  },
   iconWrap: {
     alignItems: 'center',
     borderRadius: RADIUS.pill,
@@ -100,6 +114,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.xs,
+  },
   titleRow: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -108,10 +127,16 @@ const styles = StyleSheet.create({
   },
   title: {
     color: COLORS.text.primary,
-    flex: 1,
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
+  },
+  titleGroup: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: SPACING.xs,
     marginRight: SPACING.sm,
   },
   timeLabel: {
@@ -134,12 +159,6 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 4,
-  },
-  statusRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.xs,
   },
   subtitle: {
     color: COLORS.text.secondary,

@@ -143,7 +143,11 @@ export const ChatDetailScreen = () => {
           <ChatHeader
             header={data.header}
             onPressBack={handlePressBack}
-            onPressMenu={() => setMenuVisible(previousValue => !previousValue)}
+            onPressMenu={
+              data.mode === 'preview'
+                ? undefined
+                : () => setMenuVisible(previousValue => !previousValue)
+            }
           />
         ) : (
           <View style={[styles.headerPlaceholder, {paddingTop: insets.top}]} />
@@ -190,10 +194,10 @@ export const ChatDetailScreen = () => {
                 </View>
 
                 <Text style={styles.previewDescription}>
-                  {data.preview.description}
+                  {data.header.title}
                 </Text>
                 <Text style={styles.previewHelperText}>
-                  {data.preview.helperText}
+                  {data.preview.description}
                 </Text>
 
                 <View style={styles.previewInfoRow}>

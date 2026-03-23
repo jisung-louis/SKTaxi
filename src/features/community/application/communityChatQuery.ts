@@ -52,8 +52,7 @@ export const buildCommunityChatRoomSourceItems = (
       description: room.description?.trim() || '채팅방 소개가 아직 없어요.',
       id: room.id ?? room.name,
       isJoined: room.isJoined === true,
-      lastMessageText:
-        room.lastMessage?.text?.trim() || '아직 메시지가 없어요',
+      lastMessageText: room.lastMessage?.text?.trim() || '',
       memberCount: room.memberCount,
       title: room.name,
       tone: room.type === 'party' ? 'custom' : room.type,

@@ -54,14 +54,18 @@ export const ChatHeader = ({
         </View>
       </View>
 
-      <TouchableOpacity
-        accessibilityLabel="채팅 메뉴 열기"
-        accessibilityRole="button"
-        activeOpacity={0.82}
-        onPress={onPressMenu}
-        style={styles.iconButton}>
-        <Icon color={COLORS.text.secondary} name="ellipsis-vertical" size={18} />
-      </TouchableOpacity>
+      {onPressMenu ? (
+        <TouchableOpacity
+          accessibilityLabel="채팅 메뉴 열기"
+          accessibilityRole="button"
+          activeOpacity={0.82}
+          onPress={onPressMenu}
+          style={styles.iconButton}>
+          <Icon color={COLORS.text.secondary} name="ellipsis-vertical" size={18} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.iconButton} />
+      )}
     </View>
   );
 };

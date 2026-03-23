@@ -89,11 +89,22 @@ export const useCommunityChatData = () => {
           isJoined: room.isJoined,
           memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명`,
           previewLabel: room.lastMessageText,
-          statusBackgroundColor: statusTone.backgroundColor,
-          statusLabel: room.isJoined ? '참여 중' : '둘러보기',
-          statusTextColor: statusTone.textColor,
+          previewStatusBackgroundColor: room.isJoined
+            ? undefined
+            : statusTone.backgroundColor,
+          previewStatusLabel: room.isJoined ? undefined : '둘러보기',
+          previewStatusTextColor: room.isJoined
+            ? undefined
+            : statusTone.textColor,
           timeLabel: formatChatTimeLabel(room.updatedAt),
           title: room.title,
+          titleStatusBackgroundColor: room.isJoined
+            ? statusTone.backgroundColor
+            : undefined,
+          titleStatusLabel: room.isJoined ? '참여 중' : undefined,
+          titleStatusTextColor: room.isJoined
+            ? statusTone.textColor
+            : undefined,
           unreadCount: room.unreadCount,
         } satisfies CommunityChatRoomViewData;
       }),
