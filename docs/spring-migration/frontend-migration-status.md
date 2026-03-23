@@ -548,12 +548,12 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - Community chat list는 `학교 전체방 → 학과방 → 마인크래프트방 → joined custom → not joined custom` 정렬 정책을 query layer에서 고정한다.
 - `useCommunityChatData()`는 더 이상 mock `communityHomeRepository`에서 채팅 요약을 읽지 않고 `useChatRooms('all')` 결과를 query layer에서 조합한다.
 - `useChatDetailData()`는 미참여 public room을 오류로 처리하지 않고 detail preview + 참여하기 CTA로 노출하며, join 성공 후에만 messages/STOMP/read/mute 흐름을 시작한다.
-- leave 성공 시 room detail과 list summary는 not joined 상태로 즉시 되돌리고, `/user/queue/chat-rooms`의 `CHAT_ROOM_REMOVED`도 joined-room summary 제거 신호로 흡수한다.
+- leave 성공 시 room detail과 list summary는 not joined 상태로 즉시 정리하되, 화면은 같은 detail preview에 남기지 않고 커뮤니티 탭 채팅 세그먼트로 바로 복귀시킨다. `/user/queue/chat-rooms`의 `CHAT_ROOM_REMOVED`도 joined-room summary 제거 신호로 흡수한다.
 - room unread / last message / room summary / community tab indicator는 모두 `SpringChatRepository` cache와 `/user/queue/chat-rooms` event를 기준으로 동기화한다.
 - unread/tab badge는 joined room만 계산하도록 명시적으로 고정했다.
 - create API는 `chatApiClient` / `IChatRepository` / `SpringChatRepository` 경계까지 연결했고, UI는 아직 노출하지 않는다.
 - 일반 Chat의 client SYSTEM 전송 dead path는 제거했다.
-- read/mute는 backend가 summary event를 보내지 않는 계약이므로 `PATCH /read`, `PATCH /settings` 성공 직후 repository cache를 로컬 patch해 일관성을 유지한다.
+- read/mute는 backend가 summary event를 보내지 않는 계약이므로 `PATCH /read`, `PATCH /settings` 성공 직후 repository cache를 로컬 patch해 일관성을 유지한다. 읽음 요청은 실기기 시계 차이로 unread가 복원되지 않게 room의 최신 visible server timestamp(`lastMessage.createdAt`/`updatedAt`)를 기준으로 보정해 전송한다.
 - taxi 전용 STOMP 유틸을 일반화해 `src/shared/realtime/minimalStompClient.ts`로 올리고 Taxi/일반 chat이 같은 transport를 재사용한다.
 
 이번 스레드에서 확인된 일반 Chat backend 계약:
@@ -572,12 +572,12 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - 일반 Chat 목록은 `GET /v1/chat-rooms` 계열 응답을 기준으로 joined / not joined public room을 함께 렌더링한다.
 - 미참여 public room도 detail 조회할 수 있고, detail screen은 description / recent message / member count / 참여하기 CTA를 preview로 노출한다.
 - 참여하기 성공 후에는 `GET /messages`, `/topic/chat/{id}`, `PATCH /read`, `PATCH /settings`가 joined room lifecycle에 맞게 바로 이어진다.
-- 나가기 성공 후에는 same room을 not joined preview 상태로 유지하고, unread/mute/lastRead 상태를 joined summary cache와 충돌 없이 정리한다.
+- 나가기 성공 후에는 unread/mute/lastRead 상태를 joined summary cache와 충돌 없이 정리한 뒤, 커뮤니티 탭 채팅 세그먼트로 즉시 돌아간다.
 - 일반 Chat 메시지 이력은 `GET /v1/chat-rooms/{id}/messages` cursor pagination을 사용하고, 화면에는 시간 오름차순으로 재정렬해 렌더링한다.
 - 일반 Chat 신규 메시지는 `/topic/chat/{id}` topic subscribe로 수신하고, joined room summary는 `/user/queue/chat-rooms` 이벤트로 받아 목록/상세/알림 설정/읽음 상태 구독자에게 동시에 반영된다.
 - Community tab unread indicator는 전체 joined 일반 chat의 `unreadCount` 합계를 기준으로 계산된다.
 - Community chat screen chain은 Spring room summary를 읽고, room open 시 joined/not joined 상태에 맞는 `ChatDetail` 화면으로 이동한다.
-- 일반 Chat read/mute 변경은 각각 `PATCH /read`, `PATCH /settings` 성공 직후 room cache를 patch하므로 room unread, room summary, tab indicator가 서로 어긋나지 않는다.
+- 일반 Chat read 변경은 `PATCH /read`에 room의 최신 visible timestamp를 실어 보내고, 응답의 `lastReadAt` 기준으로 room cache를 patch하므로 refresh/re-enter 후에도 unread가 다시 복원되지 않는다. mute도 `PATCH /settings` 성공 직후 cache를 patch해 room summary와 tab indicator가 어긋나지 않는다.
 - create API는 repository/API layer까지 연결됐고, create UI는 아직 노출하지 않는다.
 
 현재 아직 남은 것:

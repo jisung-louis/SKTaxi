@@ -323,6 +323,8 @@ runtime note:
 - `/user/queue/chat-rooms` event는 joined room summary 기준 채널이므로 unread/tab badge는 joined room만 계산한다.
 - `CHAT_ROOM_REMOVED`를 받으면 joined-room summary에서는 제거하되, public room detail/list cache는 not joined state로 정리한다.
 - backend는 `PATCH /read`, `PATCH /settings` 후 summary event를 보내지 않으므로 프론트가 성공 응답을 cache에 patch해 unread/mute/summary 일관성을 유지한다.
+- `PATCH /read` 요청 본문은 여전히 `{ lastReadAt: ISO8601 UTC }`이지만, 실기기 시계 차이로 unread가 되살아나는 문제를 막기 위해 프론트는 room의 최신 visible server timestamp(`lastMessage.createdAt`/`updatedAt`)와 현재 시각 중 더 뒤 값을 보정해서 보낸다.
+- 일반 Chat `채팅방 나가기` 성공 후에는 same-room preview에 머무르지 않고 커뮤니티 탭 채팅 세그먼트로 즉시 복귀한다.
 - `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 backend에서 `ChatRoomMember`를 요구한다.
 - create API는 repository/API layer까지 연결됐고, UI는 아직 노출하지 않는다.
 - 일반 Chat의 client SYSTEM 전송 dead path는 제거했다.
