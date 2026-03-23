@@ -48,6 +48,7 @@ interface PendingSpecialMessageRequest {
 
 const MESSAGES_PAGE_SIZE = 100;
 const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
+const STOMP_CONNECT_TIMEOUT_MS = 10000;
 
 const buildSockJsWebSocketPath = (endpointPath = '/ws') =>
   endpointPath.endsWith('/websocket')
@@ -675,6 +676,32 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     this.stompConnectionPromise = new Promise<Client>((resolve, reject) => {
       let settled = false;
+      let connectTimeoutHandle: ReturnType<typeof setTimeout> | null =
+        setTimeout(() => {
+          const error = createStompRepositoryError(
+            '채팅 실시간 연결 시간이 초과되었습니다.',
+            {
+              timeoutMs: STOMP_CONNECT_TIMEOUT_MS,
+            },
+          );
+
+          logStompLifecycle('connect-timeout', {
+            currentPartyId: this.currentPartyId,
+            generation,
+            timeoutMs: STOMP_CONNECT_TIMEOUT_MS,
+          });
+          safeReject(error);
+          this.deactivateStompClient().catch(() => undefined);
+        }, STOMP_CONNECT_TIMEOUT_MS);
+
+      const clearConnectTimeout = () => {
+        if (!connectTimeoutHandle) {
+          return;
+        }
+
+        clearTimeout(connectTimeoutHandle);
+        connectTimeoutHandle = null;
+      };
 
       const safeReject = (error: RepositoryError) => {
         if (settled) {
@@ -682,6 +709,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         }
 
         settled = true;
+        clearConnectTimeout();
         reject(error);
       };
 
@@ -690,20 +718,38 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           currentPartyId: this.currentPartyId,
           generation,
         });
-        const options = await chatSocketClient.buildConnectionOptions({
-          endpointPath: buildSockJsWebSocketPath(),
-        });
 
-        client.brokerURL = options.url;
-        client.connectHeaders = options.connectHeaders;
-        client.heartbeatIncoming = options.heartbeatIncomingMs;
-        client.heartbeatOutgoing = options.heartbeatOutgoingMs;
-        client.reconnectDelay = options.reconnectDelayMs;
-        logStompLifecycle('before-connect-ready', {
-          currentPartyId: this.currentPartyId,
-          generation,
-          url: options.url,
-        });
+        try {
+          const options = await chatSocketClient.buildConnectionOptions({
+            endpointPath: buildSockJsWebSocketPath(),
+          });
+
+          client.brokerURL = options.url;
+          client.connectHeaders = options.connectHeaders;
+          client.heartbeatIncoming = options.heartbeatIncomingMs;
+          client.heartbeatOutgoing = options.heartbeatOutgoingMs;
+          client.reconnectDelay = options.reconnectDelayMs;
+          logStompLifecycle('before-connect-ready', {
+            currentPartyId: this.currentPartyId,
+            generation,
+            url: options.url,
+          });
+        } catch (error) {
+          const repositoryError = createStompRepositoryError(
+            '채팅 실시간 연결 준비에 실패했습니다.',
+            {
+              cause: error,
+            },
+          );
+
+          logStompLifecycle('before-connect-error', {
+            currentPartyId: this.currentPartyId,
+            generation,
+            message: repositoryError.message,
+          });
+          safeReject(repositoryError);
+          throw repositoryError;
+        }
       };
 
       client.onConnect = () => {
@@ -725,6 +771,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
         if (!settled) {
           settled = true;
+          clearConnectTimeout();
           resolve(client);
         }
       };
@@ -764,16 +811,32 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         safeReject(error);
       };
 
-      client.onWebSocketClose = () => {
+      client.onWebSocketClose = event => {
         if (!this.isCurrentStompClient(client, generation)) {
           return;
         }
 
         logStompLifecycle('websocket-close', {
+          code: event.code,
           currentPartyId: this.currentPartyId,
           generation,
+          reason: event.reason,
+          wasClean: event.wasClean,
         });
         this.clearStompSubscriptions();
+
+        if (!settled) {
+          safeReject(
+            createStompRepositoryError(
+              '채팅 실시간 연결이 닫혔습니다.',
+              {
+                closeCode: event.code,
+                closeReason: event.reason,
+                wasClean: event.wasClean,
+              },
+            ),
+          );
+        }
       };
 
       client.onWebSocketError = event => {
