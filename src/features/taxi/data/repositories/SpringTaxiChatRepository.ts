@@ -1,10 +1,3 @@
-import {
-  Client,
-  Versions,
-  type IMessage,
-  type StompSubscription,
-} from '@stomp/stompjs';
-
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
@@ -36,6 +29,12 @@ import {
   resolveTaxiChatRoomId,
 } from '../mappers/taxiChatMapper';
 import type {ITaxiChatRepository} from './ITaxiChatRepository';
+import {
+  MinimalStompClient,
+  createNativeStompSocket,
+  type StompFrame,
+  type StompSubscription,
+} from './minimalStompClient';
 
 interface PartyChatState {
   loadPromise: Promise<TaxiChatSourceData | null> | null;
@@ -54,201 +53,6 @@ interface PendingSpecialMessageRequest {
 const MESSAGES_PAGE_SIZE = 100;
 const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 const STOMP_CONNECT_TIMEOUT_MS = 10000;
-const STOMP_NATIVE_PROTOCOL = 'v12.stomp';
-
-type StompCompatibleSocket = {
-  binaryType?: WebSocket['binaryType'];
-  readonly readyState: number;
-  readonly url: string;
-  close: () => void;
-  send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
-  onclose: ((event?: unknown) => void) | null;
-  onerror: ((event?: unknown) => void) | null;
-  onmessage: ((event?: {data?: string | ArrayBuffer}) => void) | null;
-  onopen: ((event?: unknown) => void) | null;
-};
-
-class ReactNativeStompSocketAdapter implements StompCompatibleSocket {
-  private queuedOpenEvent: unknown | null = null;
-
-  private openDelivered = false;
-
-  private oncloseHandler: ((event?: unknown) => void) | null = null;
-
-  private onerrorHandler: ((event?: unknown) => void) | null = null;
-
-  private onmessageHandler:
-    | ((event?: {data?: string | ArrayBuffer}) => void)
-    | null = null;
-
-  private onopenHandler: ((event?: unknown) => void) | null = null;
-
-  public get onclose() {
-    return this.oncloseHandler;
-  }
-
-  public set onclose(value: ((event?: unknown) => void) | null) {
-    this.oncloseHandler = value;
-    logStompLifecycle('adapter-onclose-set', {
-      hasHandler: Boolean(value),
-    });
-  }
-
-  public get onerror() {
-    return this.onerrorHandler;
-  }
-
-  public set onerror(value: ((event?: unknown) => void) | null) {
-    this.onerrorHandler = value;
-    logStompLifecycle('adapter-onerror-set', {
-      hasHandler: Boolean(value),
-    });
-  }
-
-  public get onmessage() {
-    return this.onmessageHandler;
-  }
-
-  public set onmessage(
-    value: ((event?: {data?: string | ArrayBuffer}) => void) | null,
-  ) {
-    this.onmessageHandler = value;
-    logStompLifecycle('adapter-onmessage-set', {
-      hasHandler: Boolean(value),
-    });
-  }
-
-  public get onopen() {
-    return this.onopenHandler;
-  }
-
-  public set onopen(value: ((event?: unknown) => void) | null) {
-    this.onopenHandler = value;
-    logStompLifecycle('adapter-onopen-set', {
-      hasHandler: Boolean(value),
-      hasQueuedOpenEvent: this.queuedOpenEvent !== null,
-      openDelivered: this.openDelivered,
-      readyState: this.socket.readyState,
-    });
-
-    if (value && this.queuedOpenEvent && !this.openDelivered) {
-      const queuedEvent = this.queuedOpenEvent;
-      this.queuedOpenEvent = null;
-      this.dispatchOpen(queuedEvent);
-      return;
-    }
-
-    if (
-      value &&
-      this.socket.readyState === WebSocket.OPEN &&
-      !this.openDelivered
-    ) {
-      this.dispatchOpen({
-        type: 'open',
-        source: 'ready-state-fallback',
-      });
-    }
-  }
-
-  public get readyState() {
-    return this.socket.readyState;
-  }
-
-  public get url() {
-    return this.socket.url;
-  }
-
-  public get binaryType() {
-    return this.socket.binaryType;
-  }
-
-  public set binaryType(value: WebSocket['binaryType']) {
-    if (!value) {
-      return;
-    }
-
-    this.socket.binaryType = value;
-  }
-
-  constructor(private readonly socket: WebSocket) {
-    logStompLifecycle('adapter-created', {
-      readyState: socket.readyState,
-      url: socket.url,
-    });
-
-    const eventSocket = socket as WebSocket & {
-      addEventListener: (type: string, listener: (event: any) => void) => void;
-    };
-
-    eventSocket.addEventListener('open', (event: any) => {
-      logStompLifecycle('adapter-open-received', {
-        hasOnopenHandler: Boolean(this.onopenHandler),
-        openDelivered: this.openDelivered,
-        readyState: this.socket.readyState,
-      });
-
-      if (!this.onopenHandler) {
-        this.queuedOpenEvent = event;
-        logStompLifecycle('adapter-open-queued', {
-          readyState: this.socket.readyState,
-        });
-        setTimeout(() => {
-          if (this.queuedOpenEvent === event && this.onopenHandler) {
-            const delayedEvent = this.queuedOpenEvent;
-            this.queuedOpenEvent = null;
-            this.dispatchOpen(delayedEvent);
-          }
-        }, 0);
-        return;
-      }
-
-      this.dispatchOpen(event);
-    });
-    eventSocket.addEventListener('message', (event: any) => {
-      logStompLifecycle('adapter-message-received', {
-        dataType: typeof event.data,
-      });
-      this.onmessageHandler?.({
-        data: event.data as string | ArrayBuffer,
-      });
-    });
-    eventSocket.addEventListener('error', (event: any) => {
-      logStompLifecycle('adapter-error-received', {
-        readyState: this.socket.readyState,
-      });
-      this.onerrorHandler?.(event);
-    });
-    eventSocket.addEventListener('close', (event: any) => {
-      logStompLifecycle('adapter-close-received', {
-        code: event.code,
-        reason: event.reason ?? null,
-        readyState: this.socket.readyState,
-      });
-      this.oncloseHandler?.(event);
-    });
-  }
-
-  public close() {
-    this.socket.close();
-  }
-
-  public send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
-    this.socket.send(data as string | ArrayBuffer | Blob);
-  }
-
-  private dispatchOpen(event: unknown) {
-    if (this.openDelivered) {
-      return;
-    }
-
-    this.openDelivered = true;
-    logStompLifecycle('adapter-open-dispatched', {
-      hasOnopenHandler: Boolean(this.onopenHandler),
-      readyState: this.socket.readyState,
-    });
-    this.onopenHandler?.(event);
-  }
-}
 
 const buildNativeStompWebSocketPath = (endpointPath = '/ws') => {
   const normalizedPath = endpointPath.replace(/\/$/, '');
@@ -367,9 +171,9 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
   private errorSubscription: StompSubscription | null = null;
 
-  private stompClient: Client | null = null;
+  private stompClient: MinimalStompClient | null = null;
 
-  private stompConnectionPromise: Promise<Client> | null = null;
+  private stompConnectionPromise: Promise<MinimalStompClient> | null = null;
 
   private stompClientGeneration = 0;
 
@@ -857,7 +661,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     });
   }
 
-  private async ensureStompClient(): Promise<Client> {
+  private async ensureStompClient(): Promise<MinimalStompClient> {
     if (this.stompClient?.connected) {
       logStompLifecycle('connect-reuse-connected', {
         currentPartyId: this.currentPartyId,
@@ -873,7 +677,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     }
 
     if (!this.stompClient) {
-      this.stompClient = new Client();
+      this.stompClient = new MinimalStompClient();
     }
 
     const client = this.stompClient;
@@ -883,7 +687,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       generation,
     });
 
-    this.stompConnectionPromise = new Promise<Client>((resolve, reject) => {
+    this.stompConnectionPromise = new Promise<MinimalStompClient>((resolve, reject) => {
       let settled = false;
       let connectTimeoutHandle: ReturnType<typeof setTimeout> | null =
         setTimeout(() => {
@@ -941,17 +745,12 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             endpointPath: buildNativeStompWebSocketPath(),
           });
 
-          client.brokerURL = undefined;
           client.connectHeaders = options.connectHeaders;
-          client.stompVersions = new Versions(['1.2']);
           client.webSocketFactory = () =>
-            new ReactNativeStompSocketAdapter(
-              new WebSocket(options.url, STOMP_NATIVE_PROTOCOL),
-            );
+            createNativeStompSocket(options.url);
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
-          client.appendMissingNULLonIncoming = true;
           logStompLifecycle('before-connect-ready', {
             hasAuthorizationHeader:
               typeof options.connectHeaders.Authorization === 'string' &&
@@ -959,7 +758,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             currentPartyId: this.currentPartyId,
             generation,
             headerKeys: Object.keys(options.connectHeaders),
-            protocol: STOMP_NATIVE_PROTOCOL,
+            protocol: 'v12.stomp',
             url: options.url,
           });
         } catch (error) {
@@ -1119,7 +918,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     return nextState;
   }
 
-  private async handleIncomingMessage(partyId: string, frame: IMessage) {
+  private async handleIncomingMessage(partyId: string, frame: StompFrame) {
     const message = this.parseFrameBody<ChatMessageResponseDto>(frame);
 
     if (!message) {
@@ -1240,7 +1039,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     );
   }
 
-  private isCurrentStompClient(client: Client, generation: number) {
+  private isCurrentStompClient(client: MinimalStompClient, generation: number) {
     return this.stompClient === client && this.stompClientGeneration === generation;
   }
 
