@@ -8,6 +8,10 @@ import {
 } from '@/shared/lib/errors';
 import {
   chatSocketClient,
+  createNativeStompSocket,
+  MinimalStompClient,
+  type StompFrame,
+  type StompSubscription,
 } from '@/shared/realtime';
 
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
@@ -29,12 +33,6 @@ import {
   resolveTaxiChatRoomId,
 } from '../mappers/taxiChatMapper';
 import type {ITaxiChatRepository} from './ITaxiChatRepository';
-import {
-  MinimalStompClient,
-  createNativeStompSocket,
-  type StompFrame,
-  type StompSubscription,
-} from './minimalStompClient';
 
 interface PartyChatState {
   loadPromise: Promise<TaxiChatSourceData | null> | null;

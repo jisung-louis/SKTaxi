@@ -301,7 +301,7 @@ export class MinimalStompClient {
   private async openSocket() {
     try {
       await this.beforeConnect();
-    } catch (error) {
+    } catch {
       this.active = false;
       return;
     }

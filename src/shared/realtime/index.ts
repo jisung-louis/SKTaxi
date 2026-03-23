@@ -23,3 +23,12 @@ export type {
   ChatSocketConnectionRequest,
   PreparedChatSocketConnection,
 } from './chatSocketClient';
+export {
+  createNativeStompSocket,
+  MinimalStompClient,
+} from './minimalStompClient';
+export type {
+  StompFrame,
+  StompSocket,
+  StompSubscription,
+} from './minimalStompClient';
