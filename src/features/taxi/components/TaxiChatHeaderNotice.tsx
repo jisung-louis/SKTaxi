@@ -101,105 +101,102 @@ export const TaxiChatHeaderNotice = ({
 
   if (settlementNotice) {
     return (
-      <>
-        <View style={styles.settlementWrap}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            activeOpacity={0.88}
-            onPress={() => {
-              setExpanded(current => !current);
-            }}
-            style={styles.settlementHeader}>
-            <View style={styles.settlementHeaderMain}>
-              <View style={styles.settlementIconWrap}>
-                <Icon color={COLORS.accent.purple} name="wallet-outline" size={14} />
-              </View>
+      <View style={styles.settlementWrap}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.88}
+          onPress={() => {
+            setExpanded(current => !current);
+          }}
+          style={styles.settlementHeader}>
+          <View style={styles.settlementHeaderMain}>
+            <View style={styles.settlementIconWrap}>
+              <Icon color={COLORS.accent.purple} name="wallet-outline" size={14} />
+            </View>
 
-              <View style={styles.settlementCopy}>
-                <View style={styles.settlementTitleRow}>
-                  <Text style={styles.settlementTitle}>정산 현황</Text>
-                  <View
+            <View style={styles.settlementCopy}>
+              <View style={styles.settlementTitleRow}>
+                <Text style={styles.settlementTitle}>정산 현황</Text>
+                <View
+                  style={[
+                    styles.settlementStatusPill,
+                    settlementNotice.completedCount === settlementNotice.totalCount &&
+                    settlementNotice.totalCount > 0
+                      ? styles.settlementStatusPillDone
+                      : styles.settlementStatusPillPending,
+                  ]}>
+                  <Text
                     style={[
-                      styles.settlementStatusPill,
+                      styles.settlementStatusLabel,
                       settlementNotice.completedCount === settlementNotice.totalCount &&
                       settlementNotice.totalCount > 0
-                        ? styles.settlementStatusPillDone
-                        : styles.settlementStatusPillPending,
+                        ? styles.settlementStatusLabelDone
+                        : styles.settlementStatusLabelPending,
                     ]}>
-                    <Text
-                      style={[
-                        styles.settlementStatusLabel,
-                        settlementNotice.completedCount === settlementNotice.totalCount &&
-                        settlementNotice.totalCount > 0
-                          ? styles.settlementStatusLabelDone
-                          : styles.settlementStatusLabelPending,
-                      ]}>
-                      {`${settlementNotice.completedCount}/${settlementNotice.totalCount}`}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text numberOfLines={1} style={styles.settlementSubtitle}>
-                  {buildSettlementSubtitle(settlementNotice)}
-                </Text>
-              </View>
-            </View>
-
-            <Animated.View style={chevronAnimatedStyle}>
-              <Icon
-                color={COLORS.text.muted}
-                name="chevron-down"
-                size={18}
-              />
-            </Animated.View>
-          </TouchableOpacity>
-
-          <Animated.View
-            pointerEvents={expanded ? 'auto' : 'none'}
-            style={[styles.settlementExpandedAnimated, expandedAnimatedStyle]}>
-            <View onLayout={handleExpandedCardLayout} style={styles.settlementExpandedWrap}>
-              <View style={styles.settlementExpandedCard}>
-                <View style={styles.settlementTotalRow}>
-                  <Text style={styles.settlementTotalLabel}>총 택시비</Text>
-                  <Text style={styles.settlementTotalValue}>
-                    {formatCurrency(settlementNotice.taxiFare)}
+                    {`${settlementNotice.completedCount}/${settlementNotice.totalCount}`}
                   </Text>
                 </View>
-
-                {settlementNotice.members.length > 0 ? (
-                  <View style={styles.settlementDivider} />
-                ) : null}
-
-                {settlementNotice.members.map(member => (
-                  <View key={member.id} style={styles.settlementMemberRow}>
-                    <View style={styles.settlementMemberLeft}>
-                      <ToneBadge
-                        label={member.settled ? '정산 완료' : '정산 중'}
-                        style={styles.settlementMemberBadge}
-                        tone={member.settled ? 'green' : 'orange'}
-                      />
-
-                      <View style={styles.settlementMemberLabelRow}>
-                        <Text style={styles.settlementMemberLabel}>{member.label}</Text>
-                        {member.isCurrentUser ? (
-                          <Text style={styles.settlementMemberCurrentUser}>
-                            {'(나)'}
-                          </Text>
-                        ) : null}
-                      </View>
-                    </View>
-
-                    <Text style={styles.settlementMemberAmount}>
-                      {formatCurrency(settlementNotice.perPersonAmount)}
-                    </Text>
-                  </View>
-                ))}
               </View>
+
+              <Text numberOfLines={1} style={styles.settlementSubtitle}>
+                {buildSettlementSubtitle(settlementNotice)}
+              </Text>
             </View>
+          </View>
+
+          <Animated.View style={chevronAnimatedStyle}>
+            <Icon
+              color={COLORS.text.muted}
+              name="chevron-down"
+              size={18}
+            />
           </Animated.View>
-        </View>
-        <Animated.View style={styles.emptySpacer} />
-      </>
+        </TouchableOpacity>
+
+        <Animated.View
+          pointerEvents={expanded ? 'auto' : 'none'}
+          style={[styles.settlementExpandedAnimated, expandedAnimatedStyle]}>
+          <View onLayout={handleExpandedCardLayout} style={styles.settlementExpandedWrap}>
+            <View style={styles.settlementExpandedCard}>
+              <View style={styles.settlementTotalRow}>
+                <Text style={styles.settlementTotalLabel}>총 택시비</Text>
+                <Text style={styles.settlementTotalValue}>
+                  {formatCurrency(settlementNotice.taxiFare)}
+                </Text>
+              </View>
+
+              {settlementNotice.members.length > 0 ? (
+                <View style={styles.settlementDivider} />
+              ) : null}
+
+              {settlementNotice.members.map(member => (
+                <View key={member.id} style={styles.settlementMemberRow}>
+                  <View style={styles.settlementMemberLeft}>
+                    <ToneBadge
+                      label={member.settled ? '정산 완료' : '정산 중'}
+                      style={styles.settlementMemberBadge}
+                      tone={member.settled ? 'green' : 'orange'}
+                    />
+
+                    <View style={styles.settlementMemberLabelRow}>
+                      <Text style={styles.settlementMemberLabel}>{member.label}</Text>
+                      {member.isCurrentUser ? (
+                        <Text style={styles.settlementMemberCurrentUser}>
+                          {'(나)'}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  <Text style={styles.settlementMemberAmount}>
+                    {formatCurrency(settlementNotice.perPersonAmount)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
+      </View>
     );
   }
 
@@ -351,11 +348,11 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   settlementWrap: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+    // position: 'absolute',
+    // top: 0,
+    // left: 0,
+    // right: 0,
+    // zIndex: 10,
     backgroundColor: COLORS.background.surface,
     borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
