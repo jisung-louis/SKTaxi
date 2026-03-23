@@ -750,10 +750,40 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           client.brokerURL = undefined;
           client.connectHeaders = options.connectHeaders;
           client.stompVersions = new Versions(['1.2']);
-          client.webSocketFactory = () =>
-            new WebSocket(options.url, STOMP_NATIVE_PROTOCOL, {
+          client.webSocketFactory = () => {
+            const socket = new WebSocket(options.url, STOMP_NATIVE_PROTOCOL, {
               headers: options.connectHeaders,
             });
+
+            if (__DEV__ && typeof socket.addEventListener === 'function') {
+              socket.addEventListener('open', () => {
+                logStompLifecycle('raw-websocket-open', {
+                  currentPartyId: this.currentPartyId,
+                  generation,
+                  url: options.url,
+                });
+              });
+              socket.addEventListener('error', event => {
+                logStompLifecycle('raw-websocket-error', {
+                  currentPartyId: this.currentPartyId,
+                  generation,
+                  errorEventType: event.type,
+                  url: options.url,
+                });
+              });
+              socket.addEventListener('close', event => {
+                logStompLifecycle('raw-websocket-close', {
+                  code: event.code,
+                  currentPartyId: this.currentPartyId,
+                  generation,
+                  reason: event.reason,
+                  url: options.url,
+                });
+              });
+            }
+
+            return socket;
+          };
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
