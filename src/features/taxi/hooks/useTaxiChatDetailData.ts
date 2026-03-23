@@ -18,34 +18,6 @@ const wait = (timeoutMs: number) =>
     setTimeout(resolve, timeoutMs);
   });
 
-const logAccountHookEvent = (
-  event: string,
-  details?: Record<string, unknown>,
-) => {
-  if (!__DEV__) {
-    return;
-  }
-
-  console.log('[taxi-chat][account-hook]', {
-    event,
-    ...details,
-  });
-};
-
-const logMessageHookEvent = (
-  event: string,
-  details?: Record<string, unknown>,
-) => {
-  if (!__DEV__) {
-    return;
-  }
-
-  console.log('[taxi-chat][message-hook]', {
-    event,
-    ...details,
-  });
-};
-
 const buildSettlementDraft = (
   partyChat: TaxiChatSourceData,
   payload: {
@@ -399,24 +371,7 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
         return;
       }
 
-      logMessageHookEvent('send-start', {
-        messageLength: messageText.trim().length,
-        partyId,
-      });
-
-      try {
-        await taxiChatRepository.sendMessage(partyId, messageText);
-        logMessageHookEvent('send-finished', {
-          partyId,
-        });
-      } catch (sendError) {
-        logMessageHookEvent('send-error', {
-          message:
-            sendError instanceof Error ? sendError.message : String(sendError),
-          partyId,
-        });
-        throw sendError;
-      }
+      await taxiChatRepository.sendMessage(partyId, messageText);
     },
     [partyId, taxiChatRepository],
   );
@@ -426,21 +381,8 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       if (!partyId) {
         return;
       }
-
-      logAccountHookEvent('send-start', {
-        bankName: payload.bankName,
-        hideName: payload.hideName,
-        partyId,
-        remember: payload.remember,
-      });
       await taxiChatRepository.sendAccountMessage(partyId, payload);
-      logAccountHookEvent('send-finished', {
-        partyId,
-      });
       await refreshPartySnapshot();
-      logAccountHookEvent('refresh-finished', {
-        partyId,
-      });
     },
     [partyId, refreshPartySnapshot, taxiChatRepository],
   );

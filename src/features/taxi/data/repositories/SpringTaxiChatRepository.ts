@@ -115,48 +115,6 @@ const createStompRepositoryError = (
     },
   );
 
-const logAccountMessageLifecycle = (
-  event: string,
-  details?: Record<string, unknown>,
-) => {
-  if (!__DEV__) {
-    return;
-  }
-
-  console.log('[taxi-chat][account-message]', {
-    event,
-    ...details,
-  });
-};
-
-const logStompLifecycle = (
-  event: string,
-  details?: Record<string, unknown>,
-) => {
-  if (!__DEV__) {
-    return;
-  }
-
-  console.log('[taxi-chat][stomp]', {
-    event,
-    ...details,
-  });
-};
-
-const logTextMessageLifecycle = (
-  event: string,
-  details?: Record<string, unknown>,
-) => {
-  if (!__DEV__) {
-    return;
-  }
-
-  console.log('[taxi-chat][text-message]', {
-    event,
-    ...details,
-  });
-};
-
 export class SpringTaxiChatRepository implements ITaxiChatRepository {
   private readonly pendingSpecialMessageRequests = new Map<
     string,
@@ -219,10 +177,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       return state?.source ? clonePartySource(state.source) : null;
     }
 
-    logTextMessageLifecycle('send-start', {
-      messageLength: trimmedMessage.length,
-      partyId,
-    });
     const client = await this.ensureStompClient();
 
     client.publish({
@@ -231,10 +185,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         type: 'TEXT',
       } satisfies SendChatMessageRequestDto),
       destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
-    });
-    logTextMessageLifecycle('publish', {
-      messageLength: trimmedMessage.length,
-      partyId,
     });
 
     const state = this.partyStates.get(partyId);
@@ -397,10 +347,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
   }) {
     const timeoutId = setTimeout(() => {
       this.resolveAccountMessageFromSnapshot(params).catch(error => {
-        logAccountMessageLifecycle('snapshot-fallback-error', {
-          error,
-          partyId: params.partyId,
-        });
+        console.warn('계좌 메시지 스냅샷 보정에 실패했습니다.', error);
       });
     }, 1500);
 
@@ -428,11 +375,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       return;
     }
 
-    logAccountMessageLifecycle('snapshot-fallback-start', {
-      partyId,
-      previousLatestAccountMessageId,
-    });
-
     const source = await this.loadPartyChat(partyId, true);
     const latestAccountMessage = this.getLatestAccountMessage(source);
 
@@ -441,17 +383,8 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       latestAccountMessage.id === previousLatestAccountMessageId ||
       !this.matchesAccountPayload(latestAccountMessage, payload)
     ) {
-      logAccountMessageLifecycle('snapshot-fallback-miss', {
-        latestAccountMessageId: latestAccountMessage?.id,
-        partyId,
-      });
       return;
     }
-
-    logAccountMessageLifecycle('snapshot-fallback-hit', {
-      latestAccountMessageId: latestAccountMessage.id,
-      partyId,
-    });
     this.clearPendingSpecialMessageRequest(key);
   }
 
@@ -470,11 +403,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       clearTimeout(pendingRequest.snapshotFallbackTimeoutId);
     }
     this.pendingSpecialMessageRequests.delete(key);
-
-    logAccountMessageLifecycle('pending-clear', {
-      error: error?.message,
-      key,
-    });
 
     if (error) {
       pendingRequest.reject(error);
@@ -504,10 +432,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     const responsePromise = new Promise<TaxiChatSourceData | null>(
       (resolve, reject) => {
         const timeoutId = setTimeout(() => {
-          logAccountMessageLifecycle('timeout', {
-            chatMessageType: payload.type,
-            partyId,
-          });
           this.clearPendingSpecialMessageRequest(
             key,
             createStompRepositoryError(
@@ -528,11 +452,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         });
       },
     );
-
-    logAccountMessageLifecycle('publish', {
-      partyId,
-      previousLatestAccountMessageId,
-    });
     client.publish({
       body: JSON.stringify(payload),
       destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
@@ -625,10 +544,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           apiErrorCode: payload?.errorCode,
         });
 
-        logAccountMessageLifecycle('error-queue', {
-          apiErrorCode: payload?.errorCode,
-          message,
-        });
         this.pendingSpecialMessageRequests.forEach((_, key) => {
           this.clearPendingSpecialMessageRequest(key, error);
         });
@@ -655,24 +570,14 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         this.handleIncomingMessage(partyId, frame).catch(() => undefined);
       },
     );
-    logStompLifecycle('room-subscribe', {
-      partyId,
-      topic: `/topic/chat/${resolveTaxiChatRoomId(partyId)}`,
-    });
   }
 
   private async ensureStompClient(): Promise<MinimalStompClient> {
     if (this.stompClient?.connected) {
-      logStompLifecycle('connect-reuse-connected', {
-        currentPartyId: this.currentPartyId,
-      });
       return this.stompClient;
     }
 
     if (this.stompConnectionPromise) {
-      logStompLifecycle('connect-reuse-pending', {
-        currentPartyId: this.currentPartyId,
-      });
       return this.stompConnectionPromise;
     }
 
@@ -682,10 +587,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     const client = this.stompClient;
     const generation = ++this.stompClientGeneration;
-    logStompLifecycle('connect-start', {
-      currentPartyId: this.currentPartyId,
-      generation,
-    });
 
     this.stompConnectionPromise = new Promise<MinimalStompClient>((resolve, reject) => {
       let settled = false;
@@ -698,11 +599,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             },
           );
 
-          logStompLifecycle('connect-timeout', {
-            currentPartyId: this.currentPartyId,
-            generation,
-            timeoutMs: STOMP_CONNECT_TIMEOUT_MS,
-          });
           safeReject(error);
           this.deactivateStompClient().catch(() => undefined);
         }, STOMP_CONNECT_TIMEOUT_MS);
@@ -726,20 +622,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         reject(error);
       };
 
-      client.debug = message => {
-        logStompLifecycle('client-debug', {
-          currentPartyId: this.currentPartyId,
-          generation,
-          message,
-        });
-      };
-
       client.beforeConnect = async () => {
-        logStompLifecycle('before-connect-start', {
-          currentPartyId: this.currentPartyId,
-          generation,
-        });
-
         try {
           const options = await chatSocketClient.buildConnectionOptions({
             endpointPath: buildNativeStompWebSocketPath(),
@@ -751,16 +634,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
-          logStompLifecycle('before-connect-ready', {
-            hasAuthorizationHeader:
-              typeof options.connectHeaders.Authorization === 'string' &&
-              options.connectHeaders.Authorization.startsWith('Bearer '),
-            currentPartyId: this.currentPartyId,
-            generation,
-            headerKeys: Object.keys(options.connectHeaders),
-            protocol: 'v12.stomp',
-            url: options.url,
-          });
         } catch (error) {
           const repositoryError = createStompRepositoryError(
             '채팅 실시간 연결 준비에 실패했습니다.',
@@ -768,12 +641,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
               cause: error,
             },
           );
-
-          logStompLifecycle('before-connect-error', {
-            currentPartyId: this.currentPartyId,
-            generation,
-            message: repositoryError.message,
-          });
           safeReject(repositoryError);
           throw repositoryError;
         }
@@ -783,11 +650,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         if (!this.isCurrentStompClient(client, generation)) {
           return;
         }
-
-        logStompLifecycle('connect-success', {
-          currentPartyId: this.currentPartyId,
-          generation,
-        });
 
         this.ensureErrorSubscription();
         this.partyStates.forEach((state, partyId) => {
@@ -807,11 +669,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         if (!this.isCurrentStompClient(client, generation)) {
           return;
         }
-
-        logStompLifecycle('disconnect', {
-          currentPartyId: this.currentPartyId,
-          generation,
-        });
         this.clearStompSubscriptions();
       };
 
@@ -828,12 +685,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             frameBody: frame.body,
           },
         );
-
-        logStompLifecycle('stomp-error', {
-          currentPartyId: this.currentPartyId,
-          generation,
-          message: error.message,
-        });
         this.notifyPartySubscribers(error);
         safeReject(error);
       };
@@ -842,14 +693,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         if (!this.isCurrentStompClient(client, generation)) {
           return;
         }
-
-        logStompLifecycle('websocket-close', {
-          code: event.code,
-          currentPartyId: this.currentPartyId,
-          generation,
-          reason: event.reason,
-          wasClean: event.wasClean,
-        });
         this.clearStompSubscriptions();
 
         if (!settled) {
@@ -877,19 +720,8 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             event,
           },
         );
-
-        logStompLifecycle('websocket-error', {
-          currentPartyId: this.currentPartyId,
-          generation,
-          message: error.message,
-        });
         safeReject(error);
       };
-
-      logStompLifecycle('activate', {
-        currentPartyId: this.currentPartyId,
-        generation,
-      });
       client.activate();
     }).finally(() => {
       if (this.isCurrentStompClient(client, generation)) {
@@ -930,13 +762,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     const mappedMessage = mapTaxiChatMessageDto(message);
     const specialMessageKey = this.buildSpecialMessageKey(partyId);
 
-    if (mappedMessage.type === 'account') {
-      logAccountMessageLifecycle('topic-received', {
-        messageId: message.id,
-        partyId,
-      });
-    }
-
     if (!state.source) {
       await this.loadPartyChat(partyId, true);
       if (mappedMessage.type === 'account') {
@@ -949,10 +774,6 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     if (state.source.messages.some(item => item.id === message.id)) {
       if (mappedMessage.type === 'account') {
-        logAccountMessageLifecycle('topic-duplicate', {
-          messageId: message.id,
-          partyId,
-        });
         this.clearPendingSpecialMessageRequest(specialMessageKey);
       }
       return;
