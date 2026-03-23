@@ -1,6 +1,6 @@
 # Spring 백엔드 API 명세
 
-> 최종 수정일: 2026-03-18
+> 최종 수정일: 2026-03-23
 > 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
@@ -27,7 +27,7 @@
 ### 1.1 Base URL
 
 ```
-Production: https://api.skuri.kr/v1
+Production: (도메인 미정)
 Development: http://localhost:8080/v1
 ```
 
@@ -35,12 +35,6 @@ Development: http://localhost:8080/v1
 
 - 런타임 API 계약의 최종 기준은 `/v3/api-docs`입니다.
 - 본 문서(`docs/api-specification.md`)는 사람이 읽는 설명 문서이며, 코드 변경 PR에서 `/v3/api-docs`와 함께 동기화합니다.
-- React Native 프론트 구현 시 계약 확인 우선순위는 아래와 같습니다.
-  1. 로컬 백엔드가 떠 있으면 `http://localhost:8080/v3/api-docs`
-  2. 백엔드 구현 코드 (`/Users/jisung/skuri-backend`)
-  3. 본 문서 (`docs/spring-migration/api-specification.md`)
-- 위 3개가 충돌하면 우선순위는 `/v3/api-docs` > 백엔드 코드 > 본 문서입니다.
-- 프론트 에이전트는 실제 API 호출 구현 전에 반드시 위 3개 중 하나 이상을 기준으로 endpoint, request/response DTO, enum, 인증 요구 여부를 확인합니다.
 
 ### 1.2 인증
 
@@ -753,7 +747,16 @@ FCM 토큰 삭제
     "isLeader": true,
     "settlement": {
       "status": "PENDING",
+      "taxiFare": 14000,
+      "splitMemberCount": 4,
       "perPersonAmount": 3500,
+      "settlementTargetMemberIds": ["uuid", "uuid2", "uuid3"],
+      "account": {
+        "bankName": "카카오뱅크",
+        "accountNumber": "3333-01-1234567",
+        "accountHolder": "홍*동",
+        "hideName": true
+      },
       "memberSettlements": [
         {
           "memberId": "uuid",
@@ -853,6 +856,8 @@ FCM 토큰 삭제
 #### PATCH /v1/parties/{partyId}/close
 파티 모집 마감 (리더만)
 
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"모집이 마감되었어요."`가 추가됩니다.
+
 **Response:**
 ```json
 {
@@ -866,6 +871,8 @@ FCM 토큰 삭제
 
 #### PATCH /v1/parties/{partyId}/reopen
 파티 모집 재개 (리더만)
+
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"모집이 재개되었어요."`가 추가됩니다.
 
 **Response (200 OK):**
 ```json
@@ -882,14 +889,25 @@ FCM 토큰 삭제
 도착 및 정산 시작 (리더만)
 
 - OPEN 또는 CLOSED 상태에서만 호출 가능
-- 리더를 제외한 멤버가 1명 이상 있어야 함 (정산 대상이 없으면 호출 불가)
-- `perPersonAmount = taxiFare / 정산대상인원` 정수 나눗셈(버림)으로 계산
+- 요청 본문에는 `taxiFare`, `settlementTargetMemberIds`, `account` snapshot이 모두 포함되어야 함
+- `settlementTargetMemberIds`에는 현재 파티의 non-leader 멤버만 포함할 수 있음
+- 리더를 제외한 멤버가 1명 이상 선택되어야 함 (정산 대상이 없으면 호출 불가)
+- `splitMemberCount = settlementTargetMemberIds.size + 1` 이며 리더도 1/N 분모에 포함
+- `perPersonAmount = taxiFare / splitMemberCount` 정수 나눗셈(버림)으로 계산
 - 정수 나눗셈으로 생기는 잔여 1원 단위 금액은 서버에서 자동 분배하지 않음
+- 성공 시 파티 상태/정산 snapshot 저장과 함께 파티 채팅방에 서버 생성 `ARRIVED` 메시지가 남음
 
 **Request:**
 ```json
 {
-  "taxiFare": 14000
+  "taxiFare": 14000,
+  "settlementTargetMemberIds": ["member-2", "member-3"],
+  "account": {
+    "bankName": "카카오뱅크",
+    "accountNumber": "3333-01-1234567",
+    "accountHolder": "홍길동",
+    "hideName": true
+  }
 }
 ```
 
@@ -902,7 +920,16 @@ FCM 토큰 삭제
     "status": "ARRIVED",
     "settlement": {
       "status": "PENDING",
-      "perPersonAmount": 3500,
+      "taxiFare": 14000,
+      "splitMemberCount": 3,
+      "perPersonAmount": 4666,
+      "settlementTargetMemberIds": ["member-2", "member-3"],
+      "account": {
+        "bankName": "카카오뱅크",
+        "accountNumber": "3333-01-1234567",
+        "accountHolder": "홍*동",
+        "hideName": true
+      },
       "memberSettlements": [ ... ]
     }
   }
@@ -915,6 +942,7 @@ FCM 토큰 삭제
 |----------|------|------|
 | `PARTY_NOT_ARRIVABLE` | 409 | OPEN/CLOSED 상태가 아닌 파티 |
 | `NO_MEMBERS_TO_SETTLE` | 409 | 리더 외 멤버가 없어 정산 불가 |
+| `VALIDATION_ERROR` | 422 | `settlementTargetMemberIds`가 현재 non-leader 멤버 목록과 다르거나 `account` snapshot 검증 실패 |
 
 #### PATCH /v1/parties/{partyId}/settlement/members/{memberId}/confirm
 멤버 정산 완료 표시 (리더만)
@@ -992,6 +1020,7 @@ FCM 토큰 삭제
 - 리더는 나가기 불가 (취소 또는 위임 불가 정책)
 - ARRIVED 상태에서는 나가기 불가 (정산 진행/완료 여부와 무관)
 - 리더가 탈퇴(회원탈퇴)하면 파티 강제 종료 (`endReason: WITHDRAWED`)
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"홍길동님이 파티에서 나갔어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"멤버가 파티에서 나갔어요."`를 사용합니다.
 
 **Response:**
 ```json
@@ -1148,19 +1177,38 @@ FCM 토큰 삭제
 
 ## 4. Chat API
 
-### 4.1 채팅방 조회
+### 4.1 채팅방 조회 / 공개방 멤버십
+
+#### 공개방 기본 정책
+
+- 공식 공개방 seed:
+  - 학교 전체방 1개: `성결대학교 전체 채팅방`
+  - 마인크래프트방 1개: `마인크래프트 채팅방`
+  - 학과방: `{학과명} 채팅방`
+- 노출 규칙:
+  - `UNIVERSITY`, `GAME`, `CUSTOM` 공개방은 모든 사용자에게 보입니다.
+  - `DEPARTMENT` 공개방은 본인 `department`와 일치하는 방만 보이고, 다른 학과 방은 목록/상세에서 숨깁니다.
+  - `PARTY`는 공개방이 아니며 참여 중인 멤버에게만 보입니다.
+- 미참여 공개방 정책:
+  - 목록/상세에는 보입니다.
+  - `description`, `lastMessage`, `lastMessageAt`, `memberCount`는 보입니다.
+  - `joined=false`, `unreadCount=0`, `isMuted=false`로 내려갑니다.
+  - `GET /v1/chat-rooms/{id}/messages`는 `NOT_CHAT_ROOM_MEMBER`를 반환합니다.
+- 정렬 정책:
+  - 서버가 최종 UI 정렬을 강제하지는 않습니다.
+  - 프론트는 `type`, `joined`, `lastMessageAt` 메타데이터로 `학교 전체방 → 학과방 → 마인크래프트방 → joined custom → not joined custom` 정렬을 구성할 수 있습니다.
 
 #### GET /v1/chat-rooms
 접근 가능한 채팅방 목록
 
-- 기본 정책: `공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`만 반환합니다.
+- 기본 정책: `보이는 공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`을 반환합니다.
 
 **Query Parameters:**
 
 | 파라미터 | 타입 | 설명 |
 |---------|------|------|
 | `type` | string | 채팅방 타입 (UNIVERSITY, DEPARTMENT, GAME, CUSTOM, PARTY) |
-| `joined` | boolean | 참여 중인 채팅방만 |
+| `joined` | boolean | `true`면 참여 중인 채팅방만 |
 
 **Response:**
 ```json
@@ -1168,49 +1216,141 @@ FCM 토큰 삭제
   "success": true,
   "data": [
     {
-      "id": "room_id",
-      "name": "성결대 전체 채팅방",
+      "id": "public:university",
       "type": "UNIVERSITY",
+      "name": "성결대학교 전체 채팅방",
+      "description": "성결대학교 전체 채팅방입니다.",
+      "isPublic": true,
       "memberCount": 150,
+      "joined": false,
+      "unreadCount": 0,
       "lastMessage": {
         "type": "TEXT",
         "text": "안녕하세요!",
         "senderName": "홍길동",
         "createdAt": "2026-02-03T12:00:00Z"
       },
-      "unreadCount": 5,
-      "isJoined": true
+      "lastMessageAt": "2026-02-03T12:00:00Z",
+      "isMuted": false
+    },
+    {
+      "id": "room_uuid",
+      "type": "CUSTOM",
+      "name": "시험기간 밤샘 메이트",
+      "description": "기말고사 기간 같이 공부할 사람들 모여요.",
+      "isPublic": true,
+      "memberCount": 24,
+      "joined": true,
+      "unreadCount": 3,
+      "lastMessage": {
+        "type": "TEXT",
+        "text": "중앙도서관 4층 자리 남아요.",
+        "senderName": "김성결",
+        "createdAt": "2026-02-03T23:10:00Z"
+      },
+      "lastMessageAt": "2026-02-03T23:10:00Z",
+      "isMuted": false
     }
   ]
+}
+```
+
+#### POST /v1/chat-rooms
+커스텀 공개 채팅방 생성
+
+**Request:**
+```json
+{
+  "name": "시험기간 밤샘 메이트",
+  "description": "기말고사 기간 같이 공부할 사람들 모여요."
+}
+```
+
+**정책:**
+- 생성 가능한 타입은 `CUSTOM` 고정입니다.
+- 생성된 채팅방은 `isPublic=true` 공개 탐색 방입니다.
+- 생성자는 즉시 `joined=true` 상태가 되며, `memberCount`는 1로 시작합니다.
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "room_uuid",
+    "type": "CUSTOM",
+    "name": "시험기간 밤샘 메이트",
+    "description": "기말고사 기간 같이 공부할 사람들 모여요.",
+    "isPublic": true,
+    "memberCount": 1,
+    "joined": true,
+    "unreadCount": 0,
+    "lastMessage": null,
+    "lastMessageAt": null,
+    "isMuted": false,
+    "lastReadAt": null
+  }
 }
 ```
 
 #### GET /v1/chat-rooms/{chatRoomId}
 채팅방 상세
 
+- 공개 채팅방은 `joined=false`여도 상세 조회할 수 있습니다.
 - 비공개 채팅방은 멤버만 조회 가능합니다.
+- 다른 학과 공개방은 `CHAT_ROOM_NOT_FOUND`로 숨깁니다.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "id": "room_id",
-    "name": "성결대 전체 채팅방",
+    "id": "public:university",
     "type": "UNIVERSITY",
-    "description": "성결대학교 학생들의 소통 공간",
-    "memberCount": 150,
+    "name": "성결대학교 전체 채팅방",
+    "description": "성결대학교 전체 채팅방입니다.",
     "isPublic": true,
-    "isJoined": true,
+    "memberCount": 150,
+    "joined": false,
+    "unreadCount": 0,
+    "lastMessage": {
+      "type": "TEXT",
+      "text": "안녕하세요!",
+      "senderName": "홍길동",
+      "createdAt": "2026-02-03T12:00:00Z"
+    },
+    "lastMessageAt": "2026-02-03T12:00:00Z",
     "isMuted": false,
-    "lastReadAt": "2026-02-03T11:00:00Z",
-    "unreadCount": 5
+    "lastReadAt": null
   }
 }
 ```
 
+#### POST /v1/chat-rooms/{chatRoomId}/join
+공개 채팅방 참여
+
+- 참여하기 버튼을 누르면 즉시 참여합니다.
+- 이미 참여 중이면 `409 ALREADY_CHAT_ROOM_MEMBER`
+- 정원이 있는 방에서 가득 찼으면 `409 CHAT_ROOM_FULL`
+- 참여 직후 `unreadCount`는 0으로 시작하도록 `lastReadAt`을 현재 방의 마지막 메시지 시각으로 초기화합니다.
+
+#### DELETE /v1/chat-rooms/{chatRoomId}/members/me
+공개 채팅방 나가기
+
+- 모든 공개 채팅방은 나갈 수 있습니다.
+- 나간 뒤에도 공개방 상세 조회는 계속 가능합니다.
+- 나간 뒤 `joined=false`, `unreadCount=0`, `isMuted=false` 상태가 됩니다.
+
+#### 학과 변경 정책
+
+- `PATCH /v1/members/me`에서 `department`가 바뀌면 기존 학과방 membership은 자동 제거합니다.
+- 새 학과방 membership은 자동 생성하지 않습니다.
+- 다음 refresh/재진입 시 기존 학과방은 목록에서 제거되고 접근할 수 없습니다.
+
 #### GET /v1/chat-rooms/{chatRoomId}/messages
 채팅 메시지 조회
+
+- `joined=true`인 경우에만 조회할 수 있습니다.
+- 공개 채팅방이라도 미참여 상태면 `403 NOT_CHAT_ROOM_MEMBER`
 
 **Query Parameters:**
 
@@ -1297,6 +1437,7 @@ FCM 토큰 삭제
 파티 채팅 비즈니스 규칙(멤버 검증, 계좌 정보 조회 등)은 서버 내부 STOMP 핸들러에서 처리합니다.
 - 파티 채팅 이력 조회는 `GET /v1/chat-rooms/{chatRoomId}/messages`를 사용합니다.
   - 예: `chatRoomId = party:{partyId}`
+- 서버 생성 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)도 동일한 조회/구독 경로로 전달됩니다.
 
 ### 4.5 WebSocket (STOMP)
 
@@ -1376,6 +1517,7 @@ Authorization:Bearer <firebase_id_token>
 ```
 
 > `eventType`은 `CHAT_ROOM_SNAPSHOT`, `CHAT_ROOM_UPSERT`, `CHAT_ROOM_REMOVED`를 사용합니다.
+> `/user/queue/chat-rooms`는 joined room summary 기준 채널이며, 미참여 공개방 탐색 목록은 `GET /v1/chat-rooms` refresh 기준으로 유지합니다.
 
 ---
 
@@ -1384,14 +1526,28 @@ Authorization:Bearer <firebase_id_token>
 - 파티 채팅도 동일 경로를 사용합니다.
   - 전송: `/app/chat/party:{partyId}`
   - 수신: `/topic/chat/party:{partyId}`
-- 특수 메시지 타입: `ACCOUNT`, `ARRIVED`, `END`
+- 클라이언트가 직접 보낼 수 있는 타입: `TEXT`, `IMAGE`, `ACCOUNT`
+- 서버가 생성하는 타입: `SYSTEM`, `ARRIVED`, `END`
+- 파티 채팅의 `SYSTEM`/`ARRIVED`/`END`는 도메인 이벤트(동승 승인, 멤버 나가기, 도착 처리, 취소/종료) 기준으로만 생성됨
+- `SYSTEM` 메시지 예: 동승 승인, 모집 마감, 모집 재개, 멤버 나가기
 
 **전송 포맷:**
 ```json
 { "type": "TEXT", "text": "곧 도착합니다!" }
-{ "type": "ACCOUNT" }
+{
+  "type": "ACCOUNT",
+  "account": {
+    "bankName": "카카오뱅크",
+    "accountNumber": "3333-01-1234567",
+    "accountHolder": "홍길동",
+    "hideName": true,
+    "remember": true
+  }
+}
 ```
-> `ACCOUNT` 타입: body 없이 서버가 발신자의 등록된 계좌 정보를 조회하여 메시지에 삽입
+> `ACCOUNT` 타입: 계좌 snapshot을 payload로 전달합니다.
+> `remember=true`이면 전송한 snapshot을 회원 프로필 계좌 정보에도 함께 저장합니다.
+> 클라이언트가 `SYSTEM`, `ARRIVED`, `END`를 직접 보내면 `INVALID_REQUEST`로 거부됩니다.
 
 **수신 포맷 (서버 → 클라이언트):**
 ```json
@@ -1401,12 +1557,38 @@ Authorization:Bearer <firebase_id_token>
   "senderId": "user_uuid",
   "senderName": "홍길동",
   "type": "ACCOUNT",
+  "text": "계좌 정보를 공유했어요. (카카오뱅크 3333-01-1234567)",
   "accountData": {
     "bankName": "카카오뱅크",
     "accountNumber": "3333-01-1234567",
-    "accountHolder": "홍길동"
+    "accountHolder": "홍*동",
+    "hideName": true
   },
   "createdAt": "2026-02-03T12:00:00Z"
+}
+```
+
+```json
+{
+  "id": "message_uuid_2",
+  "chatRoomId": "party:party_uuid",
+  "senderId": "leader_uuid",
+  "senderName": "홍길동",
+  "type": "ARRIVED",
+  "text": "택시가 목적지에 도착했어요. 총 14000원, 3명 정산, 1인당 4666원입니다.",
+  "arrivalData": {
+    "taxiFare": 14000,
+    "splitMemberCount": 3,
+    "perPersonAmount": 4666,
+    "settlementTargetMemberIds": ["member-2", "member-3"],
+    "accountData": {
+      "bankName": "카카오뱅크",
+      "accountNumber": "3333-01-1234567",
+      "accountHolder": "홍*동",
+      "hideName": true
+    }
+  },
+  "createdAt": "2026-02-03T12:05:00Z"
 }
 ```
 
@@ -1431,7 +1613,8 @@ Authorization:Bearer <firebase_id_token>
 | 채팅방 목록 요약 이벤트 | 메시지 저장/멤버수 변경 커밋 후 `/user/queue/chat-rooms`로 요약 이벤트 전송 |
 | 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
 | 설정 수정 (`PATCH /v1/chat-rooms/{chatRoomId}/settings`) | ChatRoomMember.muted 갱신 |
-| ACCOUNT 메시지 | 계좌 정보 DB 조회 + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
+| ACCOUNT 메시지 | payload snapshot 검증 + 선택적 회원 계좌 저장(`remember=true`) + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
+| 파티 상태 기반 서버 메시지 | party 상태/정산 snapshot 저장 후 `SYSTEM`/`ARRIVED`/`END` 메시지 DB 저장 → 커밋 후 브로드캐스트 |
 
 > 브로드캐스트(WebSocket push)는 트랜잭션 커밋 성공 후 수행합니다. (트랜잭션 커밋 후 콜백)
 
@@ -1444,7 +1627,8 @@ Authorization:Bearer <firebase_id_token>
 | `CHAT_ROOM_FULL` | 채팅방 정원 초과 |
 | `ALREADY_CHAT_ROOM_MEMBER` | 이미 참여 중인 채팅방 |
 | `STOMP_AUTH_FAILED` | WebSocket STOMP 연결 인증 실패 (토큰 검증 오류) |
-| `BANK_ACCOUNT_REQUIRED` | ACCOUNT 메시지 전송 시 계좌 미등록 상태 |
+| `INVALID_REQUEST` | 클라이언트가 `SYSTEM`/`ARRIVED`/`END` 같은 서버 전용 메시지 타입을 전송한 경우 |
+| `VALIDATION_ERROR` | `ACCOUNT` payload 또는 cursor 쿼리 조합 검증 실패 |
 
 ---
 

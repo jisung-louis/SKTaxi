@@ -1,6 +1,6 @@
 # Spring 백엔드 도메인 분석
 
-> 최종 수정일: 2026-03-10
+> 최종 수정일: 2026-03-23
 > 분석 기준: Firestore 컬렉션, Cloud Functions 트리거, Context/Hook 구조
 
 본 문서는 현재 Firebase 기반 SKURI Taxi 앱을 Spring Boot + MySQL 백엔드로 마이그레이션하기 위한 **도메인 분석 결과**입니다.
@@ -165,7 +165,10 @@ Hooks:
     - status (PENDING → ACCEPTED | DECLINED | CANCELED)
   - Settlement (Embedded)
     - status (PENDING, COMPLETED)
+    - taxiFare
+    - splitMemberCount (정산 대상 non-leader 수 + leader)
     - perPersonAmount
+    - settlementAccount snapshot (bankName, accountNumber, accountHolder, hideName)
     - memberSettlements (Map<memberId, MemberSettlement>)
   - MemberSettlement (Embedded)
     - settled, settledAt
@@ -174,8 +177,11 @@ Hooks:
   - 앱 내 결제/송금 기능은 제공하지 않으며, 향후에도 제공하지 않음
   - 정산 상태(`memberSettlements`) 변경은 파티 리더만 가능
   - 일반 멤버는 자신의 정산 상태를 직접 변경할 수 없음
-  - `perPersonAmount`는 `taxiFare / 정산대상인원` 정수 나눗셈(버림)으로 계산
+  - 도착 처리 요청은 `taxiFare`, `settlementTargetMemberIds`, `account snapshot`을 함께 받는다
+  - `settlementTargetMemberIds`에는 현재 파티의 non-leader 멤버만 포함할 수 있다
+  - `perPersonAmount`는 `taxiFare / (정산대상인원 + 리더 1명)` 정수 나눗셈(버림)으로 계산
   - 정수 나눗셈으로 생기는 잔여 1원 단위 금액은 서버에서 분배하지 않음(리더 현장 정산 정책)
+  - 동승 요청 승인, 모집 마감/재개, 멤버 나가기, 도착 처리, 취소/종료는 서버가 파티 채팅방 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)를 생성한다
 
 상태 머신:
   Party:
@@ -282,6 +288,14 @@ Hooks:
 역할:
   - 파티 채팅: TaxiParty 도메인이 규칙 관리, Chat은 엔진만 제공
   - 공개 채팅: Chat 도메인이 전체 관리
+  - 공식 공개방은 seed migration으로 `UNIVERSITY 1개 + GAME 1개 + 학과방들 + 사용자 생성 CUSTOM` 구조를 유지
+  - 공개방 visibility는 서버가 강제한다.
+    - `UNIVERSITY`, `GAME`, `CUSTOM`: 전체 사용자 노출
+    - `DEPARTMENT`: 본인 학과와 일치하는 방만 노출
+  - 미참여 공개방도 목록/상세 조회는 가능하지만, 메시지 조회/읽음/mute는 참여자만 가능
+  - 공개방 참여/나가기/커스텀방 생성은 REST(`POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`)로 처리
+  - 커스텀 공개방 생성자는 자동으로 joined 상태가 되며, join 시 초기 unread는 0으로 시작한다
+  - 회원 프로필 학과 변경 시 기존 학과방 membership은 자동 제거하고, 새 학과방은 자동 참여시키지 않는다
   - 채팅방 목록 실시간: `/user/queue/chat-rooms` 사용자 전용 요약 채널 1개 구독
   - 채팅방 상세 실시간: `/topic/chat/{chatRoomId}` 방 단위 구독
   - 채팅방 메시지 전송: `/app/chat/{chatRoomId}`
@@ -1260,96 +1274,14 @@ public enum MessageDirection {
 
 ### 7.4 TaxiParty ↔ Chat 협력 구조
 
-```java
-@Service
-@RequiredArgsConstructor
-public class PartyMessageService {
-    private final ChatService chatService;
-    private final PartyRepository partyRepository;
-    private final ApplicationEventPublisher eventPublisher;
-
-    /**
-     * 파티 채팅방 생성 (파티 생성 시 호출)
-     */
-    public void createPartyChatRoom(Party party) {
-        ChatRoom chatRoom = ChatRoom.forParty(party.getId(), party.getMembers());
-        chatService.createRoom(chatRoom);
-    }
-
-    /**
-     * 일반 메시지 전송 (Chat 엔진에 위임)
-     */
-    public void sendMessage(String partyId, String senderId, String text) {
-        validatePartyMember(partyId, senderId);
-        chatService.sendMessage("party:" + partyId, senderId, text, MessageType.TEXT);
-    }
-
-    /**
-     * 계좌 공유 메시지 (파티 도메인 규칙)
-     */
-    public void sendAccountMessage(String partyId, String senderId, BankAccount account) {
-        Party party = validatePartyMember(partyId, senderId);
-
-        ChatMessage message = ChatMessage.builder()
-            .chatRoomId("party:" + partyId)
-            .senderId(senderId)
-            .type(MessageType.ACCOUNT)
-            .accountData(AccountData.from(account))
-            .build();
-
-        chatService.sendMessage(message);
-    }
-
-    /**
-     * 도착 메시지 (파티 상태 변경 + 메시지)
-     */
-    @Transactional
-    public void sendArrivalMessage(String partyId, String leaderId, int taxiFare) {
-        Party party = partyRepository.findById(partyId)
-            .orElseThrow(PartyNotFoundException::new);
-
-        if (!party.isLeader(leaderId)) {
-            throw new NotPartyLeaderException();
-        }
-
-        // 1. 파티 상태 변경
-        party.arrive(taxiFare);
-
-        // 2. 도착 메시지 전송
-        int perPerson = taxiFare / party.getMembers().size();
-        ChatMessage message = ChatMessage.builder()
-            .chatRoomId("party:" + partyId)
-            .senderId(leaderId)
-            .type(MessageType.ARRIVED)
-            .arrivalData(ArrivalData.builder()
-                .taxiFare(taxiFare)
-                .perPerson(perPerson)
-                .memberCount(party.getMembers().size())
-                .build())
-            .build();
-
-        chatService.sendMessage(message);
-
-        // 3. 이벤트 발행 → 알림 전송
-        eventPublisher.publishEvent(new PartyArrivedEvent(
-            partyId,
-            party.getMembers(),
-            taxiFare,
-            perPerson
-        ));
-    }
-
-    private Party validatePartyMember(String partyId, String memberId) {
-        Party party = partyRepository.findById(partyId)
-            .orElseThrow(PartyNotFoundException::new);
-
-        if (!party.isMember(memberId)) {
-            throw new NotPartyMemberException();
-        }
-        return party;
-    }
-}
-```
+- 파티 생성 시 `ChatService.createPartyChatRoom`이 `party:{partyId}` 비공개 채팅방을 생성/동기화한다.
+- 클라이언트 직접 전송 가능 타입은 `TEXT`, `IMAGE`, `ACCOUNT`만 허용한다.
+- `ACCOUNT` 메시지는 클라이언트가 계좌 snapshot을 payload로 보내고, `remember=true`면 회원 프로필 계좌도 함께 갱신한다.
+- `SYSTEM`, `ARRIVED`, `END`는 서버 전용 메시지다.
+  - 동승 요청 승인, 모집 마감, 모집 재개, 멤버 나가기 → `SYSTEM` 메시지 생성
+  - 도착 처리 → 정산 snapshot이 포함된 `ARRIVED` 메시지 생성
+  - 리더 취소/종료/탈퇴 종료 → `END` 메시지 생성
+- 파티 상태 변경과 서버 생성 채팅 메시지는 같은 트랜잭션 안에서 저장하고, WebSocket 브로드캐스트는 커밋 후 수행한다.
 
 ---
 

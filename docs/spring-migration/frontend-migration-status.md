@@ -32,7 +32,7 @@
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 일반 Chat(joined room 기준)은 Spring REST/STOMP + 중앙 DI 기준으로 list/detail/messages/read/mute 및 `/user/queue/chat-rooms` summary realtime 연결 완료
 - Community chat screen chain은 더 이상 mock `communityHomeRepository`/`chatDetailRepository`를 source of truth로 사용하지 않는다.
-- 다만 공개 일반 채팅방의 join/leave/create 계약은 backend에 없어, 비참여 공개방 입장 플로우는 아직 닫히지 않았다.
+- 공개 일반 채팅방의 join/leave/create backend 계약과 seed/backfill은 준비됐고, 이제 프론트가 비참여 공개방 탐색/상세/join/leave/create를 반영할 차례다.
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
 
@@ -49,7 +49,7 @@
 - Taxi Chat detail의 STOMP client는 로그아웃/계정 전환 시 이전 Authorization 세션을 재사용하지 않도록 정리된다.
 - 일반 Chat도 중앙 DI `chatRepository`를 기준으로 요약 목록/상세/메시지/read/mute 상태를 Spring source of truth로 읽는다.
 - 일반 Chat room summary/unread/tab indicator는 `/user/queue/chat-rooms` 이벤트와 REST snapshot을 함께 사용해 같은 room cache를 기준으로 동기화된다.
-- 다만 공개 일반 채팅방의 membership lifecycle은 backend contract 부재로 여전히 남아 있다.
+- 일반 Chat의 다음 남은 핵심은 공개방 목록에서 joined/not joined를 함께 다루고, 미참여 공개방 detail/join/leave/create를 프론트에 반영하는 것이다.
 
 ---
 
@@ -62,7 +62,7 @@
 | Phase C. App Notice / Notification Center / Taxi Home | 완료           | App Notice/Notification Center/Taxi Home screen chain 완료                                 |
 | Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                               |
 | Phase E. Taxi Party 정식 이전                         | 완료           | recruit 지도 선택 기반 자유 입력, Chat header/action tray, ACCOUNT/ARRIVE payload, 서버 생성 SYSTEM/ARRIVED/END 흐름까지 반영 완료 |
-| Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail + joined 일반 chat list/detail/messages/read/mute + summary realtime 완료, 공개 일반 chat join/leave/create 계약은 backend 미지원 |
+| Phase F. Chat 정식 이전                               | 부분 진행      | Taxi Chat detail + joined 일반 chat list/detail/messages/read/mute + summary realtime 완료, 공개 일반 chat join/leave/create backend 계약 준비 완료, 프론트 후속 반영 대기 |
 | Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                          |
 | Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                                   |
 
@@ -548,12 +548,13 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - read/mute는 backend가 summary event를 보내지 않는 계약이므로 `PATCH /read`, `PATCH /settings` 성공 직후 repository cache를 로컬 patch해 일관성을 유지한다.
 - taxi 전용 STOMP 유틸을 일반화해 `src/shared/realtime/minimalStompClient.ts`로 올리고 Taxi/일반 chat이 같은 transport를 재사용한다.
 
-이번 스레드에서 확인된 backend 계약 caveat:
+이번 스레드에서 확인된 일반 Chat backend 계약:
 
 - 로컬 `http://localhost:8080/v3/api-docs`는 이 작업 시점에 connection refused였다.
 - 그래서 실제 구현은 `/Users/jisung/skuri-backend` 코드와 `docs/spring-migration/api-specification.md`를 대조해 맞췄다.
-- backend는 `GET /v1/chat-rooms`에서 공개방을 노출하지만, `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 `ChatRoomMember`를 요구한다.
-- 현재 backend에는 일반 공개 채팅방용 join/leave/create 사용자 계약이 없어, 비참여 공개방 입장 플로우는 frontend만으로 완결할 수 없다.
+- backend는 `GET /v1/chat-rooms`에서 보이는 public room + joined private room summary를 반환하고, 미참여 public room의 detail 조회는 허용한다.
+- 반면 `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 여전히 `ChatRoomMember`를 요구하므로, 미참여 public room은 detail preview와 join CTA까지만 열 수 있다.
+- backend에는 `POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`, `CHAT_ROOM_REMOVED` summary event, 공개방 seed/backfill이 이미 추가됐다.
 
 ### 4.14 Phase F 결과
 
@@ -571,7 +572,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 현재 아직 남은 것:
 
-- 공개 일반 채팅방의 join/leave/create 사용자 계약은 backend 미지원이라, 비참여 공개방의 “입장 후 메시지 읽기/전송” 플로우는 아직 구현할 수 없다.
+- 공개 일반 채팅방의 backend contract는 준비됐지만, 프론트는 아직 `joined=true` 중심 구조를 쓰고 있어 비참여 공개방 목록/상세/join/leave/create를 반영하는 follow-up이 남아 있다.
 - 일반 Chat 이미지 업로드/이미지 메시지 실사용 연결은 아직 남아 있다.
 - Board/Notice/Campus 등 다른 미이전 도메인과 남은 mock 화면 체인 정리는 다음 phase 범위다.
 
@@ -602,7 +603,7 @@ Phase D 반영 후 구조 상태:
 - RecruitScreen도 더 이상 `taxiRecruitRepository` mock singleton을 source of truth로 사용하지 않고 중앙 `partyRepository`를 통해 `/v1/parties`를 호출한다.
 - Taxi Chat detail은 중앙 DI `taxiChatRepository`와 assembler로 수렴했고, feature-local taxi chat singleton은 더 이상 source of truth가 아니다.
 - 일반 Chat도 중앙 DI `chatRepository`와 query/assembler 경계로 수렴했고, feature-local general chat mock repository는 제거됐다.
-- 다만 Chat domain의 최종 수렴은 공개 일반 채팅방 membership 계약 보강과 Phase H의 남은 legacy 정리까지 이어진다.
+- 다만 Chat domain의 최종 수렴은 공개 일반 채팅방 프론트 반영과 Phase H의 남은 legacy 정리까지 이어진다.
 
 ---
 
@@ -610,13 +611,13 @@ Phase D 반영 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. 일반 공개 채팅방 join/leave/create backend 계약 보강
+1. 공개 일반 채팅방 discover/detail/join/leave/create 프론트 반영
 2. 남은 mock 화면 체인 정리
 3. Chat 이미지 메시지 업로드와 Taxi/Chat domain의 signal-only realtime 비용 정리
 
 이 순서를 권장하는 이유:
 
-- Notification domain은 Phase D에서 닫혔고, Taxi Party의 Phase E 범위도 frontend contract 기준으로 정리됐으므로 다음 병목은 일반 공개 Chat membership 계약과 남은 legacy 경로 수렴이다.
+- Notification domain은 Phase D에서 닫혔고, Taxi Party의 Phase E 범위도 frontend contract 기준으로 정리됐으므로 다음 병목은 일반 공개 Chat membership 정책의 프론트 반영과 남은 legacy 경로 수렴이다.
 - Taxi Chat detail과 joined 일반 Chat은 이미 REST/STOMP 경계를 잡았으므로, 다음 Chat phase는 공개 일반 채팅방 join lifecycle과 이미지 메시지 실사용 연결로 이어가는 편이 자연스럽다.
 - 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 

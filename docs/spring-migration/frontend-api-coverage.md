@@ -34,7 +34,6 @@
   - Taxi Party domain 전체
   - Chat domain 전체
 - 아직 미연결
-  - 일반 공개 채팅방 join/leave/create 사용자 계약
   - Board / Notice / Campus 등 나머지 도메인
 
 즉, endpoint 단위로는 꽤 연결됐지만,
@@ -315,7 +314,7 @@ runtime note:
 - `/user/queue/chat-rooms` event가 오면 room summary를 cache에 merge하고 목록/상세/탭 unread subscriber에 동시에 publish한다.
 - backend는 `PATCH /read`, `PATCH /settings` 후 summary event를 보내지 않으므로 프론트가 성공 응답을 cache에 patch해 unread/mute/summary 일관성을 유지한다.
 - `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 backend에서 `ChatRoomMember`를 요구한다.
-- 그래서 현재 프론트는 `joined=true` room list를 source of truth로 사용하고, 비참여 공개방 진입 플로우는 backend 계약 확보 전까지 열지 않는다.
+- backend는 공개방 discover/detail/join/leave/create 계약을 이미 제공하므로, 현재 남은 일은 프론트가 `joined=true` 중심 구조를 공개방 목록 + 참여 상태 분리 구조로 바꾸는 것이다.
 
 ---
 
@@ -394,13 +393,13 @@ runtime note:
 
 아직 남은 것:
 
-- 일반 공개 채팅방 join/leave/create 사용자 계약
+- 일반 공개 채팅방 discover/detail/join/leave/create 프론트 반영
 - 이미지 메시지 전송의 실사용 연결
 
 의미:
 
 - Taxi Chat detail과 joined 일반 Chat은 모두 REST/STOMP 기준으로 동작하고, 일반 Chat의 room summary/unread/tab indicator도 `/user/queue/chat-rooms` 기준으로 맞춰진다.
-- 하지만 Chat domain 전체로 보면 공개 일반 채팅방 membership lifecycle과 이미지 메시지 실사용 연결은 아직 남아 있다.
+- backend는 공개방 seed/backfill, summary, detail, join/leave/create 계약을 이미 제공하므로, Chat domain 전체로 보면 남은 일은 프론트의 공개방 탐색/참여 플로우 연결과 이미지 메시지 실사용 연결이다.
 
 ---
 
@@ -410,7 +409,7 @@ runtime note:
 
 ### 5.1 Chat
 
-- 일반 공개 채팅방 join/leave/create 사용자 계약
+- 일반 공개 채팅방 discover/detail/join/leave/create 프론트 반영
 - 이미지 메시지 전송의 실사용 연결
 
 ### 5.2 Notice / Board / Campus / 기타
