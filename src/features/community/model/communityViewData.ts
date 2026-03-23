@@ -22,13 +22,18 @@ export interface CommunityBoardPostViewData {
 }
 
 export interface CommunityChatRoomViewData {
+  description: string;
   iconBackgroundColor: string;
   iconColor: string;
   iconName: string;
   id: string;
+  isJoined: boolean;
   memberCountLabel: string;
+  previewLabel: string;
+  statusBackgroundColor: string;
+  statusLabel: string;
+  statusTextColor: string;
   timeLabel: string;
   title: string;
   unreadCount: number;
-  subtitle: string;
 }

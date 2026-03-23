@@ -39,9 +39,24 @@ export const CommunityChatRoomCard = ({
           <Text style={styles.timeLabel}>{item.timeLabel}</Text>
         </View>
 
+        <View style={styles.statusRow}>
+          <Text numberOfLines={1} style={styles.description}>
+            {item.description}
+          </Text>
+          <View
+            style={[
+              styles.statusPill,
+              {backgroundColor: item.statusBackgroundColor},
+            ]}>
+            <Text style={[styles.statusLabel, {color: item.statusTextColor}]}>
+              {item.statusLabel}
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.subtitleRow}>
           <Text numberOfLines={1} style={styles.subtitle}>
-            {item.subtitle}
+            {item.previewLabel}
           </Text>
           {item.unreadCount > 0 ? (
             <View style={styles.badge}>
@@ -67,6 +82,13 @@ const styles = StyleSheet.create({
     minHeight: 96,
     padding: SPACING.lg,
     ...SHADOWS.card,
+  },
+  description: {
+    color: COLORS.text.secondary,
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    marginRight: SPACING.sm,
   },
   iconWrap: {
     alignItems: 'center',
@@ -98,6 +120,22 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   subtitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.xs,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  statusPill: {
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 4,
+  },
+  statusRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -38,7 +38,9 @@ export type CommunityChatRoomTone =
   | 'university';
 
 export interface CommunityChatRoomSourceItem {
+  description: string;
   id: string;
+  isJoined: boolean;
   lastMessageText: string;
   memberCount: number;
   title: string;

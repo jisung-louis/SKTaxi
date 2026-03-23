@@ -48,7 +48,7 @@ export const CommunityChatSegment = ({
           ) : (
             <View style={styles.stateWrap}>
               <StateCard
-                description="새로운 채팅방이 있으면 여기에 표시됩니다."
+                description="참여 중이거나 둘러볼 수 있는 공개 채팅방이 여기에 표시됩니다."
                 icon={
                   <Icon
                     color={COLORS.text.muted}
@@ -56,7 +56,7 @@ export const CommunityChatSegment = ({
                     size={28}
                   />
                 }
-                title="참여 중인 채팅방이 없습니다"
+                title="표시할 채팅방이 없습니다"
               />
             </View>
           )

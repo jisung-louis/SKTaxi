@@ -48,6 +48,20 @@ const getRoomTone = (type: CommunityChatRoomSourceItem['tone']) => {
   }
 };
 
+const getRoomStatusTone = (isJoined: boolean) => {
+  if (isJoined) {
+    return {
+      backgroundColor: COLORS.brand.primarySoft,
+      textColor: COLORS.brand.primaryStrong,
+    };
+  }
+
+  return {
+    backgroundColor: COLORS.background.subtle,
+    textColor: COLORS.text.secondary,
+  };
+};
+
 export const useCommunityChatData = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<CommunityStackParamList>>();
@@ -57,8 +71,10 @@ export const useCommunityChatData = () => {
     () =>
       buildCommunityChatRoomSourceItems(chatRooms).map(room => {
         const tone = getRoomTone(room.tone);
+        const statusTone = getRoomStatusTone(room.isJoined);
 
         return {
+          description: room.description,
           iconBackgroundColor: tone.iconBackgroundColor,
           iconColor: tone.iconColor,
           iconName:
@@ -70,11 +86,15 @@ export const useCommunityChatData = () => {
               ? 'game-controller-outline'
               : 'chatbubble-outline',
           id: room.id,
+          isJoined: room.isJoined,
           memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명`,
+          previewLabel: room.lastMessageText,
+          statusBackgroundColor: statusTone.backgroundColor,
+          statusLabel: room.isJoined ? '참여 중' : '둘러보기',
+          statusTextColor: statusTone.textColor,
           timeLabel: formatChatTimeLabel(room.updatedAt),
           title: room.title,
           unreadCount: room.unreadCount,
-          subtitle: room.lastMessageText,
         } satisfies CommunityChatRoomViewData;
       }),
     [chatRooms],

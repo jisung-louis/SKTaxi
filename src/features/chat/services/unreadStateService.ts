@@ -24,7 +24,7 @@ export const hasUnreadChatRoom = (
   room: ChatRoom,
   _roomState: ChatRoomState | undefined,
 ): boolean => {
-  return (room.unreadCount ?? 0) > 0;
+  return room.isJoined === true && (room.unreadCount ?? 0) > 0;
 };
 
 export const getParticipatingChatRooms = (

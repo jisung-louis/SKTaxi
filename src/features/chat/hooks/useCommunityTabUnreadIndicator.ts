@@ -8,7 +8,10 @@ export const useCommunityTabUnreadIndicator = () => {
   const totalUnreadCount = useMemo(
     () =>
       chatRooms.reduce(
-        (sum, room) => sum + (room.unreadCount ?? 0),
+        (sum, room) =>
+          room.isJoined === true
+            ? sum + (room.unreadCount ?? 0)
+            : sum,
         0,
       ),
     [chatRooms],
