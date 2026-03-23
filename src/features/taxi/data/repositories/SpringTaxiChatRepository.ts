@@ -713,6 +713,14 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         reject(error);
       };
 
+      client.debug = message => {
+        logStompLifecycle('client-debug', {
+          currentPartyId: this.currentPartyId,
+          generation,
+          message,
+        });
+      };
+
       client.beforeConnect = async () => {
         logStompLifecycle('before-connect-start', {
           currentPartyId: this.currentPartyId,
@@ -730,8 +738,12 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
           logStompLifecycle('before-connect-ready', {
+            hasAuthorizationHeader:
+              typeof options.connectHeaders.Authorization === 'string' &&
+              options.connectHeaders.Authorization.startsWith('Bearer '),
             currentPartyId: this.currentPartyId,
             generation,
+            headerKeys: Object.keys(options.connectHeaders),
             url: options.url,
           });
         } catch (error) {

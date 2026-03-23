@@ -66,6 +66,9 @@ export class ChatSocketClient {
     });
 
     logRealtimePrepared(logContext, {
+      hasAuthorizationHeader:
+        typeof connectHeaders.Authorization === 'string' &&
+        connectHeaders.Authorization.startsWith('Bearer '),
       preparedOnly: true,
     });
 
