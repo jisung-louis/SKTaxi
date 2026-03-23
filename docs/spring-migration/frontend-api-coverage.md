@@ -218,7 +218,9 @@ endpoint / realtime contract:
 - `PATCH /v1/parties/{id}/settlement/members/{memberId}/confirm`
 - `PATCH /v1/chat-rooms/party:{partyId}/settings`
 - `PATCH /v1/chat-rooms/party:{partyId}/read`
-- STOMP endpoint: `/ws` (RN transport path는 `/ws/websocket`)
+- STOMP endpoint:
+  - SockJS/web: `/ws`
+  - RN native WebSocket: `/ws-native`
 - publish: `/app/chat/party:{partyId}`
 - subscribe: `/topic/chat/party:{partyId}`
 - error queue: `/user/queue/errors`

@@ -313,8 +313,8 @@ feature별 상태:
 
 보충 메모:
 
-- RN 클라이언트의 STOMP 연결은 backend의 SockJS endpoint `/ws`를 WebSocket transport path인 `/ws/websocket`으로 붙인다.
-- 이 경로는 `/v3/api-docs`의 상위 계약(`/ws`)과 backend SockJS 설정을 함께 확인한 뒤, 로컬 handshake probe로 실제 연결 가능 여부를 검증해서 사용했다.
+- RN 클라이언트의 STOMP 연결은 backend의 native WebSocket endpoint `/ws-native`를 직접 사용한다.
+- `/ws`는 기존 웹/SockJS 클라이언트 호환용으로 유지하고, RN은 `/ws/websocket` 우회 경로를 더 이상 사용하지 않는다.
 
 ### 4.9 Phase D 결과
 

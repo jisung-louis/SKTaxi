@@ -104,7 +104,7 @@ Spring 서버 내부 구현 관점을 다룬다면,
 ### 3.2 실시간 계약
 
 - Taxi/Notification/Post 계열: SSE
-- Chat 계열: WebSocket(STOMP + SockJS)
+- Chat 계열: WebSocket(STOMP over SockJS + native WebSocket)
 
 SSE endpoint:
 
@@ -116,7 +116,9 @@ SSE endpoint:
 
 STOMP endpoint / destination:
 
-- endpoint: `/ws`
+- endpoint:
+  - SockJS/web: `/ws`
+  - RN native WebSocket: `/ws-native`
 - publish: `/app/chat/{chatRoomId}`
 - subscribe room: `/topic/chat/{chatRoomId}`
 - subscribe room summary: `/user/queue/chat-rooms`
