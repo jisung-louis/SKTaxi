@@ -56,6 +56,78 @@ const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 const STOMP_CONNECT_TIMEOUT_MS = 10000;
 const STOMP_NATIVE_PROTOCOL = 'v12.stomp';
 
+type StompCompatibleSocket = {
+  binaryType?: WebSocket['binaryType'];
+  readonly readyState: number;
+  readonly url: string;
+  close: () => void;
+  send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
+  onclose: ((event?: unknown) => void) | null;
+  onerror: ((event?: unknown) => void) | null;
+  onmessage: ((event?: {data?: string | ArrayBuffer}) => void) | null;
+  onopen: ((event?: unknown) => void) | null;
+};
+
+class ReactNativeStompSocketAdapter implements StompCompatibleSocket {
+  public onclose: ((event?: unknown) => void) | null = null;
+
+  public onerror: ((event?: unknown) => void) | null = null;
+
+  public onmessage: ((event?: {data?: string | ArrayBuffer}) => void) | null =
+    null;
+
+  public onopen: ((event?: unknown) => void) | null = null;
+
+  public get readyState() {
+    return this.socket.readyState;
+  }
+
+  public get url() {
+    return this.socket.url;
+  }
+
+  public get binaryType() {
+    return this.socket.binaryType;
+  }
+
+  public set binaryType(value: WebSocket['binaryType']) {
+    if (!value) {
+      return;
+    }
+
+    this.socket.binaryType = value;
+  }
+
+  constructor(private readonly socket: WebSocket) {
+    const eventSocket = socket as WebSocket & {
+      addEventListener: (type: string, listener: (event: any) => void) => void;
+    };
+
+    eventSocket.addEventListener('open', (event: any) => {
+      this.onopen?.(event);
+    });
+    eventSocket.addEventListener('message', (event: any) => {
+      this.onmessage?.({
+        data: event.data as string | ArrayBuffer,
+      });
+    });
+    eventSocket.addEventListener('error', (event: any) => {
+      this.onerror?.(event);
+    });
+    eventSocket.addEventListener('close', (event: any) => {
+      this.onclose?.(event);
+    });
+  }
+
+  public close() {
+    this.socket.close();
+  }
+
+  public send(data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+    this.socket.send(data as string | ArrayBuffer | Blob);
+  }
+}
+
 const buildNativeStompWebSocketPath = (endpointPath = '/ws') => {
   const normalizedPath = endpointPath.replace(/\/$/, '');
 
@@ -782,7 +854,7 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
               });
             }
 
-            return socket;
+            return new ReactNativeStompSocketAdapter(socket);
           };
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
