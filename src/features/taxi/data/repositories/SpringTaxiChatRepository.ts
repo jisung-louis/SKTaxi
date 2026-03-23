@@ -49,6 +49,7 @@ interface PendingSpecialMessageRequest {
 const MESSAGES_PAGE_SIZE = 100;
 const SPECIAL_MESSAGE_TIMEOUT_MS = 8000;
 const STOMP_CONNECT_TIMEOUT_MS = 10000;
+const STOMP_PROTOCOLS = ['v12.stomp', 'v11.stomp', 'v10.stomp'] as const;
 
 const buildSockJsWebSocketPath = (endpointPath = '/ws') =>
   endpointPath.endsWith('/websocket')
@@ -732,11 +733,16 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
             endpointPath: buildSockJsWebSocketPath(),
           });
 
-          client.brokerURL = options.url;
+          client.brokerURL = undefined;
           client.connectHeaders = options.connectHeaders;
+          client.webSocketFactory = () =>
+            new WebSocket(options.url, [...STOMP_PROTOCOLS], {
+              headers: options.connectHeaders,
+            });
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
+          client.appendMissingNULLonIncoming = true;
           logStompLifecycle('before-connect-ready', {
             hasAuthorizationHeader:
               typeof options.connectHeaders.Authorization === 'string' &&
