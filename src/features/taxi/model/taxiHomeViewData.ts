@@ -48,7 +48,7 @@ export interface TaxiHomePartyCardViewData {
   departureLabel: string;
   destinationLabel: string;
   statusLabel: string;
-  statusTone: 'active' | 'inactive';
+  statusTone: 'active' | 'inactive' | 'inactive-danger';
   leaderName: string;
   leaderRoleLabel: string;
   leaderAvatar: TaxiHomeAvatarViewData;

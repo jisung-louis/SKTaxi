@@ -166,8 +166,8 @@ const buildStatusMeta = (status: PartyStatusDto) => {
       };
     case 'ARRIVED':
       return {
-        label: '도착',
-        tone: 'inactive' as const,
+        label: '도착 완료',
+        tone: 'inactive-danger' as const,
       };
     case 'ENDED':
     default:
@@ -462,10 +462,16 @@ export async function createTaxiHomeJoinRequest(
 }
 
 export async function loadTaxiHomeQueryResult(): Promise<TaxiHomeQueryResult> {
-  const [openPartiesResponse, closedPartiesResponse, personalTaxiState] =
+  const [
+    openPartiesResponse,
+    closedPartiesResponse,
+    arrivedPartiesResponse,
+    personalTaxiState,
+  ] =
     await Promise.all([
       taxiHomeApiClient.getOpenParties(),
       taxiHomeApiClient.getClosedParties(),
+      taxiHomeApiClient.getArrivedParties(),
       loadPersonalTaxiState().catch(error => {
         if (!canFallbackOnPersonalTaxiStateError(error)) {
           throw error;
@@ -485,6 +491,7 @@ export async function loadTaxiHomeQueryResult(): Promise<TaxiHomeQueryResult> {
   const parties = mergePartySummaries(
     openPartiesResponse.data.content,
     closedPartiesResponse.data.content,
+    arrivedPartiesResponse.data.content,
   );
 
   return {

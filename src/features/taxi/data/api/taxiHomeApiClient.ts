@@ -104,6 +104,10 @@ export class TaxiHomeApiClient {
     return this.getPartiesByStatus('CLOSED');
   }
 
+  getArrivedParties() {
+    return this.getPartiesByStatus('ARRIVED');
+  }
+
   getParty(partyId: string) {
     return httpClient.get<ApiSuccessResponse<PartyDetailResponseDto>>(
       `/v1/parties/${partyId}`,

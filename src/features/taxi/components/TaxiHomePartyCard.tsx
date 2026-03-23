@@ -67,13 +67,17 @@ const getJoinActionIconName = (
   }
 };
 
+const isActiveStatusTone = (
+  statusTone: TaxiHomePartyCardViewData['statusTone'],
+) => statusTone === 'active';
+
 export const TaxiHomePartyCard = ({
   expanded,
   onPressCard,
   onPressJoinAction,
   party,
 }: TaxiHomePartyCardProps) => {
-  const expandable = party.statusTone === 'active';
+  const expandable = isActiveStatusTone(party.statusTone);
   const cardProgress = useSharedValue(expanded && expandable ? 1 : 0);
 
   React.useEffect(() => {
@@ -120,7 +124,7 @@ export const TaxiHomePartyCard = ({
       layout={LinearTransition.springify().damping(18).stiffness(190)}
       style={[
         styles.card,
-        party.statusTone === 'inactive' ? styles.cardInactive : null,
+        !isActiveStatusTone(party.statusTone) ? styles.cardInactive : null,
         cardAnimatedStyle,
       ]}>
       <TouchableOpacity
@@ -141,14 +145,18 @@ export const TaxiHomePartyCard = ({
                 styles.statusPill,
                 party.statusTone === 'active'
                   ? styles.statusPillActive
-                  : styles.statusPillInactive,
+                  : party.statusTone === 'inactive-danger'
+                    ? styles.statusPillInactiveDanger
+                    : styles.statusPillInactive,
               ]}>
               <Text
                 style={[
                   styles.statusLabel,
                   party.statusTone === 'active'
                     ? styles.statusLabelActive
-                    : styles.statusLabelInactive,
+                    : party.statusTone === 'inactive-danger'
+                      ? styles.statusLabelInactiveDanger
+                      : styles.statusLabelInactive,
                 ]}>
                 {party.statusLabel}
               </Text>
@@ -345,6 +353,9 @@ const styles = StyleSheet.create({
   statusPillInactive: {
     backgroundColor: COLORS.background.subtle,
   },
+  statusPillInactiveDanger: {
+    backgroundColor: '#FEE2E2',
+  },
   statusLabel: {
     fontSize: 12,
     fontWeight: '700',
@@ -355,6 +366,9 @@ const styles = StyleSheet.create({
   },
   statusLabelInactive: {
     color: COLORS.text.tertiary,
+  },
+  statusLabelInactiveDanger: {
+    color: COLORS.status.danger,
   },
   routeCard: {
     alignItems: 'center',
