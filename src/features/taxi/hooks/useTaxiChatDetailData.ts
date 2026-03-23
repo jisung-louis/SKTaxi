@@ -32,6 +32,20 @@ const logAccountHookEvent = (
   });
 };
 
+const logMessageHookEvent = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][message-hook]', {
+    event,
+    ...details,
+  });
+};
+
 const buildSettlementDraft = (
   partyChat: TaxiChatSourceData,
   payload: {
@@ -385,7 +399,24 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
         return;
       }
 
-      await taxiChatRepository.sendMessage(partyId, messageText);
+      logMessageHookEvent('send-start', {
+        messageLength: messageText.trim().length,
+        partyId,
+      });
+
+      try {
+        await taxiChatRepository.sendMessage(partyId, messageText);
+        logMessageHookEvent('send-finished', {
+          partyId,
+        });
+      } catch (sendError) {
+        logMessageHookEvent('send-error', {
+          message:
+            sendError instanceof Error ? sendError.message : String(sendError),
+          partyId,
+        });
+        throw sendError;
+      }
     },
     [partyId, taxiChatRepository],
   );

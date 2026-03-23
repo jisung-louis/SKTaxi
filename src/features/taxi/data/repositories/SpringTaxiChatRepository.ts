@@ -115,6 +115,34 @@ const logAccountMessageLifecycle = (
   });
 };
 
+const logStompLifecycle = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][stomp]', {
+    event,
+    ...details,
+  });
+};
+
+const logTextMessageLifecycle = (
+  event: string,
+  details?: Record<string, unknown>,
+) => {
+  if (!__DEV__) {
+    return;
+  }
+
+  console.log('[taxi-chat][text-message]', {
+    event,
+    ...details,
+  });
+};
+
 export class SpringTaxiChatRepository implements ITaxiChatRepository {
   private readonly pendingSpecialMessageRequests = new Map<
     string,
@@ -177,6 +205,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       return state?.source ? clonePartySource(state.source) : null;
     }
 
+    logTextMessageLifecycle('send-start', {
+      messageLength: trimmedMessage.length,
+      partyId,
+    });
     const client = await this.ensureStompClient();
 
     client.publish({
@@ -185,6 +217,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         type: 'TEXT',
       } satisfies SendChatMessageRequestDto),
       destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
+    });
+    logTextMessageLifecycle('publish', {
+      messageLength: trimmedMessage.length,
+      partyId,
     });
 
     const state = this.partyStates.get(partyId);
@@ -605,14 +641,24 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         this.handleIncomingMessage(partyId, frame).catch(() => undefined);
       },
     );
+    logStompLifecycle('room-subscribe', {
+      partyId,
+      topic: `/topic/chat/${resolveTaxiChatRoomId(partyId)}`,
+    });
   }
 
   private async ensureStompClient(): Promise<Client> {
     if (this.stompClient?.connected) {
+      logStompLifecycle('connect-reuse-connected', {
+        currentPartyId: this.currentPartyId,
+      });
       return this.stompClient;
     }
 
     if (this.stompConnectionPromise) {
+      logStompLifecycle('connect-reuse-pending', {
+        currentPartyId: this.currentPartyId,
+      });
       return this.stompConnectionPromise;
     }
 
@@ -622,6 +668,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
 
     const client = this.stompClient;
     const generation = ++this.stompClientGeneration;
+    logStompLifecycle('connect-start', {
+      currentPartyId: this.currentPartyId,
+      generation,
+    });
 
     this.stompConnectionPromise = new Promise<Client>((resolve, reject) => {
       let settled = false;
@@ -636,6 +686,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
       };
 
       client.beforeConnect = async () => {
+        logStompLifecycle('before-connect-start', {
+          currentPartyId: this.currentPartyId,
+          generation,
+        });
         const options = await chatSocketClient.buildConnectionOptions({
           endpointPath: buildSockJsWebSocketPath(),
         });
@@ -645,12 +699,22 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
         client.heartbeatIncoming = options.heartbeatIncomingMs;
         client.heartbeatOutgoing = options.heartbeatOutgoingMs;
         client.reconnectDelay = options.reconnectDelayMs;
+        logStompLifecycle('before-connect-ready', {
+          currentPartyId: this.currentPartyId,
+          generation,
+          url: options.url,
+        });
       };
 
       client.onConnect = () => {
         if (!this.isCurrentStompClient(client, generation)) {
           return;
         }
+
+        logStompLifecycle('connect-success', {
+          currentPartyId: this.currentPartyId,
+          generation,
+        });
 
         this.ensureErrorSubscription();
         this.partyStates.forEach((state, partyId) => {
@@ -670,6 +734,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           return;
         }
 
+        logStompLifecycle('disconnect', {
+          currentPartyId: this.currentPartyId,
+          generation,
+        });
         this.clearStompSubscriptions();
       };
 
@@ -687,6 +755,11 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           },
         );
 
+        logStompLifecycle('stomp-error', {
+          currentPartyId: this.currentPartyId,
+          generation,
+          message: error.message,
+        });
         this.notifyPartySubscribers(error);
         safeReject(error);
       };
@@ -696,6 +769,10 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           return;
         }
 
+        logStompLifecycle('websocket-close', {
+          currentPartyId: this.currentPartyId,
+          generation,
+        });
         this.clearStompSubscriptions();
       };
 
@@ -711,9 +788,18 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           },
         );
 
+        logStompLifecycle('websocket-error', {
+          currentPartyId: this.currentPartyId,
+          generation,
+          message: error.message,
+        });
         safeReject(error);
       };
 
+      logStompLifecycle('activate', {
+        currentPartyId: this.currentPartyId,
+        generation,
+      });
       client.activate();
     }).finally(() => {
       if (this.isCurrentStompClient(client, generation)) {
