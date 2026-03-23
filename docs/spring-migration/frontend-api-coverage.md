@@ -433,12 +433,13 @@ runtime note:
 - Notice 본체
 - Board / Community
 - Campus 계열
-- 남아 있는 runtime mock 화면 체인
+- 남아 있는 central mock repository 기반 도메인
 
 구조 메모:
 
 - Phase G cleanup으로 Board detail, Notice home/detail, Community board home, Campus academic calendar detail의 feature-local repository entrypoint와 dead Firebase path는 제거됐다.
-- 현재 runtime에 남은 대표 mock 화면 체인은 campus home과 cafeteria detail이다.
+- 이어진 후속 정리로 campus home과 cafeteria detail도 중앙 DI query/assembler 기준으로 수렴했고, screen-level runtime mock chain은 남지 않았다.
+- 현재 남아 있는 비Spring source는 screen local chain이 아니라 Notice / Board / Campus 도메인의 central mock repository 쪽이다.
 
 ---
 
