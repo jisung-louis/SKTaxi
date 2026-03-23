@@ -192,50 +192,174 @@ export const TaxiChatMessageList = ({
         }
 
         if (item.type === 'account-message') {
+          const accountHolderLabel = formatMaskedAccountHolder(
+            item.accountData.accountHolder,
+            item.accountData.hideName,
+          );
+          const isOutgoing = item.direction === 'outgoing';
+          const accountIconColor = isOutgoing
+            ? 'rgba(255,255,255,0.9)'
+            : COLORS.accent.blue;
+
           return (
-            <View key={item.id} style={styles.specialWrap}>
-              <View style={styles.accountCard}>
-                <View style={styles.specialHeaderRow}>
-                  <View style={styles.specialHeaderTitleWrap}>
-                    <View style={styles.accountIconWrap}>
-                      <Icon color={COLORS.accent.blue} name="card-outline" size={16} />
+            <View key={item.id} style={styles.messageWrap}>
+              {isOutgoing ? (
+                <View style={styles.accountMessageRow}>
+                  <View style={styles.accountTimeWrap}>
+                    <Text style={styles.accountTimeLabel}>{item.timeLabel}</Text>
+                  </View>
+
+                  <View
+                    style={[styles.accountBubble, styles.accountBubbleOutgoing]}>
+                    <View style={styles.accountBubbleBody}>
+                      <View style={styles.accountBubbleTitleRow}>
+                        <Icon
+                          color={accountIconColor}
+                          name="wallet"
+                          size={14}
+                          style={styles.accountBubbleTitleIcon}
+                        />
+                        <Text
+                          style={[
+                            styles.accountBubbleTitle,
+                            styles.accountBubbleTitleOutgoing,
+                          ]}>
+                          계좌 정보
+                        </Text>
+                      </View>
+
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.accountBubbleHolder,
+                          styles.accountBubbleHolderOutgoing,
+                        ]}>
+                        {accountHolderLabel}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.accountBubbleBank,
+                          styles.accountBubbleBankOutgoing,
+                        ]}>
+                        {item.accountData.bankName}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.accountBubbleNumber,
+                          styles.accountBubbleNumberOutgoing,
+                        ]}>
+                        {item.accountData.accountNumber}
+                      </Text>
                     </View>
-                    <Text style={styles.specialTitle}>계좌 전송</Text>
+
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      activeOpacity={0.84}
+                      onPress={() => {
+                        copyToClipboard(
+                          item.accountData.accountNumber,
+                          '계좌번호가 복사되었습니다.',
+                        );
+                      }}
+                      style={[
+                        styles.accountBubbleCopyButton,
+                        styles.accountBubbleCopyButtonOutgoing,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.accountBubbleCopyLabel,
+                          styles.accountBubbleCopyLabelOutgoing,
+                        ]}>
+                        계좌번호 복사
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-                  <Text style={styles.specialTimeLabel}>{item.timeLabel}</Text>
                 </View>
-
-                <Text style={styles.specialSenderLabel}>{item.senderName}</Text>
-                <Text style={styles.accountBankLabel}>
-                  {item.accountData.bankName}
-                </Text>
-                <Text style={styles.accountNumberLabel}>
-                  {item.accountData.accountNumber}
-                </Text>
-                <Text style={styles.accountHolderLabel}>
-                  {item.accountData.accountHolder}
-                </Text>
-
-                {item.accountData.hideName ? (
-                  <View style={styles.hiddenNamePill}>
-                    <Text style={styles.hiddenNamePillLabel}>이름 숨김</Text>
+              ) : (
+                <View style={styles.incomingRow}>
+                  <View style={styles.avatarWrap}>
+                    {renderAvatar(item.avatar)}
                   </View>
-                ) : null}
 
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  activeOpacity={0.84}
-                  onPress={() => {
-                    copyToClipboard(
-                      `${item.accountData.bankName} ${item.accountData.accountNumber}`,
-                      '계좌 정보가 복사되었습니다.',
-                    );
-                  }}
-                  style={styles.accountCopyButton}>
-                  <Icon color={COLORS.accent.blue} name="copy-outline" size={14} />
-                  <Text style={styles.accountCopyLabel}>계좌 복사</Text>
-                </TouchableOpacity>
-              </View>
+                  <View style={styles.incomingContent}>
+                    <Text style={styles.senderName}>{item.senderName}</Text>
+
+                    <View style={styles.accountIncomingBubbleRow}>
+                      <View
+                        style={[styles.accountBubble, styles.accountBubbleIncoming]}>
+                        <View style={styles.accountBubbleBody}>
+                          <View style={styles.accountBubbleTitleRow}>
+                            <Icon
+                              color={accountIconColor}
+                              name="wallet"
+                              size={14}
+                              style={styles.accountBubbleTitleIcon}
+                            />
+                            <Text
+                              style={[
+                                styles.accountBubbleTitle,
+                                styles.accountBubbleTitleIncoming,
+                              ]}>
+                              계좌 정보
+                            </Text>
+                          </View>
+
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.accountBubbleHolder,
+                              styles.accountBubbleHolderIncoming,
+                            ]}>
+                            {accountHolderLabel}
+                          </Text>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.accountBubbleBank,
+                              styles.accountBubbleBankIncoming,
+                            ]}>
+                            {item.accountData.bankName}
+                          </Text>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.accountBubbleNumber,
+                              styles.accountBubbleNumberIncoming,
+                            ]}>
+                            {item.accountData.accountNumber}
+                          </Text>
+                        </View>
+
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          activeOpacity={0.84}
+                          onPress={() => {
+                            copyToClipboard(
+                              item.accountData.accountNumber,
+                              '계좌번호가 복사되었습니다.',
+                            );
+                          }}
+                          style={[
+                            styles.accountBubbleCopyButton,
+                            styles.accountBubbleCopyButtonIncoming,
+                          ]}>
+                          <Text
+                            style={[
+                              styles.accountBubbleCopyLabel,
+                              styles.accountBubbleCopyLabelIncoming,
+                            ]}>
+                            계좌번호 복사
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <Text style={styles.accountTimeLabel}>{item.timeLabel}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           );
         }
@@ -416,73 +540,130 @@ export const TaxiChatMessageList = ({
 };
 
 const styles = StyleSheet.create({
-  accountBankLabel: {
-    color: COLORS.text.secondary,
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 16,
-    marginTop: SPACING.sm,
-  },
-  accountCard: {
-    backgroundColor: COLORS.background.surface,
-    borderColor: COLORS.border.subtle,
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    padding: SPACING.lg,
-    width: '100%',
+  accountBubble: {
+    borderBottomLeftRadius: RADIUS.lg,
+    borderBottomRightRadius: RADIUS.lg,
+    overflow: 'hidden',
     ...SHADOWS.card,
   },
-  accountCopyButton: {
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: COLORS.accent.blueSoft,
-    borderRadius: RADIUS.pill,
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: SPACING.md,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+  accountBubbleBank: {
+    fontSize: 12,
+    lineHeight: 16,
   },
-  accountCopyLabel: {
-    color: COLORS.accent.blue,
+  accountBubbleBody: {
+    paddingBottom: 4,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+  },
+  accountBubbleCopyButton: {
+    alignItems: 'center',
+    height: 33,
+    justifyContent: 'center',
+    paddingBottom: 8,
+    paddingTop: 9,
+  },
+  accountBubbleCopyLabel: {
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
   },
-  accountHolderLabel: {
-    color: COLORS.text.strong,
-    fontSize: 13,
-    lineHeight: 18,
+  accountBubbleHolder: {
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
     marginTop: 4,
   },
-  hiddenNamePill: {
-    alignSelf: 'flex-start',
-    backgroundColor: COLORS.background.subtle,
-    borderRadius: RADIUS.pill,
-    marginTop: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  accountBubbleHolderIncoming: {
+    color: COLORS.text.primary,
   },
-  hiddenNamePillLabel: {
-    color: COLORS.text.secondary,
-    fontSize: 11,
+  accountBubbleHolderOutgoing: {
+    color: COLORS.text.inverse,
+  },
+  accountBubbleIncoming: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: RADIUS.lg,
+    borderWidth: 1,
+    maxWidth: 156,
+    minWidth: 156,
+  },
+  accountBubbleBankIncoming: {
+    color: COLORS.text.muted,
+  },
+  accountBubbleBankOutgoing: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  accountBubbleNumber: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  accountBubbleNumberIncoming: {
+    color: COLORS.text.strong,
+  },
+  accountBubbleNumberOutgoing: {
+    color: COLORS.text.inverse,
+  },
+  accountBubbleCopyButtonIncoming: {
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+  },
+  accountBubbleCopyButtonOutgoing: {
+    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopWidth: 1,
+  },
+  accountBubbleCopyLabelIncoming: {
+    color: COLORS.accent.blue,
+  },
+  accountBubbleCopyLabelOutgoing: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+  accountBubbleTitle: {
+    fontSize: 12,
     fontWeight: '700',
+    lineHeight: 16,
+  },
+  accountBubbleTitleIncoming: {
+    color: COLORS.text.secondary,
+  },
+  accountBubbleTitleOutgoing: {
+    color: 'rgba(255,255,255,0.9)',
+  },
+  accountBubbleTitleIcon: {
+    height: 14,
+    width: 15,
+  },
+  accountBubbleTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  accountMessageRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 6,
+    justifyContent: 'flex-end',
+  },
+  accountBubbleOutgoing: {
+    backgroundColor: COLORS.brand.primary,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: 2,
+    minWidth: 104,
+  },
+  accountIncomingBubbleRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  accountTimeLabel: {
+    color: COLORS.text.muted,
+    fontSize: 10,
     lineHeight: 14,
   },
-  accountIconWrap: {
-    alignItems: 'center',
-    backgroundColor: COLORS.accent.blueSoft,
-    borderRadius: RADIUS.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
-  accountNumberLabel: {
-    color: COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '700',
-    lineHeight: 26,
-    marginTop: 2,
+  accountTimeWrap: {
+    paddingBottom: 2,
   },
   arrivedAccountCard: {
     backgroundColor: COLORS.background.subtle,

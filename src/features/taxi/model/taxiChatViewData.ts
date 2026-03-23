@@ -167,6 +167,8 @@ export interface TaxiChatSystemMessageViewData {
 
 export interface TaxiChatAccountMessageViewData {
   accountData: TaxiChatSourceAccountData;
+  avatar?: ChatAvatarViewData;
+  direction: 'incoming' | 'outgoing';
   id: string;
   senderName: string;
   text: string;

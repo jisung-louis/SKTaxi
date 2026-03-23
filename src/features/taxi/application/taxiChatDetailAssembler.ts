@@ -216,6 +216,9 @@ const buildItems = (
     if (message.type === 'account' && message.accountData) {
       items.push({
         accountData: message.accountData,
+        avatar: message.avatar,
+        direction:
+          message.senderId === currentUserId ? 'outgoing' : 'incoming',
         id: message.id,
         senderName: message.senderName,
         text: message.text,
