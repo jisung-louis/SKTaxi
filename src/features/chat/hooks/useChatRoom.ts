@@ -15,6 +15,7 @@ export interface UseChatRoomResult {
   hasJoined: boolean;
   joinRoom: () => Promise<void>;
   leaveRoom: () => Promise<void>;
+  refresh: () => Promise<void>;
   serverInfo: ChatRoomServerInfo | null;
 }
 
@@ -27,8 +28,13 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
   const [error, setError] = useState<string | null>(null);
   const [hasJoined, setHasJoined] = useState(false);
   const [serverInfo, setServerInfo] = useState<ChatRoomServerInfo | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  const refresh = useCallback(async () => {
+    setReloadToken(currentValue => currentValue + 1);
+  }, []);
 
   useEffect(() => {
     if (!chatRoomId) {
@@ -44,7 +50,12 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
     unsubscribeRef.current = chatRepository.subscribeToChatRoom(chatRoomId, {
       onData: room => {
         setChatRoom(room);
-        setHasJoined(Boolean(user?.uid && room?.members?.includes(user.uid)));
+        setHasJoined(
+          Boolean(
+            room?.isJoined ??
+              (user?.uid ? room?.members?.includes(user.uid) : false),
+          ),
+        );
         setLoading(false);
       },
       onError: err => {
@@ -58,7 +69,7 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
       unsubscribeRef.current?.();
       unsubscribeRef.current = null;
     };
-  }, [chatRepository, chatRoomId, user?.uid]);
+  }, [chatRepository, chatRoomId, reloadToken, user?.uid]);
 
   useEffect(() => {
     if (chatRoom?.type !== 'game') {
@@ -104,6 +115,7 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
     hasJoined,
     joinRoom,
     leaveRoom,
+    refresh,
     serverInfo,
   };
 };

@@ -1,13 +1,8 @@
 import type { IChatRepository } from '../data/repositories/IChatRepository';
 import type {
-  ChatMessage,
   ChatRoom,
   ChatRoomNotificationPayload,
 } from '../model/types';
-
-import type { IUserRepository } from '@/features/user';
-
-import { sendMinecraftChatMessage } from '../data/minecraftChatBridge';
 
 export const formatTimeAgo = (timestamp: unknown) => {
   if (!timestamp) {
@@ -112,20 +107,12 @@ export const resolveChatRoomForegroundNotification = async ({
 
 export const sendChatTextMessage = async ({
   chatRepository,
-  chatRoom,
   chatRoomId,
   text,
-  userEmail,
-  userId,
-  userRepository,
 }: {
   chatRepository: IChatRepository;
-  chatRoom?: ChatRoom | null;
   chatRoomId: string;
   text: string;
-  userEmail?: string | null;
-  userId: string;
-  userRepository: IUserRepository;
 }) => {
   const trimmedText = text.trim();
 
@@ -133,22 +120,10 @@ export const sendChatTextMessage = async ({
     throw new Error('메시지를 입력해주세요.');
   }
 
-  if (chatRoom?.type === 'game') {
-    await sendMinecraftChatMessage(chatRoomId, trimmedText);
-    return;
-  }
-
-  const profile = await userRepository.getUserProfile(userId);
-  const senderName = profile?.displayName || userEmail || '익명';
-  const message: Omit<ChatMessage, 'id' | 'createdAt'> = {
+  await chatRepository.sendMessage(chatRoomId, {
     text: trimmedText,
-    senderId: userId,
-    senderName,
     type: 'text',
-    clientCreatedAt: new Date(),
-  };
-
-  await chatRepository.sendMessage(chatRoomId, message);
+  });
 };
 
 export const sendChatSystemMessage = async ({
@@ -161,8 +136,6 @@ export const sendChatSystemMessage = async ({
   text: string;
 }) => {
   await chatRepository.sendMessage(chatRoomId, {
-    senderId: 'system',
-    senderName: '시스템',
     text,
     type: 'system',
   });

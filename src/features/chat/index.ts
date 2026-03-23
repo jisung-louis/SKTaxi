@@ -1,15 +1,5 @@
-export {
-  FirebaseChatRepository,
-  FirestoreChatRepository,
-} from './data/repositories/FirebaseChatRepository';
-export {
-  getChatRoomNotificationSetting,
-  joinChatRoom,
-  sendChatMessage,
-  sendChatSystemRuntimeMessage as sendChatSystemMessage,
-  updateChatRoomNotificationSetting,
-} from './data/composition/chatRuntime';
 export type { IChatRepository } from './data/repositories/IChatRepository';
+export { SpringChatRepository } from './data/repositories/SpringChatRepository';
 
 export { useChatActions } from './hooks/useChatActions';
 export type { UseChatActionsResult } from './hooks/useChatActions';
@@ -32,6 +22,7 @@ export { useCommunityTabUnreadIndicator } from './hooks/useCommunityTabUnreadInd
 
 export type {
   ChatMessage,
+  ChatMessageDraft,
   ChatRoom,
   ChatRoomCategory,
   ChatRoomFilter,

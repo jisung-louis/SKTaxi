@@ -9,7 +9,7 @@ import {FirebaseAuthRepository} from '@/features/auth';
 import {MockAcademicRepository} from '@/features/campus/data/repositories/MockAcademicRepository';
 import {MockCafeteriaRepository} from '@/features/campus/data/repositories/MockCafeteriaRepository';
 import {MockBoardRepository} from '@/features/board/data/repositories/MockBoardRepository';
-import {MockChatRepository} from '@/features/chat/data/repositories/MockChatRepository';
+import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
 import {MockNoticeRepository} from '@/features/notice/testing/MockNoticeRepository';
 import {SpringAppNoticeRepository} from '@/features/settings/data/repositories/SpringAppNoticeRepository';
 import {MockInquiryRepository} from '@/features/settings/data/repositories/MockInquiryRepository';
@@ -46,7 +46,7 @@ export function RepositoryProvider({
     // 나머지 미이전 영역만 mock 구현체를 유지한다.
     const defaultRepositories: RepositoryContainer = {
       partyRepository: new SpringPartyRepository(),
-      chatRepository: new MockChatRepository(),
+      chatRepository: new SpringChatRepository(),
       userRepository: new MockUserRepository(),
       boardRepository: new MockBoardRepository(),
       noticeRepository: new MockNoticeRepository(),

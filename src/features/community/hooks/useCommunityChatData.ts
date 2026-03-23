@@ -5,11 +5,12 @@ import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 import type {CommunityStackParamList} from '@/app/navigation/types';
+import {useChatRooms} from '@/features/chat';
 import {COLORS} from '@/shared/design-system/tokens';
 
+import {buildCommunityChatRoomSourceItems} from '../application/communityChatQuery';
 import type {CommunityChatRoomViewData} from '../model/communityViewData';
 import type {CommunityChatRoomSourceItem} from '../model/communityHomeData';
-import {communityHomeRepository} from '../data/repositories/communityHomeRepository';
 
 const formatChatTimeLabel = (timestamp: unknown) => {
   const millis = new Date(String(timestamp)).getTime();
@@ -50,59 +51,43 @@ const getRoomTone = (type: CommunityChatRoomSourceItem['tone']) => {
 export const useCommunityChatData = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<CommunityStackParamList>>();
-  const [rooms, setRooms] = React.useState<CommunityChatRoomViewData[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const {chatRooms, loading, refresh} = useChatRooms('all');
   const [refreshing, setRefreshing] = React.useState(false);
+  const rooms = React.useMemo(
+    () =>
+      buildCommunityChatRoomSourceItems(chatRooms).map(room => {
+        const tone = getRoomTone(room.tone);
 
-  const loadRooms = React.useCallback(async (mode: 'initial' | 'refresh') => {
-    if (mode === 'initial') {
-      setLoading(true);
-    }
-
-    if (mode === 'refresh') {
-      setRefreshing(true);
-    }
-
-    try {
-      const sourceRooms = await communityHomeRepository.getChatRooms();
-
-      setRooms(
-        sourceRooms.map(room => {
-          const tone = getRoomTone(room.tone);
-
-          return {
-            iconBackgroundColor: tone.iconBackgroundColor,
-            iconColor: tone.iconColor,
-            iconName:
-              room.tone === 'university'
-                ? 'business-outline'
-                : room.tone === 'department'
-                ? 'people-outline'
-                : room.tone === 'game'
-                ? 'game-controller-outline'
-                : 'chatbubble-outline',
-            id: room.id,
-            memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명`,
-            timeLabel: formatChatTimeLabel(room.updatedAt),
-            title: room.title,
-            unreadCount: room.unreadCount,
-            subtitle: room.lastMessageText,
-          } satisfies CommunityChatRoomViewData;
-        }),
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    loadRooms('initial').catch(() => undefined);
-  }, [loadRooms]);
+        return {
+          iconBackgroundColor: tone.iconBackgroundColor,
+          iconColor: tone.iconColor,
+          iconName:
+            room.tone === 'university'
+              ? 'business-outline'
+              : room.tone === 'department'
+              ? 'people-outline'
+              : room.tone === 'game'
+              ? 'game-controller-outline'
+              : 'chatbubble-outline',
+          id: room.id,
+          memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명`,
+          timeLabel: formatChatTimeLabel(room.updatedAt),
+          title: room.title,
+          unreadCount: room.unreadCount,
+          subtitle: room.lastMessageText,
+        } satisfies CommunityChatRoomViewData;
+      }),
+    [chatRooms],
+  );
 
   const handleRefresh = React.useCallback(() => {
-    loadRooms('refresh').catch(() => undefined);
-  }, [loadRooms]);
+    setRefreshing(true);
+    refresh()
+      .catch(() => undefined)
+      .finally(() => {
+        setRefreshing(false);
+      });
+  }, [refresh]);
 
   const handleOpenRoom = React.useCallback(
     (roomId: string) => {

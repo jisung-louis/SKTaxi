@@ -1,201 +1,103 @@
 import React from 'react';
-import {format} from 'date-fns';
-import {ko} from 'date-fns/locale';
+import {useIsFocused} from '@react-navigation/native';
 
-import {COLORS} from '@/shared/design-system/tokens';
-import type {
-  ChatThreadHeaderViewData,
-  ChatThreadItemViewData,
-} from '@/shared/ui/chat';
+import {useAuth} from '@/features/auth';
 
-import {
-  CHAT_DETAIL_CURRENT_USER_ID,
-  type ChatDetailSourceData,
-  type ChatDetailViewData,
-} from '../model/chatDetailViewData';
-import {chatDetailRepository} from '../data/repositories/chatDetailRepository';
+import {buildChatDetailViewData} from '../application/chatDetailAssembler';
 
-const buildHeader = (
-  roomDetail: ChatDetailSourceData,
-): ChatThreadHeaderViewData => {
-  if (roomDetail.roomType === 'university') {
-    return {
-      iconBackgroundColor: COLORS.brand.primarySoft,
-      iconColor: COLORS.brand.primary,
-      iconName: 'business-outline',
-      subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
-      title: roomDetail.title,
-    };
-  }
-
-  if (roomDetail.roomType === 'department') {
-    return {
-      iconBackgroundColor: COLORS.accent.blueSoft,
-      iconColor: COLORS.accent.blue,
-      iconName: 'people-outline',
-      subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
-      title: roomDetail.title,
-    };
-  }
-
-  if (roomDetail.roomType === 'game') {
-    return {
-      iconBackgroundColor: COLORS.accent.orangeSoft,
-      iconColor: COLORS.accent.orange,
-      iconName: 'game-controller-outline',
-      subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
-      title: roomDetail.title,
-    };
-  }
-
-  return {
-    iconBackgroundColor: COLORS.accent.purpleSoft,
-    iconColor: COLORS.accent.purple,
-    iconName: 'chatbubble-outline',
-    subtitle: `${roomDetail.memberCount.toLocaleString('ko-KR')}명`,
-    title: roomDetail.title,
-  };
-};
-
-const buildItems = (
-  roomDetail: ChatDetailSourceData,
-): ChatThreadItemViewData[] => {
-  const items: ChatThreadItemViewData[] = [];
-  let previousDateKey: string | null = null;
-
-  roomDetail.messages.forEach(message => {
-    const createdDate = new Date(message.createdAt);
-    const dateKey = format(createdDate, 'yyyy-MM-dd');
-
-    if (dateKey !== previousDateKey) {
-      items.push({
-        id: `${roomDetail.id}-${dateKey}`,
-        label: format(createdDate, 'yyyy년 M월 d일 EEEE', {locale: ko}),
-        type: 'date-divider',
-      });
-      previousDateKey = dateKey;
-    }
-
-    items.push({
-      avatar: message.avatar,
-      direction:
-        message.type === 'system'
-          ? 'system'
-          : message.senderId === CHAT_DETAIL_CURRENT_USER_ID
-          ? 'outgoing'
-          : 'incoming',
-      id: message.id,
-      minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),
-      senderId: message.senderId,
-      senderName: message.senderName,
-      text: message.text,
-      timeLabel: format(createdDate, 'a hh:mm', {locale: ko}),
-      type: 'message',
-    });
-  });
-
-  return items;
-};
-
-const buildViewData = (
-  roomDetail: ChatDetailSourceData,
-): ChatDetailViewData => ({
-  composerPlaceholder: roomDetail.composerPlaceholder,
-  currentUserId: CHAT_DETAIL_CURRENT_USER_ID,
-  header: buildHeader(roomDetail),
-  items: buildItems(roomDetail),
-  menu: {
-    canReport: true,
-    leaveLabel: '채팅방 나가기',
-    notificationEnabled: roomDetail.notificationEnabled,
-  },
-  roomId: roomDetail.id,
-});
+import {useChatActions} from './useChatActions';
+import {useChatMessages} from './useChatMessages';
+import {useChatRoom, useChatRoomLastRead} from './useChatRoom';
 
 export const useChatDetailData = (chatRoomId: string | undefined) => {
-  const [data, setData] = React.useState<ChatDetailViewData | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [notFound, setNotFound] = React.useState(false);
+  const {user} = useAuth();
+  const isFocused = useIsFocused();
+  const {
+    chatRoom,
+    error: roomError,
+    loading: roomLoading,
+    refresh: refreshRoom,
+  } = useChatRoom(chatRoomId);
+  const {
+    error: messagesError,
+    loading: messagesLoading,
+    messages,
+    refresh: refreshMessages,
+  } = useChatMessages(chatRoomId, Boolean(chatRoomId && chatRoom?.isJoined));
+  const {sendMessage: sendChatMessage, updateNotificationSetting} =
+    useChatActions();
+  const {updateLastRead} = useChatRoomLastRead(
+    chatRoomId,
+    Boolean(isFocused && chatRoom?.isJoined),
+  );
 
-  const load = React.useCallback(async () => {
-    if (!chatRoomId) {
-      setData(null);
-      setError(null);
-      setLoading(false);
-      setNotFound(true);
-      return;
+  const data = React.useMemo(() => {
+    if (!chatRoom || !chatRoom.isJoined) {
+      return null;
     }
 
-    setLoading(true);
-    setError(null);
-    setNotFound(false);
+    return buildChatDetailViewData({
+      currentUserId: user?.uid ?? 'current-user',
+      messages,
+      room: chatRoom,
+    });
+  }, [chatRoom, messages, user?.uid]);
 
-    try {
-      const roomDetail = await chatDetailRepository.getRoomDetail(chatRoomId);
-
-      if (!roomDetail) {
-        setData(null);
-        setNotFound(true);
-        return;
-      }
-
-      setData(buildViewData(roomDetail));
-    } catch (loadError) {
-      console.error('채팅 상세 데이터를 불러오지 못했습니다.', loadError);
-      setError('채팅 상세 데이터를 불러오지 못했습니다.');
-    } finally {
-      setLoading(false);
+  const loading = roomLoading || Boolean(chatRoom?.isJoined && messagesLoading);
+  const notFound = Boolean(chatRoomId && !loading && !roomError && !chatRoom);
+  const error = React.useMemo(() => {
+    if (roomError) {
+      return roomError;
     }
-  }, [chatRoomId]);
 
-  React.useEffect(() => {
-    load().catch(() => undefined);
-  }, [load]);
+    if (chatRoom && chatRoom.isJoined === false) {
+      return '참여 중인 채팅방만 메시지를 확인할 수 있습니다.';
+    }
+
+    if (messagesError) {
+      return messagesError.message || '채팅 메시지를 불러오지 못했습니다.';
+    }
+
+    return null;
+  }, [chatRoom, messagesError, roomError]);
+
+  const reload = React.useCallback(async () => {
+    await refreshRoom();
+
+    if (chatRoomId) {
+      await refreshMessages();
+    }
+  }, [chatRoomId, refreshMessages, refreshRoom]);
 
   const sendMessage = React.useCallback(
     async (messageText: string) => {
-      if (!chatRoomId) {
-        return;
+      if (!chatRoomId || !chatRoom?.isJoined) {
+        throw new Error('참여 중인 채팅방만 메시지를 전송할 수 있습니다.');
       }
 
-      const nextRoomDetail = await chatDetailRepository.sendMessage(
-        chatRoomId,
-        messageText,
-      );
-
-      if (!nextRoomDetail) {
-        return;
-      }
-
-      setData(buildViewData(nextRoomDetail));
+      await sendChatMessage(chatRoomId, messageText, chatRoom);
+      await updateLastRead();
     },
-    [chatRoomId],
+    [chatRoom, chatRoomId, sendChatMessage, updateLastRead],
   );
 
   const toggleNotification = React.useCallback(async () => {
-    if (!chatRoomId || !data) {
-      return;
+    if (!chatRoomId || !chatRoom?.isJoined) {
+      throw new Error('참여 중인 채팅방만 알림 설정을 변경할 수 있습니다.');
     }
 
-    const nextRoomDetail = await chatDetailRepository.updateNotificationSetting(
+    await updateNotificationSetting(
       chatRoomId,
-      !data.menu.notificationEnabled,
+      chatRoom.isMuted === true,
     );
-
-    if (!nextRoomDetail) {
-      return;
-    }
-
-    setData(buildViewData(nextRoomDetail));
-  }, [chatRoomId, data]);
+  }, [chatRoom, chatRoomId, updateNotificationSetting]);
 
   return {
     data,
     error,
     loading,
     notFound,
-    reload: load,
+    reload,
     sendMessage,
     toggleNotification,
   };

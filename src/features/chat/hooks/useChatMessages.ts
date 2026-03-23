@@ -13,6 +13,7 @@ export interface UseChatMessagesResult {
   hasMore: boolean;
   error: Error | null;
   loadMore: () => Promise<void>;
+  refresh: () => Promise<void>;
 }
 
 export const useChatMessages = (
@@ -31,6 +32,11 @@ export const useChatMessages = (
   const newestTimestampRef = useRef<unknown>(null);
   const realtimeUnsubscribeRef = useRef<(() => void) | null>(null);
   const isMountedRef = useRef(true);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const refresh = useCallback(async () => {
+    setReloadToken(currentValue => currentValue + 1);
+  }, []);
 
   const loadInitialMessages = useCallback(
     async (roomId: string) => {
@@ -39,56 +45,49 @@ export const useChatMessages = (
         setError(null);
 
         const result = await chatRepository.getInitialMessages(roomId, MESSAGES_PER_PAGE);
+        const sortedMessages = [...result.data].reverse();
 
         if (!isMountedRef.current) {
           return;
         }
 
-        if (result.data.length === 0) {
-          setMessages([]);
-          setHasMore(false);
-          oldestCursorRef.current = null;
-          newestTimestampRef.current = null;
-          return;
-        }
-
-        setMessages(result.data);
+        setMessages(sortedMessages);
         setHasMore(result.hasMore);
         oldestCursorRef.current = result.cursor;
-        newestTimestampRef.current = result.data[0]?.createdAt ?? null;
+        newestTimestampRef.current =
+          sortedMessages[sortedMessages.length - 1]?.createdAt ?? null;
 
-        if (newestTimestampRef.current) {
-          realtimeUnsubscribeRef.current = chatRepository.subscribeToNewMessages(
-            roomId,
-            newestTimestampRef.current,
-            {
-              onNewMessages: newMessages => {
-                if (!isMountedRef.current) {
-                  return;
+        realtimeUnsubscribeRef.current?.();
+        realtimeUnsubscribeRef.current = chatRepository.subscribeToNewMessages(
+          roomId,
+          newestTimestampRef.current,
+          {
+            onNewMessages: newMessages => {
+              if (!isMountedRef.current) {
+                return;
+              }
+
+              setMessages(prevMessages => {
+                const existingIds = new Set(prevMessages.map(message => message.id));
+                const uniqueNewMessages = newMessages.filter(
+                  message => !existingIds.has(message.id),
+                );
+
+                if (uniqueNewMessages.length === 0) {
+                  return prevMessages;
                 }
 
-                setMessages(prevMessages => {
-                  const existingIds = new Set(prevMessages.map(message => message.id));
-                  const uniqueNewMessages = newMessages.filter(
-                    message => !existingIds.has(message.id),
-                  );
+                newestTimestampRef.current =
+                  uniqueNewMessages[uniqueNewMessages.length - 1]?.createdAt ?? null;
 
-                  if (uniqueNewMessages.length === 0) {
-                    return prevMessages;
-                  }
-
-                  newestTimestampRef.current =
-                    uniqueNewMessages[uniqueNewMessages.length - 1]?.createdAt ?? null;
-
-                  return [...uniqueNewMessages, ...prevMessages];
-                });
-              },
-              onError: err => {
-                console.error('실시간 메시지 구독 실패:', err);
-              },
+                return [...prevMessages, ...uniqueNewMessages];
+              });
             },
-          );
-        }
+            onError: err => {
+              console.error('실시간 메시지 구독 실패:', err);
+            },
+          },
+        );
       } catch (err) {
         console.error('초기 메시지 로드 실패:', err);
         if (isMountedRef.current) {
@@ -126,16 +125,18 @@ export const useChatMessages = (
         return;
       }
 
+      const sortedMessages = [...result.data].reverse();
+
       setMessages(prevMessages => {
         const existingIds = new Set(prevMessages.map(message => message.id));
-        const uniqueMessages = result.data.filter(message => !existingIds.has(message.id));
+        const uniqueMessages = sortedMessages.filter(message => !existingIds.has(message.id));
 
         if (uniqueMessages.length === 0) {
           setHasMore(false);
           return prevMessages;
         }
 
-        return [...prevMessages, ...uniqueMessages];
+        return [...uniqueMessages, ...prevMessages];
       });
 
       oldestCursorRef.current = result.cursor;
@@ -173,7 +174,15 @@ export const useChatMessages = (
       realtimeUnsubscribeRef.current?.();
       realtimeUnsubscribeRef.current = null;
     };
-  }, [chatRoomId, enabled, loadInitialMessages]);
+  }, [chatRoomId, enabled, loadInitialMessages, reloadToken]);
 
-  return { messages, loading, loadingMore, hasMore, error, loadMore };
+  return {
+    messages,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    loadMore,
+    refresh,
+  };
 };

@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
-import { useUserRepository } from '@/features/user';
 
 import type { ChatRoom } from '../model/types';
 import {
@@ -28,14 +27,13 @@ export interface UseChatActionsResult {
 
 export const useChatActions = (): UseChatActionsResult => {
   const chatRepository = useChatRepository();
-  const userRepository = useUserRepository();
   const { user } = useAuth();
 
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<Error | null>(null);
 
   const sendMessage = useCallback(
-    async (chatRoomId: string, text: string, chatRoom?: ChatRoom | null) => {
+    async (chatRoomId: string, text: string, _chatRoom?: ChatRoom | null) => {
       if (!user?.uid) {
         throw new Error('로그인이 필요합니다.');
       }
@@ -46,12 +44,8 @@ export const useChatActions = (): UseChatActionsResult => {
 
         await sendChatTextMessage({
           chatRepository,
-          chatRoom,
           chatRoomId,
           text,
-          userEmail: user.email,
-          userId: user.uid,
-          userRepository,
         });
       } catch (err) {
         console.error('메시지 전송 실패:', err);
@@ -61,7 +55,7 @@ export const useChatActions = (): UseChatActionsResult => {
         setSending(false);
       }
     },
-    [chatRepository, user, userRepository],
+    [chatRepository, user?.uid],
   );
 
   const sendSystemMessage = useCallback(

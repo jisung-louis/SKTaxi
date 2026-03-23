@@ -62,8 +62,17 @@ export const ChatDetailScreen = () => {
 
   const handleSend = React.useCallback(
     async (messageText: string) => {
-      await sendMessage(messageText);
-      setComposerValue('');
+      try {
+        await sendMessage(messageText);
+        setComposerValue('');
+      } catch (sendError) {
+        Alert.alert(
+          '메시지 전송 실패',
+          sendError instanceof Error
+            ? sendError.message
+            : '메시지를 전송하지 못했습니다.',
+        );
+      }
     },
     [sendMessage],
   );

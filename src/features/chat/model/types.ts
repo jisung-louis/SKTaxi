@@ -1,22 +1,41 @@
+export type ChatRoomType =
+  | 'university'
+  | 'department'
+  | 'game'
+  | 'custom'
+  | 'party';
+
+export type ChatMessageType =
+  | 'text'
+  | 'image'
+  | 'system'
+  | 'account'
+  | 'arrived'
+  | 'end';
+
 export interface ChatRoom {
   id?: string;
   name: string;
-  type: 'university' | 'department' | 'game' | 'custom';
+  type: ChatRoomType;
   department?: string;
   description?: string;
-  createdBy: string;
-  members: string[];
+  createdBy?: string;
+  memberCount: number;
+  members?: string[];
   maxMembers?: number;
   isPublic: boolean;
+  isJoined?: boolean;
+  isMuted?: boolean;
   createdAt?: unknown;
+  lastReadAt?: unknown;
   updatedAt?: unknown;
   lastMessage?: {
-    text: string;
-    senderId: string;
-    senderName: string;
-    timestamp: unknown;
+    createdAt?: unknown;
+    senderName?: string;
+    text?: string;
+    type?: ChatMessageType;
   };
-  unreadCount?: Record<string, number>;
+  unreadCount?: number;
 }
 
 export interface ChatMessage {
@@ -24,9 +43,10 @@ export interface ChatMessage {
   text: string;
   senderId: string;
   senderName: string;
-  type?: 'text' | 'image' | 'system';
+  type?: ChatMessageType;
   createdAt?: unknown;
   clientCreatedAt?: unknown;
+  imageUrl?: string;
   readBy?: string[];
   direction?: 'mc_to_app' | 'app_to_mc' | 'system';
   source?: 'minecraft' | 'app';
@@ -34,7 +54,18 @@ export interface ChatMessage {
   appUserDisplayName?: string | null;
 }
 
-export type ChatRoomCategory = 'all' | 'university' | 'department' | 'game' | 'custom';
+export interface ChatMessageDraft {
+  imageUrl?: string;
+  text?: string;
+  type: Extract<ChatMessageType, 'text' | 'image' | 'system'>;
+}
+
+export type ChatRoomCategory =
+  | 'all'
+  | 'university'
+  | 'department'
+  | 'game'
+  | 'custom';
 
 export interface ChatRoomFilter {
   category: ChatRoomCategory;

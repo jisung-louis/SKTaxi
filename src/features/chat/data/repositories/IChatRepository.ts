@@ -5,6 +5,7 @@ import type {
 
 import type {
   ChatMessage,
+  ChatMessageDraft,
   ChatRoom,
   ChatRoomFilter,
   ChatRoomStatesMap,
@@ -52,7 +53,7 @@ export interface IChatRepository {
 
   sendMessage(
     chatRoomId: string,
-    message: Omit<ChatMessage, 'id' | 'createdAt'>,
+    message: ChatMessageDraft,
   ): Promise<void>;
 
   getNotificationSetting(chatRoomId: string, userId: string): Promise<boolean>;
