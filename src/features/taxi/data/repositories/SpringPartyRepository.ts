@@ -718,7 +718,7 @@ export class SpringPartyRepository implements IPartyRepository {
   async sendSystemMessage(_partyId: string, _text: string): Promise<void> {
     throw new RepositoryError(
       RepositoryErrorCode.INVALID_ARGUMENT,
-      'Spring backend에 파티 시스템 메시지 write contract가 없습니다.',
+      '파티 시스템 메시지는 Spring backend가 자동으로 생성하므로 클라이언트에서 직접 전송할 수 없습니다.',
     );
   }
 

@@ -1,6 +1,5 @@
 import {IPartyRepository} from '../data/repositories/IPartyRepository';
 import {INotificationActionRepository} from '../data/repositories/INotificationActionRepository';
-import {reportUnsupportedSystemMessageWrite} from './systemMessageContract';
 
 interface JoinRequestDependencies {
   partyRepository: IPartyRepository;
@@ -29,7 +28,6 @@ export async function acceptJoinRequest({
     leaderId,
     requestId,
   );
-  reportUnsupportedSystemMessageWrite('join request accepted');
 }
 
 export async function declineJoinRequest({

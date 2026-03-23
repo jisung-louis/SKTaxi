@@ -2,7 +2,6 @@ import {logEvent} from '@/shared/lib/analytics';
 
 import {IPartyRepository} from '../data/repositories/IPartyRepository';
 import {Party} from '../model/types';
-import {reportUnsupportedSystemMessageWrite} from './systemMessageContract';
 
 interface CreateTaxiPartyParams {
   partyRepository: IPartyRepository;
@@ -24,8 +23,6 @@ export async function createTaxiParty({
     keyword_count: party.tags?.length ?? 0,
     has_detail: Boolean(party.detail?.trim()),
   });
-
-  reportUnsupportedSystemMessageWrite('party created');
 
   return partyId;
 }
