@@ -266,13 +266,16 @@ runtime note:
 
 상태:
 
-- joined room 기준 연결 완료
+- 완료
 
 endpoint / realtime contract:
 
-- `GET /v1/chat-rooms?joined=true`
-- `GET /v1/chat-rooms?type=UNIVERSITY|DEPARTMENT|GAME|CUSTOM&joined=true`
+- `GET /v1/chat-rooms`
+- `GET /v1/chat-rooms?type=UNIVERSITY|DEPARTMENT|GAME|CUSTOM`
 - `GET /v1/chat-rooms/{chatRoomId}`
+- `POST /v1/chat-rooms`
+- `POST /v1/chat-rooms/{chatRoomId}/join`
+- `DELETE /v1/chat-rooms/{chatRoomId}/members/me`
 - `GET /v1/chat-rooms/{chatRoomId}/messages`
 - `PATCH /v1/chat-rooms/{chatRoomId}/settings`
 - `PATCH /v1/chat-rooms/{chatRoomId}/read`
@@ -288,16 +291,20 @@ endpoint / realtime contract:
 
 - Community chat room list
 - Community chat room detail
+- 일반 공개 채팅방 preview detail / join / leave
 - 일반 Chat 메시지 이력 조회
 - 일반 Chat 실시간 메시지 수신/전송
 - 일반 Chat 음소거 토글
 - 일반 Chat 방 열람 중 읽음 처리
 - Community tab unread badge
 - room summary / room unread / last message 동기화
+- create API repository surface
 
 코드:
 
 - `src/features/chat/data/api/chatApiClient.ts`
+- `src/features/chat/data/dto/chatDto.ts`
+- `src/features/chat/data/mappers/chatMapper.ts`
 - `src/features/chat/data/repositories/SpringChatRepository.ts`
 - `src/features/chat/hooks/useChatRooms.ts`
 - `src/features/chat/hooks/useChatRoom.ts`
@@ -311,10 +318,14 @@ runtime note:
 
 - 일반 Chat도 중앙 DI `chatRepository`를 source of truth로 사용한다.
 - 목록/상세/읽음 상태/알림 상태는 `SpringChatRepository` 내부 room cache 하나를 기준으로 맞춘다.
-- `/user/queue/chat-rooms` event가 오면 room summary를 cache에 merge하고 목록/상세/탭 unread subscriber에 동시에 publish한다.
+- `GET /v1/chat-rooms` 응답은 public discover room + joined room을 함께 포함하고, 프론트는 joined/not joined 상태와 정렬 정책을 query layer에서 조합한다.
+- 미참여 public room은 detail preview만 허용하고, join 성공 후에만 messages/STOMP/read/mute 흐름을 시작한다.
+- `/user/queue/chat-rooms` event는 joined room summary 기준 채널이므로 unread/tab badge는 joined room만 계산한다.
+- `CHAT_ROOM_REMOVED`를 받으면 joined-room summary에서는 제거하되, public room detail/list cache는 not joined state로 정리한다.
 - backend는 `PATCH /read`, `PATCH /settings` 후 summary event를 보내지 않으므로 프론트가 성공 응답을 cache에 patch해 unread/mute/summary 일관성을 유지한다.
 - `GET /messages`, `SEND /app/chat/{chatRoomId}`, `SUBSCRIBE /topic/chat/{chatRoomId}`는 모두 backend에서 `ChatRoomMember`를 요구한다.
-- backend는 공개방 discover/detail/join/leave/create 계약을 이미 제공하므로, 현재 남은 일은 프론트가 `joined=true` 중심 구조를 공개방 목록 + 참여 상태 분리 구조로 바꾸는 것이다.
+- create API는 repository/API layer까지 연결됐고, UI는 아직 노출하지 않는다.
+- 일반 Chat의 client SYSTEM 전송 dead path는 제거했다.
 
 ---
 
@@ -381,8 +392,11 @@ runtime note:
 - Taxi Chat detail의 `/user/queue/errors`
 - Taxi Chat detail의 `ACCOUNT` payload write/read
 - Taxi Chat detail의 server-generated `SYSTEM` / `ARRIVED` / `END` message read/render
-- 일반 Chat의 `GET /v1/chat-rooms?joined=true`
+- 일반 Chat의 `GET /v1/chat-rooms`
 - 일반 Chat의 `GET /v1/chat-rooms/{chatRoomId}`
+- 일반 Chat의 `POST /v1/chat-rooms`
+- 일반 Chat의 `POST /v1/chat-rooms/{chatRoomId}/join`
+- 일반 Chat의 `DELETE /v1/chat-rooms/{chatRoomId}/members/me`
 - 일반 Chat의 `GET /v1/chat-rooms/{chatRoomId}/messages`
 - 일반 Chat의 `PATCH /v1/chat-rooms/{chatRoomId}/settings`
 - 일반 Chat의 `PATCH /v1/chat-rooms/{chatRoomId}/read`
@@ -393,13 +407,12 @@ runtime note:
 
 아직 남은 것:
 
-- 일반 공개 채팅방 discover/detail/join/leave/create 프론트 반영
 - 이미지 메시지 전송의 실사용 연결
 
 의미:
 
-- Taxi Chat detail과 joined 일반 Chat은 모두 REST/STOMP 기준으로 동작하고, 일반 Chat의 room summary/unread/tab indicator도 `/user/queue/chat-rooms` 기준으로 맞춰진다.
-- backend는 공개방 seed/backfill, summary, detail, join/leave/create 계약을 이미 제공하므로, Chat domain 전체로 보면 남은 일은 프론트의 공개방 탐색/참여 플로우 연결과 이미지 메시지 실사용 연결이다.
+- Taxi Chat detail과 일반 공개 Chat은 모두 REST/STOMP 기준으로 동작하고, 일반 Chat의 room summary/unread/tab indicator도 `/user/queue/chat-rooms` 기준으로 맞춰진다.
+- Chat domain 전체로 보면 남은 일은 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 
 ---
 
@@ -409,7 +422,6 @@ runtime note:
 
 ### 5.1 Chat
 
-- 일반 공개 채팅방 discover/detail/join/leave/create 프론트 반영
 - 이미지 메시지 전송의 실사용 연결
 
 ### 5.2 Notice / Board / Campus / 기타

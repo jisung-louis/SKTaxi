@@ -396,8 +396,8 @@ REST 재조회만으로 화면이 복구되어야 한다.
 현재 상태:
 
 - Taxi Chat detail 범위는 `taxiChatRepository` 기준으로 REST + STOMP 부분 이전이 완료됐다.
-- 일반 community/custom chat의 joined room 목록/상세, `/user/queue/chat-rooms` 기반 summary 갱신, read/mute는 이미 Spring 기준으로 이전됐다.
-- backend에는 공개방 seed/backfill, discover/detail/join/leave/create 계약이 추가됐고, 남은 일은 프론트가 joined/not joined 공개방 목록과 참여 플로우를 반영하는 것이다.
+- 일반 community/custom chat은 public discover/detail/join/leave/create, `/user/queue/chat-rooms` 기반 joined summary 갱신, read/mute까지 Spring 기준으로 이전됐다.
+- 남은 Chat backlog는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 
 완료 기준:
 
