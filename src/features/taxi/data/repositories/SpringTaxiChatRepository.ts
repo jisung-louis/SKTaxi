@@ -751,7 +751,9 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
           client.connectHeaders = options.connectHeaders;
           client.stompVersions = new Versions(['1.2']);
           client.webSocketFactory = () =>
-            new WebSocket(options.url, STOMP_NATIVE_PROTOCOL);
+            new WebSocket(options.url, STOMP_NATIVE_PROTOCOL, {
+              headers: options.connectHeaders,
+            });
           client.heartbeatIncoming = options.heartbeatIncomingMs;
           client.heartbeatOutgoing = options.heartbeatOutgoingMs;
           client.reconnectDelay = options.reconnectDelayMs;
