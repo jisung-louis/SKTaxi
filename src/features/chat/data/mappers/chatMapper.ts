@@ -1,6 +1,7 @@
 import type {
   ChatMessage,
   ChatMessageDraft,
+  ChatRoomCreateDraft,
   ChatRoom,
 } from '../../model/types';
 import type {
@@ -10,6 +11,7 @@ import type {
   ChatRoomSummaryEventResponseDto,
   ChatRoomSummaryResponseDto,
   ChatRoomTypeDto,
+  CreateChatRoomRequestDto,
   SendChatMessageRequestDto,
 } from '../dto/chatDto';
 
@@ -71,15 +73,17 @@ export const mapChatRoomLastMessageDto = (
 export const mapChatRoomSummaryDto = (
   room: ChatRoomSummaryResponseDto,
 ): ChatRoom => ({
+  description: room.description ?? undefined,
   id: room.id,
-  isJoined: room.isJoined,
-  isPublic: room.type !== 'CUSTOM' && room.type !== 'PARTY',
+  isJoined: room.joined,
+  isMuted: room.isMuted,
+  isPublic: room.isPublic,
   lastMessage: mapChatRoomLastMessageDto(room.lastMessage),
   memberCount: room.memberCount,
   name: room.name,
   type: resolveRoomType(room.type),
   unreadCount: room.unreadCount,
-  updatedAt: room.lastMessage?.createdAt ?? undefined,
+  updatedAt: room.lastMessageAt ?? room.lastMessage?.createdAt ?? undefined,
 });
 
 export const mapChatRoomDetailDto = (
@@ -89,14 +93,20 @@ export const mapChatRoomDetailDto = (
   ...existing,
   description: room.description ?? undefined,
   id: room.id,
-  isJoined: room.isJoined,
+  isJoined: room.joined,
   isMuted: room.isMuted,
   isPublic: room.isPublic,
+  lastMessage:
+    mapChatRoomLastMessageDto(room.lastMessage) ?? existing?.lastMessage,
   lastReadAt: room.lastReadAt ?? undefined,
   memberCount: room.memberCount,
   name: room.name,
   type: resolveRoomType(room.type),
   unreadCount: room.unreadCount,
+  updatedAt:
+    room.lastMessageAt ??
+    room.lastMessage?.createdAt ??
+    existing?.updatedAt,
 });
 
 export const mergeChatRoomSummaryEvent = (
@@ -105,6 +115,7 @@ export const mergeChatRoomSummaryEvent = (
 ): ChatRoom => ({
   ...room,
   id: event.chatRoomId,
+  isJoined: true,
   lastMessage: mapChatRoomLastMessageDto(event.lastMessage),
   memberCount: event.memberCount,
   name: event.name,
@@ -113,6 +124,13 @@ export const mergeChatRoomSummaryEvent = (
     event.updatedAt ??
     event.lastMessage?.createdAt ??
     room.updatedAt,
+});
+
+export const mapChatRoomCreateDraftToDto = (
+  chatRoom: ChatRoomCreateDraft,
+): CreateChatRoomRequestDto => ({
+  description: chatRoom.description?.trim() || null,
+  name: chatRoom.name.trim(),
 });
 
 export const mapChatMessageDto = (
@@ -136,11 +154,6 @@ export const mapChatMessageDraftToDto = (
         imageUrl: message.imageUrl ?? null,
         text: message.text ?? null,
         type: 'IMAGE',
-      };
-    case 'system':
-      return {
-        text: message.text ?? null,
-        type: 'SYSTEM',
       };
     case 'text':
     default:

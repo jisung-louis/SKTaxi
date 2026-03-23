@@ -5,6 +5,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -22,6 +23,7 @@ import {
 } from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import Button from '@/shared/ui/Button';
 import {
   ChatHeader,
   ChatMessageList,
@@ -46,8 +48,18 @@ export const ChatDetailScreen = () => {
     >();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {data, error, loading, notFound, reload, sendMessage, toggleNotification} =
-    useChatDetailData(route.params?.chatRoomId);
+  const {
+    data,
+    error,
+    joinRoom,
+    leaveRoom,
+    loading,
+    membershipLoading,
+    notFound,
+    reload,
+    sendMessage,
+    toggleNotification,
+  } = useChatDetailData(route.params?.chatRoomId);
   const [composerValue, setComposerValue] = React.useState('');
   const [menuVisible, setMenuVisible] = React.useState(false);
 
@@ -77,16 +89,42 @@ export const ChatDetailScreen = () => {
     [sendMessage],
   );
 
+  const handleJoin = React.useCallback(async () => {
+    try {
+      await joinRoom();
+    } catch (joinError) {
+      Alert.alert(
+        '참여하기 실패',
+        joinError instanceof Error
+          ? joinError.message
+          : '채팅방에 참여하지 못했습니다.',
+      );
+    }
+  }, [joinRoom]);
+
   const handleLeave = React.useCallback(() => {
     Alert.alert('채팅방 나가기', '채팅방에서 나갈까요?', [
       {text: '취소', style: 'cancel'},
       {
         text: '나가기',
         style: 'destructive',
-        onPress: handlePressBack,
+        onPress: () => {
+          leaveRoom()
+            .then(() => {
+              setComposerValue('');
+            })
+            .catch(leaveError => {
+              Alert.alert(
+                '채팅방 나가기 실패',
+                leaveError instanceof Error
+                  ? leaveError.message
+                  : '채팅방에서 나가지 못했습니다.',
+              );
+            });
+        },
       },
     ]);
-  }, [handlePressBack]);
+  }, [leaveRoom]);
 
   const handleReport = React.useCallback(() => {
     Alert.alert('신고하기', '신고 기능은 다음 단계에서 연결할 예정입니다.');
@@ -136,40 +174,98 @@ export const ChatDetailScreen = () => {
             />
           </View>
         ) : data ? (
-          <>
-            <View style={styles.threadWrap}>
-              <ChatMessageList
-                contentContainerStyle={styles.threadContent}
-                items={data.items}
-              />
-            </View>
+          data.mode === 'preview' && data.preview ? (
+            <View style={styles.previewWrap}>
+              <View style={styles.previewCard}>
+                <View style={styles.previewStatusPill}>
+                  <Text style={styles.previewStatusLabel}>
+                    {data.preview.statusLabel}
+                  </Text>
+                </View>
 
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={0}>
-              <DetailComposer
-                leadingActionAccessibilityLabel="첨부 메뉴"
-                leadingIconName="add-outline"
-                onChangeText={setComposerValue}
-                onPressLeadingAction={() => {
-                  Alert.alert('준비 중', '첨부 기능은 다음 단계에서 연결할 예정입니다.');
-                }}
-                onSend={handleSend}
-                placeholder={data.composerPlaceholder}
-                sendAccessibilityLabel="메시지 전송"
-                value={composerValue}
-              />
-            </KeyboardAvoidingView>
-          </>
+                <Text style={styles.previewDescription}>
+                  {data.preview.description}
+                </Text>
+                <Text style={styles.previewHelperText}>
+                  {data.preview.helperText}
+                </Text>
+
+                <View style={styles.previewInfoRow}>
+                  <View style={styles.previewInfoItem}>
+                    <Icon
+                      color={COLORS.text.muted}
+                      name="people-outline"
+                      size={16}
+                    />
+                    <Text style={styles.previewInfoText}>
+                      {data.preview.memberCountLabel}
+                    </Text>
+                  </View>
+
+                  <View style={styles.previewInfoItem}>
+                    <Icon
+                      color={COLORS.text.muted}
+                      name="time-outline"
+                      size={16}
+                    />
+                    <Text style={styles.previewInfoText}>
+                      {data.preview.timeLabel}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.previewMessageCard}>
+                  <Text style={styles.previewMessageCaption}>최근 메시지</Text>
+                  <Text style={styles.previewMessageText}>
+                    {data.preview.lastMessageText}
+                  </Text>
+                </View>
+
+                <Button
+                  loading={membershipLoading}
+                  onPress={handleJoin}
+                  style={styles.previewJoinButton}
+                  title={data.preview.joinLabel}
+                />
+              </View>
+            </View>
+          ) : (
+            <>
+              <View style={styles.threadWrap}>
+                <ChatMessageList
+                  contentContainerStyle={styles.threadContent}
+                  items={data.items}
+                />
+              </View>
+
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}>
+                <DetailComposer
+                  leadingActionAccessibilityLabel="첨부 메뉴"
+                  leadingIconName="add-outline"
+                  onChangeText={setComposerValue}
+                  onPressLeadingAction={() => {
+                    Alert.alert('준비 중', '첨부 기능은 다음 단계에서 연결할 예정입니다.');
+                  }}
+                  onSend={handleSend}
+                  placeholder={data.composerPlaceholder}
+                  sendAccessibilityLabel="메시지 전송"
+                  value={composerValue}
+                />
+              </KeyboardAvoidingView>
+            </>
+          )
         ) : null}
 
         {data ? (
           <ChatPopupMenu
             canReport={data.menu.canReport}
+            canToggleNotification={data.menu.canToggleNotification}
             leaveLabel={data.menu.leaveLabel}
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}
-            onLeave={handleLeave}
+            onLeave={data.menu.canLeave ? handleLeave : undefined}
             onReport={handleReport}
             onToggleNotification={() => {
               toggleNotification().catch(() => undefined);
@@ -195,6 +291,81 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border.subtle,
     borderBottomWidth: 1,
     minHeight: 56,
+  },
+  previewCard: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: SPACING.xl,
+  },
+  previewDescription: {
+    color: COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 28,
+    marginBottom: SPACING.sm,
+  },
+  previewHelperText: {
+    color: COLORS.text.secondary,
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: SPACING.lg,
+  },
+  previewInfoItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.xs,
+  },
+  previewInfoRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  previewInfoText: {
+    color: COLORS.text.muted,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  previewJoinButton: {
+    marginTop: SPACING.md,
+  },
+  previewMessageCaption: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: SPACING.xs,
+  },
+  previewMessageCard: {
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: 18,
+    padding: SPACING.lg,
+  },
+  previewMessageText: {
+    color: COLORS.text.strong,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  previewStatusLabel: {
+    color: COLORS.brand.primaryStrong,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  previewStatusPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.brand.primarySoft,
+    borderRadius: 999,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+  },
+  previewWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xl,
   },
   screen: {
     flex: 1,

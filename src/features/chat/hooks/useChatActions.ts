@@ -4,7 +4,6 @@ import { useAuth } from '@/features/auth';
 
 import type { ChatRoom } from '../model/types';
 import {
-  sendChatSystemMessage,
   sendChatTextMessage,
 } from '../services/chatRoomService';
 
@@ -16,7 +15,6 @@ export interface UseChatActionsResult {
     text: string,
     chatRoom?: ChatRoom | null,
   ) => Promise<void>;
-  sendSystemMessage: (chatRoomId: string, text: string) => Promise<void>;
   sending: boolean;
   sendError: Error | null;
   joinRoom: (chatRoomId: string) => Promise<void>;
@@ -56,13 +54,6 @@ export const useChatActions = (): UseChatActionsResult => {
       }
     },
     [chatRepository, user?.uid],
-  );
-
-  const sendSystemMessage = useCallback(
-    async (chatRoomId: string, text: string) => {
-      await sendChatSystemMessage({ chatRepository, chatRoomId, text });
-    },
-    [chatRepository],
   );
 
   const joinRoom = useCallback(
@@ -111,7 +102,6 @@ export const useChatActions = (): UseChatActionsResult => {
 
   return {
     sendMessage,
-    sendSystemMessage,
     sending,
     sendError,
     joinRoom,

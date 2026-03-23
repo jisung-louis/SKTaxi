@@ -57,7 +57,12 @@ export interface ChatMessage {
 export interface ChatMessageDraft {
   imageUrl?: string;
   text?: string;
-  type: Extract<ChatMessageType, 'text' | 'image' | 'system'>;
+  type: Extract<ChatMessageType, 'text' | 'image'>;
+}
+
+export interface ChatRoomCreateDraft {
+  description?: string;
+  name: string;
 }
 
 export type ChatRoomCategory =

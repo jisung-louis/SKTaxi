@@ -21,9 +21,13 @@ export interface ChatRoomLastMessageResponseDto {
 }
 
 export interface ChatRoomSummaryResponseDto {
+  description?: string | null;
   id: string;
-  isJoined: boolean;
+  isMuted: boolean;
+  isPublic: boolean;
   lastMessage?: ChatRoomLastMessageResponseDto | null;
+  lastMessageAt?: string | null;
+  joined: boolean;
   memberCount: number;
   name: string;
   type: ChatRoomTypeDto;
@@ -33,14 +37,21 @@ export interface ChatRoomSummaryResponseDto {
 export interface ChatRoomDetailResponseDto {
   description?: string | null;
   id: string;
-  isJoined: boolean;
   isMuted: boolean;
   isPublic: boolean;
+  lastMessage?: ChatRoomLastMessageResponseDto | null;
+  lastMessageAt?: string | null;
+  joined: boolean;
   lastReadAt?: string | null;
   memberCount: number;
   name: string;
   type: ChatRoomTypeDto;
   unreadCount: number;
+}
+
+export interface CreateChatRoomRequestDto {
+  description?: string | null;
+  name: string;
 }
 
 export interface ChatMessageResponseDto {
@@ -105,7 +116,7 @@ export interface ChatRoomSettingsResponseDto {
 export interface SendChatMessageRequestDto {
   imageUrl?: string | null;
   text?: string | null;
-  type: Extract<ChatMessageTypeDto, 'TEXT' | 'IMAGE' | 'SYSTEM'>;
+  type: Extract<ChatMessageTypeDto, 'TEXT' | 'IMAGE'>;
 }
 
 export interface ChatRoomSummaryEventResponseDto {

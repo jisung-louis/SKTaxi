@@ -158,6 +158,7 @@ export const useChatMessages = (
 
     if (!chatRoomId || !enabled) {
       setMessages([]);
+      setError(null);
       setLoading(false);
       setHasMore(true);
       oldestCursorRef.current = null;

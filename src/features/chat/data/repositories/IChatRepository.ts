@@ -6,6 +6,7 @@ import type {
 import type {
   ChatMessage,
   ChatMessageDraft,
+  ChatRoomCreateDraft,
   ChatRoom,
   ChatRoomFilter,
   ChatRoomStatesMap,
@@ -28,11 +29,11 @@ export interface IChatRepository {
 
   getChatRoom(chatRoomId: string): Promise<ChatRoom | null>;
 
-  createChatRoom(chatRoom: Omit<ChatRoom, 'id'>): Promise<string>;
+  createChatRoom(chatRoom: ChatRoomCreateDraft): Promise<ChatRoom>;
 
-  joinChatRoom(chatRoomId: string, userId: string): Promise<void>;
+  joinChatRoom(chatRoomId: string, userId: string): Promise<ChatRoom | null>;
 
-  leaveChatRoom(chatRoomId: string, userId: string): Promise<void>;
+  leaveChatRoom(chatRoomId: string, userId: string): Promise<ChatRoom | null>;
 
   getInitialMessages(
     chatRoomId: string,

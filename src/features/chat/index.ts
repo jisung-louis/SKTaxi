@@ -23,6 +23,7 @@ export { useCommunityTabUnreadIndicator } from './hooks/useCommunityTabUnreadInd
 export type {
   ChatMessage,
   ChatMessageDraft,
+  ChatRoomCreateDraft,
   ChatRoom,
   ChatRoomCategory,
   ChatRoomFilter,

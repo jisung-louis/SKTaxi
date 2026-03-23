@@ -15,6 +15,8 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
   const {
     chatRoom,
     error: roomError,
+    joinRoom: joinChatRoom,
+    leaveRoom: leaveChatRoom,
     loading: roomLoading,
     refresh: refreshRoom,
   } = useChatRoom(chatRoomId);
@@ -24,15 +26,15 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     messages,
     refresh: refreshMessages,
   } = useChatMessages(chatRoomId, Boolean(chatRoomId && chatRoom?.isJoined));
-  const {sendMessage: sendChatMessage, updateNotificationSetting} =
-    useChatActions();
+  const {sendMessage: sendChatMessage, updateNotificationSetting} = useChatActions();
   const {updateLastRead} = useChatRoomLastRead(
     chatRoomId,
     Boolean(isFocused && chatRoom?.isJoined),
   );
+  const [membershipLoading, setMembershipLoading] = React.useState(false);
 
   const data = React.useMemo(() => {
-    if (!chatRoom || !chatRoom.isJoined) {
+    if (!chatRoom) {
       return null;
     }
 
@@ -50,16 +52,12 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
       return roomError;
     }
 
-    if (chatRoom && chatRoom.isJoined === false) {
-      return '참여 중인 채팅방만 메시지를 확인할 수 있습니다.';
-    }
-
     if (messagesError) {
       return messagesError.message || '채팅 메시지를 불러오지 못했습니다.';
     }
 
     return null;
-  }, [chatRoom, messagesError, roomError]);
+  }, [messagesError, roomError]);
 
   const reload = React.useCallback(async () => {
     await refreshRoom();
@@ -92,10 +90,39 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     );
   }, [chatRoom, chatRoomId, updateNotificationSetting]);
 
+  const joinRoom = React.useCallback(async () => {
+    if (!chatRoomId || !chatRoom || chatRoom.isJoined) {
+      return;
+    }
+
+    try {
+      setMembershipLoading(true);
+      await joinChatRoom();
+    } finally {
+      setMembershipLoading(false);
+    }
+  }, [chatRoom, chatRoomId, joinChatRoom]);
+
+  const leaveRoom = React.useCallback(async () => {
+    if (!chatRoomId || !chatRoom?.isJoined) {
+      return;
+    }
+
+    try {
+      setMembershipLoading(true);
+      await leaveChatRoom();
+    } finally {
+      setMembershipLoading(false);
+    }
+  }, [chatRoom, chatRoomId, leaveChatRoom]);
+
   return {
     data,
     error,
+    joinRoom,
+    leaveRoom,
     loading,
+    membershipLoading,
     notFound,
     reload,
     sendMessage,

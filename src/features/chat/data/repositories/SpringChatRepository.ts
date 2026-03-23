@@ -17,6 +17,7 @@ import {
 import type {
   ChatMessage,
   ChatMessageDraft,
+  ChatRoomCreateDraft,
   ChatRoom,
   ChatRoomFilter,
   ChatRoomStatesMap,
@@ -33,6 +34,7 @@ import type {
 import {
   mapChatMessageDraftToDto,
   mapChatMessageDto,
+  mapChatRoomCreateDraftToDto,
   mapChatRoomDetailDto,
   mapChatRoomSummaryDto,
   mergeChatRoomSummaryEvent,
@@ -114,10 +116,10 @@ const createStompRepositoryError = (
 
 const isGeneralChatRoom = (room: ChatRoom) => room.type !== 'party';
 
-const isJoinedRoom = (room: ChatRoom) => room.isJoined !== false;
+const isJoinedRoom = (room: ChatRoom) => room.isJoined === true;
 
-const matchesFilter = (room: ChatRoom, filter: ChatRoomFilter) => {
-  if (!isGeneralChatRoom(room) || !isJoinedRoom(room)) {
+const matchesCategoryFilter = (room: ChatRoom, filter: ChatRoomFilter) => {
+  if (!isGeneralChatRoom(room)) {
     return false;
   }
 
@@ -128,6 +130,10 @@ const matchesFilter = (room: ChatRoom, filter: ChatRoomFilter) => {
   return room.type === filter.category;
 };
 
+const matchesFilter = (room: ChatRoom, filter: ChatRoomFilter) => {
+  return matchesCategoryFilter(room, filter);
+};
+
 const hasRoomDetail = (room?: ChatRoom | null) =>
   Boolean(
     room &&
@@ -135,6 +141,14 @@ const hasRoomDetail = (room?: ChatRoom | null) =>
         room.lastReadAt !== undefined ||
         room.description !== undefined),
   );
+
+const toLeftRoom = (room: ChatRoom): ChatRoom => ({
+  ...room,
+  isJoined: false,
+  isMuted: false,
+  lastReadAt: undefined,
+  unreadCount: 0,
+});
 
 export class SpringChatRepository implements IChatRepository {
   private readonly listSubscriptions = new Map<number, ListSubscription>();
@@ -235,7 +249,7 @@ export class SpringChatRepository implements IChatRepository {
     bucket.add(callbacks);
     this.roomDetailSubscribers.set(chatRoomId, bucket);
 
-    this.loadChatRoom(chatRoomId, false)
+    this.loadChatRoom(chatRoomId, true)
       .then(room => {
         callbacks.onData(room ? cloneRoom(room) : null);
       })
@@ -260,25 +274,79 @@ export class SpringChatRepository implements IChatRepository {
     return room ? cloneRoom(room) : null;
   }
 
-  async createChatRoom(_chatRoom: Omit<ChatRoom, 'id'>): Promise<string> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '일반 채팅방 생성 API는 아직 서버 계약이 없습니다.',
+  async createChatRoom(chatRoom: ChatRoomCreateDraft): Promise<ChatRoom> {
+    const roomName = chatRoom.name.trim();
+
+    if (!roomName) {
+      throw new RepositoryError(
+        RepositoryErrorCode.INVALID_ARGUMENT,
+        '채팅방 이름을 입력해주세요.',
+      );
+    }
+
+    const response = await chatApiClient.createChatRoom(
+      mapChatRoomCreateDraftToDto(chatRoom),
     );
+    const mapped = mapChatRoomDetailDto(response.data, this.roomCache.get(response.data.id));
+
+    this.roomCache.set(mapped.id!, mapped);
+    this.publishRoom(mapped.id!);
+    this.publishLists();
+    this.publishNotifications();
+    this.publishStates();
+
+    return cloneRoom(mapped);
   }
 
-  async joinChatRoom(_chatRoomId: string, _userId: string): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '일반 채팅방 참여 API는 아직 서버 계약이 없습니다.',
-    );
+  async joinChatRoom(chatRoomId: string, _userId: string): Promise<ChatRoom | null> {
+    try {
+      const response = await chatApiClient.joinChatRoom(chatRoomId);
+      const mapped = mapChatRoomDetailDto(
+        response.data,
+        this.roomCache.get(chatRoomId),
+      );
+
+      this.roomCache.set(chatRoomId, mapped);
+      this.publishRoom(chatRoomId);
+      this.publishLists();
+      this.publishNotifications();
+      this.publishStates();
+
+      return cloneRoom(mapped);
+    } catch (error) {
+      if (
+        error instanceof RepositoryError &&
+        error.code === RepositoryErrorCode.ALREADY_EXISTS &&
+        this.hasApiErrorCode(error, 'ALREADY_CHAT_ROOM_MEMBER')
+      ) {
+        return this.loadChatRoom(chatRoomId, true);
+      }
+
+      throw error;
+    }
   }
 
-  async leaveChatRoom(_chatRoomId: string, _userId: string): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '일반 채팅방 나가기 API는 아직 서버 계약이 없습니다.',
+  async leaveChatRoom(chatRoomId: string, _userId: string): Promise<ChatRoom | null> {
+    const response = await chatApiClient.leaveChatRoom(chatRoomId);
+    const mapped = toLeftRoom(
+      mapChatRoomDetailDto(response.data, this.roomCache.get(chatRoomId)),
     );
+
+    this.releaseRoomMessageSubscription(chatRoomId);
+
+    if (mapped.isPublic) {
+      this.roomCache.set(chatRoomId, mapped);
+      this.publishRoom(chatRoomId);
+    } else {
+      this.roomCache.delete(chatRoomId);
+      this.publishRoom(chatRoomId, null);
+    }
+
+    this.publishLists();
+    this.publishNotifications();
+    this.publishStates();
+
+    return cloneRoom(mapped);
   }
 
   async getInitialMessages(
@@ -370,13 +438,6 @@ export class SpringChatRepository implements IChatRepository {
     chatRoomId: string,
     message: ChatMessageDraft,
   ): Promise<void> {
-    if (message.type === 'system') {
-      throw new RepositoryError(
-        RepositoryErrorCode.INVALID_ARGUMENT,
-        '일반 채팅방에서는 SYSTEM 메시지를 전송할 수 없습니다.',
-      );
-    }
-
     const client = await this.ensureStompClient();
 
     client.publish({
@@ -519,34 +580,30 @@ export class SpringChatRepository implements IChatRepository {
     switch (filter.category) {
       case 'custom':
         return {
-          joined: true,
           type: 'CUSTOM',
         };
       case 'department':
         return {
-          joined: true,
           type: 'DEPARTMENT',
         };
       case 'game':
         return {
-          joined: true,
           type: 'GAME',
         };
       case 'university':
         return {
-          joined: true,
           type: 'UNIVERSITY',
         };
       case 'all':
       default:
-        return {
-          joined: true,
-        };
+        return {};
     }
   }
 
   private buildNotificationMap() {
-    return this.getCachedGeneralChatRooms().reduce<Record<string, boolean>>(
+    return this.getCachedGeneralChatRooms()
+      .filter(isJoinedRoom)
+      .reduce<Record<string, boolean>>(
       (accumulator, room) => {
         if (room.id) {
           accumulator[room.id] = room.isMuted !== true;
@@ -559,7 +616,9 @@ export class SpringChatRepository implements IChatRepository {
   }
 
   private buildStatesMap(): ChatRoomStatesMap {
-    return this.getCachedGeneralChatRooms().reduce<ChatRoomStatesMap>(
+    return this.getCachedGeneralChatRooms()
+      .filter(isJoinedRoom)
+      .reduce<ChatRoomStatesMap>(
       (accumulator, room) => {
         if (room.id) {
           accumulator[room.id] = {
@@ -830,6 +889,11 @@ export class SpringChatRepository implements IChatRepository {
     const rooms = response.data
       .map(mapChatRoomSummaryDto)
       .filter(isGeneralChatRoom);
+    const nextRoomIds = new Set(
+      rooms
+        .map(room => room.id)
+        .filter((roomId): roomId is string => Boolean(roomId)),
+    );
 
     rooms.forEach(room => {
       if (!room.id) {
@@ -851,7 +915,10 @@ export class SpringChatRepository implements IChatRepository {
       );
     });
 
+    this.reconcileRoomCache(subscription.filter, nextRoomIds);
     subscription.callbacks.onData(this.resolveRoomsForFilter(subscription.filter));
+    this.publishNotifications();
+    this.publishStates();
   }
 
   private async handleIncomingRoomMessage(chatRoomId: string, frame: StompFrame) {
@@ -892,8 +959,18 @@ export class SpringChatRepository implements IChatRepository {
     }
 
     if (payload.eventType === 'CHAT_ROOM_REMOVED') {
-      this.roomCache.delete(payload.chatRoomId);
-      this.publishRoom(payload.chatRoomId, null);
+      const existing = this.roomCache.get(payload.chatRoomId);
+
+      this.releaseRoomMessageSubscription(payload.chatRoomId);
+
+      if (existing?.isPublic) {
+        this.roomCache.set(payload.chatRoomId, toLeftRoom(existing));
+        this.publishRoom(payload.chatRoomId);
+      } else {
+        this.roomCache.delete(payload.chatRoomId);
+        this.publishRoom(payload.chatRoomId, null);
+      }
+
       this.publishLists();
       this.publishNotifications();
       this.publishStates();
@@ -905,6 +982,8 @@ export class SpringChatRepository implements IChatRepository {
     if (!existing) {
       await this.loadChatRoom(payload.chatRoomId, true);
       this.publishLists();
+      this.publishNotifications();
+      this.publishStates();
       return;
     }
 
@@ -914,6 +993,12 @@ export class SpringChatRepository implements IChatRepository {
     );
     this.publishRoom(payload.chatRoomId);
     this.publishLists();
+    this.publishNotifications();
+    this.publishStates();
+  }
+
+  private hasApiErrorCode(error: RepositoryError, apiErrorCode: string) {
+    return error.context?.apiErrorCode === apiErrorCode;
   }
 
   private hasRealtimeSubscribers() {
@@ -935,12 +1020,34 @@ export class SpringChatRepository implements IChatRepository {
     const rooms = response.data
       .map(mapChatRoomSummaryDto)
       .filter(isGeneralChatRoom);
+    const joinedRoomIds = new Set(
+      rooms
+        .map(room => room.id)
+        .filter((roomId): roomId is string => Boolean(roomId)),
+    );
 
     rooms.forEach(room => {
       if (room.id) {
         this.roomCache.set(room.id, room);
       }
     });
+
+    this.getCachedGeneralChatRooms()
+      .filter(room => room.id && isJoinedRoom(room) && !joinedRoomIds.has(room.id))
+      .forEach(room => {
+        if (!room.id) {
+          return;
+        }
+
+        if (room.isPublic) {
+          this.roomCache.set(room.id, toLeftRoom(room));
+          this.publishRoom(room.id);
+          return;
+        }
+
+        this.roomCache.delete(room.id);
+        this.publishRoom(room.id, null);
+      });
 
     await Promise.all(
       rooms
@@ -992,8 +1099,14 @@ export class SpringChatRepository implements IChatRepository {
       .catch(error => {
         if (
           error instanceof RepositoryError &&
-          error.code === RepositoryErrorCode.NOT_FOUND
+          (error.code === RepositoryErrorCode.NOT_FOUND ||
+            error.code === RepositoryErrorCode.PERMISSION_DENIED)
         ) {
+          this.releaseRoomMessageSubscription(chatRoomId);
+          this.roomCache.delete(chatRoomId);
+          this.publishRoom(chatRoomId, null);
+          this.publishNotifications();
+          this.publishStates();
           return null;
         }
 
@@ -1086,6 +1199,30 @@ export class SpringChatRepository implements IChatRepository {
       .filter(room => matchesFilter(room, filter))
       .sort(sortChatRooms)
       .map(cloneRoom);
+  }
+
+  private reconcileRoomCache(filter: ChatRoomFilter, nextRoomIds: Set<string>) {
+    this.getCachedGeneralChatRooms()
+      .filter(room => matchesCategoryFilter(room, filter))
+      .forEach(room => {
+        if (!room.id || nextRoomIds.has(room.id)) {
+          return;
+        }
+
+        this.releaseRoomMessageSubscription(room.id);
+        this.roomCache.delete(room.id);
+        this.publishRoom(room.id, null);
+      });
+  }
+
+  private releaseRoomMessageSubscription(chatRoomId: string) {
+    const realtimeState = this.messageRealtimeStates.get(chatRoomId);
+
+    realtimeState?.subscription?.unsubscribe();
+
+    if (realtimeState) {
+      realtimeState.subscription = null;
+    }
   }
 
   private getCachedGeneralChatRooms() {

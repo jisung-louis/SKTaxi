@@ -17,6 +17,7 @@ import {
 
 interface ChatPopupMenuProps {
   canReport?: boolean
+  canToggleNotification?: boolean
   leaveLabel: string
   notificationEnabled: boolean
   onClose: () => void
@@ -47,6 +48,7 @@ const TogglePill = ({enabled}: {enabled: boolean}) => {
 
 export const ChatPopupMenu = ({
   canReport = false,
+  canToggleNotification = true,
   leaveLabel,
   notificationEnabled,
   onClose,
@@ -62,29 +64,34 @@ export const ChatPopupMenu = ({
   }
 
   const showLeaveAction = Boolean(onLeave);
+  const showNotificationAction = canToggleNotification;
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <Pressable onPress={onClose} style={styles.overlay} />
 
       <View style={[styles.card, {right, top}]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.82}
-          onPress={onToggleNotification}
-          style={styles.toggleRow}>
-          <View style={styles.rowLabelGroup}>
-            <Icon
-              color={COLORS.text.secondary}
-              name="notifications-outline"
-              size={15}
-            />
-            <Text style={styles.rowLabel}>알림</Text>
-          </View>
-          <TogglePill enabled={notificationEnabled} />
-        </TouchableOpacity>
+        {showNotificationAction ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            onPress={onToggleNotification}
+            style={styles.toggleRow}>
+            <View style={styles.rowLabelGroup}>
+              <Icon
+                color={COLORS.text.secondary}
+                name="notifications-outline"
+                size={15}
+              />
+              <Text style={styles.rowLabel}>알림</Text>
+            </View>
+            <TogglePill enabled={notificationEnabled} />
+          </TouchableOpacity>
+        ) : null}
 
-        {canReport && onReport ? <View style={styles.divider} /> : null}
+        {showNotificationAction && canReport && onReport ? (
+          <View style={styles.divider} />
+        ) : null}
 
         {canReport && onReport ? (
           <TouchableOpacity

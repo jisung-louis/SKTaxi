@@ -125,18 +125,3 @@ export const sendChatTextMessage = async ({
     type: 'text',
   });
 };
-
-export const sendChatSystemMessage = async ({
-  chatRepository,
-  chatRoomId,
-  text,
-}: {
-  chatRepository: IChatRepository;
-  chatRoomId: string;
-  text: string;
-}) => {
-  await chatRepository.sendMessage(chatRoomId, {
-    text,
-    type: 'system',
-  });
-};
