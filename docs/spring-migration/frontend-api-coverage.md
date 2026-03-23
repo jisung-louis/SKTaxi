@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-23
+> 최종 수정일: 2026-03-24
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -433,7 +433,12 @@ runtime note:
 - Notice 본체
 - Board / Community
 - Campus 계열
-- 남아 있는 mock 화면 체인
+- 남아 있는 runtime mock 화면 체인
+
+구조 메모:
+
+- Phase G cleanup으로 Board detail, Notice home/detail, Community board home, Campus academic calendar detail의 feature-local repository entrypoint와 dead Firebase path는 제거됐다.
+- 현재 runtime에 남은 대표 mock 화면 체인은 campus home과 cafeteria detail이다.
 
 ---
 

@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-23
+> 최종 수정일: 2026-03-24
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md)
 
 ---
@@ -32,6 +32,8 @@
 - Taxi Chat detail의 STOMP lifecycle/auth reset blocker는 해소되어 이전 인증 세션 재사용 경로를 닫음
 - 일반 Chat은 Spring REST/STOMP + 중앙 DI 기준으로 public discover/detail/join/leave/create surface, list/detail/messages/read/mute 및 `/user/queue/chat-rooms` summary realtime 연결 완료
 - Community chat screen chain은 더 이상 mock `communityHomeRepository`/`chatDetailRepository`를 source of truth로 사용하지 않는다.
+- Board detail, Notice home/detail, Community board home은 더 이상 feature-local repository entrypoint를 source of truth로 사용하지 않는다.
+- Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 수렴했고, legacy Firebase/detail entrypoint dead path는 제거됐다.
 - 공개 일반 채팅방은 joined/not joined를 함께 표시하고, 미참여 room detail preview + 참여하기 CTA + leave 후 not joined 복귀 정책까지 프론트에 반영됐다.
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
@@ -50,6 +52,7 @@
 - 일반 Chat도 중앙 DI `chatRepository`를 기준으로 요약 목록/상세/메시지/read/mute 상태를 Spring source of truth로 읽는다.
 - 일반 Chat room summary/unread/tab indicator는 `/user/queue/chat-rooms` 이벤트와 REST snapshot을 함께 사용해 같은 room cache를 기준으로 동기화된다.
 - 일반 Chat의 Phase F 범위는 닫혔고, 다음 남은 Chat backlog는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
+- Phase G는 부분 진행 상태이며, Board/Notice/Community/Campus academic detail의 남은 local entrypoint와 dead Firebase path를 줄였고, campus home/cafeteria detail은 후속 contract 정리 범위로 남아 있다.
 
 ---
 
@@ -63,7 +66,7 @@
 | Phase D. Notification 정식 이전                       | 완료           | REST + unread count + SSE 실시간 동기화 완료                                               |
 | Phase E. Taxi Party 정식 이전                         | 완료           | recruit 지도 선택 기반 자유 입력, Chat header/action tray, ACCOUNT/ARRIVE payload, 서버 생성 SYSTEM/ARRIVED/END 흐름까지 반영 완료 |
 | Phase F. Chat 정식 이전                               | 완료           | Taxi Chat detail + 일반 공개 chat discover/detail/join/leave/create + summary realtime + read/mute + central DI 수렴 완료 |
-| Phase G. 남은 mock 화면 체인 정리                     | 미시작         | feature-local 임시 경로 수렴 필요                                                          |
+| Phase G. 남은 mock 화면 체인 정리                     | 진행 중        | Board/Notice/Community/Campus academic detail 정리 완료, campus home/cafeteria detail 잔존 |
 | Phase H. 정리/수렴                                    | 미시작         | Firestore direct path와 legacy 분기 제거                                                   |
 
 ---
@@ -586,6 +589,81 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 ---
 
+### 4.15 Phase G 구현
+
+이번 스레드에서는 Spring API를 새로 붙이지 않고, 남아 있던 mock/Firebase/direct import 경로 중 이번에 안전하게 닫을 수 있는 feature-local entrypoint와 dead path를 정리했다.
+
+추가/갱신한 대표 파일:
+
+- `src/features/board/hooks/useBoardDetailData.ts`
+- `src/features/notice/hooks/useNoticeHomeData.ts`
+- `src/features/notice/hooks/useNoticeDetailData.ts`
+- `src/features/notice/testing/MockNoticeRepository.ts`
+- `src/features/community/application/communityBoardQuery.ts`
+- `src/features/community/hooks/useCommunityBoardData.ts`
+- `src/features/campus/hooks/useAcademicCalendarDetailData.ts`
+- `src/features/board/index.ts`
+- `src/features/notice/index.ts`
+- `src/features/campus/index.ts`
+
+이번 스레드에서 제거한 대표 legacy/dead path:
+
+- `src/features/board/data/repositories/boardDetailRepository.ts`
+- `src/features/board/data/repositories/MockBoardDetailRepository.ts`
+- `src/features/board/data/repositories/IBoardDetailRepository.ts`
+- `src/features/board/data/repositories/FirebaseBoardRepository.ts`
+- `src/features/board/mocks/boardDetail.mock.ts`
+- `src/features/notice/data/repositories/noticeHomeRepository.ts`
+- `src/features/notice/data/repositories/noticeDetailRepository.ts`
+- `src/features/notice/data/repositories/MockNoticeHomeRepository.ts`
+- `src/features/notice/data/repositories/MockNoticeDetailRepository.ts`
+- `src/features/notice/data/repositories/FirebaseNoticeRepository.ts`
+- `src/features/community/data/repositories/communityHomeRepository.ts`
+- `src/features/community/data/repositories/MockCommunityHomeRepository.ts`
+- `src/features/community/mocks/communityHome.mock.ts`
+- `src/features/campus/data/repositories/academicCalendarDetailRepository.ts`
+- `src/features/campus/data/repositories/MockAcademicCalendarDetailRepository.ts`
+- `src/features/campus/data/repositories/IAcademicCalendarDetailRepository.ts`
+- `src/features/campus/data/repositories/FirebaseAcademicRepository.ts`
+- `src/features/campus/data/repositories/FirebaseCafeteriaRepository.ts`
+
+이번 구현의 핵심 변화:
+
+- Board detail은 더 이상 전용 mock singleton을 거치지 않고 중앙 DI `boardRepository`에서 게시글/댓글을 읽어 화면 모델로 조합한다.
+- Notice home/detail은 전용 home/detail repository entrypoint를 제거하고 중앙 DI `noticeRepository` + 기존 hook/query 경계로 수렴했다.
+- `MockNoticeRepository`는 기존 notice mock 화면 데이터를 seed로 흡수해 notice domain mock source of truth를 한 곳으로 모았다.
+- Community board home은 `communityBoardQuery`를 통해 중앙 DI `boardRepository` 결과를 화면 모델로 변환하고, feature-local `communityHomeRepository` 의존을 제거했다.
+- Campus academic calendar detail은 중앙 DI `academicRepository`에서 schedule을 읽어 detail source로 변환한다.
+- Board/Notice/Campus에 남아 있던 Firebase repository 파일은 runtime import가 없는 dead path였으므로 제거했다.
+
+이번 스레드에서 남겨둔 경계:
+
+- `useCampusHomeRepository` / `MockCampusHomeRepository`
+- `cafeteriaDetailRepository` / `MockCafeteriaDetailRepository`
+
+남겨둔 이유:
+
+- campus home은 notice/timetable/taxi/cafeteria/academic를 한 화면 모델로 묶는 조합 책임이 아직 중앙 query/assembler로 승격되지 않았다.
+- cafeteria detail은 현재 중앙 `ICafeteriaRepository` 계약이 주간 메뉴 문자열 집계까지만 노출하고 있어, detail 화면이 쓰는 가격/반응/badge metadata를 대체할 공용 source가 아직 없다.
+
+### 4.16 Phase G 결과
+
+현재 가능한 것:
+
+- Board detail은 중앙 DI `boardRepository` 기준으로 게시글/댓글을 읽고 screen view data를 만든다.
+- Notice home/detail은 중앙 DI `noticeRepository`와 기존 notice hook 계층을 기준으로 동작한다.
+- Community board home은 중앙 DI `boardRepository`와 query layer를 기준으로 community screen model을 만든다.
+- Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 동작한다.
+- Board/Notice/Campus의 dead Firebase repository surface는 제거되어 runtime source of truth 후보에서 빠졌다.
+
+현재 아직 남은 것:
+
+- Notice / Board / Community / Campus 본체 Spring API 이전은 아직 남아 있다.
+- campus home과 cafeteria detail은 feature-local mock entrypoint가 남아 있다.
+- 일반 Chat 이미지 업로드/이미지 메시지 실사용 연결은 아직 남아 있다.
+
+---
+
 ## 5. 현재 남아 있는 구조 상태
 
 현재 앱은 여전히 아래 두 구조가 혼재한다.
@@ -602,7 +680,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 즉, 다음 작업자는 앱 전체를 먼저 전면 리팩터링하지 않는다.
 
-Phase D 반영 후 구조 상태:
+Phase G 부분 반영 후 구조 상태:
 
 - App Notice의 screen entrypoint는 제거됐고 중앙 DI `appNoticeRepository`로 수렴했다.
 - Notification Center의 screen entrypoint는 제거됐고 중앙 DI `notificationRepository`로 수렴했다.
@@ -611,6 +689,11 @@ Phase D 반영 후 구조 상태:
 - RecruitScreen도 더 이상 `taxiRecruitRepository` mock singleton을 source of truth로 사용하지 않고 중앙 `partyRepository`를 통해 `/v1/parties`를 호출한다.
 - Taxi Chat detail은 중앙 DI `taxiChatRepository`와 assembler로 수렴했고, feature-local taxi chat singleton은 더 이상 source of truth가 아니다.
 - 일반 Chat도 중앙 DI `chatRepository`와 query/assembler 경계로 수렴했고, feature-local general chat mock repository는 제거됐다.
+- Board detail은 중앙 DI `boardRepository`로 수렴했고, 전용 detail repository/screen mock chain은 제거됐다.
+- Notice home/detail은 중앙 DI `noticeRepository` + notice hook 계층으로 수렴했고, home/detail 전용 repository entrypoint는 제거됐다.
+- Community board home은 `communityBoardQuery` + 중앙 DI `boardRepository`로 수렴했고, `communityHomeRepository`는 제거됐다.
+- Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 수렴했고, legacy detail/Firebase entrypoint는 제거됐다.
+- campus home / cafeteria detail은 아직 중앙 contract가 부족해 feature-local mock entrypoint가 남아 있다.
 - Chat domain의 다음 남은 구조 과제는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 
 ---
