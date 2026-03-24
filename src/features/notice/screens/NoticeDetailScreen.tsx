@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -55,14 +56,19 @@ export const NoticeDetailScreen = () => {
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {
+    cancelCommentEdit,
     commentDraft,
+    commentItems,
     data,
+    editingCommentId,
     error,
+    isEditingComment,
     loading,
     notice,
     notFound,
     reload,
     setCommentDraft,
+    startEditingComment,
     submitComment,
     submittingComment,
     toggleLike,
@@ -104,10 +110,23 @@ export const NoticeDetailScreen = () => {
         '오류',
         submitError instanceof Error
           ? submitError.message
-          : '댓글 작성에 실패했습니다.',
+          : isEditingComment
+            ? '댓글 수정에 실패했습니다.'
+            : '댓글 작성에 실패했습니다.',
       );
     });
-  }, [submitComment]);
+  }, [isEditingComment, submitComment]);
+
+  const handleStartEditingComment = React.useCallback(
+    (commentId: string) => {
+      startEditingComment(commentId);
+    },
+    [startEditingComment],
+  );
+
+  const handleCancelCommentEdit = React.useCallback(() => {
+    cancelCommentEdit();
+  }, [cancelCommentEdit]);
 
   const primaryBadge = data?.metaBadges[0];
   const secondaryBadges = data?.metaBadges.slice(1) ?? [];
@@ -198,9 +217,9 @@ export const NoticeDetailScreen = () => {
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
-              <Text style={styles.commentsTitle}>댓글 {data.comments.length}</Text>
+              <Text style={styles.commentsTitle}>댓글 {commentItems.length}</Text>
 
-              {data.comments.length === 0 ? (
+              {commentItems.length === 0 ? (
                 <View style={styles.emptyCommentsWrap}>
                   <Text style={styles.emptyCommentsLabel}>
                     {data.emptyCommentsLabel}
@@ -208,8 +227,17 @@ export const NoticeDetailScreen = () => {
                 </View>
               ) : (
                 <View style={styles.commentsList}>
-                  {data.comments.map(comment => (
-                    <DetailCommentCard comment={comment} key={comment.id} />
+                  {commentItems.map(comment => (
+                    <DetailCommentCard
+                      actionLabel={comment.isEditable ? '수정' : undefined}
+                      comment={comment}
+                      key={comment.id}
+                      onPressAction={
+                        comment.isEditable
+                          ? () => handleStartEditingComment(comment.id)
+                          : undefined
+                      }
+                    />
                   ))}
                 </View>
               )}
@@ -220,10 +248,25 @@ export const NoticeDetailScreen = () => {
               keyboardVerticalOffset={0}
               pointerEvents="box-none"
               style={styles.composerAvoidingView}>
+              {isEditingComment ? (
+                <View style={styles.editingBanner}>
+                  <Text style={styles.editingBannerText}>댓글 수정 중</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    onPress={handleCancelCommentEdit}>
+                    <Text style={styles.editingBannerAction}>취소</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
               <DetailComposer
                 onChangeText={setCommentDraft}
                 onSend={handleSubmitComment}
-                placeholder={data.commentInputPlaceholder}
+                placeholder={
+                  editingCommentId
+                    ? '댓글을 수정하세요...'
+                    : data.commentInputPlaceholder
+                }
                 sendEnabled={!submittingComment && commentDraft.trim().length > 0}
                 value={commentDraft}
               />
@@ -278,6 +321,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border.default,
     height: 1,
     marginBottom: SPACING.xxl,
+  },
+  editingBanner: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  editingBannerAction: {
+    color: COLORS.brand.primary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  editingBannerText: {
+    color: COLORS.text.secondary,
+    fontSize: 13,
+    lineHeight: 18,
   },
   emptyCommentsLabel: {
     color: COLORS.text.muted,

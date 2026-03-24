@@ -42,6 +42,7 @@ export interface NoticeComment {
   parentId?: string | null;
   replyCount?: number;
   isAnonymous?: boolean;
+  isAuthor?: boolean;
   anonId?: string;
   anonymousOrder?: number;
   replies?: NoticeComment[];

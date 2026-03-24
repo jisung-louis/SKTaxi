@@ -70,6 +70,7 @@ export const mapNoticeCommentDto = (
   createdAt: toDate(dto.createdAt),
   id: dto.id,
   isAnonymous: dto.isAnonymous,
+  isAuthor: dto.isAuthor,
   isDeleted: dto.isDeleted,
   noticeId,
   parentId: dto.parentId ?? null,

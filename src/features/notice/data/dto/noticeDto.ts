@@ -79,3 +79,7 @@ export interface CreateNoticeCommentRequestDto {
   isAnonymous: boolean;
   parentId?: string | null;
 }
+
+export interface UpdateNoticeCommentRequestDto {
+  content: string;
+}

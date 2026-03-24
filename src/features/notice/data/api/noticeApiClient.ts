@@ -8,6 +8,7 @@ import type {
   NoticePageResponseDto,
   NoticeReadResponseDto,
   NoticeSummaryDto,
+  UpdateNoticeCommentRequestDto,
 } from '../dto/noticeDto';
 
 interface GetNoticesParams {
@@ -67,6 +68,13 @@ export class NoticeApiClient {
     return httpClient.delete<ApiSuccessResponse<NoticeLikeResponseDto>>(
       `/v1/notices/${noticeId}/like`,
     );
+  }
+
+  updateComment(commentId: string, data: UpdateNoticeCommentRequestDto) {
+    return httpClient.patch<
+      ApiSuccessResponse<NoticeCommentDto>,
+      UpdateNoticeCommentRequestDto
+    >(`/v1/notice-comments/${commentId}`, data);
   }
 }
 

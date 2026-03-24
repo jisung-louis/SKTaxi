@@ -246,14 +246,19 @@ export class SpringNoticeRepository implements INoticeRepository {
   }
 
   async updateComment(
-    _noticeId: string,
-    _commentId: string,
-    _content: string,
+    noticeId: string,
+    commentId: string,
+    content: string,
   ): Promise<void> {
-    throw new RepositoryError(
-      RepositoryErrorCode.INVALID_ARGUMENT,
-      '현재 Notice 댓글 수정 API 계약이 없습니다.',
-    );
+    const response = await this.apiClient.updateComment(commentId, {
+      content: content.trim(),
+    });
+    const updatedComment = mapNoticeCommentDto(noticeId, response.data);
+    const nextComments = this.flattenComments(
+      this.commentCache.get(noticeId) ?? [],
+    ).map(comment => (comment.id === commentId ? updatedComment : comment));
+
+    this.commentCache.set(noticeId, buildCommentTree(nextComments));
   }
 
   private async fetchNotices(

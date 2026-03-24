@@ -1,5 +1,10 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {ContentDetailCommentViewData} from '@/shared/types/contentDetailViewData';
@@ -13,10 +18,14 @@ import {
 
 interface DetailCommentCardProps {
   comment: ContentDetailCommentViewData;
+  actionLabel?: string;
+  onPressAction?: () => void;
 }
 
 export const DetailCommentCard = ({
+  actionLabel,
   comment,
+  onPressAction,
 }: DetailCommentCardProps) => {
   return (
     <View style={styles.card}>
@@ -27,7 +36,17 @@ export const DetailCommentCard = ({
           </View>
           <Text style={styles.authorLabel}>{comment.authorLabel}</Text>
         </View>
-        <Text style={styles.dateLabel}>{comment.dateLabel}</Text>
+        <View style={styles.trailingRow}>
+          {actionLabel && onPressAction ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.8}
+              onPress={onPressAction}>
+              <Text style={styles.actionLabel}>{actionLabel}</Text>
+            </TouchableOpacity>
+          ) : null}
+          <Text style={styles.dateLabel}>{comment.dateLabel}</Text>
+        </View>
       </View>
 
       <Text style={styles.bodyText}>{comment.body}</Text>
@@ -79,6 +98,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 16,
   },
+  actionLabel: {
+    color: COLORS.brand.primary,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
   dateLabel: {
     color: COLORS.text.muted,
     fontSize: 12,
@@ -104,5 +129,10 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
+  },
+  trailingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
   },
 });
