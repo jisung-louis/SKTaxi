@@ -36,7 +36,7 @@
 - Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 수렴했고, legacy Firebase/detail entrypoint dead path는 제거됐다.
 - Board / Notice / Campus central repository는 이제 mock이 아니라 Spring concrete repository를 기본 source of truth로 사용한다.
 - Community board 탭은 중앙 DI `boardRepository`의 Spring 응답을 기준으로 목록/featured post를 조합한다.
-- Phase H의 1차 목표였던 Board / Notice / Campus 본체 이전과 중앙 RepositoryProvider 전환은 완료됐고, 남은 것은 backend contract gap 정리다.
+- Phase H follow-up까지 반영되어 Board / Notice / Campus 본체 이전과 남아 있던 backend contract gap 3개 정리가 완료됐다.
 - 공개 일반 채팅방은 joined/not joined를 함께 표시하고, 미참여 room detail preview + 참여하기 CTA + leave 후 not joined 복귀 정책까지 프론트에 반영됐다.
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨
 - 공식 작업 전략은 `migrate-as-you-centralize`
@@ -56,7 +56,7 @@
 - 일반 Chat room summary/unread/tab indicator는 `/user/queue/chat-rooms` 이벤트와 REST snapshot을 함께 사용해 같은 room cache를 기준으로 동기화된다.
 - 일반 Chat의 Phase F 범위는 닫혔고, 다음 남은 Chat backlog는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 - Phase G는 완료 상태이며, campus home/cafeteria detail을 포함한 남은 screen-level mock chain 정리를 마쳤다.
-- Phase H는 Board / Notice / Campus central repository를 Spring으로 전환해 1차 완료 상태이며, backend 계약 부족으로 남은 blocker는 별도 관리가 필요하다.
+- Phase H는 Board / Notice / Campus central repository 전환과 follow-up contract 반영까지 완료 상태다.
 
 ---
 
@@ -71,7 +71,7 @@
 | Phase E. Taxi Party 정식 이전                         | 완료           | recruit 지도 선택 기반 자유 입력, Chat header/action tray, ACCOUNT/ARRIVE payload, 서버 생성 SYSTEM/ARRIVED/END 흐름까지 반영 완료 |
 | Phase F. Chat 정식 이전                               | 완료           | Taxi Chat detail + 일반 공개 chat discover/detail/join/leave/create + summary realtime + read/mute + central DI 수렴 완료 |
 | Phase G. 남은 mock 화면 체인 정리                     | 완료           | Board/Notice/Community/Campus 계열 screen-level local chain 정리 완료                      |
-| Phase H. 정리/수렴                                    | 부분 완료      | Board/Notice/Campus central repository Spring 전환 완료, 남은 backend contract gap 정리 필요 |
+| Phase H. 정리/수렴                                    | 완료           | Board/Notice/Campus central repository Spring 전환 및 follow-up contract gap 3개 반영 완료 |
 
 ---
 
@@ -667,9 +667,6 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 현재 아직 남은 것:
 
-- Board list/community list에서 사용하는 bookmarkCount는 현재 `/v1/posts` summary contract에 없어 완전한 서버 지표 표시가 불가능하다.
-- Board 수정 API는 현재 `title/content/category`만 허용하므로, 작성 후 이미지/익명 설정 수정은 지원되지 않는다.
-- Notice 댓글 수정 API contract가 없어 댓글 수정 UI는 아직 닫혀 있다.
 - 일반 Chat 이미지 업로드/이미지 메시지 실사용 연결은 아직 남아 있다.
 
 ### 4.17 Phase H 구현
@@ -704,7 +701,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - `RepositoryProvider`의 기본 `boardRepository` / `noticeRepository` / `academicRepository` / `cafeteriaRepository`를 Spring 구현으로 전환했다.
 - Board write는 `POST /v1/images` 업로드 결과를 먼저 모은 뒤 `POST /v1/posts`에 포함해 생성하고, 더 이상 mock storage path를 타지 않는다.
 - Board detail은 `GET /v1/posts/{id}` + `GET /v1/posts/{id}/comments`를 기준으로 like / bookmark / comment submit / delete를 Spring source of truth에 연결했다.
-- Board edit는 backend `PATCH /v1/posts/{id}` 계약에 맞춰 title/content/category만 수정하고, 이미지/익명 수정은 UI에서 명시적으로 막는다.
+- Board edit는 backend `PATCH /v1/posts/{id}` 계약에 맞춰 title/content/category/isAnonymous/images를 보내고, 이미지 변경 시에만 전체 목록 교체 semantics를 사용한다.
 - Notice home/detail/read/like/comments는 `SpringNoticeRepository`를 기준으로 동작하고, detail 진입 시 `POST /v1/notices/{id}/read`를 호출한다.
 - Notice detail은 더 이상 placeholder bookmark reaction을 보여주지 않고, 실제 Spring contract가 있는 like + comments만 연결한다.
 - Campus academic/cafeteria 화면은 `GET /v1/academic-schedules`, `GET /v1/cafeteria-menus`, `GET /v1/cafeteria-menus/{weekId}`를 source of truth로 사용한다.
@@ -722,7 +719,9 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 현재 가능한 것:
 
 - Board list/detail/comments/like/bookmark/write/edit는 중앙 DI `SpringBoardRepository` 기준으로 동작한다.
+- Board list / Community featured popularity는 `GET /v1/posts` summary의 `bookmarkCount`를 그대로 source of truth로 사용한다.
 - Notice home/detail/read/like/comments는 중앙 DI `SpringNoticeRepository` 기준으로 동작한다.
+- Notice detail은 본인 댓글에 대해 수정 액션을 노출하고 `PATCH /v1/notice-comments/{commentId}`를 호출한다.
 - Campus academic calendar detail, campus home academic preview, cafeteria detail, campus home cafeteria preview는 Spring API 기준으로 동작한다.
 - Community board home은 더 이상 central mock repository가 아니라 Spring board source를 기준으로 화면 모델을 만든다.
 - `RepositoryProvider` 기준 남아 있던 Board / Notice / Academic / Cafeteria central mock 기본값은 제거됐다.
@@ -772,14 +771,14 @@ Phase G 완료 후 구조 상태:
 
 현재 시점에서 가장 자연스러운 다음 단계는 아래 순서다.
 
-1. Phase H 잔여 backend contract gap 정리
-2. Chat 이미지 메시지 업로드 실사용 연결
-3. Taxi/Chat domain의 signal-only realtime 비용 정리
+1. Chat 이미지 메시지 업로드 실사용 연결
+2. Taxi/Chat domain의 signal-only realtime 비용 정리
+3. 이후 남은 legacy 정리
 
 이 순서를 권장하는 이유:
 
-- Notification domain은 Phase D에서 닫혔고, Taxi Party와 Chat의 Phase E/F 범위도 frontend contract 기준으로 정리됐으며, Phase H의 central repository 전환도 1차 완료됐다.
-- Board/Notice/Campus는 frontend source of truth 전환이 끝났으므로 다음 남은 우선순위는 backend contract gap 정리와 Chat 이미지 메시지 실사용 연결이다.
+- Notification domain은 Phase D에서 닫혔고, Taxi Party와 Chat의 Phase E/F 범위도 frontend contract 기준으로 정리됐으며, Phase H도 follow-up gap 반영까지 마감됐다.
+- Board/Notice/Campus는 frontend source of truth 전환과 남은 backend gap 정리가 끝났으므로 다음 남은 우선순위는 Chat 이미지 메시지 실사용 연결이다.
 - 전역 DI 수렴은 concrete feature migration을 따라가며 진행하는 현재 전략과 맞는다.
 
 ---

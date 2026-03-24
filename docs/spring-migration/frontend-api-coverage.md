@@ -38,11 +38,10 @@
   - Chat domain 전체
 - 아직 미연결
   - Chat 이미지 메시지 실사용 연결
-  - Board / Notice backend contract gap
 
 즉, endpoint 단위로는 꽤 연결됐지만,
 도메인 단위로 보면 Taxi / Chat은 아직 다음 phase 작업이 남아 있고,
-Board / Notice는 backend contract gap 해소가 추가로 필요하다.
+Board / Notice / Campus는 Phase H follow-up까지 포함해 현재 사용자 기능 기준으로 닫혔다.
 
 ---
 
@@ -400,6 +399,7 @@ endpoint:
 - `DELETE /v1/notices/{noticeId}/like`
 - `GET /v1/notices/{noticeId}/comments`
 - `POST /v1/notices/{noticeId}/comments`
+- `PATCH /v1/notice-comments/{commentId}`
 - `DELETE /v1/notice-comments/{commentId}`
 
 현재 사용처:
@@ -408,7 +408,7 @@ endpoint:
 - Notice detail
 - 읽음 처리
 - 좋아요
-- 댓글 조회 / 작성 / 삭제
+- 댓글 조회 / 작성 / 수정 / 삭제
 
 코드:
 
@@ -563,20 +563,19 @@ runtime note:
 
 - 이미지 메시지 전송의 실사용 연결
 
-### 5.2 Board / Notice 잔여 blocker
+### 5.2 Board / Notice / Campus
 
-현재 Board / Notice / Campus는 이미 Spring source of truth로 연결됐고,
-남은 것은 미연결 도메인이라기보다 backend contract gap이다.
+Board / Notice / Campus는 Phase H follow-up까지 반영되어 현재 사용자 기능 기준의 Spring source of truth 전환이 닫혔다.
 
-- Board summary `GET /v1/posts`에 `bookmarkCount`가 없어 list/community popularity를 완전한 서버 지표로 계산할 수 없다.
-- Board 수정 API `PATCH /v1/posts/{postId}`는 이미지/익명 수정 contract가 없다.
-- Notice 댓글 수정 endpoint가 없다.
+- Board summary `bookmarkCount`는 `GET /v1/posts` summary contract를 그대로 사용한다.
+- Board 수정은 `PATCH /v1/posts/{postId}`의 `isAnonymous/images` semantics까지 연결됐다.
+- Notice 댓글 수정은 `PATCH /v1/notice-comments/{commentId}`로 연결됐다.
 
 구조 메모:
 
 - Phase G cleanup으로 screen-level local chain과 dead Firebase path는 이미 제거됐다.
 - 이번 Phase H에서 `RepositoryProvider`의 `boardRepository` / `noticeRepository` / `academicRepository` / `cafeteriaRepository` 기본 구현도 Spring concrete repository로 전환됐다.
-- 따라서 현재 Board / Notice / Campus의 남은 과제는 frontend source 전환이 아니라 backend contract 보강이다.
+- 따라서 현재 남은 구조 우선순위는 Chat 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 
 ---
 
