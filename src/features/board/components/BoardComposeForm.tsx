@@ -34,9 +34,12 @@ const CATEGORY_LABELS: Record<BoardPostCategoryId, string> = {
 };
 
 interface BoardComposeFormProps {
+  anonymousEditable?: boolean;
   category: BoardPostCategoryId;
   content: string;
   contentPlaceholder: string;
+  imageHelperText?: string;
+  imagesEditable?: boolean;
   isAnonymous: boolean;
   onChangeContent: (value: string) => void;
   onChangeTitle: (value: string) => void;
@@ -52,9 +55,12 @@ interface BoardComposeFormProps {
 }
 
 export const BoardComposeForm = ({
+  anonymousEditable = true,
   category,
   content,
   contentPlaceholder,
+  imageHelperText,
+  imagesEditable = true,
   isAnonymous,
   onChangeContent,
   onChangeTitle,
@@ -161,6 +167,7 @@ export const BoardComposeForm = ({
           </Text>
         </View>
         <ImageSelector
+          editable={imagesEditable}
           maxImages={10}
           onPickImages={onPickImages}
           onRemoveImage={onRemoveImage}
@@ -168,18 +175,24 @@ export const BoardComposeForm = ({
           selectedImages={selectedImages}
           uploading={uploadingImages}
         />
+        {imageHelperText ? (
+          <Text style={styles.helperText}>{imageHelperText}</Text>
+        ) : null}
       </View>
 
       <View style={styles.toggleSection}>
         <View>
           <Text style={styles.toggleTitle}>익명으로 올리기</Text>
           <Text style={styles.toggleDescription}>
-            닉네임 대신 &#39;익명&#39;으로 표시돼요
+            {anonymousEditable
+              ? '닉네임 대신 익명으로 표시돼요'
+              : '현재 Spring 계약에서는 작성 후 익명 설정을 수정할 수 없어요'}
           </Text>
         </View>
 
         <ToggleSwitch
           accessibilityLabel="익명으로 올리기"
+          disabled={!anonymousEditable}
           onValueChange={onToggleAnonymous}
           value={isAnonymous}
         />
@@ -234,6 +247,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     marginTop: 4,
+  },
+  helperText: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: SPACING.sm,
   },
   inlineCounterLabel: {
     color: COLORS.border.default,

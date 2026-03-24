@@ -36,7 +36,6 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
     pickImages,
     removeImage,
     reorderImages,
-    uploadImages,
     clearImages,
     setImages,
   } = useBoardImageUpload({ maxImages: 10 });
@@ -57,7 +56,8 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
           setError('게시글을 찾을 수 없습니다.');
           return;
         }
-        if (postData.authorId !== user.uid) {
+        const canEdit = postData.isAuthor ?? postData.authorId === user.uid;
+        if (!canEdit) {
           setError('수정 권한이 없습니다.');
           return;
         }
@@ -90,7 +90,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
       }
     };
 
-    void loadPost();
+    loadPost().catch(() => undefined);
   }, [boardRepository, postId, setImages, user]);
 
   const updatePost = useCallback(
@@ -109,30 +109,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(true);
         setError(null);
 
-        let uploadedImages = selectedImages;
-        if (selectedImages.length > 0) {
-          try {
-            uploadedImages = await uploadImages(postId);
-          } catch (imageError) {
-            console.error('이미지 업로드 실패:', imageError);
-          }
-        }
-
-        const finalImages = uploadedImages
-          .filter((image) => image.status === 'uploaded' && (image.remoteUrl || image.localUri))
-          .map((image) => ({
-            url: image.remoteUrl || image.localUri,
-            width: image.width,
-            height: image.height,
-            thumbUrl: image.thumbUrl,
-            size: image.size,
-            mime: image.mime,
-          }));
-
-        await boardRepository.updatePost(postId, {
-          ...buildBoardPostUpdatePayload(formData),
-          images: finalImages,
-        });
+        await boardRepository.updatePost(postId, buildBoardPostUpdatePayload(formData));
 
         clearImages();
       } catch (err) {
@@ -143,7 +120,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(false);
       }
     },
-    [boardRepository, clearImages, postId, selectedImages, uploadImages, user],
+    [boardRepository, clearImages, postId, user],
   );
 
   return {

@@ -25,8 +25,6 @@ import {useBoardEdit} from '../hooks/useBoardEdit';
 import type {BoardStackParamList} from '../model/navigation';
 import type {BoardFormData, BoardPostCategoryId} from '../model/types';
 
-const getImageIdentity = (value?: string | null) => value ?? '';
-
 export const BoardEditScreen = () => {
   useScreenView();
 
@@ -85,33 +83,17 @@ export const BoardEditScreen = () => {
     [],
   );
 
-  const handleToggleAnonymous = React.useCallback(() => {
-    setFormData(previous => ({
-      ...previous,
-      isAnonymous: !previous.isAnonymous,
-    }));
-  }, []);
-
   const hasDraftChanges = React.useMemo(() => {
     if (!post) {
       return false;
     }
 
-    const originalImages = (post.images ?? []).map(image =>
-      getImageIdentity(image.url),
-    );
-    const currentImages = selectedImages.map(image =>
-      getImageIdentity(image.remoteUrl ?? image.localUri),
-    );
-
     return (
       formData.title !== post.title ||
       formData.content !== post.content ||
-      formData.category !== post.category ||
-      !!formData.isAnonymous !== !!post.isAnonymous ||
-      originalImages.join('|') !== currentImages.join('|')
+      formData.category !== post.category
     );
-  }, [formData, post, selectedImages]);
+  }, [formData, post]);
 
   const handleClose = React.useCallback(() => {
     if (!hasDraftChanges) {
@@ -210,9 +192,12 @@ export const BoardEditScreen = () => {
         ) : (
           <View style={styles.formWrap}>
             <BoardComposeForm
+              anonymousEditable={false}
               category={formData.category}
               content={formData.content}
               contentPlaceholder="내용을 입력하세요..."
+              imageHelperText="현재 Spring 계약에서는 작성 후 첨부 이미지와 익명 설정을 수정할 수 없습니다."
+              imagesEditable={false}
               isAnonymous={!!formData.isAnonymous}
               onChangeContent={handleChangeContent}
               onChangeTitle={handleChangeTitle}
@@ -220,7 +205,7 @@ export const BoardEditScreen = () => {
               onRemoveImage={removeImage}
               onReorderImages={reorderImages}
               onSelectCategory={handleSelectCategory}
-              onToggleAnonymous={handleToggleAnonymous}
+              onToggleAnonymous={() => {}}
               selectedImages={selectedImages}
               title={formData.title}
               titlePlaceholder="제목을 입력하세요"

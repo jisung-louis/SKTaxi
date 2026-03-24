@@ -66,6 +66,5 @@ export function buildBoardPostUpdatePayload(formData: BoardFormData): Partial<Bo
     title: formData.title.trim(),
     content: formData.content.trim(),
     category: formData.category,
-    isAnonymous: !!formData.isAnonymous,
   };
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -53,9 +54,20 @@ export const NoticeDetailScreen = () => {
   const {height: keyboardHeight, isVisible: isKeyboardVisible} =
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {data, error, loading, notFound, reload} = useNoticeDetailData(
-    route.params?.noticeId,
-  );
+  const {
+    commentDraft,
+    data,
+    error,
+    loading,
+    notice,
+    notFound,
+    reload,
+    setCommentDraft,
+    submitComment,
+    submittingComment,
+    toggleLike,
+    togglingLike,
+  } = useNoticeDetailData(route.params?.noticeId);
 
   const headerOffset = insets.top + 56;
   const scrollBottomPadding = isKeyboardVisible
@@ -74,6 +86,28 @@ export const NoticeDetailScreen = () => {
   const handlePressReturnToList = React.useCallback(() => {
     navigation.navigate('NoticeMain');
   }, [navigation]);
+
+  const handleToggleLike = React.useCallback(() => {
+    toggleLike().catch(toggleError => {
+      Alert.alert(
+        '오류',
+        toggleError instanceof Error
+          ? toggleError.message
+          : '좋아요 처리에 실패했습니다.',
+      );
+    });
+  }, [toggleLike]);
+
+  const handleSubmitComment = React.useCallback(() => {
+    submitComment().catch(submitError => {
+      Alert.alert(
+        '오류',
+        submitError instanceof Error
+          ? submitError.message
+          : '댓글 작성에 실패했습니다.',
+      );
+    });
+  }, [submitComment]);
 
   const primaryBadge = data?.metaBadges[0];
   const secondaryBadges = data?.metaBadges.slice(1) ?? [];
@@ -153,13 +187,14 @@ export const NoticeDetailScreen = () => {
               ) : null}
 
               <View style={styles.reactionsRow}>
-                {data.reactions.map(reaction => (
-                  <DetailReactionChip
-                    count={reaction.count}
-                    iconName={reaction.iconName}
-                    key={reaction.id}
-                  />
-                ))}
+                <DetailReactionChip
+                  accessibilityLabel="공지사항 좋아요"
+                  active={Boolean(notice?.isLiked)}
+                  count={notice?.likeCount ?? 0}
+                  disabled={togglingLike}
+                  iconName={notice?.isLiked ? 'heart' : 'heart-outline'}
+                  onPress={handleToggleLike}
+                />
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
@@ -185,7 +220,13 @@ export const NoticeDetailScreen = () => {
               keyboardVerticalOffset={0}
               pointerEvents="box-none"
               style={styles.composerAvoidingView}>
-              <DetailComposer placeholder={data.commentInputPlaceholder} />
+              <DetailComposer
+                onChangeText={setCommentDraft}
+                onSend={handleSubmitComment}
+                placeholder={data.commentInputPlaceholder}
+                sendEnabled={!submittingComment && commentDraft.trim().length > 0}
+                value={commentDraft}
+              />
             </KeyboardAvoidingView>
           </>
         ) : null}
@@ -197,55 +238,19 @@ export const NoticeDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.background.page,
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
+  attachmentsSection: {
+    marginTop: SPACING.xxl,
   },
   centeredState: {
     flex: 1,
     paddingHorizontal: SPACING.lg,
   },
-  scrollContent: {
-    paddingHorizontal: SPACING.lg,
-  },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  dateLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: SPACING.xxl,
-  },
-  divider: {
-    backgroundColor: COLORS.border.default,
-    height: 1,
-    marginBottom: SPACING.xxl,
-  },
-  attachmentsSection: {
-    marginTop: SPACING.xxl,
-  },
-  reactionsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    marginTop: SPACING.xxl,
-  },
   commentsDivider: {
     marginBottom: SPACING.lg,
     marginTop: SPACING.xxl,
+  },
+  commentsList: {
+    paddingBottom: SPACING.md,
   },
   commentsTitle: {
     color: COLORS.text.primary,
@@ -254,24 +259,60 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: SPACING.md,
   },
-  emptyCommentsWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 84,
-    paddingVertical: 32,
+  composerAvoidingView: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  container: {
+    backgroundColor: COLORS.background.page,
+    flex: 1,
+  },
+  dateLabel: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  divider: {
+    backgroundColor: COLORS.border.default,
+    height: 1,
+    marginBottom: SPACING.xxl,
   },
   emptyCommentsLabel: {
     color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
   },
-  commentsList: {
-    paddingBottom: SPACING.md,
+  emptyCommentsWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 84,
+    paddingVertical: 32,
   },
-  composerAvoidingView: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  reactionsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.xxl,
+  },
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: SPACING.lg,
+  },
+  title: {
+    color: COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 28,
+    marginBottom: SPACING.xxl,
   },
 });

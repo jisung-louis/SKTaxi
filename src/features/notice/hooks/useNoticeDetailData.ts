@@ -1,5 +1,6 @@
 import React from 'react';
 
+import {useAuth} from '@/features/auth';
 import type {
   ContentDetailBodyBlockViewData,
   ContentDetailViewData,
@@ -7,8 +8,7 @@ import type {
 
 import {normalizeNoticeHtml} from '../model/selectors';
 import type {Notice, NoticeCommentTreeNode} from '../model/types';
-import {useNoticeComments} from './useNoticeComments';
-import {useNoticeDetail} from './useNoticeDetail';
+import {useNoticeRepository} from './useNoticeRepository';
 
 const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
   '공모/행사': '행사',
@@ -139,6 +139,14 @@ const isRecentNotice = (postedAt: unknown) => {
   return Number.isFinite(millis) && Date.now() - millis <= RECENT_NOTICE_WINDOW_MS;
 };
 
+const getCommentAuthorLabel = (comment: NoticeCommentTreeNode) => {
+  if (!comment.isAnonymous) {
+    return comment.userDisplayName;
+  }
+
+  return `익명${comment.anonymousOrder ?? ''}`;
+};
+
 const toViewData = (
   notice: Notice,
   comments: NoticeCommentTreeNode[],
@@ -154,9 +162,7 @@ const toViewData = (
     bodyBlocks: buildBodyBlocks(notice),
     commentInputPlaceholder: '댓글을 입력하세요...',
     comments: flattenComments(comments).map(comment => ({
-      authorLabel: comment.isAnonymous
-        ? `익명${comment.anonymousOrder ?? ''}`
-        : comment.userDisplayName,
+      authorLabel: getCommentAuthorLabel(comment),
       body: comment.content,
       dateLabel: formatNoticeDateLabel(comment.createdAt.toISOString()),
       id: comment.id,
@@ -183,46 +189,195 @@ const toViewData = (
     reactions: [
       {
         count: notice.likeCount ?? 0,
-        iconName: 'heart-outline',
+        iconName: notice.isLiked ? 'heart' : 'heart-outline',
         id: `${notice.id}-likes`,
-      },
-      {
-        count: 0,
-        iconName: 'bookmark-outline',
-        id: `${notice.id}-bookmarks`,
       },
     ],
     title: notice.title,
   };
 };
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return '공지사항을 다시 불러와주세요.';
+};
+
 export const useNoticeDetailData = (noticeId?: string) => {
-  const {error: detailError, loading: detailLoading, notice, refresh} =
-    useNoticeDetail(noticeId);
-  const {
-    comments,
-    error: commentsError,
-    loading: commentsLoading,
-  } = useNoticeComments(noticeId ?? '');
+  const {user} = useAuth();
+  const noticeRepository = useNoticeRepository();
+  const [notice, setNotice] = React.useState<Notice | null>(null);
+  const [comments, setComments] = React.useState<NoticeCommentTreeNode[]>([]);
+  const [commentDraft, setCommentDraft] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [notFound, setNotFound] = React.useState(false);
+  const [togglingLike, setTogglingLike] = React.useState(false);
+  const [submittingComment, setSubmittingComment] = React.useState(false);
+  const requestIdRef = React.useRef(0);
+
+  const loadDetail = React.useCallback(async () => {
+    const currentRequestId = requestIdRef.current + 1;
+    requestIdRef.current = currentRequestId;
+    setLoading(true);
+
+    try {
+      if (!noticeId) {
+        setNotice(null);
+        setComments([]);
+        setNotFound(true);
+        setError(null);
+        return;
+      }
+
+      const [nextNotice, nextComments] = await Promise.all([
+        noticeRepository.getNotice(noticeId),
+        noticeRepository.getComments(noticeId),
+      ]);
+
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
+
+      if (!nextNotice) {
+        setNotice(null);
+        setComments([]);
+        setNotFound(true);
+        setError(null);
+        return;
+      }
+
+      setNotice(nextNotice);
+      setComments(nextComments);
+      setNotFound(false);
+      setError(null);
+    } catch (loadError) {
+      if (currentRequestId !== requestIdRef.current) {
+        return;
+      }
+
+      setError(getErrorMessage(loadError));
+      setNotice(null);
+      setComments([]);
+      setNotFound(false);
+    } finally {
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [noticeId, noticeRepository]);
+
+  React.useEffect(() => {
+    loadDetail().catch(() => undefined);
+  }, [loadDetail]);
+
+  React.useEffect(() => {
+    if (!noticeId || !user?.uid || !notice || notice.isRead) {
+      return;
+    }
+
+    noticeRepository
+      .markAsRead(user.uid, noticeId)
+      .then(() => {
+        setNotice(currentNotice =>
+          currentNotice
+            ? {
+                ...currentNotice,
+                isRead: true,
+              }
+            : currentNotice,
+        );
+      })
+      .catch(markError => {
+        console.error('공지사항 읽음 처리 실패:', markError);
+      });
+  }, [notice, noticeId, noticeRepository, user?.uid]);
+
+  const toggleLike = React.useCallback(async () => {
+    if (!noticeId || !user?.uid || togglingLike) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setTogglingLike(true);
+
+    try {
+      const nextIsLiked = await noticeRepository.toggleLike(noticeId, user.uid);
+      setNotice(currentNotice => {
+        if (!currentNotice) {
+          return currentNotice;
+        }
+
+        const previousIsLiked = Boolean(currentNotice.isLiked);
+        const likeDelta =
+          previousIsLiked === nextIsLiked ? 0 : nextIsLiked ? 1 : -1;
+
+        return {
+          ...currentNotice,
+          isLiked: nextIsLiked,
+          likeCount: Math.max(0, (currentNotice.likeCount ?? 0) + likeDelta),
+        };
+      });
+    } finally {
+      setTogglingLike(false);
+    }
+  }, [noticeId, noticeRepository, togglingLike, user?.uid]);
+
+  const submitComment = React.useCallback(async () => {
+    if (!noticeId || !user?.uid) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const trimmedComment = commentDraft.trim();
+    if (!trimmedComment) {
+      throw new Error('댓글 내용을 입력해주세요.');
+    }
+
+    setSubmittingComment(true);
+
+    try {
+      await noticeRepository.createComment(noticeId, {
+        content: trimmedComment,
+        isAnonymous: false,
+        parentId: null,
+        userDisplayName: user.displayName ?? '익명',
+        userId: user.uid,
+      });
+
+      const nextComments = await noticeRepository.getComments(noticeId);
+      setComments(nextComments);
+      setCommentDraft('');
+      setNotice(currentNotice =>
+        currentNotice
+          ? {
+              ...currentNotice,
+              commentCount: flattenComments(nextComments).length,
+            }
+          : currentNotice,
+      );
+    } finally {
+      setSubmittingComment(false);
+    }
+  }, [commentDraft, noticeId, noticeRepository, user]);
 
   const data = React.useMemo(
     () => (notice ? toViewData(notice, comments) : null),
     [comments, notice],
   );
 
-  const error = detailError ?? commentsError ?? null;
-  const loading =
-    detailLoading || (Boolean(noticeId) && commentsLoading && !notice);
-  const notFound = !loading && !error && !notice;
-  const reload = React.useCallback(async () => {
-    refresh();
-  }, [refresh]);
-
   return {
+    commentDraft,
     data,
     error,
     loading,
+    notice,
     notFound,
-    reload,
+    reload: loadDetail,
+    setCommentDraft,
+    submitComment,
+    submittingComment,
+    toggleLike,
+    togglingLike,
   };
 };

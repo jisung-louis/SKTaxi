@@ -21,6 +21,7 @@ import {
 import type {BoardSelectedImage} from '../model/types';
 
 interface ImageSelectorProps {
+  editable?: boolean;
   maxImages?: number;
   onPickImages: () => void;
   onRemoveImage: (imageId: string) => void;
@@ -30,6 +31,7 @@ interface ImageSelectorProps {
 }
 
 export const ImageSelector = ({
+  editable = true,
   maxImages = 10,
   onPickImages,
   onRemoveImage,
@@ -37,7 +39,7 @@ export const ImageSelector = ({
   selectedImages,
   uploading = false,
 }: ImageSelectorProps) => {
-  const canAddMore = selectedImages.length < maxImages;
+  const canAddMore = editable && selectedImages.length < maxImages;
 
   const renderImageItem = ({
     drag,
@@ -46,13 +48,8 @@ export const ImageSelector = ({
   }: RenderItemParams<BoardSelectedImage>) => {
     const isUploading = item.status === 'uploading';
 
-    return (
-      <TouchableOpacity
-        accessibilityRole="button"
-        activeOpacity={0.92}
-        delayLongPress={220}
-        onLongPress={drag}
-        style={[styles.imageItem, isActive ? styles.imageItemActive : undefined]}>
+    const content = (
+      <>
         <Image source={{uri: item.localUri}} style={styles.imagePreview} />
 
         {isUploading ? (
@@ -61,20 +58,45 @@ export const ImageSelector = ({
           </View>
         ) : null}
 
-        <TouchableOpacity
-          accessibilityLabel="이미지 삭제"
-          accessibilityRole="button"
-          activeOpacity={0.82}
-          disabled={uploading}
-          onPress={() => onRemoveImage(item.id)}
-          style={styles.removeButton}>
-          <Icon color={COLORS.text.inverse} name="close" size={12} />
-        </TouchableOpacity>
+        {editable ? (
+          <TouchableOpacity
+            accessibilityLabel="이미지 삭제"
+            accessibilityRole="button"
+            activeOpacity={0.82}
+            disabled={uploading}
+            onPress={() => onRemoveImage(item.id)}
+            style={styles.removeButton}>
+            <Icon color={COLORS.text.inverse} name="close" size={12} />
+          </TouchableOpacity>
+        ) : null}
+      </>
+    );
+
+    if (!editable) {
+      return (
+        <View style={[styles.imageItem, isActive ? styles.imageItemActive : undefined]}>
+          {content}
+        </View>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        accessibilityRole="button"
+        activeOpacity={0.92}
+        delayLongPress={220}
+        onLongPress={drag}
+        style={[styles.imageItem, isActive ? styles.imageItemActive : undefined]}>
+        {content}
       </TouchableOpacity>
     );
   };
 
   if (selectedImages.length === 0) {
+    if (!editable) {
+      return null;
+    }
+
     return (
       <TouchableOpacity
         accessibilityRole="button"
@@ -90,7 +112,7 @@ export const ImageSelector = ({
 
   return (
     <DraggableFlatList
-      activationDistance={20}
+      activationDistance={editable ? 20 : Number.MAX_SAFE_INTEGER}
       contentContainerStyle={styles.listContent}
       data={selectedImages}
       horizontal

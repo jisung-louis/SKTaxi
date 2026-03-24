@@ -21,6 +21,7 @@ interface BoardDetailPopupMenuProps {
   onPressEdit: () => void;
   onPressReport: () => void;
   right?: number;
+  showManageActions?: boolean;
   top: number;
   visible: boolean;
 }
@@ -31,6 +32,7 @@ export const BoardDetailPopupMenu = ({
   onPressEdit,
   onPressReport,
   right = 12,
+  showManageActions = true,
   top,
   visible,
 }: BoardDetailPopupMenuProps) => {
@@ -59,33 +61,37 @@ export const BoardDetailPopupMenu = ({
           <Text style={styles.rowLabel}>신고</Text>
         </TouchableOpacity>
 
-        <View style={styles.divider} />
+        {showManageActions ? (
+          <>
+            <View style={styles.divider} />
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.82}
-          onPress={() => {
-            onClose();
-            onPressEdit();
-          }}
-          style={styles.row}>
-          <Icon color={COLORS.accent.blue} name="create-outline" size={16} />
-          <Text style={styles.rowLabel}>수정</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.82}
+              onPress={() => {
+                onClose();
+                onPressEdit();
+              }}
+              style={styles.row}>
+              <Icon color={COLORS.accent.blue} name="create-outline" size={16} />
+              <Text style={styles.rowLabel}>수정</Text>
+            </TouchableOpacity>
 
-        <View style={styles.divider} />
+            <View style={styles.divider} />
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          activeOpacity={0.82}
-          onPress={() => {
-            onClose();
-            onPressDelete();
-          }}
-          style={styles.row}>
-          <Icon color={COLORS.status.danger} name="trash-outline" size={16} />
-          <Text style={styles.deleteLabel}>삭제</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.82}
+              onPress={() => {
+                onClose();
+                onPressDelete();
+              }}
+              style={styles.row}>
+              <Icon color={COLORS.status.danger} name="trash-outline" size={16} />
+              <Text style={styles.deleteLabel}>삭제</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
       </View>
     </View>
   );

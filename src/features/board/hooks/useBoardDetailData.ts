@@ -2,10 +2,11 @@ import React from 'react';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
+import {useAuth} from '@/features/auth';
 import type {ContentDetailViewData} from '@/shared/types/contentDetailViewData';
 
 import type {BoardCommentTreeNode} from '../data/repositories/IBoardRepository';
-import type {BoardPost} from '../model/types';
+import type {BoardComment, BoardPost} from '../model/types';
 import {useBoardRepository} from './useBoardRepository';
 
 const CATEGORY_LABEL_MAP: Record<BoardPost['category'], string> = {
@@ -36,11 +37,19 @@ const flattenComments = (
 ): BoardCommentTreeNode[] =>
   comments.flatMap(comment => [comment, ...flattenComments(comment.replies)]);
 
+const getCommentAuthorLabel = (comment: BoardComment) => {
+  if (!comment.isAnonymous) {
+    return comment.authorName;
+  }
+
+  return `익명${comment.anonymousOrder ?? ''}`;
+};
+
 const toViewData = (
   post: BoardPost,
   comments: BoardCommentTreeNode[],
 ): ContentDetailViewData => ({
-  authorLabel: post.authorName,
+  authorLabel: post.isAnonymous ? '익명' : post.authorName,
   bodyBlocks: [
     ...splitParagraphs(post.content).map((paragraph, index) => ({
       id: `${post.id}-paragraph-${index + 1}`,
@@ -57,7 +66,7 @@ const toViewData = (
   ],
   commentInputPlaceholder: '댓글을 입력하세요...',
   comments: flattenComments(comments).map(comment => ({
-    authorLabel: comment.authorName,
+    authorLabel: getCommentAuthorLabel(comment),
     body: comment.content,
     dateLabel: formatBoardDateLabel(comment.createdAt.toISOString()),
     id: comment.id,
@@ -75,12 +84,12 @@ const toViewData = (
   reactions: [
     {
       count: post.likeCount,
-      iconName: 'heart-outline',
+      iconName: post.isLiked ? 'heart' : 'heart-outline',
       id: `${post.id}-likes`,
     },
     {
       count: post.bookmarkCount,
-      iconName: 'bookmark-outline',
+      iconName: post.isBookmarked ? 'bookmark' : 'bookmark-outline',
       id: `${post.id}-bookmarks`,
     },
   ],
@@ -96,11 +105,18 @@ const getErrorMessage = (error: unknown) => {
 };
 
 export const useBoardDetailData = (postId?: string) => {
+  const {user} = useAuth();
   const boardRepository = useBoardRepository();
-  const [data, setData] = React.useState<ContentDetailViewData | null>(null);
+  const [post, setPost] = React.useState<BoardPost | null>(null);
+  const [comments, setComments] = React.useState<BoardCommentTreeNode[]>([]);
+  const [commentDraft, setCommentDraft] = React.useState('');
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [notFound, setNotFound] = React.useState(false);
+  const [togglingLike, setTogglingLike] = React.useState(false);
+  const [togglingBookmark, setTogglingBookmark] = React.useState(false);
+  const [submittingComment, setSubmittingComment] = React.useState(false);
+  const [deletingPost, setDeletingPost] = React.useState(false);
   const requestIdRef = React.useRef(0);
 
   const loadDetail = React.useCallback(async () => {
@@ -110,13 +126,14 @@ export const useBoardDetailData = (postId?: string) => {
 
     try {
       if (!postId) {
-        setData(null);
+        setPost(null);
+        setComments([]);
         setNotFound(true);
         setError(null);
         return;
       }
 
-      const [post, comments] = await Promise.all([
+      const [nextPost, nextComments] = await Promise.all([
         boardRepository.getPost(postId),
         boardRepository.getComments(postId),
       ]);
@@ -125,14 +142,16 @@ export const useBoardDetailData = (postId?: string) => {
         return;
       }
 
-      if (!post) {
-        setData(null);
+      if (!nextPost) {
+        setPost(null);
+        setComments([]);
         setNotFound(true);
         setError(null);
         return;
       }
 
-      setData(toViewData(post, comments));
+      setPost(nextPost);
+      setComments(nextComments);
       setNotFound(false);
       setError(null);
     } catch (loadError) {
@@ -141,7 +160,8 @@ export const useBoardDetailData = (postId?: string) => {
       }
 
       setError(getErrorMessage(loadError));
-      setData(null);
+      setPost(null);
+      setComments([]);
       setNotFound(false);
     } finally {
       if (currentRequestId === requestIdRef.current) {
@@ -154,11 +174,155 @@ export const useBoardDetailData = (postId?: string) => {
     loadDetail().catch(() => undefined);
   }, [loadDetail]);
 
+  const canManageActions = React.useMemo(() => {
+    if (!post) {
+      return false;
+    }
+
+    return Boolean(post.isAuthor ?? (user?.uid && post.authorId === user.uid));
+  }, [post, user?.uid]);
+
+  const toggleLike = React.useCallback(async () => {
+    if (!postId || !user?.uid || togglingLike) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setTogglingLike(true);
+
+    try {
+      const nextIsLiked = await boardRepository.toggleLike(postId, user.uid);
+      setPost(currentPost => {
+        if (!currentPost) {
+          return currentPost;
+        }
+
+        const previousIsLiked = Boolean(currentPost.isLiked);
+        const likeDelta =
+          previousIsLiked === nextIsLiked ? 0 : nextIsLiked ? 1 : -1;
+
+        return {
+          ...currentPost,
+          isLiked: nextIsLiked,
+          likeCount: Math.max(0, currentPost.likeCount + likeDelta),
+        };
+      });
+    } finally {
+      setTogglingLike(false);
+    }
+  }, [boardRepository, postId, togglingLike, user?.uid]);
+
+  const toggleBookmark = React.useCallback(async () => {
+    if (!postId || !user?.uid || togglingBookmark) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setTogglingBookmark(true);
+
+    try {
+      const nextIsBookmarked = await boardRepository.toggleBookmark(
+        postId,
+        user.uid,
+      );
+      setPost(currentPost => {
+        if (!currentPost) {
+          return currentPost;
+        }
+
+        const previousIsBookmarked = Boolean(currentPost.isBookmarked);
+        const bookmarkDelta =
+          previousIsBookmarked === nextIsBookmarked
+            ? 0
+            : nextIsBookmarked
+              ? 1
+              : -1;
+
+        return {
+          ...currentPost,
+          bookmarkCount: Math.max(0, currentPost.bookmarkCount + bookmarkDelta),
+          isBookmarked: nextIsBookmarked,
+        };
+      });
+    } finally {
+      setTogglingBookmark(false);
+    }
+  }, [boardRepository, postId, togglingBookmark, user?.uid]);
+
+  const submitComment = React.useCallback(async () => {
+    if (!postId || !user?.uid) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const trimmedComment = commentDraft.trim();
+    if (!trimmedComment) {
+      throw new Error('댓글 내용을 입력해주세요.');
+    }
+
+    setSubmittingComment(true);
+
+    try {
+      await boardRepository.createComment(postId, {
+        anonId: null,
+        authorId: user.uid,
+        authorName: user.displayName ?? '익명',
+        authorProfileImage: user.photoURL ?? null,
+        content: trimmedComment,
+        isAnonymous: false,
+        isDeleted: false,
+        parentId: null,
+      });
+
+      const nextComments = await boardRepository.getComments(postId);
+      setComments(nextComments);
+      setCommentDraft('');
+      setPost(currentPost =>
+        currentPost
+          ? {
+              ...currentPost,
+              commentCount: flattenComments(nextComments).length,
+            }
+          : currentPost,
+      );
+    } finally {
+      setSubmittingComment(false);
+    }
+  }, [boardRepository, commentDraft, postId, user]);
+
+  const deletePost = React.useCallback(async () => {
+    if (!postId) {
+      throw new Error('게시글 정보를 찾을 수 없습니다.');
+    }
+
+    setDeletingPost(true);
+
+    try {
+      await boardRepository.deletePost(postId);
+    } finally {
+      setDeletingPost(false);
+    }
+  }, [boardRepository, postId]);
+
+  const data = React.useMemo(
+    () => (post ? toViewData(post, comments) : null),
+    [comments, post],
+  );
+
   return {
+    canManageActions,
+    commentDraft,
     data,
+    deletePost,
+    deletingPost,
     error,
     loading,
     notFound,
+    post,
     reload: loadDetail,
+    setCommentDraft,
+    submitComment,
+    submittingComment,
+    toggleBookmark,
+    toggleLike,
+    togglingBookmark,
+    togglingLike,
   };
 };

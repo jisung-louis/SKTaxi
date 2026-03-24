@@ -34,9 +34,9 @@ import {
   useScreenView,
 } from '@/shared/hooks';
 
-import type {BoardStackParamList} from '../model/navigation';
-import {useBoardDetailData} from '../hooks/useBoardDetailData';
 import {BoardDetailPopupMenu} from '../components/BoardDetailPopupMenu';
+import {useBoardDetailData} from '../hooks/useBoardDetailData';
+import type {BoardStackParamList} from '../model/navigation';
 
 type BoardDetailNavigationProp = NativeStackNavigationProp<
   BoardStackParamList,
@@ -56,9 +56,25 @@ export const BoardDetailScreen = () => {
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const [isMenuVisible, setIsMenuVisible] = React.useState(false);
-  const {data, error, loading, notFound, reload} = useBoardDetailData(
-    route.params?.postId,
-  );
+  const {
+    canManageActions,
+    commentDraft,
+    data,
+    deletePost,
+    deletingPost,
+    error,
+    loading,
+    notFound,
+    post,
+    reload,
+    setCommentDraft,
+    submitComment,
+    submittingComment,
+    toggleBookmark,
+    toggleLike,
+    togglingBookmark,
+    togglingLike,
+  } = useBoardDetailData(route.params?.postId);
 
   const headerOffset = insets.top + 56;
   const scrollBottomPadding = isKeyboardVisible
@@ -92,10 +108,82 @@ export const BoardDetailScreen = () => {
   }, [navigation, route.params?.postId]);
 
   const handlePressDelete = React.useCallback(() => {
-    Alert.alert('게시글 삭제', '삭제 메뉴 연결은 다음 단계에서 진행할 예정입니다.');
-  }, []);
+    Alert.alert('게시글 삭제', '이 게시글을 삭제하시겠습니까?', [
+      {text: '취소', style: 'cancel'},
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: () => {
+          deletePost()
+            .then(() => {
+              navigation.reset({
+                index: 0,
+                routes: [{name: 'BoardMain'}],
+              });
+            })
+            .catch(deleteError => {
+              Alert.alert(
+                '오류',
+                deleteError instanceof Error
+                  ? deleteError.message
+                  : '게시글 삭제에 실패했습니다.',
+              );
+            });
+        },
+      },
+    ]);
+  }, [deletePost, navigation]);
+
+  const handleToggleLike = React.useCallback(() => {
+    toggleLike().catch(toggleError => {
+      Alert.alert(
+        '오류',
+        toggleError instanceof Error
+          ? toggleError.message
+          : '좋아요 처리에 실패했습니다.',
+      );
+    });
+  }, [toggleLike]);
+
+  const handleToggleBookmark = React.useCallback(() => {
+    toggleBookmark().catch(toggleError => {
+      Alert.alert(
+        '오류',
+        toggleError instanceof Error
+          ? toggleError.message
+          : '북마크 처리에 실패했습니다.',
+      );
+    });
+  }, [toggleBookmark]);
+
+  const handleSubmitComment = React.useCallback(() => {
+    submitComment().catch(submitError => {
+      Alert.alert(
+        '오류',
+        submitError instanceof Error
+          ? submitError.message
+          : '댓글 작성에 실패했습니다.',
+      );
+    });
+  }, [submitComment]);
 
   const categoryBadge = data?.metaBadges[0];
+  const rightAccessory = data ? (
+    <TouchableOpacity
+      accessibilityLabel="게시물 메뉴"
+      accessibilityRole="button"
+      activeOpacity={0.82}
+      onPress={() => {
+        setIsMenuVisible(previous => !previous);
+      }}
+      style={styles.menuButton}>
+      <Icon
+        color={COLORS.text.secondary}
+        name="ellipsis-vertical"
+        size={18}
+      />
+    </TouchableOpacity>
+  ) : undefined;
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -178,13 +266,22 @@ export const BoardDetailScreen = () => {
               <DetailBodyBlocks blocks={data.bodyBlocks} />
 
               <View style={styles.reactionsRow}>
-                {data.reactions.map(reaction => (
-                  <DetailReactionChip
-                    count={reaction.count}
-                    iconName={reaction.iconName}
-                    key={reaction.id}
-                  />
-                ))}
+                <DetailReactionChip
+                  accessibilityLabel="게시글 좋아요"
+                  active={Boolean(post?.isLiked)}
+                  count={post?.likeCount ?? 0}
+                  disabled={togglingLike}
+                  iconName={post?.isLiked ? 'heart' : 'heart-outline'}
+                  onPress={handleToggleLike}
+                />
+                <DetailReactionChip
+                  accessibilityLabel="게시글 북마크"
+                  active={Boolean(post?.isBookmarked)}
+                  count={post?.bookmarkCount ?? 0}
+                  disabled={togglingBookmark}
+                  iconName={post?.isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                  onPress={handleToggleBookmark}
+                />
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
@@ -210,29 +307,20 @@ export const BoardDetailScreen = () => {
               keyboardVerticalOffset={0}
               pointerEvents="box-none"
               style={styles.composerAvoidingView}>
-              <DetailComposer placeholder={data.commentInputPlaceholder} />
+              <DetailComposer
+                onChangeText={setCommentDraft}
+                onSend={handleSubmitComment}
+                placeholder={data.commentInputPlaceholder}
+                sendEnabled={!submittingComment && commentDraft.trim().length > 0}
+                value={commentDraft}
+              />
             </KeyboardAvoidingView>
           </>
         ) : null}
 
         <DetailBackHeader
           onPressBack={handlePressBack}
-          rightAccessory={
-            <TouchableOpacity
-              accessibilityLabel="게시물 메뉴"
-              accessibilityRole="button"
-              activeOpacity={0.82}
-              onPress={() => {
-                setIsMenuVisible(previous => !previous);
-              }}
-              style={styles.menuButton}>
-              <Icon
-                color={COLORS.text.secondary}
-                name="ellipsis-vertical"
-                size={18}
-              />
-            </TouchableOpacity>
-          }
+          rightAccessory={rightAccessory}
         />
         <BoardDetailPopupMenu
           onClose={() => {
@@ -241,8 +329,10 @@ export const BoardDetailScreen = () => {
           onPressDelete={handlePressDelete}
           onPressEdit={handlePressEdit}
           onPressReport={handlePressReport}
+          right={12}
+          showManageActions={canManageActions}
           top={insets.top + 44}
-          visible={isMenuVisible}
+          visible={isMenuVisible && !deletingPost}
         />
       </Animated.View>
     </SafeAreaView>
@@ -250,37 +340,11 @@ export const BoardDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: COLORS.background.page,
-    flex: 1,
-  },
-  screen: {
-    flex: 1,
-  },
-  centeredState: {
-    flex: 1,
-    paddingHorizontal: SPACING.lg,
-  },
-  scrollContent: {
-    paddingHorizontal: SPACING.lg,
-  },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  dateLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: SPACING.md,
+  authorLabel: {
+    color: COLORS.text.tertiary,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
   },
   authorRow: {
     alignItems: 'center',
@@ -296,25 +360,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 28,
   },
-  authorLabel: {
-    color: COLORS.text.tertiary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  divider: {
-    backgroundColor: COLORS.border.default,
-    height: 1,
-    marginBottom: SPACING.xl,
-  },
-  reactionsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    marginTop: SPACING.xl,
+  centeredState: {
+    flex: 1,
+    paddingHorizontal: SPACING.lg,
   },
   commentsDivider: {
     marginBottom: SPACING.lg,
     marginTop: SPACING.xxl,
+  },
+  commentsList: {
+    paddingBottom: SPACING.md,
   },
   commentsTitle: {
     color: COLORS.text.primary,
@@ -323,30 +378,66 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: SPACING.md,
   },
-  emptyCommentsWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 84,
-    paddingVertical: 32,
-  },
-  emptyCommentsLabel: {
-    color: COLORS.text.muted,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  commentsList: {
-    paddingBottom: SPACING.md,
-  },
   composerAvoidingView: {
     bottom: 0,
     left: 0,
     position: 'absolute',
     right: 0,
   },
+  container: {
+    backgroundColor: COLORS.background.page,
+    flex: 1,
+  },
+  dateLabel: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  divider: {
+    backgroundColor: COLORS.border.default,
+    height: 1,
+    marginBottom: SPACING.xl,
+  },
+  emptyCommentsLabel: {
+    color: COLORS.text.muted,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyCommentsWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 84,
+    paddingVertical: 32,
+  },
   menuButton: {
     alignItems: 'center',
     height: 36,
     justifyContent: 'center',
+    marginRight: -6,
     width: 36,
+  },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  reactionsRow: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.xl,
+  },
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: SPACING.lg,
+  },
+  title: {
+    color: COLORS.text.primary,
+    fontSize: 20,
+    fontWeight: '800',
+    lineHeight: 28,
+    marginBottom: SPACING.md,
   },
 });
