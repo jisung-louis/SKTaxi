@@ -35,6 +35,7 @@ export interface BoardPostSummaryDto {
   viewCount: number;
   likeCount: number;
   commentCount: number;
+  bookmarkCount: number;
   hasImage: boolean;
   isPinned: boolean;
   createdAt: string;
@@ -100,6 +101,8 @@ export interface BoardUpdatePostRequestDto {
   title?: string;
   content?: string;
   category?: BoardPostCategoryDto;
+  isAnonymous?: boolean;
+  images?: BoardPostImageDto[];
 }
 
 export interface BoardCreateCommentRequestDto {

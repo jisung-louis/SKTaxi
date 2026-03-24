@@ -25,6 +25,11 @@ import {useBoardEdit} from '../hooks/useBoardEdit';
 import type {BoardStackParamList} from '../model/navigation';
 import type {BoardFormData, BoardPostCategoryId} from '../model/types';
 
+const getSelectedImageIdentity = (image: {
+  localUri: string;
+  remoteUrl?: string;
+}) => image.remoteUrl ?? image.localUri;
+
 export const BoardEditScreen = () => {
   useScreenView();
 
@@ -83,17 +88,34 @@ export const BoardEditScreen = () => {
     [],
   );
 
+  const handleToggleAnonymous = React.useCallback(() => {
+    setFormData(previous => ({
+      ...previous,
+      isAnonymous: !previous.isAnonymous,
+    }));
+  }, []);
+
   const hasDraftChanges = React.useMemo(() => {
     if (!post) {
       return false;
     }
 
+    const currentImages = post.images ?? [];
+    const imagesChanged =
+      currentImages.length !== selectedImages.length ||
+      selectedImages.some((image, index) => {
+        const currentImage = currentImages[index];
+        return !currentImage || getSelectedImageIdentity(image) !== currentImage.url;
+      });
+
     return (
       formData.title !== post.title ||
       formData.content !== post.content ||
-      formData.category !== post.category
+      formData.category !== post.category ||
+      formData.isAnonymous !== post.isAnonymous ||
+      imagesChanged
     );
-  }, [formData, post]);
+  }, [formData, post, selectedImages]);
 
   const handleClose = React.useCallback(() => {
     if (!hasDraftChanges) {
@@ -192,12 +214,9 @@ export const BoardEditScreen = () => {
         ) : (
           <View style={styles.formWrap}>
             <BoardComposeForm
-              anonymousEditable={false}
               category={formData.category}
               content={formData.content}
               contentPlaceholder="내용을 입력하세요..."
-              imageHelperText="현재 Spring 계약에서는 작성 후 첨부 이미지와 익명 설정을 수정할 수 없습니다."
-              imagesEditable={false}
               isAnonymous={!!formData.isAnonymous}
               onChangeContent={handleChangeContent}
               onChangeTitle={handleChangeTitle}
@@ -205,7 +224,7 @@ export const BoardEditScreen = () => {
               onRemoveImage={removeImage}
               onReorderImages={reorderImages}
               onSelectCategory={handleSelectCategory}
-              onToggleAnonymous={() => {}}
+              onToggleAnonymous={handleToggleAnonymous}
               selectedImages={selectedImages}
               title={formData.title}
               titlePlaceholder="제목을 입력하세요"

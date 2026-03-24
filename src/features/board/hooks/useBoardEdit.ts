@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
 
-import type { BoardFormData, BoardPost, BoardSelectedImage } from '../model/types';
+import type {
+  BoardFormData,
+  BoardImage,
+  BoardPost,
+  BoardSelectedImage,
+} from '../model/types';
 import { buildBoardPostUpdatePayload } from '../services/boardPostService';
 import { useBoardImageUpload } from './useBoardImageUpload';
 import { useBoardRepository } from './useBoardRepository';
@@ -22,6 +27,42 @@ export interface UseBoardEditResult {
   clearImages: () => void;
 }
 
+const mapSelectedImageToBoardImage = (
+  image: BoardSelectedImage,
+): BoardImage => ({
+  height: image.height,
+  mime: image.mime,
+  size: image.size,
+  thumbUrl: image.thumbUrl,
+  url: image.remoteUrl ?? image.localUri,
+  width: image.width,
+});
+
+const getSelectedImageIdentity = (image: BoardSelectedImage) =>
+  image.remoteUrl ?? image.localUri;
+
+const getBoardImageIdentity = (image: BoardImage) => image.url;
+
+const haveImagesChanged = (
+  currentImages: BoardImage[] | undefined,
+  selectedImages: BoardSelectedImage[],
+) => {
+  const normalizedCurrent = currentImages ?? [];
+
+  if (normalizedCurrent.length !== selectedImages.length) {
+    return true;
+  }
+
+  return selectedImages.some((selectedImage, index) => {
+    const currentImage = normalizedCurrent[index];
+
+    return (
+      !currentImage ||
+      getSelectedImageIdentity(selectedImage) !== getBoardImageIdentity(currentImage)
+    );
+  });
+};
+
 export function useBoardEdit(postId: string): UseBoardEditResult {
   const { user } = useAuth();
   const boardRepository = useBoardRepository();
@@ -38,6 +79,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
     reorderImages,
     clearImages,
     setImages,
+    uploadImages,
   } = useBoardImageUpload({ maxImages: 10 });
 
   useEffect(() => {
@@ -95,7 +137,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
 
   const updatePost = useCallback(
     async (formData: BoardFormData): Promise<void> => {
-      if (!postId || !user) {
+      if (!postId || !user || !post) {
         throw new Error('수정할 수 없습니다.');
       }
       if (!formData.title.trim()) {
@@ -109,9 +151,21 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(true);
         setError(null);
 
-        await boardRepository.updatePost(postId, buildBoardPostUpdatePayload(formData));
+        const shouldUpdateAnonymous = formData.isAnonymous !== post.isAnonymous;
+        const shouldUpdateImages = haveImagesChanged(post.images, selectedImages);
+        const uploadedImages = shouldUpdateImages ? await uploadImages(postId) : [];
 
-        clearImages();
+        await boardRepository.updatePost(postId, {
+          ...buildBoardPostUpdatePayload(formData),
+          ...(shouldUpdateAnonymous
+            ? {isAnonymous: Boolean(formData.isAnonymous)}
+            : {}),
+          ...(shouldUpdateImages
+            ? {
+                images: uploadedImages.map(mapSelectedImageToBoardImage),
+              }
+            : {}),
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : '게시글 수정에 실패했습니다.';
         setError(message);
@@ -120,7 +174,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(false);
       }
     },
-    [boardRepository, clearImages, postId, user],
+    [boardRepository, post, postId, selectedImages, uploadImages, user],
   );
 
   return {

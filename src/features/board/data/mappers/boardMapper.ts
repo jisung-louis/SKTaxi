@@ -78,7 +78,7 @@ const mapBoardPostBase = (
 
 export const mapBoardPostSummaryDto = (dto: BoardPostSummaryDto): BoardPost => ({
   ...mapBoardPostBase(dto),
-  bookmarkCount: 0,
+  bookmarkCount: dto.bookmarkCount,
   images: dto.hasImage ? [] : undefined,
   isDeleted: false,
   isPinned: dto.isPinned,

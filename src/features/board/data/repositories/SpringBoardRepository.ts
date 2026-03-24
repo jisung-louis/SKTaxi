@@ -106,7 +106,6 @@ const mergeSummaryPost = (
 
   return {
     ...summary,
-    bookmarkCount: cached.bookmarkCount,
     images: cached.images,
     isAuthor: cached.isAuthor,
     isBookmarked: cached.isBookmarked,
@@ -129,10 +128,25 @@ const toUpdatePostRequest = (updates: Partial<BoardPost>) => {
   const request = {
     category: mapBoardCategoryToDto(updates.category),
     content: updates.content?.trim(),
+    images: updates.images?.map(image => ({
+      height: image.height,
+      mime: image.mime,
+      size: image.size,
+      thumbUrl: image.thumbUrl,
+      url: image.url,
+      width: image.width,
+    })),
+    isAnonymous: updates.isAnonymous,
     title: updates.title?.trim(),
   };
 
-  if (!request.category && !request.content && !request.title) {
+  if (
+    !request.category &&
+    !request.content &&
+    !request.title &&
+    request.isAnonymous === undefined &&
+    request.images === undefined
+  ) {
     return null;
   }
 
