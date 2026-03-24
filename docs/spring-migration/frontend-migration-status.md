@@ -711,11 +711,11 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - Community board home은 중앙 DI `boardRepository`를 통해 Spring 게시글 목록을 조합한다.
 - Board의 dead storage hook path는 제거했다.
 
-이번 스레드에서 확인된 backend contract gap:
+이번 스레드에서 반영된 backend contract 보강:
 
-- `GET /v1/posts` summary에는 `bookmarkCount`가 없어 Board list / Community featured popularity를 완전히 서버 지표로 계산할 수 없다.
-- `PATCH /v1/posts/{postId}`는 `title/content/category`만 허용하고 이미지/익명 수정 contract가 없다.
-- Notice에는 댓글 수정 endpoint가 없어 `updateComment()`는 의도적으로 에러를 반환한다.
+- `GET /v1/posts` summary에 `bookmarkCount`가 추가되어 Board list / Community featured popularity를 서버 지표로 계산할 수 있다.
+- `PATCH /v1/posts/{postId}`가 `title/content/category/isAnonymous/images`를 지원한다. `images`는 전체 목록 교체 semantics이며 `[]`는 전체 제거를 의미한다.
+- `PATCH /v1/notice-comments/{commentId}`가 추가되어 Notice 댓글 수정이 가능해졌다. 수정 가능 필드는 `content`만이며 `isAnonymous`는 유지된다.
 
 ### 4.18 Phase H 결과
 
@@ -729,9 +729,6 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 현재 아직 남은 것:
 
-- Board list/community list의 bookmarkCount 및 featured popularity는 backend summary contract 보강 전까지 완전한 source of truth가 아니다.
-- Board 수정 후 이미지/익명 변경은 backend contract 추가 전까지 지원할 수 없다.
-- Notice 댓글 수정은 backend endpoint가 추가되기 전까지 미지원이다.
 - 일반 Chat 이미지 업로드/이미지 메시지 실사용 연결은 아직 남아 있다.
 
 ---

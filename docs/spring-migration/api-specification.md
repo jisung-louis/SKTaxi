@@ -1,6 +1,6 @@
 # Spring 백엔드 API 명세
 
-> 최종 수정일: 2026-03-23
+> 최종 수정일: 2026-03-10
 > 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
@@ -1177,38 +1177,19 @@ FCM 토큰 삭제
 
 ## 4. Chat API
 
-### 4.1 채팅방 조회 / 공개방 멤버십
-
-#### 공개방 기본 정책
-
-- 공식 공개방 seed:
-  - 학교 전체방 1개: `성결대학교 전체 채팅방`
-  - 마인크래프트방 1개: `마인크래프트 채팅방`
-  - 학과방: `{학과명} 채팅방`
-- 노출 규칙:
-  - `UNIVERSITY`, `GAME`, `CUSTOM` 공개방은 모든 사용자에게 보입니다.
-  - `DEPARTMENT` 공개방은 본인 `department`와 일치하는 방만 보이고, 다른 학과 방은 목록/상세에서 숨깁니다.
-  - `PARTY`는 공개방이 아니며 참여 중인 멤버에게만 보입니다.
-- 미참여 공개방 정책:
-  - 목록/상세에는 보입니다.
-  - `description`, `lastMessage`, `lastMessageAt`, `memberCount`는 보입니다.
-  - `joined=false`, `unreadCount=0`, `isMuted=false`로 내려갑니다.
-  - `GET /v1/chat-rooms/{id}/messages`는 `NOT_CHAT_ROOM_MEMBER`를 반환합니다.
-- 정렬 정책:
-  - 서버가 최종 UI 정렬을 강제하지는 않습니다.
-  - 프론트는 `type`, `joined`, `lastMessageAt` 메타데이터로 `학교 전체방 → 학과방 → 마인크래프트방 → joined custom → not joined custom` 정렬을 구성할 수 있습니다.
+### 4.1 채팅방 조회
 
 #### GET /v1/chat-rooms
 접근 가능한 채팅방 목록
 
-- 기본 정책: `보이는 공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`을 반환합니다.
+- 기본 정책: `공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`만 반환합니다.
 
 **Query Parameters:**
 
 | 파라미터 | 타입 | 설명 |
 |---------|------|------|
 | `type` | string | 채팅방 타입 (UNIVERSITY, DEPARTMENT, GAME, CUSTOM, PARTY) |
-| `joined` | boolean | `true`면 참여 중인 채팅방만 |
+| `joined` | boolean | 참여 중인 채팅방만 |
 
 **Response:**
 ```json
@@ -1216,141 +1197,49 @@ FCM 토큰 삭제
   "success": true,
   "data": [
     {
-      "id": "public:university",
+      "id": "room_id",
+      "name": "성결대 전체 채팅방",
       "type": "UNIVERSITY",
-      "name": "성결대학교 전체 채팅방",
-      "description": "성결대학교 전체 채팅방입니다.",
-      "isPublic": true,
       "memberCount": 150,
-      "joined": false,
-      "unreadCount": 0,
       "lastMessage": {
         "type": "TEXT",
         "text": "안녕하세요!",
         "senderName": "홍길동",
         "createdAt": "2026-02-03T12:00:00Z"
       },
-      "lastMessageAt": "2026-02-03T12:00:00Z",
-      "isMuted": false
-    },
-    {
-      "id": "room_uuid",
-      "type": "CUSTOM",
-      "name": "시험기간 밤샘 메이트",
-      "description": "기말고사 기간 같이 공부할 사람들 모여요.",
-      "isPublic": true,
-      "memberCount": 24,
-      "joined": true,
-      "unreadCount": 3,
-      "lastMessage": {
-        "type": "TEXT",
-        "text": "중앙도서관 4층 자리 남아요.",
-        "senderName": "김성결",
-        "createdAt": "2026-02-03T23:10:00Z"
-      },
-      "lastMessageAt": "2026-02-03T23:10:00Z",
-      "isMuted": false
+      "unreadCount": 5,
+      "isJoined": true
     }
   ]
-}
-```
-
-#### POST /v1/chat-rooms
-커스텀 공개 채팅방 생성
-
-**Request:**
-```json
-{
-  "name": "시험기간 밤샘 메이트",
-  "description": "기말고사 기간 같이 공부할 사람들 모여요."
-}
-```
-
-**정책:**
-- 생성 가능한 타입은 `CUSTOM` 고정입니다.
-- 생성된 채팅방은 `isPublic=true` 공개 탐색 방입니다.
-- 생성자는 즉시 `joined=true` 상태가 되며, `memberCount`는 1로 시작합니다.
-
-**Response (201 Created):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "room_uuid",
-    "type": "CUSTOM",
-    "name": "시험기간 밤샘 메이트",
-    "description": "기말고사 기간 같이 공부할 사람들 모여요.",
-    "isPublic": true,
-    "memberCount": 1,
-    "joined": true,
-    "unreadCount": 0,
-    "lastMessage": null,
-    "lastMessageAt": null,
-    "isMuted": false,
-    "lastReadAt": null
-  }
 }
 ```
 
 #### GET /v1/chat-rooms/{chatRoomId}
 채팅방 상세
 
-- 공개 채팅방은 `joined=false`여도 상세 조회할 수 있습니다.
 - 비공개 채팅방은 멤버만 조회 가능합니다.
-- 다른 학과 공개방은 `CHAT_ROOM_NOT_FOUND`로 숨깁니다.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "id": "public:university",
+    "id": "room_id",
+    "name": "성결대 전체 채팅방",
     "type": "UNIVERSITY",
-    "name": "성결대학교 전체 채팅방",
-    "description": "성결대학교 전체 채팅방입니다.",
-    "isPublic": true,
+    "description": "성결대학교 학생들의 소통 공간",
     "memberCount": 150,
-    "joined": false,
-    "unreadCount": 0,
-    "lastMessage": {
-      "type": "TEXT",
-      "text": "안녕하세요!",
-      "senderName": "홍길동",
-      "createdAt": "2026-02-03T12:00:00Z"
-    },
-    "lastMessageAt": "2026-02-03T12:00:00Z",
+    "isPublic": true,
+    "isJoined": true,
     "isMuted": false,
-    "lastReadAt": null
+    "lastReadAt": "2026-02-03T11:00:00Z",
+    "unreadCount": 5
   }
 }
 ```
 
-#### POST /v1/chat-rooms/{chatRoomId}/join
-공개 채팅방 참여
-
-- 참여하기 버튼을 누르면 즉시 참여합니다.
-- 이미 참여 중이면 `409 ALREADY_CHAT_ROOM_MEMBER`
-- 정원이 있는 방에서 가득 찼으면 `409 CHAT_ROOM_FULL`
-- 참여 직후 `unreadCount`는 0으로 시작하도록 `lastReadAt`을 현재 방의 마지막 메시지 시각으로 초기화합니다.
-
-#### DELETE /v1/chat-rooms/{chatRoomId}/members/me
-공개 채팅방 나가기
-
-- 모든 공개 채팅방은 나갈 수 있습니다.
-- 나간 뒤에도 공개방 상세 조회는 계속 가능합니다.
-- 나간 뒤 `joined=false`, `unreadCount=0`, `isMuted=false` 상태가 됩니다.
-
-#### 학과 변경 정책
-
-- `PATCH /v1/members/me`에서 `department`가 바뀌면 기존 학과방 membership은 자동 제거합니다.
-- 새 학과방 membership은 자동 생성하지 않습니다.
-- 다음 refresh/재진입 시 기존 학과방은 목록에서 제거되고 접근할 수 없습니다.
-
 #### GET /v1/chat-rooms/{chatRoomId}/messages
 채팅 메시지 조회
-
-- `joined=true`인 경우에만 조회할 수 있습니다.
-- 공개 채팅방이라도 미참여 상태면 `403 NOT_CHAT_ROOM_MEMBER`
 
 **Query Parameters:**
 
@@ -1417,28 +1306,13 @@ FCM 토큰 삭제
 읽음 처리
 
 - 클라이언트는 채팅방 포커스 획득/이탈, 앱 백그라운드 전환 시점마다 `lastReadAt`을 갱신합니다.
-- 요청 `lastReadAt`은 JS/React Native의 `new Date().toISOString()` 형태와 같은 ISO 8601 UTC 문자열(`...Z`)을 사용합니다.
-- 서버는 요청 문자열을 절대 시각으로 해석한 뒤 `Asia/Seoul` 기준 `LocalDateTime`으로 정규화하여 비교/저장합니다.
 - 서버는 저장된 `lastReadAt`보다 과거 시각 요청을 무시해 단조 증가를 보장하고, 미래 시각 요청은 서버 현재 시각과 마지막 메시지 시각을 상한으로 clamp합니다.
 - 미읽음 계산 기준은 `message.createdAt > lastReadAt` 입니다. (`==` 는 읽음으로 간주)
-- `PATCH /read` 응답과 채팅방 detail의 `lastReadAt`도 ISO 8601 UTC 문자열로 반환합니다.
 
 **Request:**
 ```json
 {
   "lastReadAt": "2026-02-03T12:00:00Z"
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "chatRoomId": "public:university",
-    "lastReadAt": "2026-02-03T12:00:00Z",
-    "updated": true
-  }
 }
 ```
 
@@ -1532,7 +1406,6 @@ Authorization:Bearer <firebase_id_token>
 ```
 
 > `eventType`은 `CHAT_ROOM_SNAPSHOT`, `CHAT_ROOM_UPSERT`, `CHAT_ROOM_REMOVED`를 사용합니다.
-> `/user/queue/chat-rooms`는 joined room summary 기준 채널이며, 미참여 공개방 탐색 목록은 `GET /v1/chat-rooms` refresh 기준으로 유지합니다.
 
 ---
 
@@ -1626,7 +1499,7 @@ Authorization:Bearer <firebase_id_token>
 |------|------------|
 | 메시지 전송 (STOMP 핸들러) | 메시지 DB 저장 + ChatRoom.messageCount 증가 → 커밋 후 구독자 브로드캐스트 |
 | 채팅방 목록 요약 이벤트 | 메시지 저장/멤버수 변경 커밋 후 `/user/queue/chat-rooms`로 요약 이벤트 전송 |
-| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | ISO 8601 UTC `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
+| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
 | 설정 수정 (`PATCH /v1/chat-rooms/{chatRoomId}/settings`) | ChatRoomMember.muted 갱신 |
 | ACCOUNT 메시지 | payload snapshot 검증 + 선택적 회원 계좌 저장(`remember=true`) + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
 | 파티 상태 기반 서버 메시지 | party 상태/정산 snapshot 저장 후 `SYSTEM`/`ARRIVED`/`END` 메시지 DB 저장 → 커밋 후 브로드캐스트 |
@@ -1656,7 +1529,7 @@ Authorization:Bearer <firebase_id_token>
 | `POST` | `/v1/posts` | 게시글 작성 |
 | `GET` | `/v1/posts` | 게시글 목록 조회 |
 | `GET` | `/v1/posts/{postId}` | 게시글 상세 조회 (조회수 증가) |
-| `PATCH` | `/v1/posts/{postId}` | 게시글 수정 (작성자) |
+| `PATCH` | `/v1/posts/{postId}` | 게시글 수정 (작성자, `isAnonymous`/`images` 전체 교체 포함) |
 | `DELETE` | `/v1/posts/{postId}` | 게시글 삭제 (작성자, soft delete) |
 | `POST` | `/v1/posts/{postId}/like` | 좋아요 등록 |
 | `DELETE` | `/v1/posts/{postId}/like` | 좋아요 취소 |
@@ -1704,6 +1577,7 @@ Authorization:Bearer <firebase_id_token>
         "viewCount": 100,
         "likeCount": 10,
         "commentCount": 5,
+        "bookmarkCount": 3,
         "hasImage": true,
         "isPinned": false,
         "createdAt": "2026-02-03T12:00:00Z"
@@ -1718,6 +1592,8 @@ Authorization:Bearer <firebase_id_token>
   }
 }
 ```
+
+- 목록 summary의 `bookmarkCount`는 상세 응답의 `bookmarkCount`와 동일한 게시글 누적 북마크 수입니다.
 
 #### GET /v1/posts/{postId}
 
@@ -1754,9 +1630,27 @@ Authorization:Bearer <firebase_id_token>
 {
   "title": "수정된 제목",
   "content": "수정된 내용",
-  "category": "QUESTION"
+  "category": "QUESTION",
+  "isAnonymous": true,
+  "images": [
+    {
+      "url": "https://...",
+      "thumbUrl": "https://...",
+      "width": 800,
+      "height": 600,
+      "size": 245123,
+      "mime": "image/jpeg"
+    }
+  ]
 }
 ```
+
+- 수정 가능 필드: `title`, `content`, `category`, `isAnonymous`, `images`
+- `isAnonymous`를 전달하면 게시글 익명 상태를 변경하고, 생략하거나 `null`이면 기존 값을 유지한다.
+- `images[]`는 `POST /v1/posts`와 동일한 구조를 사용한다.
+- `images` 필드를 전달하면 전체 이미지 목록을 전달한 순서대로 교체한다.
+- `images: []`는 첨부 이미지를 모두 제거한다.
+- `images`를 생략하거나 `null`로 보내면 기존 이미지를 유지한다.
 
 #### DELETE /v1/posts/{postId}
 
@@ -2060,6 +1954,42 @@ Authorization:Bearer <firebase_id_token>
 - 각 댓글은 최소 `id`, `parentId`, `depth`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
 - 서버는 thread 순서를 보장한 flat list를 반환하고, 클라이언트가 트리 UI를 조립한다.
 
+#### PATCH /v1/notice-comments/{commentId}
+공지 댓글 수정
+
+**Request:**
+```json
+{
+  "content": "수정된 댓글 내용"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "notice_comment_uuid",
+    "parentId": null,
+    "depth": 0,
+    "content": "수정된 댓글 내용",
+    "authorId": "user_uuid",
+    "authorName": "홍길동",
+    "isAnonymous": false,
+    "anonymousOrder": null,
+    "isAuthor": true,
+    "isDeleted": false,
+    "createdAt": "2026-02-03T12:00:00",
+    "updatedAt": "2026-02-03T12:30:00"
+  }
+}
+```
+
+**수정 정책:**
+- 댓글 작성자만 본문을 수정할 수 있다.
+- `content`만 수정 가능하며 `parentId`, `isAnonymous`, `anonymousOrder`는 생성 시점 값을 유지한다.
+- 이미 삭제된 댓글은 `409 COMMENT_ALREADY_DELETED`를 반환한다.
+
 #### DELETE /v1/notice-comments/{commentId}
 공지 댓글 삭제
 
@@ -2124,8 +2054,8 @@ Authorization:Bearer <firebase_id_token>
 | `NOTICE_NOT_FOUND` | 404 | 존재하지 않는 학교 공지 |
 | `APP_NOTICE_NOT_FOUND` | 404 | 존재하지 않는 앱 공지 |
 | `NOTICE_COMMENT_NOT_FOUND` | 404 | 존재하지 않는 공지 댓글 |
-| `NOT_NOTICE_COMMENT_AUTHOR` | 403 | 댓글 작성자가 아닌데 삭제 시도 |
-| `COMMENT_ALREADY_DELETED` | 409 | 이미 삭제된 댓글 재삭제 시도 |
+| `NOT_NOTICE_COMMENT_AUTHOR` | 403 | 댓글 작성자가 아닌데 수정/삭제 시도 |
+| `COMMENT_ALREADY_DELETED` | 409 | 이미 삭제된 댓글 수정/재삭제 시도 |
 | `RESOURCE_CONCURRENT_MODIFICATION` | 409 | 공지 동기화가 이미 진행 중임 |
 
 ---

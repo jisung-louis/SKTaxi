@@ -1,6 +1,6 @@
 # Spring 백엔드 도메인 분석
 
-> 최종 수정일: 2026-03-23
+> 최종 수정일: 2026-03-10
 > 분석 기준: Firestore 컬렉션, Cloud Functions 트리거, Context/Hook 구조
 
 본 문서는 현재 Firebase 기반 SKURI Taxi 앱을 Spring Boot + MySQL 백엔드로 마이그레이션하기 위한 **도메인 분석 결과**입니다.
@@ -288,14 +288,6 @@ Hooks:
 역할:
   - 파티 채팅: TaxiParty 도메인이 규칙 관리, Chat은 엔진만 제공
   - 공개 채팅: Chat 도메인이 전체 관리
-  - 공식 공개방은 seed migration으로 `UNIVERSITY 1개 + GAME 1개 + 학과방들 + 사용자 생성 CUSTOM` 구조를 유지
-  - 공개방 visibility는 서버가 강제한다.
-    - `UNIVERSITY`, `GAME`, `CUSTOM`: 전체 사용자 노출
-    - `DEPARTMENT`: 본인 학과와 일치하는 방만 노출
-  - 미참여 공개방도 목록/상세 조회는 가능하지만, 메시지 조회/읽음/mute는 참여자만 가능
-  - 공개방 참여/나가기/커스텀방 생성은 REST(`POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`)로 처리
-  - 커스텀 공개방 생성자는 자동으로 joined 상태가 되며, join 시 초기 unread는 0으로 시작한다
-  - 회원 프로필 학과 변경 시 기존 학과방 membership은 자동 제거하고, 새 학과방은 자동 참여시키지 않는다
   - 채팅방 목록 실시간: `/user/queue/chat-rooms` 사용자 전용 요약 채널 1개 구독
   - 채팅방 상세 실시간: `/topic/chat/{chatRoomId}` 방 단위 구독
   - 채팅방 메시지 전송: `/app/chat/{chatRoomId}`
@@ -354,6 +346,11 @@ Hooks:
   - 게시글 정렬: latest/popular/mostCommented/mostViewed
   - 내 작성글: GET /v1/members/me/posts
   - 내 북마크글: GET /v1/members/me/bookmarks
+
+게시글 수정 정책:
+  - `PATCH /v1/posts/{postId}`는 `title`, `content`, `category`, `isAnonymous`를 부분 수정으로 지원
+  - `images`는 생성과 동일한 구조를 사용하며, 필드를 보내면 전체 이미지 목록 교체
+  - `images: []`는 전체 제거, `images` 생략/null은 기존 유지
 
 카테고리:
   - GENERAL (일반)
@@ -442,6 +439,10 @@ Hooks:
   - 공지 본문은 회원과 독립적인 외부 데이터이므로 영향 없음
   - `NoticeComment`는 본문을 유지하고 `userId`, `userDisplayName`만 익명화
   - `NoticeLike`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
+
+댓글 수정 정책:
+  - `PATCH /v1/notice-comments/{commentId}`는 `content`만 수정 가능
+  - `isAnonymous`, `parentId`, `anonymousOrder`는 생성 시점 값을 유지
 
 향후 확장 준비:
   - AI 요약은 `summary` 컬럼에 저장하고, `contentHash`가 바뀌면 기존 AI 요약을 무효화한다.

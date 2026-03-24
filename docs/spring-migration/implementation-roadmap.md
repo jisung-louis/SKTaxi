@@ -1,7 +1,7 @@
 # SKURI 백엔드 구현 로드맵
 
-> 최종 수정일: 2026-03-23
-> 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [API 명세](./api-specification.md) | [기술 전략](./tech-strategy.md) | [역할 정의](./role-definition.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md) | [채팅 Firestore → MySQL 마이그레이션 참고](./chat-firestore-to-mysql-migration-reference.md)
+> 최종 수정일: 2026-03-10
+> 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [API 명세](./api-specification.md) | [기술 전략](./tech-strategy.md) | [역할 정의](./role-definition.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
 
@@ -14,15 +14,6 @@
 | 빌드 도구 | Gradle |
 | 현재 의존성 | JPA, Web MVC, Validation, Security, Firebase Admin, Springdoc OpenAPI(Swagger UI/Scalar), Thumbnailator, TwelveMonkeys WebP, Lombok, MySQL Connector |
 | 구현 상태 | Phase 0 완료 (공통 기반 구축), Phase 1 완료, Phase 2 완료 (TaxiParty + SSE 반영), Phase 3 완료 (Chat + WebSocket 반영), Phase 4 완료 (Board 반영), Phase 5 완료 (Notice + AppNotice + 공통 Comment 정책 반영), Phase 6 완료 (Academic + 시간표/학사일정/관리자 강의 bulk 반영), Phase 7 완료 (Support + 문의/신고/앱 버전/학식 운영 API 반영), Phase 8 완료 (Notification 인프라), Phase 9 완료 (인프라/배포 기준 정리), Phase 10 완료 (Member 탈퇴/계정 라이프사이클), Phase 11 완료 (운영 공통 인프라 / Admin 공통), Phase 12 완료 (이미지/미디어 업로드 인프라 1차) |
-
----
-
-## 1.1 문서 동기화 및 데이터 마이그레이션 운영 규칙
-
-- `docs/` 아래의 공유 계약 문서(`api-specification.md`, `domain-analysis.md`, `erd.md`, `implementation-roadmap.md`, `role-definition.md`)는 백엔드 레포 최신본을 기준으로 유지하고, 프론트 레포 대응 문서에도 즉시 동일 내용으로 동기화한다.
-- 채팅 Firestore → MySQL 이관 참고사항은 [chat-firestore-to-mysql-migration-reference.md](./chat-firestore-to-mysql-migration-reference.md)에 누적 관리한다.
-- 데이터 마이그레이션 관련 신규 발견사항(컬렉션 구조, ID 매핑, seed 충돌 가능성, 요약 필드 재계산 규칙 등)이 생기면 위 참고 문서를 먼저 갱신하고, 필요 시 `api-specification.md`, `domain-analysis.md`, `erd.md`에도 함께 반영한다.
-- 프론트/백엔드 구현 에이전트의 최종 보고에는 “상대 레포의 동일 문서를 바로 동기화하라”는 문구를 반드시 포함한다.
 
 ---
 
@@ -318,9 +309,6 @@ SSE 운영 제약:
 | 브라우저/실시간 CORS | 프로필/환경별 허용 Origin 설정 (`API_ALLOWED_ORIGIN_PATTERNS`, `CHAT_WS_ALLOWED_ORIGIN_PATTERNS`) |
 | ChatService | 공통 채팅 엔진 (메시지 저장, 전송, 읽음 처리) |
 | PartyMessageService | 파티 채팅 규칙 (계좌 공유, 도착 메시지, 종료 메시지) — Chat 엔진 사용 |
-| 공개방 seed/backfill | 학교 전체방/마인크래프트방/학과방을 idempotent startup seed로 보장 |
-| 공개방 visibility/membership | `UNIVERSITY/GAME/CUSTOM` 전체 노출, `DEPARTMENT`는 본인 학과만 노출, public room의 joined/not joined 목록/상세 정책 제공 |
-| 학과 변경 side effect | 회원 학과 변경 시 기존 학과방 membership 자동 제거, 새 학과방 자동 참여는 하지 않음 |
 | 채팅방 목록 요약 스트림 | 목록 화면은 `/user/queue/chat-rooms` 단일 구독으로 카드 요약(이름/인원/마지막 메시지/미읽음) 수신 |
 | 읽음 처리 | `ChatRoomMember.lastReadAt` 기반 미읽음 수 계산 |
 
@@ -329,10 +317,7 @@ SSE 운영 제약:
 | Method | Path | 설명 |
 |--------|------|------|
 | `GET` | `/v1/chat-rooms` | 채팅방 목록 (타입 필터) |
-| `POST` | `/v1/chat-rooms` | 커스텀 공개 채팅방 생성 (생성자는 자동 joined) |
 | `GET` | `/v1/chat-rooms/{id}` | 채팅방 상세 |
-| `POST` | `/v1/chat-rooms/{id}/join` | 공개 채팅방 참여 |
-| `DELETE` | `/v1/chat-rooms/{id}/members/me` | 공개 채팅방 나가기 |
 | `GET` | `/v1/chat-rooms/{id}/messages` | 메시지 목록 (커서 기반 페이지네이션) |
 | `PATCH` | `/v1/chat-rooms/{id}/read` | 읽음 처리 (`lastReadAt` 단조 증가) |
 | `PATCH` | `/v1/chat-rooms/{id}/settings` | 채팅방 설정(음소거 등) |
@@ -350,8 +335,6 @@ SSE 운영 제약:
 - [x] 파티 채팅방 자동 생성 (파티 생성 시) 동작
 - [x] 읽음/미읽음 처리 동작
 - [x] 파티 채팅 특수 메시지 (계좌, 도착, 종료) 동작
-- [x] 공개 일반 채팅방의 joined/not joined 목록/상세 정책 및 join/leave/create REST 계약 동작
-- [x] 공개방 seed/backfill과 학과 변경 membership 제거 정책 동작
 - [x] 관리자 공개 채팅방 API (`POST/DELETE /v1/admin/chat-rooms`) + `ADMIN_REQUIRED` 권한 정책 동작
 
 ---
@@ -376,6 +359,7 @@ SSE 운영 제약:
 | 익명 처리 | `anonId` = `{postId}:{userId}`, `anonymousOrder` 서버 계산 (글 단위 순번) |
 | 좋아요/북마크 | `PostInteraction` 단일 테이블, 등록/취소 방식 |
 | 카운트 관리 | `viewCount`, `likeCount`, `commentCount`, `bookmarkCount` 동기화 |
+| 게시글 수정 정책 | `PATCH /v1/posts/{postId}`는 `title/content/category/isAnonymous`와 `images` 전체 교체를 지원 |
 | 댓글 구조 | 무제한 depth 저장 + flat list 조회 응답 (`parentId`, `depth`) |
 | 부모 삭제 정책(B) | 부모 댓글은 placeholder soft delete(`삭제된 댓글입니다`), 자식 댓글은 유지 |
 
@@ -386,7 +370,7 @@ SSE 운영 제약:
 | `POST` | `/v1/posts` | 게시글 작성 |
 | `GET` | `/v1/posts` | 게시글 목록 (카테고리 필터, 페이지네이션) |
 | `GET` | `/v1/posts/{postId}` | 게시글 상세 (조회수 증가) |
-| `PATCH` | `/v1/posts/{postId}` | 게시글 부분 수정 (작성자) |
+| `PATCH` | `/v1/posts/{postId}` | 게시글 부분 수정 (작성자, `isAnonymous`/`images` 전체 교체 포함) |
 | `DELETE` | `/v1/posts/{postId}` | 게시글 삭제 (작성자) |
 | `POST` | `/v1/posts/{postId}/like` | 좋아요 토글 |
 | `POST` | `/v1/posts/{postId}/bookmark` | 북마크 토글 |
@@ -435,6 +419,7 @@ SSE 운영 제약:
 | detail 재검증 | 신규/메타 변경/`detailHash` 없음/24시간 초과 시 재크롤링 |
 | 공지 ID | `Base64(link).replace(/=+$/, '').slice(0, 120)` — 링크 기반 안정 ID |
 | 저장 구조 | `rssPreview`(RSS 미리보기), `bodyHtml`(원문 HTML), `bodyText`(정규화 text), `summary`(향후 AI 요약 예약) |
+| 공지 댓글 수정 정책 | `PATCH /v1/notice-comments/{id}`는 `content`만 수정 가능하고 익명 여부는 유지 |
 
 #### 5-3. API
 
@@ -447,6 +432,7 @@ SSE 운영 제약:
 | `DELETE` | `/v1/notices/{id}/like` | 좋아요 취소 |
 | `GET` | `/v1/notices/{noticeId}/comments` | 공지 댓글 목록 |
 | `POST` | `/v1/notices/{noticeId}/comments` | 공지 댓글 작성 |
+| `PATCH` | `/v1/notice-comments/{id}` | 공지 댓글 본문 수정 |
 | `DELETE` | `/v1/notice-comments/{id}` | 공지 댓글 삭제 |
 | `GET` | `/v1/app-notices` | 앱 공지 목록 (**Public**) |
 | `GET` | `/v1/app-notices/{id}` | 앱 공지 상세 |

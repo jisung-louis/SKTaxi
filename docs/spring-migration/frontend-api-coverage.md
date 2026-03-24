@@ -382,8 +382,8 @@ runtime note:
 
 - Board 이미지 업로드는 더 이상 shared mock storage path를 사용하지 않고 `POST /v1/images?context=POST_IMAGE`를 먼저 호출한 뒤 `POST /v1/posts` payload에 포함한다.
 - Community board도 중앙 DI `boardRepository`를 그대로 사용하므로 mock board source와 분기되지 않는다.
-- 다만 `GET /v1/posts` summary contract에는 `bookmarkCount`가 없어 Board list / Community featured popularity는 완전한 서버 지표 계산이 불가능하다.
-- `PATCH /v1/posts/{postId}`는 현재 `title/content/category`만 허용하므로, 작성 후 이미지/익명 설정 수정은 프론트에서 막는다.
+- `GET /v1/posts` summary contract에 `bookmarkCount`가 추가되어 Board list / Community featured popularity를 서버 누적 수치로 계산할 수 있다.
+- `PATCH /v1/posts/{postId}`는 `title/content/category/isAnonymous/images`를 지원한다. `images`를 보내면 전체 목록 교체, `[]`면 전체 제거, 생략/null이면 기존 유지 semantics를 따른다.
 
 ### 3.8 Notice 본체
 
@@ -426,7 +426,8 @@ runtime note:
 
 - Notice detail screen은 placeholder bookmark reaction을 제거하고 실제 backend contract가 있는 like/comments만 노출한다.
 - detail 진입 시 `POST /v1/notices/{noticeId}/read`를 호출해 read state를 server source에 맞춘다.
-- backend에는 notice comment update endpoint가 없으므로 프론트 `updateComment()`는 의도적으로 unsupported 상태를 유지한다.
+- `PATCH /v1/notice-comments/{commentId}`가 추가되어 프론트 `updateComment()`를 backend contract로 연결할 수 있다.
+- Notice comment 수정은 `content`만 허용하며 `isAnonymous`는 생성 시점 값을 유지한다.
 
 ### 3.9 Campus academic / cafeteria
 
