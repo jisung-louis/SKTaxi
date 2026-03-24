@@ -1,0 +1,133 @@
+import type {
+  BoardBookmarkResponseDto,
+  BoardCommentDto,
+  BoardImageUploadResponseDto,
+  BoardLikeResponseDto,
+  BoardPostCategoryDto,
+  BoardPostDetailDto,
+  BoardPostImageDto,
+  BoardPostSummaryDto,
+} from '../dto/boardDto';
+import type {BoardComment, BoardImage, BoardPost, BoardPostCategoryId} from '../../model/types';
+
+const BOARD_CATEGORY_FROM_DTO: Record<BoardPostCategoryDto, BoardPostCategoryId> = {
+  ANNOUNCEMENT: 'announcement',
+  GENERAL: 'general',
+  QUESTION: 'question',
+  REVIEW: 'review',
+};
+
+const BOARD_CATEGORY_TO_DTO: Record<BoardPostCategoryId, BoardPostCategoryDto> = {
+  announcement: 'ANNOUNCEMENT',
+  general: 'GENERAL',
+  question: 'QUESTION',
+  review: 'REVIEW',
+};
+
+const toDate = (value: string) => new Date(value);
+
+export const mapBoardCategoryToDto = (
+  category?: string,
+): BoardPostCategoryDto | undefined => {
+  if (!category) {
+    return undefined;
+  }
+
+  return BOARD_CATEGORY_TO_DTO[category as BoardPostCategoryId];
+};
+
+export const mapBoardImageDto = (dto: BoardPostImageDto): BoardImage => ({
+  height: dto.height ?? 0,
+  mime: dto.mime ?? undefined,
+  size: dto.size ?? undefined,
+  thumbUrl: dto.thumbUrl ?? undefined,
+  url: dto.url,
+  width: dto.width ?? 0,
+});
+
+const mapBoardPostBase = (
+  dto: Pick<
+    BoardPostDetailDto,
+    | 'authorId'
+    | 'authorName'
+    | 'authorProfileImage'
+    | 'category'
+    | 'commentCount'
+    | 'content'
+    | 'createdAt'
+    | 'id'
+    | 'isAnonymous'
+    | 'likeCount'
+    | 'title'
+    | 'viewCount'
+  >,
+) => ({
+  authorId: dto.authorId ?? '',
+  authorName: dto.authorName ?? '익명',
+  authorProfileImage: dto.authorProfileImage ?? null,
+  category: BOARD_CATEGORY_FROM_DTO[dto.category],
+  commentCount: dto.commentCount,
+  content: dto.content,
+  createdAt: toDate(dto.createdAt),
+  id: dto.id,
+  isAnonymous: dto.isAnonymous,
+  likeCount: dto.likeCount,
+  title: dto.title,
+  viewCount: dto.viewCount,
+});
+
+export const mapBoardPostSummaryDto = (dto: BoardPostSummaryDto): BoardPost => ({
+  ...mapBoardPostBase(dto),
+  bookmarkCount: 0,
+  images: dto.hasImage ? [] : undefined,
+  isDeleted: false,
+  isPinned: dto.isPinned,
+  updatedAt: toDate(dto.createdAt),
+});
+
+export const mapBoardPostDetailDto = (dto: BoardPostDetailDto): BoardPost => ({
+  ...mapBoardPostBase(dto),
+  bookmarkCount: dto.bookmarkCount,
+  images: dto.images.map(mapBoardImageDto),
+  isAuthor: dto.isAuthor,
+  isBookmarked: dto.isBookmarked,
+  isDeleted: false,
+  isLiked: dto.isLiked,
+  isPinned: false,
+  updatedAt: toDate(dto.updatedAt),
+});
+
+export const mapBoardCommentDto = (
+  postId: string,
+  dto: BoardCommentDto,
+): BoardComment => ({
+  anonId: dto.isAnonymous
+    ? `${postId}:${dto.anonymousOrder ?? dto.authorId ?? dto.id}`
+    : null,
+  anonymousOrder: dto.anonymousOrder ?? undefined,
+  authorId: dto.authorId ?? '',
+  authorName: dto.authorName ?? '익명',
+  authorProfileImage: dto.authorProfileImage ?? null,
+  content: dto.content,
+  createdAt: toDate(dto.createdAt),
+  id: dto.id,
+  isAnonymous: dto.isAnonymous,
+  isDeleted: dto.isDeleted,
+  parentId: dto.parentId ?? null,
+  postId,
+  updatedAt: toDate(dto.updatedAt),
+});
+
+export const mapBoardLikeResponseDto = (dto: BoardLikeResponseDto) => ({
+  isLiked: dto.isLiked,
+  likeCount: dto.likeCount,
+});
+
+export const mapBoardBookmarkResponseDto = (dto: BoardBookmarkResponseDto) => ({
+  bookmarkCount: dto.bookmarkCount,
+  isBookmarked: dto.isBookmarked,
+});
+
+export const mapBoardImageUploadResponseDto = (
+  dto: BoardImageUploadResponseDto,
+): BoardImage => mapBoardImageDto(dto);

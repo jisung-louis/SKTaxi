@@ -20,6 +20,8 @@ export interface Notice {
   likeCount?: number;
   commentCount?: number;
   viewCount?: number;
+  isRead?: boolean;
+  isLiked?: boolean;
 }
 
 export type ReadStatusMap = Record<string, boolean>;

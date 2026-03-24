@@ -3,14 +3,14 @@
 
 import React, {useMemo, type ReactNode} from 'react';
 
+import {SpringBoardRepository} from '@/features/board/data/repositories/SpringBoardRepository';
 import {SpringMemberRepository} from '@/features/member';
 import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
 import {FirebaseAuthRepository} from '@/features/auth';
-import {MockAcademicRepository} from '@/features/campus/data/repositories/MockAcademicRepository';
-import {MockCafeteriaRepository} from '@/features/campus/data/repositories/MockCafeteriaRepository';
-import {MockBoardRepository} from '@/features/board/data/repositories/MockBoardRepository';
+import {SpringAcademicRepository} from '@/features/campus/data/repositories/SpringAcademicRepository';
+import {SpringCafeteriaRepository} from '@/features/campus/data/repositories/SpringCafeteriaRepository';
 import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
-import {MockNoticeRepository} from '@/features/notice/testing/MockNoticeRepository';
+import {SpringNoticeRepository} from '@/features/notice/data/repositories/SpringNoticeRepository';
 import {SpringAppNoticeRepository} from '@/features/settings/data/repositories/SpringAppNoticeRepository';
 import {MockInquiryRepository} from '@/features/settings/data/repositories/MockInquiryRepository';
 import {SpringPartyRepository} from '@/features/taxi/data/repositories/SpringPartyRepository';
@@ -48,13 +48,13 @@ export function RepositoryProvider({
       partyRepository: new SpringPartyRepository(),
       chatRepository: new SpringChatRepository(),
       userRepository: new MockUserRepository(),
-      boardRepository: new MockBoardRepository(),
-      noticeRepository: new MockNoticeRepository(),
+      boardRepository: new SpringBoardRepository(),
+      noticeRepository: new SpringNoticeRepository(),
       courseRepository: new MockCourseRepository(),
       notificationRepository: new SpringNotificationRepository(),
       appNoticeRepository: new SpringAppNoticeRepository(),
-      cafeteriaRepository: new MockCafeteriaRepository(),
-      academicRepository: new MockAcademicRepository(),
+      cafeteriaRepository: new SpringCafeteriaRepository(),
+      academicRepository: new SpringAcademicRepository(),
       inquiryRepository: new MockInquiryRepository(),
       storageRepository: new MockStorageRepository(),
       timetableRepository: new MockTimetableRepository(),
