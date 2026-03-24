@@ -30,14 +30,19 @@
   - Taxi Home 조회/동승 요청 생성/취소/수락 대기 조회/실제 파티 채팅 진입
   - Taxi Party의 my party / join request count / leader 승인·거절 / recruit(create, 직접 입력 + 지도 선택 포함) / 수정 / 취소 + 주요 SSE subscription
   - Taxi Chat detail의 close/reopen/arrive/end/kick/leave/settlement confirm + ACCOUNT payload 전송 + 서버 생성 SYSTEM/ARRIVED/END 렌더링 chain
+  - Board / Community board의 list/detail/comments/like/bookmark/write/edit
+  - Notice 본체의 home/detail/read/like/comments
+  - Campus academic / cafeteria 본체
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
 - 아직 미연결
-  - Board / Notice / Campus 등 나머지 도메인
+  - Chat 이미지 메시지 실사용 연결
+  - Board / Notice backend contract gap
 
 즉, endpoint 단위로는 꽤 연결됐지만,
-도메인 단위로 보면 Taxi / Chat은 아직 다음 phase 작업이 남아 있다.
+도메인 단위로 보면 Taxi / Chat은 아직 다음 phase 작업이 남아 있고,
+Board / Notice는 backend contract gap 해소가 추가로 필요하다.
 
 ---
 
@@ -329,6 +334,137 @@ runtime note:
 - create API는 repository/API layer까지 연결됐고, UI는 아직 노출하지 않는다.
 - 일반 Chat의 client SYSTEM 전송 dead path는 제거했다.
 
+### 3.7 Board / Community board
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/posts`
+- `GET /v1/posts/{postId}`
+- `POST /v1/posts`
+- `PATCH /v1/posts/{postId}`
+- `DELETE /v1/posts/{postId}`
+- `POST /v1/posts/{postId}/like`
+- `DELETE /v1/posts/{postId}/like`
+- `POST /v1/posts/{postId}/bookmark`
+- `DELETE /v1/posts/{postId}/bookmark`
+- `GET /v1/posts/{postId}/comments`
+- `POST /v1/posts/{postId}/comments`
+- `PATCH /v1/comments/{commentId}`
+- `DELETE /v1/comments/{commentId}`
+- `POST /v1/images?context=POST_IMAGE`
+
+현재 사용처:
+
+- Board 목록
+- Board 상세
+- Board 좋아요 / 북마크 / 댓글 작성 / 게시글 삭제
+- Board 글쓰기 / 수정
+- Community board 탭 목록 / featured post 조합
+
+코드:
+
+- `src/features/board/data/api/boardApiClient.ts`
+- `src/features/board/data/dto/boardDto.ts`
+- `src/features/board/data/mappers/boardMapper.ts`
+- `src/features/board/data/repositories/SpringBoardRepository.ts`
+- `src/features/board/hooks/useBoardWrite.ts`
+- `src/features/board/hooks/useBoardEdit.ts`
+- `src/features/board/hooks/useBoardDetailData.ts`
+- `src/features/community/application/communityBoardQuery.ts`
+- `src/features/community/hooks/useCommunityBoardData.ts`
+- `src/di/RepositoryProvider.tsx`
+
+runtime note:
+
+- Board 이미지 업로드는 더 이상 shared mock storage path를 사용하지 않고 `POST /v1/images?context=POST_IMAGE`를 먼저 호출한 뒤 `POST /v1/posts` payload에 포함한다.
+- Community board도 중앙 DI `boardRepository`를 그대로 사용하므로 mock board source와 분기되지 않는다.
+- 다만 `GET /v1/posts` summary contract에는 `bookmarkCount`가 없어 Board list / Community featured popularity는 완전한 서버 지표 계산이 불가능하다.
+- `PATCH /v1/posts/{postId}`는 현재 `title/content/category`만 허용하므로, 작성 후 이미지/익명 설정 수정은 프론트에서 막는다.
+
+### 3.8 Notice 본체
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/notices`
+- `GET /v1/notices/{noticeId}`
+- `POST /v1/notices/{noticeId}/read`
+- `POST /v1/notices/{noticeId}/like`
+- `DELETE /v1/notices/{noticeId}/like`
+- `GET /v1/notices/{noticeId}/comments`
+- `POST /v1/notices/{noticeId}/comments`
+- `DELETE /v1/notice-comments/{commentId}`
+
+현재 사용처:
+
+- Notice home 목록
+- Notice detail
+- 읽음 처리
+- 좋아요
+- 댓글 조회 / 작성 / 삭제
+
+코드:
+
+- `src/features/notice/data/api/noticeApiClient.ts`
+- `src/features/notice/data/dto/noticeDto.ts`
+- `src/features/notice/data/mappers/noticeMapper.ts`
+- `src/features/notice/data/repositories/SpringNoticeRepository.ts`
+- `src/features/notice/hooks/useNotices.ts`
+- `src/features/notice/hooks/useNoticeDetailData.ts`
+- `src/features/notice/hooks/useNoticeReadState.ts`
+- `src/features/notice/screens/NoticeDetailScreen.tsx`
+- `src/di/RepositoryProvider.tsx`
+
+runtime note:
+
+- Notice detail screen은 placeholder bookmark reaction을 제거하고 실제 backend contract가 있는 like/comments만 노출한다.
+- detail 진입 시 `POST /v1/notices/{noticeId}/read`를 호출해 read state를 server source에 맞춘다.
+- backend에는 notice comment update endpoint가 없으므로 프론트 `updateComment()`는 의도적으로 unsupported 상태를 유지한다.
+
+### 3.9 Campus academic / cafeteria
+
+상태:
+
+- 연결 완료
+
+endpoint:
+
+- `GET /v1/academic-schedules`
+- `GET /v1/cafeteria-menus`
+- `GET /v1/cafeteria-menus/{weekId}`
+
+현재 사용처:
+
+- Campus academic calendar detail
+- Campus home academic preview
+- Cafeteria detail
+- Campus home cafeteria preview
+
+코드:
+
+- `src/features/campus/data/api/campusApiClient.ts`
+- `src/features/campus/data/dto/campusDto.ts`
+- `src/features/campus/data/mappers/campusMapper.ts`
+- `src/features/campus/data/repositories/SpringAcademicRepository.ts`
+- `src/features/campus/data/repositories/SpringCafeteriaRepository.ts`
+- `src/features/campus/application/campusHomeQuery.ts`
+- `src/features/campus/hooks/useAcademicCalendarDetailData.ts`
+- `src/features/campus/hooks/useCafeteriaDetailData.ts`
+- `src/features/campus/hooks/useCampusHomeViewData.ts`
+- `src/di/RepositoryProvider.tsx`
+
+runtime note:
+
+- Campus home은 academic / cafeteria를 query layer에서 조합하고, central mock repository를 더 이상 기본값으로 사용하지 않는다.
+- 현재 campus domain에서 Spring source of truth로 남지 않은 것은 course/timetable/user preview 조합용 기존 mock repository뿐이며, 이번 Phase H 범위 밖이다.
+
 ---
 
 ## 4. 부분 연결 API
@@ -426,20 +562,20 @@ runtime note:
 
 - 이미지 메시지 전송의 실사용 연결
 
-### 5.2 Notice / Board / Campus / 기타
+### 5.2 Board / Notice 잔여 blocker
 
-현재 다음 영역은 여전히 Spring 정식 이전 전이다.
+현재 Board / Notice / Campus는 이미 Spring source of truth로 연결됐고,
+남은 것은 미연결 도메인이라기보다 backend contract gap이다.
 
-- Notice 본체
-- Board / Community
-- Campus 계열
-- 남아 있는 central mock repository 기반 도메인
+- Board summary `GET /v1/posts`에 `bookmarkCount`가 없어 list/community popularity를 완전한 서버 지표로 계산할 수 없다.
+- Board 수정 API `PATCH /v1/posts/{postId}`는 이미지/익명 수정 contract가 없다.
+- Notice 댓글 수정 endpoint가 없다.
 
 구조 메모:
 
-- Phase G cleanup으로 Board detail, Notice home/detail, Community board home, Campus academic calendar detail의 feature-local repository entrypoint와 dead Firebase path는 제거됐다.
-- 이어진 후속 정리로 campus home과 cafeteria detail도 중앙 DI query/assembler 기준으로 수렴했고, screen-level runtime mock chain은 남지 않았다.
-- 현재 남아 있는 비Spring source는 screen local chain이 아니라 Notice / Board / Campus 도메인의 central mock repository 쪽이다.
+- Phase G cleanup으로 screen-level local chain과 dead Firebase path는 이미 제거됐다.
+- 이번 Phase H에서 `RepositoryProvider`의 `boardRepository` / `noticeRepository` / `academicRepository` / `cafeteriaRepository` 기본 구현도 Spring concrete repository로 전환됐다.
+- 따라서 현재 Board / Notice / Campus의 남은 과제는 frontend source 전환이 아니라 backend contract 보강이다.
 
 ---
 
