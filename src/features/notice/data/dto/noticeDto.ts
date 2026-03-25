@@ -30,6 +30,7 @@ export interface NoticeSummaryDto {
   isLiked: boolean;
   isBookmarked: boolean;
   isCommentedByMe: boolean;
+  thumbnailUrl?: string | null;
 }
 
 export interface NoticeDetailDto {

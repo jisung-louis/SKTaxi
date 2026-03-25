@@ -12,6 +12,7 @@ export {FormField} from './FormField';
 export {InfoBanner} from './InfoBanner';
 export {ImageLightboxModal} from './ImageLightboxModal';
 export type {ImageLightboxItem} from './ImageLightboxModal';
+export {ListCardThumbnail} from './ListCardThumbnail';
 export {PageHeader} from './PageHeader';
 export {SelectionDropdown} from './SelectionDropdown';
 export {SettingsRow} from './SettingsRow';

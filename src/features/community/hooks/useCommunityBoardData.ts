@@ -56,6 +56,7 @@ const toBoardPostViewData = (
   isCommentedByMe: post.isCommentedByMe,
   isLiked: post.isLiked,
   likeCount: post.likeCount,
+  thumbnailUrl: post.thumbnailUrl,
   timeLabel: formatKoreanRelativeTime(post.createdAt),
   title: post.title,
   viewCount: post.viewCount,

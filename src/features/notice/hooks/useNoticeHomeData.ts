@@ -96,6 +96,7 @@ const mapNoticeToViewData = (
     isLiked: Boolean(notice.isLiked),
     isUnread,
     likeCount: notice.likeCount ?? 0,
+    thumbnailUrl: notice.thumbnailUrl,
     timeLabel: formatKoreanRelativeTime(notice.postedAt),
     title: notice.title,
     viewCount: notice.viewCount ?? 0,

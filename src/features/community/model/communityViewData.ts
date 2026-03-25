@@ -20,6 +20,7 @@ export interface CommunityBoardPostViewData {
   isCommentedByMe: boolean;
   isLiked: boolean;
   likeCount: number;
+  thumbnailUrl?: string;
   timeLabel: string;
   title: string;
   viewCount: number;

@@ -96,6 +96,7 @@ export const mapBoardPostSummaryDto = (
   isDeleted: false,
   isLiked: dto.isLiked,
   isPinned: dto.isPinned,
+  thumbnailUrl: dto.thumbnailUrl ?? undefined,
   updatedAt: toDate(dto.createdAt),
 });
 

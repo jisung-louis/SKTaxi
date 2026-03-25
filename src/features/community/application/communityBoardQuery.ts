@@ -40,6 +40,7 @@ const toCommunityBoardSourceItem = (
   isCommentedByMe: Boolean(post.isCommentedByMe),
   isLiked: Boolean(post.isLiked),
   likeCount: post.likeCount,
+  thumbnailUrl: post.thumbnailUrl,
   title: post.title,
   viewCount: post.viewCount,
 });

@@ -1,7 +1,10 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
-import {ContentStatsRow} from '@/shared/design-system/components';
+import {
+  ContentStatsRow,
+  ListCardThumbnail,
+} from '@/shared/design-system/components';
 import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CommunityBoardPostViewData} from '../model/communityViewData';
@@ -28,13 +31,26 @@ export const CommunityBoardPostCard = ({
         <Text style={styles.timeLabel}>{item.timeLabel}</Text>
       </View>
 
-      <Text numberOfLines={1} style={styles.title}>
-        {item.title}
-      </Text>
+      <View style={styles.contentRow}>
+        <View style={styles.contentTextColumn}>
+          <Text numberOfLines={1} style={styles.title}>
+            {item.title}
+          </Text>
 
-      <Text numberOfLines={2} style={styles.excerpt}>
-        {item.excerpt}
-      </Text>
+          <Text
+            numberOfLines={item.thumbnailUrl ? 2 : 3}
+            style={styles.excerpt}>
+            {item.excerpt}
+          </Text>
+        </View>
+
+        {item.thumbnailUrl ? (
+          <ListCardThumbnail
+            accessibilityLabel={`${item.title} 썸네일`}
+            uri={item.thumbnailUrl}
+          />
+        ) : null}
+      </View>
 
       <View style={styles.footerRow}>
         <Text style={styles.authorLabel}>{item.authorLabel}</Text>
@@ -79,6 +95,16 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 16,
   },
+  contentRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  contentTextColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
   timeLabel: {
     color: '#9CA3AF',
     fontSize: 12,
@@ -90,12 +116,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
     marginBottom: SPACING.xs,
+    minWidth: 0,
   },
   excerpt: {
     color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: SPACING.md,
   },
   footerRow: {
     alignItems: 'center',

@@ -38,6 +38,7 @@ export const mapNoticeSummaryDto = (dto: NoticeSummaryDto): Notice => ({
   link: '',
   postedAt: dto.postedAt,
   source: 'RSS',
+  thumbnailUrl: dto.thumbnailUrl ?? undefined,
   title: dto.title,
   viewCount: dto.viewCount,
 });

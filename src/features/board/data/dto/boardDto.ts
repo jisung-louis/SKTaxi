@@ -40,6 +40,7 @@ export interface BoardPostSummaryDto {
   isBookmarked: boolean;
   isCommentedByMe: boolean;
   hasImage: boolean;
+  thumbnailUrl?: string | null;
   isPinned: boolean;
   createdAt: string;
 }

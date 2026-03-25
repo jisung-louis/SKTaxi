@@ -3,7 +3,10 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {NoticeHomeNoticeItemViewData} from '../model/noticeHomeViewData';
-import {ContentStatsRow} from '@/shared/design-system/components';
+import {
+  ContentStatsRow,
+  ListCardThumbnail,
+} from '@/shared/design-system/components';
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
@@ -67,7 +70,8 @@ export const NoticeListItem = ({
                 styles.categoryPill,
                 {backgroundColor: toneStyles.backgroundColor},
               ]}>
-              <Text style={[styles.categoryLabel, {color: toneStyles.textColor}]}>
+              <Text
+                style={[styles.categoryLabel, {color: toneStyles.textColor}]}>
                 {item.categoryLabel}
               </Text>
             </View>
@@ -79,11 +83,21 @@ export const NoticeListItem = ({
             size={IconSize}
           />
         </View>
-        <Text
-          numberOfLines={2}
-          style={[styles.title, item.isUnread ? styles.titleUnread : null]}>
-          {item.title}
-        </Text>
+
+        <View style={styles.titleRow}>
+          <Text
+            numberOfLines={item.thumbnailUrl ? 3 : 2}
+            style={[styles.title, item.isUnread ? styles.titleUnread : null]}>
+            {item.title}
+          </Text>
+          {item.thumbnailUrl ? (
+            <ListCardThumbnail
+              accessibilityLabel={`${item.title} 썸네일`}
+              uri={item.thumbnailUrl}
+            />
+          ) : null}
+        </View>
+
         <View style={styles.footerRow}>
           <Text numberOfLines={1} style={styles.authorLabel}>
             {item.authorLabel}
@@ -129,6 +143,13 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minWidth: 0,
+  },
+  titleRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.xs,
   },
   metaRow: {
     alignItems: 'center',
@@ -138,8 +159,10 @@ const styles = StyleSheet.create({
   },
   metaRowContent: {
     alignItems: 'center',
+    flex: 1,
     flexDirection: 'row',
     gap: SPACING.sm,
+    minWidth: 0,
   },
   categoryPill: {
     borderRadius: RADIUS.xs,
@@ -172,9 +195,10 @@ const styles = StyleSheet.create({
   },
   title: {
     color: COLORS.text.secondary,
+    flex: 1,
     fontSize: 14,
     lineHeight: 20,
-    marginRight: IconSize + SPACING.sm,
+    minWidth: 0,
   },
   titleUnread: {
     color: COLORS.text.primary,

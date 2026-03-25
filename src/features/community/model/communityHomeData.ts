@@ -30,6 +30,7 @@ export interface CommunityBoardSourceItem {
   isCommentedByMe: boolean;
   isLiked: boolean;
   likeCount: number;
+  thumbnailUrl?: string;
   title: string;
   viewCount: number;
 }

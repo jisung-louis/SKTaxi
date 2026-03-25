@@ -53,6 +53,7 @@ export interface BoardPost {
   isCommentedByMe?: boolean;
   isAuthor?: boolean;
   images?: BoardImage[];
+  thumbnailUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   lastCommentAt?: Date;

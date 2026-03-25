@@ -17,6 +17,7 @@ export interface Notice {
   source: string;
   contentDetail: string;
   contentAttachments: NoticeAttachment[];
+  thumbnailUrl?: string;
   likeCount?: number;
   bookmarkCount?: number;
   commentCount?: number;

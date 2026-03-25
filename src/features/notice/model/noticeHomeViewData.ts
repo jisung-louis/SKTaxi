@@ -40,6 +40,7 @@ export interface NoticeHomeNoticeItemViewData {
   isLiked: boolean;
   isUnread: boolean;
   likeCount: number;
+  thumbnailUrl?: string;
   timeLabel: string;
   title: string;
   viewCount: number;
