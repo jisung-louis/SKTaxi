@@ -97,7 +97,7 @@ export function useNotificationSettings(): UseNotificationSettingsResult {
             key === 'allNotifications'
               ? buildToggleAllNotificationsPatch(value)
               : buildToggleNotificationSettingPatch({
-                  currentSettings: settings,
+                  currentSettings: resolveMemberNotificationSettings(settings),
                   enabled: value,
                   key,
                 }),

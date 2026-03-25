@@ -31,8 +31,13 @@ export const NOTIFICATION_SETTING_KEYS: NotificationSettingKey[] = [
   'systemNotifications',
 ];
 
+type ResolvableMemberNotificationSettings =
+  | Partial<MemberNotificationSetting>
+  | null
+  | undefined;
+
 export const resolveMemberNotificationSettings = (
-  settings?: MemberNotificationSetting | null,
+  settings?: ResolvableMemberNotificationSettings,
 ): MemberNotificationSetting => ({
   ...DEFAULT_MEMBER_NOTIFICATION_SETTINGS,
   ...settings,
@@ -47,7 +52,7 @@ const areAllVisibleNotificationsDisabled = (
 ) => NOTIFICATION_SETTING_KEYS.every(key => !settings[key]);
 
 export const mapMemberNotificationSettingsToScreenSource = (
-  settings?: MemberNotificationSetting | null,
+  settings?: ResolvableMemberNotificationSettings,
 ): NotificationSettingsScreenSource => {
   const resolved = resolveMemberNotificationSettings(settings);
   const allNotifications = !areAllVisibleNotificationsDisabled(resolved);
@@ -80,7 +85,7 @@ export const buildToggleNotificationSettingPatch = ({
   enabled,
   key,
 }: {
-  currentSettings?: MemberNotificationSetting | null;
+  currentSettings?: ResolvableMemberNotificationSettings;
   enabled: boolean;
   key: NotificationSettingKey;
 }): UpdateMemberNotificationSettingsInput => {
