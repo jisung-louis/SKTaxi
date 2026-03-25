@@ -98,3 +98,6 @@ serviceAccountKey.json
 
 # Serena
 .serena/
+
+# base url
+src/shared/api/baseUrl.ts
