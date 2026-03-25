@@ -6,6 +6,7 @@ import type {
 } from '../dto/fcmTokenDto';
 import type {MemberResponseDto} from '../dto/memberDto';
 import type {UpdateMemberBankAccountRequestDto} from '../dto/updateMemberBankAccountDto';
+import type {UpdateMemberNotificationSettingsRequestDto} from '../dto/updateMemberNotificationSettingsDto';
 import type {UpdateMemberProfileRequestDto} from '../dto/updateMemberProfileDto';
 
 export class MemberApiClient {
@@ -33,6 +34,15 @@ export class MemberApiClient {
       ApiSuccessResponse<MemberResponseDto>,
       UpdateMemberBankAccountRequestDto
     >('/v1/members/me/bank-account', data);
+  }
+
+  updateMyNotificationSettings(
+    data: UpdateMemberNotificationSettingsRequestDto,
+  ) {
+    return httpClient.patch<
+      ApiSuccessResponse<MemberResponseDto>,
+      UpdateMemberNotificationSettingsRequestDto
+    >('/v1/members/me/notification-settings', data);
   }
 
   registerFcmToken(data: RegisterMemberFcmTokenRequestDto) {

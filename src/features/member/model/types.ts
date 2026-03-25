@@ -16,6 +16,20 @@ export interface UpdateMemberBankAccountInput {
   hideName: boolean;
 }
 
+export interface UpdateMemberNotificationSettingsInput {
+  allNotifications?: boolean;
+  partyNotifications?: boolean;
+  noticeNotifications?: boolean;
+  boardLikeNotifications?: boolean;
+  commentNotifications?: boolean;
+  bookmarkedPostCommentNotifications?: boolean;
+  systemNotifications?: boolean;
+  academicScheduleNotifications?: boolean;
+  academicScheduleDayBeforeEnabled?: boolean;
+  academicScheduleAllEventsEnabled?: boolean;
+  noticeNotificationsDetail?: Record<string, boolean>;
+}
+
 export interface MemberNotificationSetting {
   allNotifications: boolean;
   partyNotifications: boolean;

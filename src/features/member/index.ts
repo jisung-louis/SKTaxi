@@ -10,5 +10,6 @@ export type {
   MemberNotificationSetting,
   MemberProfile,
   UpdateMemberBankAccountInput,
+  UpdateMemberNotificationSettingsInput,
   UpdateMemberProfileInput,
 } from './model/types';
