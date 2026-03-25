@@ -1,5 +1,5 @@
-import {MockUserActivityRepository} from './MockUserActivityRepository';
+import {SpringUserActivityRepository} from './SpringUserActivityRepository';
 import type {IUserActivityRepository} from './IUserActivityRepository';
 
 export const userActivityRepository: IUserActivityRepository =
-  new MockUserActivityRepository();
+  new SpringUserActivityRepository();

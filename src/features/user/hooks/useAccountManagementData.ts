@@ -1,5 +1,7 @@
 import React from 'react';
 
+import {useAuth} from '@/features/auth';
+
 import {accountManagementRepository} from '../data/repositories/accountManagementRepository';
 import type {AccountManagementScreenViewData} from '../model/accountManagementViewData';
 
@@ -28,6 +30,7 @@ const mapViewData = ({
 });
 
 export const useAccountManagementData = () => {
+  const {refreshCurrentUser} = useAuth();
   const [accountHolder, setAccountHolder] = React.useState('');
   const [accountNumber, setAccountNumber] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -64,12 +67,17 @@ export const useAccountManagementData = () => {
     setError(null);
 
     try {
-      await accountManagementRepository.saveAccountManagement({
+      const saved = await accountManagementRepository.saveAccountManagement({
         accountHolder: accountHolder.trim(),
         accountNumber: accountNumber.trim(),
         bankName: selectedBankName,
         hideName,
       });
+      setSelectedBankName(saved.bankName);
+      setAccountNumber(saved.accountNumber);
+      setAccountHolder(saved.accountHolder);
+      setHideName(saved.hideName);
+      await refreshCurrentUser();
     } catch (caughtError) {
       console.error('계좌 정보를 저장하지 못했습니다.', caughtError);
       setError('계좌 정보를 저장하지 못했습니다.');
@@ -77,7 +85,13 @@ export const useAccountManagementData = () => {
     } finally {
       setSaving(false);
     }
-  }, [accountHolder, accountNumber, hideName, selectedBankName]);
+  }, [
+    accountHolder,
+    accountNumber,
+    hideName,
+    refreshCurrentUser,
+    selectedBankName,
+  ]);
 
   return {
     data: mapViewData({
