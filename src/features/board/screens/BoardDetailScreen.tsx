@@ -24,10 +24,10 @@ import {
   DetailComposer,
   DetailNotFoundState,
   DetailReactionChip,
+  DetailTitleHeader,
   StateCard,
-  ToneBadge,
 } from '@/shared/design-system/components';
-import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
   useKeyboardInset,
   useScreenEnterAnimation,
@@ -167,7 +167,6 @@ export const BoardDetailScreen = () => {
     });
   }, [submitComment]);
 
-  const categoryBadge = data?.metaBadges[0];
   const rightAccessory = data ? (
     <TouchableOpacity
       accessibilityLabel="게시물 메뉴"
@@ -177,11 +176,7 @@ export const BoardDetailScreen = () => {
         setIsMenuVisible(previous => !previous);
       }}
       style={styles.menuButton}>
-      <Icon
-        color={COLORS.text.secondary}
-        name="ellipsis-vertical"
-        size={18}
-      />
+      <Icon color={COLORS.text.secondary} name="ellipsis-vertical" size={18} />
     </TouchableOpacity>
   ) : undefined;
 
@@ -229,7 +224,9 @@ export const BoardDetailScreen = () => {
                   paddingTop: headerOffset,
                 },
               ]}
-              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+              keyboardDismissMode={
+                Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+              }
               keyboardShouldPersistTaps="handled"
               onScrollBeginDrag={() => {
                 if (isMenuVisible) {
@@ -237,31 +234,12 @@ export const BoardDetailScreen = () => {
                 }
               }}
               showsVerticalScrollIndicator={false}>
-              <View style={styles.metaRow}>
-                {categoryBadge ? (
-                  <ToneBadge
-                    label={categoryBadge.label}
-                    tone={categoryBadge.tone}
-                  />
-                ) : null}
-                <Text style={styles.dateLabel}>{data.dateLabel}</Text>
-              </View>
-
-              <Text style={styles.title}>{data.title}</Text>
-
-              {data.authorLabel ? (
-                <View style={styles.authorRow}>
-                  <View style={styles.avatarCircle}>
-                    <Icon
-                      color={COLORS.text.muted}
-                      name="person-outline"
-                      size={14}
-                    />
-                  </View>
-                  <Text style={styles.authorLabel}>{data.authorLabel}</Text>
-                </View>
-              ) : null}
-
+              <DetailTitleHeader
+                authorLabel={data.authorLabel}
+                badges={data.metaBadges}
+                dateLabel={data.dateLabel}
+                title={data.title}
+              />
               <View style={styles.divider} />
               <DetailBodyBlocks blocks={data.bodyBlocks} />
 
@@ -279,13 +257,17 @@ export const BoardDetailScreen = () => {
                   active={Boolean(post?.isBookmarked)}
                   count={post?.bookmarkCount ?? 0}
                   disabled={togglingBookmark}
-                  iconName={post?.isBookmarked ? 'bookmark' : 'bookmark-outline'}
+                  iconName={
+                    post?.isBookmarked ? 'bookmark' : 'bookmark-outline'
+                  }
                   onPress={handleToggleBookmark}
                 />
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
-              <Text style={styles.commentsTitle}>댓글 {data.comments.length}</Text>
+              <Text style={styles.commentsTitle}>
+                댓글 {data.comments.length}
+              </Text>
 
               {data.comments.length === 0 ? (
                 <View style={styles.emptyCommentsWrap}>
@@ -311,7 +293,9 @@ export const BoardDetailScreen = () => {
                 onChangeText={setCommentDraft}
                 onSend={handleSubmitComment}
                 placeholder={data.commentInputPlaceholder}
-                sendEnabled={!submittingComment && commentDraft.trim().length > 0}
+                sendEnabled={
+                  !submittingComment && commentDraft.trim().length > 0
+                }
                 value={commentDraft}
               />
             </KeyboardAvoidingView>
@@ -340,26 +324,6 @@ export const BoardDetailScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  authorLabel: {
-    color: COLORS.text.tertiary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  authorRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.xl,
-  },
-  avatarCircle: {
-    alignItems: 'center',
-    backgroundColor: COLORS.border.default,
-    borderRadius: RADIUS.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
-  },
   centeredState: {
     flex: 1,
     paddingHorizontal: SPACING.lg,
@@ -388,11 +352,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.page,
     flex: 1,
   },
-  dateLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
   divider: {
     backgroundColor: COLORS.border.default,
     height: 1,
@@ -416,12 +375,6 @@ const styles = StyleSheet.create({
     marginRight: -6,
     width: 36,
   },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
   reactionsRow: {
     flexDirection: 'row',
     gap: SPACING.md,
@@ -432,12 +385,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: SPACING.lg,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: SPACING.md,
   },
 });

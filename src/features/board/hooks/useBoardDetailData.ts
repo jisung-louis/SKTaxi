@@ -3,6 +3,7 @@ import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
 import {useAuth} from '@/features/auth';
+import {formatKoreanAbsoluteWithRelativeTime} from '@/shared/lib/date';
 import type {ContentDetailViewData} from '@/shared/types/contentDetailViewData';
 
 import type {BoardCommentTreeNode} from '../data/repositories/IBoardRepository';
@@ -16,7 +17,7 @@ const CATEGORY_LABEL_MAP: Record<BoardPost['category'], string> = {
   review: '후기게시판',
 };
 
-const formatBoardDateLabel = (value: string) => {
+const formatBoardCommentDateLabel = (value: string) => {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -68,11 +69,11 @@ const toViewData = (
   comments: flattenComments(comments).map(comment => ({
     authorLabel: getCommentAuthorLabel(comment),
     body: comment.content,
-    dateLabel: formatBoardDateLabel(comment.createdAt.toISOString()),
+    dateLabel: formatBoardCommentDateLabel(comment.createdAt.toISOString()),
     id: comment.id,
     likeCount: 0,
   })),
-  dateLabel: formatBoardDateLabel(post.createdAt.toISOString()),
+  dateLabel: formatKoreanAbsoluteWithRelativeTime(post.createdAt),
   emptyCommentsLabel: '첫 댓글을 남겨보세요!',
   metaBadges: [
     {
@@ -233,8 +234,8 @@ export const useBoardDetailData = (postId?: string) => {
           previousIsBookmarked === nextIsBookmarked
             ? 0
             : nextIsBookmarked
-              ? 1
-              : -1;
+            ? 1
+            : -1;
 
         return {
           ...currentPost,

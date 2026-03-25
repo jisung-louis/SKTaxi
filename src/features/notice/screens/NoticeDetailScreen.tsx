@@ -24,8 +24,8 @@ import {
   DetailComposer,
   DetailNotFoundState,
   DetailReactionChip,
+  DetailTitleHeader,
   StateCard,
-  ToneBadge,
 } from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
@@ -141,9 +141,6 @@ export const NoticeDetailScreen = () => {
     cancelCommentEdit();
   }, [cancelCommentEdit]);
 
-  const primaryBadge = data?.metaBadges[0];
-  const secondaryBadges = data?.metaBadges.slice(1) ?? [];
-
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
@@ -192,24 +189,12 @@ export const NoticeDetailScreen = () => {
               }
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
-              <View style={styles.metaRow}>
-                {primaryBadge ? (
-                  <ToneBadge
-                    label={primaryBadge.label}
-                    tone={primaryBadge.tone}
-                  />
-                ) : null}
-                <Text style={styles.dateLabel}>{data.dateLabel}</Text>
-                {secondaryBadges.map(badge => (
-                  <ToneBadge
-                    key={badge.id}
-                    label={badge.label}
-                    tone={badge.tone}
-                  />
-                ))}
-              </View>
-
-              <Text style={styles.title}>{data.title}</Text>
+              <DetailTitleHeader
+                authorLabel={data.authorLabel}
+                badges={data.metaBadges}
+                dateLabel={data.dateLabel}
+                title={data.title}
+              />
               <View style={styles.divider} />
 
               <DetailBodyBlocks blocks={data.bodyBlocks} />
@@ -341,11 +326,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.page,
     flex: 1,
   },
-  dateLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
   divider: {
     backgroundColor: COLORS.border.default,
     height: 1,
@@ -383,13 +363,6 @@ const styles = StyleSheet.create({
     minHeight: 84,
     paddingVertical: 32,
   },
-  metaRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
   reactionsRow: {
     flexDirection: 'row',
     gap: SPACING.md,
@@ -400,12 +373,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: SPACING.lg,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 20,
-    fontWeight: '800',
-    lineHeight: 28,
-    marginBottom: SPACING.xxl,
   },
 });

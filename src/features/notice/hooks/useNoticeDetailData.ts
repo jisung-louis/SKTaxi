@@ -1,6 +1,10 @@
 import React from 'react';
 
 import {useAuth} from '@/features/auth';
+import {
+  formatKoreanAbsoluteDate,
+  formatKoreanAbsoluteWithRelativeTime,
+} from '@/shared/lib/date';
 import type {
   ContentDetailBodyBlockViewData,
   ContentDetailCommentViewData,
@@ -34,20 +38,6 @@ const CATEGORY_TONE_MAP: Record<
 };
 
 const RECENT_NOTICE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-const formatNoticeDateLabel = (value: string) => {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
 
 const toCategoryLabel = (category: string) =>
   CATEGORY_DISPLAY_LABEL_MAP[category] ?? category;
@@ -162,7 +152,7 @@ const toCommentItems = (
   flattenComments(comments).map(comment => ({
     authorLabel: getCommentAuthorLabel(comment),
     body: comment.content,
-    dateLabel: formatNoticeDateLabel(comment.createdAt.toISOString()),
+    dateLabel: formatKoreanAbsoluteDate(comment.createdAt),
     id: comment.id,
     isEditable: Boolean(comment.isAuthor),
     likeCount: 0,
@@ -175,6 +165,7 @@ const toViewData = (
   const categoryLabel = toCategoryLabel(notice.category);
 
   return {
+    authorLabel: notice.author,
     attachments: notice.contentAttachments.map((attachment, index) => ({
       fileName: attachment.name,
       id: `${notice.id}-attachment-${index + 1}`,
@@ -183,7 +174,7 @@ const toViewData = (
     bodyBlocks: buildBodyBlocks(notice),
     commentInputPlaceholder: '댓글을 입력하세요...',
     comments: toCommentItems(comments),
-    dateLabel: formatNoticeDateLabel(String(notice.postedAt)),
+    dateLabel: formatKoreanAbsoluteWithRelativeTime(notice.postedAt),
     emptyCommentsLabel: '첫 댓글을 남겨보세요!',
     metaBadges: [
       {
