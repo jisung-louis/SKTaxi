@@ -6,14 +6,22 @@ import {
   NoticeApiClient,
 } from '@/features/notice/data/api/noticeApiClient';
 import type {NoticeBookmarkSummaryDto} from '@/features/notice/data/dto/noticeDto';
+import {
+  taxiHomeApiClient,
+  TaxiHomeApiClient,
+} from '@/features/taxi/data/api/taxiHomeApiClient';
+import type {
+  TaxiHistoryItemResponseDto,
+  TaxiHistorySummaryResponseDto,
+} from '@/features/taxi/data/dto/taxiHomeDto';
 
 import {
   memberBoardApiClient,
   MemberBoardApiClient,
 } from '../api/memberBoardApiClient';
-import {TAXI_HISTORY_MOCK} from '../../mocks/userActivity.mock';
 import type {
   BookmarksSource,
+  TaxiHistoryEntrySource,
   TaxiHistorySource,
   UserNoticeBookmarkItemSource,
   UserPostListItemSource,
@@ -61,6 +69,34 @@ const NOTICE_CATEGORY_TONES: Record<
   학사: 'blue',
 };
 
+const TAXI_HISTORY_ROLE_META: Record<
+  TaxiHistoryItemResponseDto['role'],
+  Pick<TaxiHistoryEntrySource, 'roleLabel' | 'roleTone'>
+> = {
+  LEADER: {
+    roleLabel: '주최',
+    roleTone: 'orange',
+  },
+  MEMBER: {
+    roleLabel: '참여',
+    roleTone: 'purple',
+  },
+};
+
+const TAXI_HISTORY_STATUS_META: Record<
+  TaxiHistoryItemResponseDto['status'],
+  Pick<TaxiHistoryEntrySource, 'statusLabel' | 'statusTone'>
+> = {
+  CANCELLED: {
+    statusLabel: '취소',
+    statusTone: 'red',
+  },
+  COMPLETED: {
+    statusLabel: '완료',
+    statusTone: 'green',
+  },
+};
+
 const mapBoardPostToUserPostItem = (
   post: BoardPostSummaryDto,
 ): UserPostListItemSource => ({
@@ -91,10 +127,45 @@ const mapNoticeBookmarkToItem = (
   };
 };
 
+const mapTaxiHistoryItem = (
+  item: TaxiHistoryItemResponseDto,
+): TaxiHistoryEntrySource => {
+  const roleMeta = TAXI_HISTORY_ROLE_META[item.role];
+  const statusMeta = TAXI_HISTORY_STATUS_META[item.status];
+
+  return {
+    arrivalLabel: item.arrivalLabel,
+    dateTimeLabel: format(new Date(item.dateTime), 'yyyy.MM.dd HH:mm'),
+    departureLabel: item.departureLabel,
+    id: item.id,
+    passengerCountLabel: `${item.passengerCount.toLocaleString(
+      'ko-KR',
+    )}명 탑승`,
+    paymentLabel:
+      item.paymentAmount == null
+        ? '-'
+        : `${item.paymentAmount.toLocaleString('ko-KR')}원`,
+    roleLabel: roleMeta.roleLabel,
+    roleTone: roleMeta.roleTone,
+    statusLabel: statusMeta.statusLabel,
+    statusTone: statusMeta.statusTone,
+  };
+};
+
+const mapTaxiHistorySummary = (
+  summary: TaxiHistorySummaryResponseDto,
+): TaxiHistorySource['summary'] => ({
+  completedRideCountLabel: `${summary.completedRideCount.toLocaleString(
+    'ko-KR',
+  )}회`,
+  savedFareLabel: `${summary.savedFareAmount.toLocaleString('ko-KR')}원`,
+});
+
 export class SpringUserActivityRepository implements IUserActivityRepository {
   constructor(
     private readonly apiClient: MemberBoardApiClient = memberBoardApiClient,
     private readonly noticeClient: NoticeApiClient = noticeApiClient,
+    private readonly taxiClient: TaxiHomeApiClient = taxiHomeApiClient,
   ) {}
 
   async getBookmarks(): Promise<BookmarksSource> {
@@ -130,7 +201,15 @@ export class SpringUserActivityRepository implements IUserActivityRepository {
   }
 
   async getTaxiHistory(): Promise<TaxiHistorySource> {
-    return TAXI_HISTORY_MOCK;
+    const [historyResponse, summaryResponse] = await Promise.all([
+      this.taxiClient.getMyTaxiHistory(),
+      this.taxiClient.getMyTaxiHistorySummary(),
+    ]);
+
+    return {
+      entries: historyResponse.data.map(mapTaxiHistoryItem),
+      summary: mapTaxiHistorySummary(summaryResponse.data),
+    };
   }
 
   private async getAllCommunityBookmarks(): Promise<UserPostListItemSource[]> {
