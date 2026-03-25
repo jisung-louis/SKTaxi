@@ -15,7 +15,8 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
-import {useAccountInfo, type AccountInfo} from '@/features/user/hooks/useAccountInfo';
+import {useAuth} from '@/features/auth';
+import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
@@ -45,7 +46,10 @@ import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
 import type {TaxiStackParamList} from '../model/navigation';
 import type {TaxiChatActionTrayActionId} from '../model/taxiChatViewData';
 
-type TaxiChatNavigationProp = NativeStackNavigationProp<TaxiStackParamList, 'Chat'>;
+type TaxiChatNavigationProp = NativeStackNavigationProp<
+  TaxiStackParamList,
+  'Chat'
+>;
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error instanceof Error && error.message) {
@@ -110,7 +114,7 @@ export const ChatScreen = () => {
   const insets = useSafeAreaInsets();
   const {isVisible: keyboardVisible} = useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
-  const {accountInfo} = useAccountInfo();
+  const {user} = useAuth();
   const {
     actionInFlightId,
     cancelParty,
@@ -141,6 +145,7 @@ export const ChatScreen = () => {
   const [sessionAccountInfo, setSessionAccountInfo] =
     React.useState<AccountInfo | null>(null);
   const [sendingAccount, setSendingAccount] = React.useState(false);
+  const accountInfo = user?.accountInfo ?? user?.account ?? null;
 
   const snapshotAccountInfo = React.useMemo<AccountInfo | null>(() => {
     const nextAccountInfo = data?.summary.settlementNotice?.accountData;
@@ -512,7 +517,9 @@ export const ChatScreen = () => {
           </View>
         ) : data ? (
           <>
-            <TaxiChatHeaderNotice settlementNotice={data.summary.settlementNotice} />
+            <TaxiChatHeaderNotice
+              settlementNotice={data.summary.settlementNotice}
+            />
 
             <View style={styles.threadWrap}>
               <TaxiChatMessageList
@@ -522,9 +529,7 @@ export const ChatScreen = () => {
                     paddingBottom: threadBottomPadding,
                   },
                 ]}
-                headerContent={
-                  <TaxiChatSummaryCard summary={data.summary} />
-                }
+                headerContent={<TaxiChatSummaryCard summary={data.summary} />}
                 items={data.items}
                 onPressEndPartyExit={handleGoBackOnly}
               />
@@ -567,7 +572,10 @@ export const ChatScreen = () => {
             onClose={() => setMenuVisible(false)}
             onEditParty={() => {
               if (!data.menu.canEditParty) {
-                Alert.alert('수정 불가', '모집 중 또는 모집 마감 상태에서만 수정할 수 있습니다.');
+                Alert.alert(
+                  '수정 불가',
+                  '모집 중 또는 모집 마감 상태에서만 수정할 수 있습니다.',
+                );
                 return;
               }
 
@@ -594,7 +602,10 @@ export const ChatScreen = () => {
               toggleNotification().catch(toggleError => {
                 Alert.alert(
                   '알림 설정 실패',
-                  getErrorMessage(toggleError, '알림 설정을 변경하지 못했습니다.'),
+                  getErrorMessage(
+                    toggleError,
+                    '알림 설정을 변경하지 못했습니다.',
+                  ),
                 );
               });
             }}
