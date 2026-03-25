@@ -33,6 +33,8 @@ const splitParagraphs = (content: string) =>
     .map(paragraph => paragraph.trim())
     .filter(Boolean);
 
+const formatViewCountLabel = (value: number) => value.toLocaleString('ko-KR');
+
 const flattenComments = (
   comments: BoardCommentTreeNode[],
 ): BoardCommentTreeNode[] =>
@@ -95,6 +97,7 @@ const toViewData = (
     },
   ],
   title: post.title,
+  viewCountLabel: formatViewCountLabel(post.viewCount),
 });
 
 const getErrorMessage = (error: unknown) => {

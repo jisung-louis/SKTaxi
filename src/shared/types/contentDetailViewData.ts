@@ -62,4 +62,5 @@ export interface ContentDetailViewData {
   metaBadges: ContentDetailBadgeViewData[];
   reactions: ContentDetailReactionViewData[];
   title: string;
+  viewCountLabel?: string;
 }

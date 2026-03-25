@@ -239,6 +239,7 @@ export const BoardDetailScreen = () => {
                 badges={data.metaBadges}
                 dateLabel={data.dateLabel}
                 title={data.title}
+                viewCountLabel={data.viewCountLabel}
               />
               <View style={styles.divider} />
               <DetailBodyBlocks blocks={data.bodyBlocks} />

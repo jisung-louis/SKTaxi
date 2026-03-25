@@ -12,6 +12,7 @@ interface DetailTitleHeaderProps {
   badges?: ContentDetailBadgeViewData[];
   dateLabel?: string;
   title: string;
+  viewCountLabel?: string;
 }
 
 export const DetailTitleHeader = ({
@@ -19,6 +20,7 @@ export const DetailTitleHeader = ({
   badges = [],
   dateLabel,
   title,
+  viewCountLabel,
 }: DetailTitleHeaderProps) => {
   const [primaryBadge, ...secondaryBadges] = badges;
 
@@ -38,12 +40,29 @@ export const DetailTitleHeader = ({
 
       <Text style={styles.title}>{title}</Text>
 
-      {authorLabel ? (
+      {authorLabel || viewCountLabel ? (
         <View style={styles.authorRow}>
-          <View style={styles.avatarCircle}>
-            <Icon color={COLORS.text.muted} name="person-outline" size={14} />
+          <View style={styles.authorMetaGroup}>
+            {authorLabel ? (
+              <>
+                <View style={styles.avatarCircle}>
+                  <Icon
+                    color={COLORS.text.muted}
+                    name="person-outline"
+                    size={14}
+                  />
+                </View>
+                <Text style={styles.authorLabel}>{authorLabel}</Text>
+              </>
+            ) : null}
           </View>
-          <Text style={styles.authorLabel}>{authorLabel}</Text>
+
+          {viewCountLabel ? (
+            <View style={styles.viewCountRow}>
+              <Icon color={COLORS.text.muted} name="eye-outline" size={14} />
+              <Text style={styles.viewCountLabel}>{viewCountLabel}</Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -59,8 +78,16 @@ const styles = StyleSheet.create({
   },
   authorRow: {
     alignItems: 'center',
+    justifyContent: 'space-between',
     flexDirection: 'row',
     gap: SPACING.sm,
+  },
+  authorMetaGroup: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    minWidth: 0,
   },
   avatarCircle: {
     alignItems: 'center',
@@ -91,5 +118,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 28,
+  },
+  viewCountLabel: {
+    color: COLORS.text.muted,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  viewCountRow: {
+    alignItems: 'center',
+    columnGap: 4,
+    flexDirection: 'row',
+    flexShrink: 0,
   },
 });

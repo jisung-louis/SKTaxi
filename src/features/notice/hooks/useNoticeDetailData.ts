@@ -63,6 +63,9 @@ const decodeHtmlEntities = (value: string) =>
 const TABLE_TOKEN_PATTERN = /\[\[TABLE:(\d+)\]\]/;
 const IMAGE_TOKEN_PATTERN = /\[\[IMG:([^\]]+)\]\]/;
 
+const formatViewCountLabel = (value?: number) =>
+  typeof value === 'number' ? value.toLocaleString('ko-KR') : undefined;
+
 const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
   const html = normalizeNoticeHtml(
     notice.contentDetail || notice.content || '',
@@ -225,6 +228,7 @@ const toViewData = (
       },
     ],
     title: notice.title,
+    viewCountLabel: formatViewCountLabel(notice.viewCount),
   };
 };
 

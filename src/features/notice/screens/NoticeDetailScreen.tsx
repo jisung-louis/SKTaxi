@@ -213,6 +213,7 @@ export const NoticeDetailScreen = () => {
                 badges={data.metaBadges}
                 dateLabel={data.dateLabel}
                 title={data.title}
+                viewCountLabel={data.viewCountLabel}
               />
               <View style={styles.divider} />
 
