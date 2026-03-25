@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -141,6 +142,24 @@ export const NoticeDetailScreen = () => {
     cancelCommentEdit();
   }, [cancelCommentEdit]);
 
+  const handleOpenExternalLink = React.useCallback(() => {
+    const targetUrl = notice?.link?.trim();
+
+    if (!targetUrl) {
+      Alert.alert('안내', '외부 링크를 찾을 수 없습니다.');
+      return;
+    }
+
+    Linking.openURL(targetUrl).catch(openError => {
+      Alert.alert(
+        '오류',
+        openError instanceof Error
+          ? openError.message
+          : '외부 브라우저를 열지 못했습니다.',
+      );
+    });
+  }, [notice?.link]);
+
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
@@ -199,31 +218,52 @@ export const NoticeDetailScreen = () => {
 
               <DetailBodyBlocks blocks={data.bodyBlocks} />
 
-              {data.attachments && data.attachments.length > 0 ? (
+              {notice?.contentAttachments.length ? (
                 <View style={styles.attachmentsSection}>
-                  <NoticeDetailAttachments attachments={data.attachments} />
+                  <NoticeDetailAttachments
+                    attachments={notice.contentAttachments}
+                  />
                 </View>
               ) : null}
 
               <View style={styles.reactionsRow}>
-                <DetailReactionChip
-                  accessibilityLabel="공지사항 좋아요"
-                  active={Boolean(notice?.isLiked)}
-                  count={notice?.likeCount ?? 0}
-                  disabled={togglingLike}
-                  iconName={notice?.isLiked ? 'heart' : 'heart-outline'}
-                  onPress={handleToggleLike}
-                />
-                <DetailReactionChip
-                  accessibilityLabel="공지사항 북마크"
-                  active={Boolean(notice?.isBookmarked)}
-                  count={notice?.bookmarkCount ?? 0}
-                  disabled={togglingBookmark}
-                  iconName={
-                    notice?.isBookmarked ? 'bookmark' : 'bookmark-outline'
-                  }
-                  onPress={handleToggleBookmark}
-                />
+                <View style={styles.reactionsGroup}>
+                  <DetailReactionChip
+                    accessibilityLabel="공지사항 좋아요"
+                    active={Boolean(notice?.isLiked)}
+                    count={notice?.likeCount ?? 0}
+                    disabled={togglingLike}
+                    iconName={notice?.isLiked ? 'heart' : 'heart-outline'}
+                    onPress={handleToggleLike}
+                  />
+                  <DetailReactionChip
+                    accessibilityLabel="공지사항 북마크"
+                    active={Boolean(notice?.isBookmarked)}
+                    count={notice?.bookmarkCount ?? 0}
+                    disabled={togglingBookmark}
+                    iconName={
+                      notice?.isBookmarked ? 'bookmark' : 'bookmark-outline'
+                    }
+                    onPress={handleToggleBookmark}
+                  />
+                </View>
+                {notice?.link?.trim() ? (
+                  <TouchableOpacity
+                    accessibilityLabel="외부 브라우저에서 공지 열기"
+                    accessibilityRole="button"
+                    activeOpacity={0.86}
+                    onPress={handleOpenExternalLink}
+                    style={styles.externalLinkButton}>
+                    <Icon
+                      color={COLORS.brand.primaryStrong}
+                      name="open-outline"
+                      size={16}
+                    />
+                    <Text style={styles.externalLinkButtonLabel}>
+                      원문 보기
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
@@ -363,9 +403,32 @@ const styles = StyleSheet.create({
     minHeight: 84,
     paddingVertical: 32,
   },
-  reactionsRow: {
+  externalLinkButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.brand.primaryTint,
+    borderColor: COLORS.brand.primarySoft,
+    borderRadius: 999,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    justifyContent: 'center',
+    minHeight: 36,
+    paddingHorizontal: SPACING.md,
+  },
+  externalLinkButtonLabel: {
+    color: COLORS.brand.primaryStrong,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  reactionsGroup: {
     flexDirection: 'row',
     gap: SPACING.md,
+  },
+  reactionsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: SPACING.xxl,
   },
   screen: {
