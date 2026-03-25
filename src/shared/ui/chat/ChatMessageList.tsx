@@ -256,8 +256,7 @@ const styles = StyleSheet.create({
   dateDividerRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: SPACING.md,
-    marginTop: SPACING.sm,
+    marginVertical: SPACING.md,
   },
   incomingBubble: {
     backgroundColor: COLORS.background.surface,
