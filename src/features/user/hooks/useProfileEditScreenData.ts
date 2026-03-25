@@ -1,5 +1,7 @@
 import React from 'react';
 
+import {useAuth} from '@/features/auth';
+
 import {profileEditRepository} from '../data/repositories/profileEditRepository';
 import type {ProfileEditDraft} from '../model/profileEditSource';
 import type {ProfileEditSource} from '../model/profileEditSource';
@@ -15,6 +17,7 @@ const toViewData = (source: ProfileEditSource): ProfileEditScreenViewData => ({
 });
 
 export const useProfileEditScreenData = () => {
+  const {refreshCurrentUser} = useAuth();
   const [data, setData] = React.useState<ProfileEditScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -35,17 +38,20 @@ export const useProfileEditScreenData = () => {
     }
   }, []);
 
-  const saveChanges = React.useCallback(async (draft: ProfileEditDraft) => {
-    try {
-      setSaving(true);
+  const saveChanges = React.useCallback(
+    async (draft: ProfileEditDraft) => {
+      try {
+        setSaving(true);
 
-      await profileEditRepository.saveProfileEdit(draft);
-      const nextSource = await profileEditRepository.getProfileEdit();
-      setData(toViewData(nextSource));
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+        const nextSource = await profileEditRepository.saveProfileEdit(draft);
+        setData(toViewData(nextSource));
+        await refreshCurrentUser();
+      } finally {
+        setSaving(false);
+      }
+    },
+    [refreshCurrentUser],
+  );
 
   React.useEffect(() => {
     reload().catch(() => undefined);

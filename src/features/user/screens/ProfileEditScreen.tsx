@@ -22,11 +22,7 @@ import {
   StackHeader,
   StateCard,
 } from '@/shared/design-system/components';
-import {
-  COLORS,
-  RADIUS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {useProfileEditScreenData} from '../hooks/useProfileEditScreenData';
@@ -85,18 +81,27 @@ export const ProfileEditScreen = () => {
       return;
     }
 
-    await saveChanges({
-      department: department.trim(),
-      displayName: trimmedDisplayName,
-      studentId: trimmedStudentId,
-    });
+    try {
+      await saveChanges({
+        department: department.trim(),
+        displayName: trimmedDisplayName,
+        studentId: trimmedStudentId,
+      });
 
-    Alert.alert('저장 완료', '프로필이 저장되었습니다.', [
-      {
-        text: '확인',
-        onPress: () => navigation.goBack(),
-      },
-    ]);
+      Alert.alert('저장 완료', '프로필이 저장되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => navigation.goBack(),
+        },
+      ]);
+    } catch (caughtError) {
+      console.error('프로필 저장 실패', caughtError);
+      const message =
+        caughtError instanceof Error && caughtError.message.trim()
+          ? caughtError.message
+          : '프로필을 저장하지 못했습니다.';
+      Alert.alert('오류', message);
+    }
   }, [department, displayName, navigation, saveChanges, studentId]);
 
   return (
@@ -151,10 +156,17 @@ export const ProfileEditScreen = () => {
                 accessibilityRole="button"
                 activeOpacity={0.86}
                 onPress={() =>
-                  Alert.alert('준비 중', '프로필 사진 변경은 추후 연결 예정입니다.')
+                  Alert.alert(
+                    '준비 중',
+                    '프로필 사진 변경은 추후 연결 예정입니다.',
+                  )
                 }
                 style={styles.cameraButton}>
-                <Icon color={COLORS.text.inverse} name="camera-outline" size={14} />
+                <Icon
+                  color={COLORS.text.inverse}
+                  name="camera-outline"
+                  size={14}
+                />
               </TouchableOpacity>
             </View>
 

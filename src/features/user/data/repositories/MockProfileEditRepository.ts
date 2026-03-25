@@ -2,7 +2,10 @@ import {
   getProfileEditMockData,
   saveProfileEditMockData,
 } from '../../mocks/profileEdit.mock';
-import type {ProfileEditDraft, ProfileEditSource} from '../../model/profileEditSource';
+import type {
+  ProfileEditDraft,
+  ProfileEditSource,
+} from '../../model/profileEditSource';
 
 import type {IProfileEditRepository} from './IProfileEditRepository';
 
@@ -14,8 +17,9 @@ export class MockProfileEditRepository implements IProfileEditRepository {
     return getProfileEditMockData();
   }
 
-  async saveProfileEdit(draft: ProfileEditDraft): Promise<void> {
+  async saveProfileEdit(draft: ProfileEditDraft): Promise<ProfileEditSource> {
     await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
     saveProfileEditMockData(draft);
+    return getProfileEditMockData();
   }
 }

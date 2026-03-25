@@ -5,5 +5,5 @@ import type {
 
 export interface IProfileEditRepository {
   getProfileEdit(): Promise<ProfileEditSource>;
-  saveProfileEdit(draft: ProfileEditDraft): Promise<void>;
+  saveProfileEdit(draft: ProfileEditDraft): Promise<ProfileEditSource>;
 }
