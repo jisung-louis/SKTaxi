@@ -14,6 +14,8 @@ import type {
   JoinRequestStatusDto,
   PartyStatusDto,
   SettlementConfirmResponseDto,
+  TaxiHistoryItemResponseDto,
+  TaxiHistorySummaryResponseDto,
   UpdatePartyRequestDto,
 } from '../dto/taxiHomeDto';
 
@@ -80,6 +82,18 @@ export class TaxiHomeApiClient {
   getMyParties() {
     return httpClient.get<ApiSuccessResponse<MyPartyResponseDto[]>>(
       '/v1/members/me/parties',
+    );
+  }
+
+  getMyTaxiHistory() {
+    return httpClient.get<ApiSuccessResponse<TaxiHistoryItemResponseDto[]>>(
+      '/v1/members/me/taxi-history',
+    );
+  }
+
+  getMyTaxiHistorySummary() {
+    return httpClient.get<ApiSuccessResponse<TaxiHistorySummaryResponseDto>>(
+      '/v1/members/me/taxi-history/summary',
     );
   }
 

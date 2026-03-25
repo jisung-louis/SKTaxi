@@ -6,6 +6,10 @@ export type JoinRequestStatusDto =
   | 'DECLINED'
   | 'CANCELED';
 
+export type TaxiHistoryRoleDto = 'LEADER' | 'MEMBER';
+
+export type TaxiHistoryStatusDto = 'COMPLETED' | 'CANCELLED';
+
 export interface PartyLocationDto {
   lat: number;
   lng: number;
@@ -153,4 +157,21 @@ export interface JoinRequestListItemResponseDto {
   requesterName?: string | null;
   requesterPhotoUrl?: string | null;
   status: JoinRequestStatusDto;
+}
+
+export interface TaxiHistoryItemResponseDto {
+  arrivalLabel: string;
+  dateTime: string;
+  departureLabel: string;
+  id: string;
+  passengerCount: number;
+  paymentAmount?: number | null;
+  role: TaxiHistoryRoleDto;
+  status: TaxiHistoryStatusDto;
+}
+
+export interface TaxiHistorySummaryResponseDto {
+  completedRideCount: number;
+  savedFareAmount: number;
+  totalRideCount: number;
 }
