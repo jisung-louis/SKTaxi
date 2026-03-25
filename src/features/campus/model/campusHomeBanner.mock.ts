@@ -7,15 +7,12 @@ export const CAMPUS_HOME_BANNER_MOCK_SOURCE: readonly CampusBannerSourceData[] =
       buttonLabel: '파티 찾기',
       descriptionLabel: '같은 방향 가는 학생과 택시비를 함께 나눠요',
       id: 'taxi-main',
-      imageUrl: 'wireframe://taxi',
-      palette: {
-        accent: '#16A34A',
-        backgroundGradient: ['#F0FDF4', '#DCFCE7'],
-        badgeBackground: 'rgba(22, 163, 74, 0.12)',
-        badgeText: '#16A34A',
-        buttonBackground: '#16A34A',
-        buttonText: '#FFFFFF',
+      action: {
+        target: 'TAXI_MAIN',
+        type: 'inApp',
       },
+      imageUrl: 'wireframe://taxi',
+      paletteKey: 'GREEN',
       titleLabel: '택시 동승 매칭',
     },
     {
@@ -23,15 +20,12 @@ export const CAMPUS_HOME_BANNER_MOCK_SOURCE: readonly CampusBannerSourceData[] =
       buttonLabel: '공지 보기',
       descriptionLabel: '중요한 학교 소식을 놓치지 말고 확인하세요',
       id: 'notice-main',
-      imageUrl: 'wireframe://notice',
-      palette: {
-        accent: '#2563EB',
-        backgroundGradient: ['#EFF6FF', '#DBEAFE'],
-        badgeBackground: 'rgba(37, 99, 235, 0.12)',
-        badgeText: '#2563EB',
-        buttonBackground: '#2563EB',
-        buttonText: '#FFFFFF',
+      action: {
+        target: 'NOTICE_MAIN',
+        type: 'inApp',
       },
+      imageUrl: 'wireframe://notice',
+      paletteKey: 'BLUE',
       titleLabel: '학교 공지사항',
     },
     {
@@ -39,15 +33,15 @@ export const CAMPUS_HOME_BANNER_MOCK_SOURCE: readonly CampusBannerSourceData[] =
       buttonLabel: '시간표 보기',
       descriptionLabel: '오늘 수업 일정을 한눈에 확인하세요',
       id: 'timetable-all',
-      imageUrl: 'wireframe://timetable',
-      palette: {
-        accent: '#7C3AED',
-        backgroundGradient: ['#FAF5FF', '#EDE9FE'],
-        badgeBackground: 'rgba(124, 58, 237, 0.12)',
-        badgeText: '#7C3AED',
-        buttonBackground: '#7C3AED',
-        buttonText: '#FFFFFF',
+      action: {
+        params: {
+          initialView: 'all',
+        },
+        target: 'TIMETABLE_DETAIL',
+        type: 'inApp',
       },
+      imageUrl: 'wireframe://timetable',
+      paletteKey: 'PURPLE',
       titleLabel: '나의 시간표',
     },
   ] as const;

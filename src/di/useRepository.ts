@@ -1,14 +1,15 @@
 // SKTaxi: Repository 접근 훅 - DIP 의존성 주입 구현
 // 컴포넌트에서 Repository에 쉽게 접근할 수 있는 훅 제공
 
-import { useContext } from 'react';
+import {useContext} from 'react';
 
-import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
+import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
 import type {
   IAcademicRepository,
   IAppNoticeRepository,
   IAuthRepository,
   IBoardRepository,
+  ICampusBannerRepository,
   ICafeteriaRepository,
   IChatRepository,
   ICourseRepository,
@@ -40,7 +41,7 @@ export function useRepositories(): RepositoryContainer {
  * Party Repository 접근 훅
  */
 export function usePartyRepository(): IPartyRepository {
-  const { partyRepository } = useRepositories();
+  const {partyRepository} = useRepositories();
   return partyRepository;
 }
 
@@ -48,7 +49,7 @@ export function usePartyRepository(): IPartyRepository {
  * Chat Repository 접근 훅
  */
 export function useChatRepository(): IChatRepository {
-  const { chatRepository } = useRepositories();
+  const {chatRepository} = useRepositories();
   return chatRepository;
 }
 
@@ -56,7 +57,7 @@ export function useChatRepository(): IChatRepository {
  * User Repository 접근 훅
  */
 export function useUserRepository(): IUserRepository {
-  const { userRepository } = useRepositories();
+  const {userRepository} = useRepositories();
   return userRepository;
 }
 
@@ -64,7 +65,7 @@ export function useUserRepository(): IUserRepository {
  * Board Repository 접근 훅
  */
 export function useBoardRepository(): IBoardRepository {
-  const { boardRepository } = useRepositories();
+  const {boardRepository} = useRepositories();
   return boardRepository;
 }
 
@@ -72,7 +73,7 @@ export function useBoardRepository(): IBoardRepository {
  * Notice Repository 접근 훅
  */
 export function useNoticeRepository(): INoticeRepository {
-  const { noticeRepository } = useRepositories();
+  const {noticeRepository} = useRepositories();
   return noticeRepository;
 }
 
@@ -80,7 +81,7 @@ export function useNoticeRepository(): INoticeRepository {
  * Course Repository 접근 훅
  */
 export function useCourseRepository(): ICourseRepository {
-  const { courseRepository } = useRepositories();
+  const {courseRepository} = useRepositories();
   return courseRepository;
 }
 
@@ -88,7 +89,7 @@ export function useCourseRepository(): ICourseRepository {
  * Notification Repository 접근 훅
  */
 export function useNotificationRepository(): INotificationRepository {
-  const { notificationRepository } = useRepositories();
+  const {notificationRepository} = useRepositories();
   return notificationRepository;
 }
 
@@ -96,7 +97,7 @@ export function useNotificationRepository(): INotificationRepository {
  * App Notice Repository 접근 훅
  */
 export function useAppNoticeRepository(): IAppNoticeRepository {
-  const { appNoticeRepository } = useRepositories();
+  const {appNoticeRepository} = useRepositories();
   return appNoticeRepository;
 }
 
@@ -104,7 +105,7 @@ export function useAppNoticeRepository(): IAppNoticeRepository {
  * Cafeteria Repository 접근 훅
  */
 export function useCafeteriaRepository(): ICafeteriaRepository {
-  const { cafeteriaRepository } = useRepositories();
+  const {cafeteriaRepository} = useRepositories();
   return cafeteriaRepository;
 }
 
@@ -112,15 +113,23 @@ export function useCafeteriaRepository(): ICafeteriaRepository {
  * Academic Repository 접근 훅
  */
 export function useAcademicRepository(): IAcademicRepository {
-  const { academicRepository } = useRepositories();
+  const {academicRepository} = useRepositories();
   return academicRepository;
+}
+
+/**
+ * Campus banner Repository 접근 훅
+ */
+export function useCampusBannerRepository(): ICampusBannerRepository {
+  const {campusBannerRepository} = useRepositories();
+  return campusBannerRepository;
 }
 
 /**
  * Inquiry Repository 접근 훅
  */
 export function useInquiryRepository(): IInquiryRepository {
-  const { inquiryRepository } = useRepositories();
+  const {inquiryRepository} = useRepositories();
   return inquiryRepository;
 }
 
@@ -128,7 +137,7 @@ export function useInquiryRepository(): IInquiryRepository {
  * Storage Repository 접근 훅
  */
 export function useStorageRepository(): IStorageRepository {
-  const { storageRepository } = useRepositories();
+  const {storageRepository} = useRepositories();
   return storageRepository;
 }
 
@@ -136,7 +145,7 @@ export function useStorageRepository(): IStorageRepository {
  * Timetable Repository 접근 훅
  */
 export function useTimetableRepository(): ITimetableRepository {
-  const { timetableRepository } = useRepositories();
+  const {timetableRepository} = useRepositories();
   return timetableRepository;
 }
 
@@ -144,7 +153,7 @@ export function useTimetableRepository(): ITimetableRepository {
  * Auth Repository 접근 훅
  */
 export function useAuthRepository(): IAuthRepository {
-  const { authRepository } = useRepositories();
+  const {authRepository} = useRepositories();
   return authRepository;
 }
 
@@ -152,7 +161,7 @@ export function useAuthRepository(): IAuthRepository {
  * Member Repository 접근 훅
  */
 export function useMemberRepository(): IMemberRepository {
-  const { memberRepository } = useRepositories();
+  const {memberRepository} = useRepositories();
   return memberRepository;
 }
 
@@ -160,7 +169,7 @@ export function useMemberRepository(): IMemberRepository {
  * Notification action Repository 접근 훅
  */
 export function useNotificationActionRepository(): INotificationActionRepository {
-  const { notificationActionRepository } = useRepositories();
+  const {notificationActionRepository} = useRepositories();
   return notificationActionRepository;
 }
 
@@ -168,7 +177,7 @@ export function useNotificationActionRepository(): INotificationActionRepository
  * Taxi chat Repository 접근 훅
  */
 export function useTaxiChatRepository(): ITaxiChatRepository {
-  const { taxiChatRepository } = useRepositories();
+  const {taxiChatRepository} = useRepositories();
   return taxiChatRepository;
 }
 

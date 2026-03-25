@@ -1,5 +1,12 @@
 import React from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   type NavigationProp,
   type ParamListBase,
@@ -24,7 +31,7 @@ import {CampusNoticePreviewCard} from '../components/CampusNoticePreviewCard';
 import {CampusQuickMenuGrid} from '../components/CampusQuickMenuGrid';
 import {CampusSectionHeader} from '../components/CampusSectionHeader';
 import {CampusTimetablePreviewCard} from '../components/CampusTimetablePreviewCard';
-import {loadCampusHomeBannerViewData} from '../application/campusHomeBannerQuery';
+import {getDefaultCampusHomeBannerViewData} from '../application/campusHomeBannerQuery';
 import {
   CAMPUS_HOME_ACTION_LABELS,
   CAMPUS_HOME_QUICK_MENU_ITEMS,
@@ -43,7 +50,11 @@ export const CampusScreen = () => {
     [navigation],
   );
   const {data, loading, error, refetch} = useCampusHomeViewData();
-  const bannerItems = React.useMemo(() => loadCampusHomeBannerViewData(), []);
+  const defaultBannerItems = React.useMemo(
+    () => getDefaultCampusHomeBannerViewData(),
+    [],
+  );
+  const bannerItems = data?.banners ?? defaultBannerItems;
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -53,18 +64,45 @@ export const CampusScreen = () => {
   );
 
   const handlePressBanner = React.useCallback(
-    (item: CampusBannerViewData) => {
-      switch (item.id) {
-        case 'taxi-main':
+    async (item: CampusBannerViewData) => {
+      if (item.action.type === 'externalUrl') {
+        try {
+          await Linking.openURL(item.action.url);
+        } catch (linkError) {
+          console.warn('Campus 배너 외부 링크를 열지 못했습니다.', linkError);
+          Alert.alert(
+            '링크 열기 실패',
+            '배너 링크를 열지 못했습니다. 잠시 후 다시 시도해주세요.',
+          );
+        }
+
+        return;
+      }
+
+      switch (item.action.target) {
+        case 'TAXI_MAIN':
           campusEntryNavigation.openTaxiMain();
           return;
-        case 'notice-main':
+        case 'NOTICE_MAIN':
           campusEntryNavigation.openNoticeList();
           return;
-        case 'timetable-all':
-          campusEntryNavigation.openCampusScreen('TimetableDetail', {
-            initialView: 'all',
-          });
+        case 'TIMETABLE_DETAIL':
+          campusEntryNavigation.openCampusScreen(
+            'TimetableDetail',
+            item.action.params,
+          );
+          return;
+        case 'CAFETERIA_DETAIL':
+          campusEntryNavigation.openCampusScreen(
+            'CafeteriaDetail',
+            item.action.params,
+          );
+          return;
+        case 'ACADEMIC_CALENDAR_DETAIL':
+          campusEntryNavigation.openCampusScreen(
+            'AcademicCalendarDetail',
+            item.action.params,
+          );
           return;
         default:
           return;

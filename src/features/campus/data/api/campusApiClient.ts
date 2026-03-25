@@ -2,6 +2,7 @@ import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 
 import type {
   AcademicScheduleDto,
+  CampusBannerResponseDto,
   CafeteriaMenuDto,
 } from '../dto/campusDto';
 
@@ -12,6 +13,15 @@ interface GetAcademicSchedulesParams {
 }
 
 export class CampusApiClient {
+  getCampusBanners() {
+    return httpClient.get<ApiSuccessResponse<CampusBannerResponseDto[]>>(
+      '/v1/campus-banners',
+      {
+        requiresAuth: false,
+      },
+    );
+  }
+
   getAcademicSchedules(params: GetAcademicSchedulesParams = {}) {
     return httpClient.get<ApiSuccessResponse<AcademicScheduleDto[]>>(
       '/v1/academic-schedules',

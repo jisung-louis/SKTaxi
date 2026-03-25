@@ -23,6 +23,7 @@ import type {IUserRepository} from '@/features/user/data/repositories/IUserRepos
 import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
 import type {IAcademicRepository} from '../data/repositories/IAcademicRepository';
+import type {ICampusBannerRepository} from '../data/repositories/ICampusBannerRepository';
 import type {ICafeteriaRepository} from '../data/repositories/ICafeteriaRepository';
 import {
   type CampusAcademicEventBadgeViewData,
@@ -37,6 +38,10 @@ import {
 } from '../model/campusHome';
 import {formatLocalDateKey} from '../model/cafeteria';
 import {toAcademicCalendarEventSource} from './academicCalendarEventMapper';
+import {
+  getDefaultCampusHomeBannerViewData,
+  loadCampusHomeBannerViewData,
+} from './campusHomeBannerQuery';
 import {buildCampusRecommendedMenus} from './cafeteriaMenuAssembler';
 
 const NOTICE_PREVIEW_LIMIT = 3;
@@ -459,6 +464,7 @@ const loadAcademicPreviewItems = async ({
 
 export const loadCampusHomeQueryResult = async ({
   academicRepository,
+  campusBannerRepository,
   cafeteriaRepository,
   courseRepository,
   noticeRepository,
@@ -467,6 +473,7 @@ export const loadCampusHomeQueryResult = async ({
   currentUserId,
 }: {
   academicRepository: IAcademicRepository;
+  campusBannerRepository: ICampusBannerRepository;
   cafeteriaRepository: ICafeteriaRepository;
   courseRepository: ICourseRepository;
   currentUserId?: string;
@@ -476,32 +483,47 @@ export const loadCampusHomeQueryResult = async ({
 }): Promise<CampusHomeViewData> => {
   const currentDate = new Date();
   const currentDateKey = formatLocalDateKey(currentDate);
-  const [noticesResult, timetableResult, cafeteriaResult, academicResult] =
-    await Promise.allSettled([
-      loadNoticePreviewItems({
-        currentUserId,
-        noticeRepository,
-        userRepository,
-      }),
-      loadTimetablePreview({
-        courseRepository,
-        currentDate,
-        currentUserId,
-        timetableRepository,
-      }),
-      cafeteriaRepository.getCurrentWeekMenu().then(menu =>
-        menu
-          ? buildCampusRecommendedMenus({
-              currentDate: currentDateKey,
-              menu,
-            })
-          : [],
-      ),
-      loadAcademicPreviewItems({
-        academicRepository,
-        currentDate,
-      }),
-    ]);
+  const [
+    bannerResult,
+    noticesResult,
+    timetableResult,
+    cafeteriaResult,
+    academicResult,
+  ] = await Promise.allSettled([
+    loadCampusHomeBannerViewData({
+      campusBannerRepository,
+    }),
+    loadNoticePreviewItems({
+      currentUserId,
+      noticeRepository,
+      userRepository,
+    }),
+    loadTimetablePreview({
+      courseRepository,
+      currentDate,
+      currentUserId,
+      timetableRepository,
+    }),
+    cafeteriaRepository.getCurrentWeekMenu().then(menu =>
+      menu
+        ? buildCampusRecommendedMenus({
+            currentDate: currentDateKey,
+            menu,
+          })
+        : [],
+    ),
+    loadAcademicPreviewItems({
+      academicRepository,
+      currentDate,
+    }),
+  ]);
+
+  if (bannerResult.status === 'rejected') {
+    console.warn(
+      'Campus 배너 프리뷰를 불러오지 못했습니다.',
+      bannerResult.reason,
+    );
+  }
 
   if (noticesResult.status === 'rejected') {
     console.warn(
@@ -535,6 +557,10 @@ export const loadCampusHomeQueryResult = async ({
     academicCalendar: {
       items: academicResult.status === 'fulfilled' ? academicResult.value : [],
     },
+    banners:
+      bannerResult.status === 'fulfilled'
+        ? bannerResult.value
+        : getDefaultCampusHomeBannerViewData(),
     cafeteria: {
       recommendedMenus:
         cafeteriaResult.status === 'fulfilled' ? cafeteriaResult.value : [],
