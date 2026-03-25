@@ -21,5 +21,5 @@ export type {
   ICourseRepository,
   ITimetableRepository,
 } from '@/features/timetable';
-export type {INotificationRepository, IUserRepository} from '@/features/user';
+export type {INotificationRepository} from '@/features/user';
 export type {IStorageRepository} from '@/shared/lib/firebase/storageRepository';

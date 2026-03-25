@@ -22,7 +22,6 @@ import type {
   IStorageRepository,
   ITaxiChatRepository,
   ITimetableRepository,
-  IUserRepository,
 } from './repositoryContracts';
 
 /**
@@ -51,14 +50,6 @@ export function usePartyRepository(): IPartyRepository {
 export function useChatRepository(): IChatRepository {
   const {chatRepository} = useRepositories();
   return chatRepository;
-}
-
-/**
- * User Repository 접근 훅
- */
-export function useUserRepository(): IUserRepository {
-  const {userRepository} = useRepositories();
-  return userRepository;
 }
 
 /**

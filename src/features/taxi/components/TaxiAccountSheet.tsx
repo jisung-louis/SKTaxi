@@ -9,13 +9,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {ToggleSwitch} from '@/shared/design-system/components';
-import {
-  COLORS,
-  RADIUS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
+import type {UserAccountInfo as AccountInfo} from '@/shared/types/user';
 import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
-import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
 import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
@@ -172,10 +168,7 @@ export const TaxiAccountSheet = ({
         }}
         style={styles.checkboxRow}>
         <View
-          style={[
-            styles.checkbox,
-            remember ? styles.checkboxSelected : null,
-          ]}>
+          style={[styles.checkbox, remember ? styles.checkboxSelected : null]}>
           {remember ? (
             <Icon color={COLORS.text.inverse} name="checkmark" size={12} />
           ) : null}

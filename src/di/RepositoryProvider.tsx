@@ -20,7 +20,6 @@ import {SpringTaxiChatRepository} from '@/features/taxi/data/repositories/Spring
 import {MockCourseRepository} from '@/features/timetable/data/repositories/MockCourseRepository';
 import {MockTimetableRepository} from '@/features/timetable/data/repositories/MockTimetableRepository';
 import {SpringNotificationRepository} from '@/features/user/data/repositories/SpringNotificationRepository';
-import {MockUserRepository} from '@/features/user/data/repositories/MockUserRepository';
 import {MockStorageRepository} from '@/shared/lib/mock/MockStorageRepository';
 
 interface RepositoryProviderProps {
@@ -48,7 +47,6 @@ export function RepositoryProvider({
     const defaultRepositories: RepositoryContainer = {
       partyRepository: new SpringPartyRepository(),
       chatRepository: new SpringChatRepository(),
-      userRepository: new MockUserRepository(),
       boardRepository: new SpringBoardRepository(),
       noticeRepository: new SpringNoticeRepository(),
       courseRepository: new MockCourseRepository(),

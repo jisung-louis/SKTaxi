@@ -16,7 +16,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
 import {useAuth} from '@/features/auth';
-import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
@@ -24,6 +23,7 @@ import {
   useScreenEnterAnimation,
   useScreenView,
 } from '@/shared/hooks';
+import type {UserAccountInfo as AccountInfo} from '@/shared/types/user';
 import {ChatHeader} from '@/shared/ui/chat';
 
 import {TaxiAccountSheet} from '../components/TaxiAccountSheet';

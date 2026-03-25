@@ -20,7 +20,6 @@ import type {
   IStorageRepository,
   ITaxiChatRepository,
   ITimetableRepository,
-  IUserRepository,
 } from './repositoryContracts';
 
 /**
@@ -29,7 +28,6 @@ import type {
 export interface RepositoryContainer {
   partyRepository: IPartyRepository;
   chatRepository: IChatRepository;
-  userRepository: IUserRepository;
   boardRepository: IBoardRepository;
   noticeRepository: INoticeRepository;
   courseRepository: ICourseRepository;

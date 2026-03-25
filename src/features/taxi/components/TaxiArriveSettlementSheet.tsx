@@ -9,13 +9,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {ToggleSwitch} from '@/shared/design-system/components';
-import {
-  COLORS,
-  RADIUS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
+import type {UserAccountInfo as AccountInfo} from '@/shared/types/user';
 import {AccountBankDropdown} from '@/features/user/components/AccountBankDropdown';
-import type {AccountInfo} from '@/features/user/hooks/useAccountInfo';
 
 import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import type {TaxiChatSettlementMemberViewData} from '../model/taxiChatViewData';
@@ -69,7 +65,9 @@ export const TaxiArriveSettlementSheet = ({
   const [bankDropdownOpen, setBankDropdownOpen] = React.useState(false);
   const [bankName, setBankName] = React.useState('');
   const [hideName, setHideName] = React.useState(false);
-  const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = React.useState<string[]>(
+    [],
+  );
   const [taxiFareInput, setTaxiFareInput] = React.useState('');
   const accountHolderInputRef = React.useRef<TextInput>(null);
   const accountNumberInputRef = React.useRef<TextInput>(null);
@@ -130,7 +128,11 @@ export const TaxiArriveSettlementSheet = ({
       visible={visible}>
       <View style={styles.headerRow}>
         <View style={styles.titleIconWrap}>
-          <Icon color={COLORS.status.success} name="location-outline" size={16} />
+          <Icon
+            color={COLORS.status.success}
+            name="location-outline"
+            size={16}
+          />
         </View>
         <Text style={styles.title}>{'택시 도착 & 정산'}</Text>
       </View>
@@ -225,7 +227,8 @@ export const TaxiArriveSettlementSheet = ({
         {leaderMember ? (
           <View style={[styles.memberRow, styles.memberRowLeader]}>
             <View style={styles.memberLeft}>
-              <View style={[styles.memberCheckWrap, styles.memberCheckWrapLeader]}>
+              <View
+                style={[styles.memberCheckWrap, styles.memberCheckWrapLeader]}>
                 <Icon color={COLORS.text.inverse} name="person" size={11} />
               </View>
               <View>
@@ -254,7 +257,9 @@ export const TaxiArriveSettlementSheet = ({
                 }}
                 style={[
                   styles.memberRow,
-                  selected ? styles.memberRowSelected : styles.memberRowUnselected,
+                  selected
+                    ? styles.memberRowSelected
+                    : styles.memberRowUnselected,
                 ]}>
                 <View style={styles.memberLeft}>
                   <View
@@ -265,7 +270,11 @@ export const TaxiArriveSettlementSheet = ({
                         : styles.memberCheckWrapUnselected,
                     ]}>
                     {selected ? (
-                      <Icon color={COLORS.text.inverse} name="checkmark" size={12} />
+                      <Icon
+                        color={COLORS.text.inverse}
+                        name="checkmark"
+                        size={12}
+                      />
                     ) : null}
                   </View>
                   <Text style={styles.memberLabel}>
