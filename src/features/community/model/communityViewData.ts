@@ -16,6 +16,9 @@ export interface CommunityBoardPostViewData {
   commentCount: number;
   excerpt: string;
   id: string;
+  isBookmarked: boolean;
+  isCommentedByMe: boolean;
+  isLiked: boolean;
   likeCount: number;
   timeLabel: string;
   title: string;

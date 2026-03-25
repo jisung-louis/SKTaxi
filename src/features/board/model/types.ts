@@ -1,6 +1,14 @@
-export type BoardPostCategoryId = 'general' | 'question' | 'review' | 'announcement';
+export type BoardPostCategoryId =
+  | 'general'
+  | 'question'
+  | 'review'
+  | 'announcement';
 
-export type BoardSortOption = 'latest' | 'popular' | 'mostCommented' | 'mostViewed';
+export type BoardSortOption =
+  | 'latest'
+  | 'popular'
+  | 'mostCommented'
+  | 'mostViewed';
 
 export interface BoardImage {
   url: string;
@@ -42,6 +50,7 @@ export interface BoardPost {
   isDeleted: boolean;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  isCommentedByMe?: boolean;
   isAuthor?: boolean;
   images?: BoardImage[];
   createdAt: Date;

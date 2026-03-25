@@ -36,6 +36,9 @@ export interface BoardPostSummaryDto {
   likeCount: number;
   commentCount: number;
   bookmarkCount: number;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  isCommentedByMe: boolean;
   hasImage: boolean;
   isPinned: boolean;
   createdAt: string;

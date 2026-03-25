@@ -36,6 +36,9 @@ const toCommunityBoardSourceItem = (
   hashtags: extractHashtags(post.content),
   id: post.id,
   isAnonymous: Boolean(post.isAnonymous),
+  isBookmarked: Boolean(post.isBookmarked),
+  isCommentedByMe: Boolean(post.isCommentedByMe),
+  isLiked: Boolean(post.isLiked),
   likeCount: post.likeCount,
   title: post.title,
   viewCount: post.viewCount,
@@ -68,10 +71,7 @@ export const loadCommunityBoardPage = async ({
   let featuredPost: CommunityBoardSourceItem | undefined;
 
   if (!filters.category && !filters.searchText && cursor == null) {
-    const popularPage = await boardRepository.getPosts(
-      {sortBy: 'popular'},
-      1,
-    );
+    const popularPage = await boardRepository.getPosts({sortBy: 'popular'}, 1);
     const visiblePopular = await filterVisibleBoardPosts(popularPage.data);
     const [popularPost] = visiblePopular.sort(
       (left, right) =>

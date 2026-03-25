@@ -8,21 +8,30 @@ import type {
   BoardPostImageDto,
   BoardPostSummaryDto,
 } from '../dto/boardDto';
-import type {BoardComment, BoardImage, BoardPost, BoardPostCategoryId} from '../../model/types';
+import type {
+  BoardComment,
+  BoardImage,
+  BoardPost,
+  BoardPostCategoryId,
+} from '../../model/types';
 
-const BOARD_CATEGORY_FROM_DTO: Record<BoardPostCategoryDto, BoardPostCategoryId> = {
+const BOARD_CATEGORY_FROM_DTO: Record<
+  BoardPostCategoryDto,
+  BoardPostCategoryId
+> = {
   ANNOUNCEMENT: 'announcement',
   GENERAL: 'general',
   QUESTION: 'question',
   REVIEW: 'review',
 };
 
-const BOARD_CATEGORY_TO_DTO: Record<BoardPostCategoryId, BoardPostCategoryDto> = {
-  announcement: 'ANNOUNCEMENT',
-  general: 'GENERAL',
-  question: 'QUESTION',
-  review: 'REVIEW',
-};
+const BOARD_CATEGORY_TO_DTO: Record<BoardPostCategoryId, BoardPostCategoryDto> =
+  {
+    announcement: 'ANNOUNCEMENT',
+    general: 'GENERAL',
+    question: 'QUESTION',
+    review: 'REVIEW',
+  };
 
 const toDate = (value: string) => new Date(value);
 
@@ -76,11 +85,16 @@ const mapBoardPostBase = (
   viewCount: dto.viewCount,
 });
 
-export const mapBoardPostSummaryDto = (dto: BoardPostSummaryDto): BoardPost => ({
+export const mapBoardPostSummaryDto = (
+  dto: BoardPostSummaryDto,
+): BoardPost => ({
   ...mapBoardPostBase(dto),
   bookmarkCount: dto.bookmarkCount,
   images: dto.hasImage ? [] : undefined,
+  isBookmarked: dto.isBookmarked,
+  isCommentedByMe: dto.isCommentedByMe,
   isDeleted: false,
+  isLiked: dto.isLiked,
   isPinned: dto.isPinned,
   updatedAt: toDate(dto.createdAt),
 });

@@ -7,31 +7,35 @@ import {COLORS, SPACING} from '@/shared/design-system/tokens';
 interface ContentStatsRowProps {
   bookmarkCount: number;
   commentCount: number;
+  isBookmarked?: boolean;
+  isCommentedByMe?: boolean;
+  isLiked?: boolean;
   likeCount: number;
 }
 
 export const ContentStatsRow = ({
   bookmarkCount,
   commentCount,
+  isBookmarked = false,
+  isCommentedByMe = false,
+  isLiked = false,
   likeCount,
 }: ContentStatsRowProps) => {
   return (
     <View style={styles.row}>
       <View style={styles.statItem}>
-        <Icon color={COLORS.text.tertiary} name="heart-outline" size={12} />
-        <Text
-          style={[
-            styles.statLabel,
-            likeCount > 0 ? styles.likeLabelActive : null,
-          ]}>
-          {likeCount}
-        </Text>
+        <Icon
+          color={isLiked ? COLORS.status.danger : COLORS.text.tertiary}
+          name={isLiked ? 'heart' : 'heart-outline'}
+          size={12}
+        />
+        <Text style={styles.statLabel}>{likeCount}</Text>
       </View>
 
       <View style={styles.statItem}>
         <Icon
-          color={COLORS.text.tertiary}
-          name="chatbubble-outline"
+          color={isCommentedByMe ? COLORS.status.info : COLORS.text.tertiary}
+          name={isCommentedByMe ? 'chatbubble' : 'chatbubble-outline'}
           size={12}
         />
         <Text style={styles.statLabel}>{commentCount}</Text>
@@ -39,31 +43,17 @@ export const ContentStatsRow = ({
 
       <View style={styles.statItem}>
         <Icon
-          color={
-            bookmarkCount > 0 ? COLORS.status.success : COLORS.text.tertiary
-          }
-          name="bookmark-outline"
+          color={isBookmarked ? COLORS.status.success : COLORS.text.tertiary}
+          name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
           size={12}
         />
-        <Text
-          style={[
-            styles.statLabel,
-            bookmarkCount > 0 ? styles.bookmarkLabelActive : null,
-          ]}>
-          {bookmarkCount}
-        </Text>
+        <Text style={styles.statLabel}>{bookmarkCount}</Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  bookmarkLabelActive: {
-    color: COLORS.status.success,
-  },
-  likeLabelActive: {
-    color: COLORS.status.danger,
-  },
   row: {
     flexDirection: 'row',
     gap: SPACING.md,
@@ -77,5 +67,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.tertiary,
     fontSize: 12,
     lineHeight: 16,
+    fontWeight: '500',
   },
 });

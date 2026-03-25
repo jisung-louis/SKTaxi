@@ -1,7 +1,14 @@
 import type {CommunityBoardSourceItem} from '@/features/community/model/communityHomeData';
 
+const DEFAULT_PERSONALIZED_STATE = {
+  isBookmarked: false,
+  isCommentedByMe: false,
+  isLiked: false,
+} as const;
+
 export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 7,
     category: 'general',
@@ -16,6 +23,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 412,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 3,
     category: 'general',
@@ -30,6 +38,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 231,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 18,
     category: 'announcement',
@@ -44,6 +53,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 387,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 2,
     category: 'general',
@@ -58,6 +68,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 154,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 0,
     category: 'question',
@@ -72,6 +83,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 96,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 4,
     category: 'review',
@@ -87,6 +99,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 128,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 9,
     category: 'announcement',
@@ -101,6 +114,7 @@ export const BOARD_POSTS_MOCK: CommunityBoardSourceItem[] = [
     viewCount: 344,
   },
   {
+    ...DEFAULT_PERSONALIZED_STATE,
     authorName: '익명',
     bookmarkCount: 1,
     category: 'question',

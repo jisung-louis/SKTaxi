@@ -24,6 +24,7 @@ export interface Notice {
   isRead?: boolean;
   isLiked?: boolean;
   isBookmarked?: boolean;
+  isCommentedByMe?: boolean;
 }
 
 export type ReadStatusMap = Record<string, boolean>;

@@ -29,6 +29,7 @@ export interface NoticeSummaryDto {
   isRead: boolean;
   isLiked: boolean;
   isBookmarked: boolean;
+  isCommentedByMe: boolean;
 }
 
 export interface NoticeDetailDto {

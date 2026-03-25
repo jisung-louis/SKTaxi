@@ -82,9 +82,7 @@ const buildCommentTree = (comments: BoardComment[]): BoardCommentTreeNode[] => {
   return roots;
 };
 
-const extractCursor = (
-  cursor: unknown,
-): BoardPageCursor => {
+const extractCursor = (cursor: unknown): BoardPageCursor => {
   if (
     cursor &&
     typeof cursor === 'object' &&
@@ -108,8 +106,9 @@ const mergeSummaryPost = (
     ...summary,
     images: cached.images,
     isAuthor: cached.isAuthor,
-    isBookmarked: cached.isBookmarked,
-    isLiked: cached.isLiked,
+    isBookmarked: cached.isBookmarked ?? summary.isBookmarked,
+    isCommentedByMe: cached.isCommentedByMe ?? summary.isCommentedByMe,
+    isLiked: cached.isLiked ?? summary.isLiked,
     updatedAt: cached.updatedAt,
   };
 };
@@ -119,7 +118,9 @@ const toPaginatedResult = (
   data: BoardPost[],
   currentPage: number,
 ): PaginatedResult<BoardPost> => ({
-  cursor: page.hasNext ? {page: currentPage + 1} satisfies BoardPageCursor : null,
+  cursor: page.hasNext
+    ? ({page: currentPage + 1} satisfies BoardPageCursor)
+    : null,
   data,
   hasMore: page.hasNext,
 });
@@ -185,7 +186,13 @@ export class SpringBoardRepository implements IBoardRepository {
   async createPost(
     post: Omit<
       BoardPost,
-      'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'likeCount' | 'commentCount' | 'bookmarkCount'
+      | 'id'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'viewCount'
+      | 'likeCount'
+      | 'commentCount'
+      | 'bookmarkCount'
     >,
   ): Promise<string> {
     const response = await this.apiClient.createPost({
@@ -225,7 +232,9 @@ export class SpringBoardRepository implements IBoardRepository {
     this.postCache.delete(postId);
   }
 
-  async getCategoryCounts(categories: string[]): Promise<Record<string, number>> {
+  async getCategoryCounts(
+    categories: string[],
+  ): Promise<Record<string, number>> {
     const entries = await Promise.all(
       categories.map(async category => {
         const response = await this.apiClient.getPosts({
@@ -243,7 +252,9 @@ export class SpringBoardRepository implements IBoardRepository {
 
   async getComments(postId: string): Promise<BoardCommentTreeNode[]> {
     const response = await this.apiClient.getComments(postId);
-    const comments = response.data.map(comment => mapBoardCommentDto(postId, comment));
+    const comments = response.data.map(comment =>
+      mapBoardCommentDto(postId, comment),
+    );
     const tree = buildCommentTree(comments);
     this.commentCache.set(postId, tree);
     return cloneCommentTree(tree);

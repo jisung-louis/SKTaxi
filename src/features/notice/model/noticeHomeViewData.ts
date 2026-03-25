@@ -34,6 +34,9 @@ export interface NoticeHomeNoticeItemViewData {
   categoryTone: NoticeHomeTone;
   commentCount: number;
   id: string;
+  isBookmarked: boolean;
+  isCommentedByMe: boolean;
+  isLiked: boolean;
   isUnread: boolean;
   likeCount: number;
   timeLabel: string;

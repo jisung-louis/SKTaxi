@@ -26,6 +26,9 @@ export interface CommunityBoardSourceItem {
   hashtags: string[];
   id: string;
   isAnonymous: boolean;
+  isBookmarked: boolean;
+  isCommentedByMe: boolean;
+  isLiked: boolean;
   likeCount: number;
   title: string;
   viewCount: number;

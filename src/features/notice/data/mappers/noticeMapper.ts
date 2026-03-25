@@ -31,6 +31,7 @@ export const mapNoticeSummaryDto = (dto: NoticeSummaryDto): Notice => ({
   id: dto.id,
   isLiked: dto.isLiked,
   isBookmarked: dto.isBookmarked,
+  isCommentedByMe: dto.isCommentedByMe,
   isRead: dto.isRead,
   bookmarkCount: dto.bookmarkCount,
   likeCount: dto.likeCount,

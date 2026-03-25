@@ -79,6 +79,9 @@ export const NoticeListItem = ({
           <ContentStatsRow
             bookmarkCount={item.bookmarkCount}
             commentCount={item.commentCount}
+            isBookmarked={item.isBookmarked}
+            isCommentedByMe={item.isCommentedByMe}
+            isLiked={item.isLiked}
             likeCount={item.likeCount}
           />
         </View>
