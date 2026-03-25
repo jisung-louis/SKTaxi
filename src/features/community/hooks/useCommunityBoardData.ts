@@ -1,6 +1,4 @@
 import React from 'react';
-import {format, formatDistanceToNow} from 'date-fns';
-import {ko} from 'date-fns/locale';
 import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
@@ -14,6 +12,7 @@ import type {
 } from '../model/communityHomeData';
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {useBoardRepository} from '@/features/board';
+import {formatKoreanRelativeTime} from '@/shared/lib/date';
 
 import {loadCommunityBoardPage} from '../application/communityBoardQuery';
 
@@ -33,10 +32,6 @@ const DEFAULT_FILTERS: CommunityBoardSearchFilters = {
   sortBy: 'latest',
 };
 
-const formatBoardListTimeLabel = (date: Date) => {
-  return format(date, 'M월 d일 a h:mm', {locale: ko});
-};
-
 const toFeaturedViewData = (
   post: CommunityBoardSourceItem,
 ): CommunityBoardFeaturedViewData => ({
@@ -44,10 +39,7 @@ const toFeaturedViewData = (
   commentCount: post.commentCount,
   id: post.id,
   likeCount: post.likeCount,
-  timeLabel: formatDistanceToNow(new Date(post.createdAt), {
-    addSuffix: true,
-    locale: ko,
-  }),
+  timeLabel: formatKoreanRelativeTime(post.createdAt),
   title: post.title,
 });
 
@@ -61,7 +53,7 @@ const toBoardPostViewData = (
   excerpt: post.content,
   id: post.id,
   likeCount: post.likeCount,
-  timeLabel: formatBoardListTimeLabel(new Date(post.createdAt)),
+  timeLabel: formatKoreanRelativeTime(post.createdAt),
   title: post.title,
 });
 
@@ -86,9 +78,7 @@ export const useCommunityBoardData = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
-  const [nextCursor, setNextCursor] = React.useState<unknown>(
-    undefined,
-  );
+  const [nextCursor, setNextCursor] = React.useState<unknown>(undefined);
   const [searchVisible, setSearchVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const requestIdRef = React.useRef(0);

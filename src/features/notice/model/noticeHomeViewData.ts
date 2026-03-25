@@ -29,11 +29,14 @@ export interface NoticeHomeBannerViewData {
 }
 
 export interface NoticeHomeNoticeItemViewData {
+  bookmarkCount: number;
   categoryLabel: string;
   categoryTone: NoticeHomeTone;
-  dateLabel: string;
+  commentCount: number;
   id: string;
   isUnread: boolean;
+  likeCount: number;
+  timeLabel: string;
   title: string;
 }
 

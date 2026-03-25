@@ -1,13 +1,8 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 
-import {
-  COLORS,
-  RADIUS,
-  SHADOWS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {ContentStatsRow} from '@/shared/design-system/components';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CommunityBoardPostViewData} from '../model/communityViewData';
 
@@ -43,38 +38,11 @@ export const CommunityBoardPostCard = ({
 
       <View style={styles.footerRow}>
         <Text style={styles.authorLabel}>{item.authorLabel}</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Icon color="#6B7280" name="heart-outline" size={12} />
-            <Text
-              style={[
-                styles.statLabel,
-                item.likeCount > 0 ? styles.likeLabelActive : null,
-              ]}>
-              {item.likeCount}
-            </Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon color="#6B7280" name="chatbubble-outline" size={12} />
-            <Text style={styles.statLabel}>{item.commentCount}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Icon
-              color={
-                item.bookmarkCount > 0 ? COLORS.status.success : '#6B7280'
-              }
-              name="bookmark-outline"
-              size={12}
-            />
-            <Text
-              style={[
-                styles.statLabel,
-                item.bookmarkCount > 0 ? styles.bookmarkLabelActive : null,
-              ]}>
-              {item.bookmarkCount}
-            </Text>
-          </View>
-        </View>
+        <ContentStatsRow
+          bookmarkCount={item.bookmarkCount}
+          commentCount={item.commentCount}
+          likeCount={item.likeCount}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -134,25 +102,5 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontSize: 12,
     lineHeight: 16,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-  },
-  statItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.xs,
-  },
-  statLabel: {
-    color: '#6B7280',
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  likeLabelActive: {
-    color: '#EF4444',
-  },
-  bookmarkLabelActive: {
-    color: COLORS.status.success,
   },
 });

@@ -3,6 +3,7 @@ import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import type {NoticeHomeNoticeItemViewData} from '../model/noticeHomeViewData';
+import {ContentStatsRow} from '@/shared/design-system/components';
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
@@ -55,9 +56,7 @@ export const NoticeListItem = ({
       activeOpacity={0.86}
       onPress={() => onPress(item.id)}
       style={[styles.row, isLast ? styles.rowLast : null]}>
-        {item.isUnread ? (
-          <View style={styles.dot} />
-        ) : null}
+      {item.isUnread ? <View style={styles.dot} /> : null}
       <View style={styles.content}>
         <View style={styles.metaRow}>
           <View
@@ -69,13 +68,20 @@ export const NoticeListItem = ({
               {item.categoryLabel}
             </Text>
           </View>
-          <Text style={styles.dateLabel}>{item.dateLabel}</Text>
+          <Text style={styles.dateLabel}>{item.timeLabel}</Text>
         </View>
         <Text
           numberOfLines={2}
           style={[styles.title, item.isUnread ? styles.titleUnread : null]}>
           {item.title}
         </Text>
+        <View style={styles.statsWrap}>
+          <ContentStatsRow
+            bookmarkCount={item.bookmarkCount}
+            commentCount={item.commentCount}
+            likeCount={item.likeCount}
+          />
+        </View>
       </View>
       <Icon
         color={COLORS.text.muted}
@@ -142,5 +148,8 @@ const styles = StyleSheet.create({
   titleUnread: {
     color: COLORS.text.primary,
     fontWeight: '700',
+  },
+  statsWrap: {
+    marginTop: SPACING.md,
   },
 });

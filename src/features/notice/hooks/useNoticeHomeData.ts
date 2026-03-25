@@ -1,5 +1,7 @@
 import React from 'react';
 
+import {formatKoreanRelativeTime} from '@/shared/lib/date';
+
 import type {Notice} from '../model/types';
 import {isNoticeRead} from '../model/selectors';
 import type {
@@ -70,20 +72,6 @@ const CATEGORY_TONE_MAP: Record<string, NoticeHomeTone> = {
   학사: 'blue',
 };
 
-const formatNoticeDateLabel = (value: string) => {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  const year = date.getFullYear();
-  const month = `${date.getMonth() + 1}`.padStart(2, '0');
-  const day = `${date.getDate()}`.padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
 const getCategoryDisplayLabel = (category: string) =>
   CATEGORY_DISPLAY_LABEL_MAP[category] ?? category.split('/')[0] ?? category;
 
@@ -97,11 +85,14 @@ const mapNoticeToViewData = (
   const categoryLabel = getCategoryDisplayLabel(notice.category);
 
   return {
+    bookmarkCount: notice.bookmarkCount ?? 0,
     categoryLabel,
     categoryTone: getCategoryTone(categoryLabel),
-    dateLabel: formatNoticeDateLabel(String(notice.postedAt)),
+    commentCount: notice.commentCount ?? 0,
     id: notice.id,
     isUnread,
+    likeCount: notice.likeCount ?? 0,
+    timeLabel: formatKoreanRelativeTime(notice.postedAt),
     title: notice.title,
   };
 };
