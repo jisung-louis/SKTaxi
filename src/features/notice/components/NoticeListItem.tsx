@@ -37,6 +37,8 @@ const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
   }
 };
 
+const IconSize = 16;
+
 interface NoticeListItemProps {
   isLast: boolean;
   item: NoticeHomeNoticeItemViewData;
@@ -59,23 +61,33 @@ export const NoticeListItem = ({
       {item.isUnread ? <View style={styles.dot} /> : null}
       <View style={styles.content}>
         <View style={styles.metaRow}>
-          <View
-            style={[
-              styles.categoryPill,
-              {backgroundColor: toneStyles.backgroundColor},
-            ]}>
-            <Text style={[styles.categoryLabel, {color: toneStyles.textColor}]}>
-              {item.categoryLabel}
-            </Text>
+          <View style={styles.metaRowContent}>
+            <View
+              style={[
+                styles.categoryPill,
+                {backgroundColor: toneStyles.backgroundColor},
+              ]}>
+              <Text style={[styles.categoryLabel, {color: toneStyles.textColor}]}>
+                {item.categoryLabel}
+              </Text>
+            </View>
+            <Text style={styles.dateLabel}>{item.timeLabel}</Text>
           </View>
-          <Text style={styles.dateLabel}>{item.timeLabel}</Text>
+          <Icon
+            color={COLORS.text.muted}
+            name="chevron-forward-outline"
+            size={IconSize}
+          />
         </View>
         <Text
           numberOfLines={2}
           style={[styles.title, item.isUnread ? styles.titleUnread : null]}>
           {item.title}
         </Text>
-        <View style={styles.statsWrap}>
+        <View style={styles.footerRow}>
+          <Text numberOfLines={1} style={styles.authorLabel}>
+            {item.authorLabel}
+          </Text>
           <ContentStatsRow
             bookmarkCount={item.bookmarkCount}
             commentCount={item.commentCount}
@@ -83,14 +95,10 @@ export const NoticeListItem = ({
             isCommentedByMe={item.isCommentedByMe}
             isLiked={item.isLiked}
             likeCount={item.likeCount}
+            viewCount={item.viewCount}
           />
         </View>
       </View>
-      <Icon
-        color={COLORS.text.muted}
-        name="chevron-forward-outline"
-        size={16}
-      />
     </TouchableOpacity>
   );
 };
@@ -125,8 +133,13 @@ const styles = StyleSheet.create({
   metaRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: SPACING.sm,
     marginBottom: SPACING.sm,
+    justifyContent: 'space-between',
+  },
+  metaRowContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
   },
   categoryPill: {
     borderRadius: RADIUS.xs,
@@ -143,16 +156,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  footerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.md,
+    justifyContent: 'space-between',
+    marginTop: SPACING.md,
+  },
+  authorLabel: {
+    color: COLORS.text.tertiary,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    marginRight: SPACING.sm,
+  },
   title: {
     color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
+    marginRight: IconSize + SPACING.sm,
   },
   titleUnread: {
     color: COLORS.text.primary,
     fontWeight: '700',
-  },
-  statsWrap: {
-    marginTop: SPACING.md,
   },
 });

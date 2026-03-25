@@ -22,6 +22,7 @@ export interface CommunityBoardPostViewData {
   likeCount: number;
   timeLabel: string;
   title: string;
+  viewCount: number;
 }
 
 export interface CommunityChatRoomViewData {

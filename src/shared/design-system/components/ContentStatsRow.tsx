@@ -11,6 +11,7 @@ interface ContentStatsRowProps {
   isCommentedByMe?: boolean;
   isLiked?: boolean;
   likeCount: number;
+  viewCount: number;
 }
 
 export const ContentStatsRow = ({
@@ -20,6 +21,7 @@ export const ContentStatsRow = ({
   isCommentedByMe = false,
   isLiked = false,
   likeCount,
+  viewCount,
 }: ContentStatsRowProps) => {
   return (
     <View style={styles.row}>
@@ -49,6 +51,11 @@ export const ContentStatsRow = ({
         />
         <Text style={styles.statLabel}>{bookmarkCount}</Text>
       </View>
+
+      <View style={styles.statItem}>
+        <Icon color={COLORS.text.tertiary} name="eye-outline" size={12} />
+        <Text style={styles.statLabel}>{viewCount}</Text>
+      </View>
     </View>
   );
 };
@@ -56,6 +63,7 @@ export const ContentStatsRow = ({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: SPACING.md,
   },
   statItem: {

@@ -58,6 +58,7 @@ const toBoardPostViewData = (
   likeCount: post.likeCount,
   timeLabel: formatKoreanRelativeTime(post.createdAt),
   title: post.title,
+  viewCount: post.viewCount,
 });
 
 const getErrorMessage = (error: unknown) => {

@@ -85,6 +85,7 @@ const mapNoticeToViewData = (
   const categoryLabel = getCategoryDisplayLabel(notice.category);
 
   return {
+    authorLabel: notice.author || notice.department || '성결대학교',
     bookmarkCount: notice.bookmarkCount ?? 0,
     categoryLabel,
     categoryTone: getCategoryTone(categoryLabel),
@@ -97,6 +98,7 @@ const mapNoticeToViewData = (
     likeCount: notice.likeCount ?? 0,
     timeLabel: formatKoreanRelativeTime(notice.postedAt),
     title: notice.title,
+    viewCount: notice.viewCount ?? 0,
   };
 };
 

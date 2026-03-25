@@ -45,6 +45,7 @@ export const CommunityBoardPostCard = ({
           isCommentedByMe={item.isCommentedByMe}
           isLiked={item.isLiked}
           likeCount={item.likeCount}
+          viewCount={item.viewCount}
         />
       </View>
     </TouchableOpacity>
@@ -99,11 +100,14 @@ const styles = StyleSheet.create({
   footerRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    gap: SPACING.md,
     justifyContent: 'space-between',
   },
   authorLabel: {
     color: '#6B7280',
+    flex: 1,
     fontSize: 12,
     lineHeight: 16,
+    marginRight: SPACING.sm,
   },
 });

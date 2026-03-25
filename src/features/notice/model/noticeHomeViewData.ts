@@ -29,6 +29,7 @@ export interface NoticeHomeBannerViewData {
 }
 
 export interface NoticeHomeNoticeItemViewData {
+  authorLabel: string;
   bookmarkCount: number;
   categoryLabel: string;
   categoryTone: NoticeHomeTone;
@@ -41,6 +42,7 @@ export interface NoticeHomeNoticeItemViewData {
   likeCount: number;
   timeLabel: string;
   title: string;
+  viewCount: number;
 }
 
 export interface NoticeHomeEmptyStateViewData {
