@@ -18,16 +18,18 @@ import {useScreenView} from '@/shared/hooks/useScreenView';
 
 import {CampusAcademicCalendarPreviewCard} from '../components/CampusAcademicCalendarPreviewCard';
 import {CampusCafeteriaPreviewCarousel} from '../components/CampusCafeteriaPreviewCarousel';
+import {CampusHomeBannerCarousel} from '../components/CampusHomeBannerCarousel';
 import {CampusHomeHeader} from '../components/CampusHomeHeader';
 import {CampusNoticePreviewCard} from '../components/CampusNoticePreviewCard';
 import {CampusQuickMenuGrid} from '../components/CampusQuickMenuGrid';
 import {CampusSectionHeader} from '../components/CampusSectionHeader';
-import {CampusTaxiPreviewCards} from '../components/CampusTaxiPreviewCards';
 import {CampusTimetablePreviewCard} from '../components/CampusTimetablePreviewCard';
+import {loadCampusHomeBannerViewData} from '../application/campusHomeBannerQuery';
 import {
   CAMPUS_HOME_ACTION_LABELS,
   CAMPUS_HOME_QUICK_MENU_ITEMS,
 } from '../constants/campusHomePreview';
+import type {CampusBannerViewData} from '../model/campusHomeBanner';
 import {useCampusHomeViewData} from '../hooks/useCampusHomeViewData';
 
 export const CampusScreen = () => {
@@ -41,12 +43,34 @@ export const CampusScreen = () => {
     [navigation],
   );
   const {data, loading, error, refetch} = useCampusHomeViewData();
+  const bannerItems = React.useMemo(() => loadCampusHomeBannerViewData(), []);
 
   const contentContainerStyle = React.useMemo(
     () => ({
       paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + SPACING.xxl,
     }),
     [insets.bottom],
+  );
+
+  const handlePressBanner = React.useCallback(
+    (item: CampusBannerViewData) => {
+      switch (item.id) {
+        case 'taxi-main':
+          campusEntryNavigation.openTaxiMain();
+          return;
+        case 'notice-main':
+          campusEntryNavigation.openNoticeList();
+          return;
+        case 'timetable-all':
+          campusEntryNavigation.openCampusScreen('TimetableDetail', {
+            initialView: 'all',
+          });
+          return;
+        default:
+          return;
+      }
+    },
+    [campusEntryNavigation],
   );
 
   return (
@@ -62,6 +86,18 @@ export const CampusScreen = () => {
             onPressProfile={() =>
               campusEntryNavigation.openCampusScreen('Profile')
             }
+          />
+
+          <CampusHomeBannerCarousel
+            items={bannerItems}
+            onPressItem={handlePressBanner}
+          />
+
+          <CampusQuickMenuGrid
+            items={CAMPUS_HOME_QUICK_MENU_ITEMS}
+            onPressItem={routeName => {
+              campusEntryNavigation.openCampusScreen(routeName);
+            }}
           />
 
           {loading && !data ? (
@@ -127,18 +163,6 @@ export const CampusScreen = () => {
 
               <View style={styles.section}>
                 <CampusSectionHeader
-                  actionLabel={CAMPUS_HOME_ACTION_LABELS.taxi}
-                  onPressAction={campusEntryNavigation.openTaxiMain}
-                  title="모집 중인 택시"
-                />
-                <CampusTaxiPreviewCards
-                  items={data.taxi.items}
-                  onPressItem={campusEntryNavigation.openTaxiMain}
-                />
-              </View>
-
-              <View style={styles.section}>
-                <CampusSectionHeader
                   actionLabel={CAMPUS_HOME_ACTION_LABELS.cafeteria}
                   onPressAction={() =>
                     campusEntryNavigation.openCampusScreen('CafeteriaDetail')
@@ -172,13 +196,6 @@ export const CampusScreen = () => {
                   }
                 />
               </View>
-
-              <CampusQuickMenuGrid
-                items={CAMPUS_HOME_QUICK_MENU_ITEMS}
-                onPressItem={routeName => {
-                  campusEntryNavigation.openCampusScreen(routeName);
-                }}
-              />
             </>
           ) : null}
         </ScrollView>

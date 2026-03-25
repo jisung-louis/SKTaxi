@@ -40,13 +40,6 @@ export interface CampusTimetableEmptyStateViewData {
   description: string;
 }
 
-export interface CampusTaxiPartyViewData {
-  id: string;
-  routeLabel: string;
-  departureTimeLabel: string;
-  seatStatusLabel: string;
-}
-
 export interface CampusCafeteriaRecommendedMenuViewData {
   categoryLabel: string;
   id: string;
@@ -80,9 +73,6 @@ export interface CampusHomeViewData {
     sessions: CampusTimetableSessionViewData[];
     collapsedVisibleCount: number;
     emptyState?: CampusTimetableEmptyStateViewData;
-  };
-  taxi: {
-    items: CampusTaxiPartyViewData[];
   };
   cafeteria: {
     recommendedMenus: CampusCafeteriaRecommendedMenuViewData[];

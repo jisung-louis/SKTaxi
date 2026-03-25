@@ -1,9 +1,10 @@
 import React from 'react';
-import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
   COLORS,
+  FONT_FAMILIES,
   RADIUS,
   SHADOWS,
   SPACING,
@@ -20,36 +21,27 @@ export const CampusHomeHeader = ({
 }: CampusHomeHeaderProps) => {
   return (
     <View style={styles.container}>
-      <View style={styles.wordmarkContainer}>
-        <Image
-          source={require('../../../../assets/icons/skuri_icon.png')}
-          style={styles.wordmarkImage}
-        />
-        <Text style={styles.wordmark}>SKURI</Text>
-      </View>
+      <Text style={styles.wordmark}>SKURI</Text>
       <View style={styles.rightButtonContainer}>
-        {/* 알림 버튼 */}
-        <TouchableOpacity 
+        <TouchableOpacity
+          accessibilityLabel="알림"
+          accessibilityRole="button"
           activeOpacity={0.8}
           onPress={onPressNotification}
           style={styles.button}>
           <Icon
             color={COLORS.text.secondary}
             name="notifications-outline"
-            size={18}
+            size={20}
           />
-          {/* TODO : 알림 개수 뱃지 추가 */}
         </TouchableOpacity>
-        {/* 프로필 버튼 */}
         <TouchableOpacity
+          accessibilityLabel="프로필"
+          accessibilityRole="button"
           activeOpacity={0.8}
           onPress={onPressProfile}
           style={styles.button}>
-          <Icon
-            color={COLORS.text.secondary}
-            name="person-outline"
-            size={18}
-          />
+          <Icon color={COLORS.text.secondary} name="person-outline" size={20} />
         </TouchableOpacity>
       </View>
     </View>
@@ -63,27 +55,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl,
-  },
-  wordmarkContainer: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.lg,
-  },
-  wordmarkImage: {
-    borderRadius: RADIUS.sm,
-    height: 48,
-    width: 48,
+    paddingTop: SPACING.xl + SPACING.xs,
   },
   wordmark: {
-    color: COLORS.brand.logo,
-    fontSize: 48,
-    fontWeight: '700',
-    lineHeight: 64,
+    color: COLORS.text.primary,
+    fontFamily: FONT_FAMILIES.brand.wordmark,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    lineHeight: 32,
   },
   rightButtonContainer: {
     flexDirection: 'row',
-    gap: SPACING.lg,
+    gap: SPACING.sm,
   },
   button: {
     alignItems: 'center',

@@ -8,7 +8,6 @@ import {
 } from '@/features/notice/model/selectors';
 import type {Notice, ReadStatusMap} from '@/features/notice/model/types';
 import {resolveNoticeReadStatus} from '@/features/notice/services/noticeReadStateService';
-import {loadTaxiHomeQueryResult} from '@/features/taxi/application/taxiHomeQuery';
 import type {ICourseRepository} from '@/features/timetable/data/repositories/ICourseRepository';
 import type {
   ITimetableRepository,
@@ -21,10 +20,7 @@ import {
   getPeriodTimeInfo,
 } from '@/features/timetable/services/timetableUtils';
 import type {IUserRepository} from '@/features/user/data/repositories/IUserRepository';
-import {
-  normalizeDate,
-  normalizeDateObject,
-} from '@/shared/lib/date';
+import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
 import type {IAcademicRepository} from '../data/repositories/IAcademicRepository';
 import type {ICafeteriaRepository} from '../data/repositories/ICafeteriaRepository';
@@ -35,7 +31,6 @@ import {
   type CampusHomeViewData,
   type CampusNoticeItemViewData,
   type CampusNoticeTone,
-  type CampusTaxiPartyViewData,
   type CampusTimetableEmptyStateViewData,
   type CampusTimetablePeriodViewData,
   type CampusTimetableSessionViewData,
@@ -46,10 +41,9 @@ import {buildCampusRecommendedMenus} from './cafeteriaMenuAssembler';
 
 const NOTICE_PREVIEW_LIMIT = 3;
 const TIMETABLE_COLLAPSED_VISIBLE_COUNT = 9;
-const TIMETABLE_SESSION_TONES: Array<Extract<CampusHighlightTone, 'blue' | 'orange'>> = [
-  'orange',
-  'blue',
-];
+const TIMETABLE_SESSION_TONES: Array<
+  Extract<CampusHighlightTone, 'blue' | 'orange'>
+> = ['orange', 'blue'];
 
 const NOTICE_CATEGORY_LABEL_MAP: Record<string, string> = {
   '공모/행사': '행사',
@@ -204,19 +198,19 @@ const loadTimetableSnapshot = (
     let settled = false;
 
     const finish =
-      <T,>(handler: (value: T) => void) =>
+      <T>(handler: (value: T) => void) =>
       (value: T) => {
-      if (settled) {
-        return;
-      }
+        if (settled) {
+          return;
+        }
 
-      settled = true;
+        settled = true;
 
-      if (unsubscribe) {
-        unsubscribe();
-      } else {
-        shouldCleanupImmediately = true;
-      }
+        if (unsubscribe) {
+          unsubscribe();
+        } else {
+          shouldCleanupImmediately = true;
+        }
 
         handler(value);
       };
@@ -323,7 +317,9 @@ const loadTimetablePreview = async ({
   }
 
   const currentDayOfWeek = currentDate.getDay();
-  const courseById = new Map(semesterCourses.map(course => [course.id, course]));
+  const courseById = new Map(
+    semesterCourses.map(course => [course.id, course]),
+  );
   const selectedCourses = timetable.courses
     .map(courseId => courseById.get(courseId))
     .filter((course): course is Course => Boolean(course));
@@ -362,20 +358,6 @@ const loadTimetablePreview = async ({
     periods,
     sessions,
   };
-};
-
-const loadTaxiPreviewItems = async (): Promise<CampusTaxiPartyViewData[]> => {
-  const result = await loadTaxiHomeQueryResult();
-
-  return result.source.parties
-    .filter(party => party.statusTone === 'active')
-    .slice(0, 3)
-    .map(party => ({
-      departureTimeLabel: party.departureTimeLabel,
-      id: party.id,
-      routeLabel: `${party.departureLabel} → ${party.destinationLabel}`,
-      seatStatusLabel: `${party.currentMemberCount}/${party.maxMemberCount}명`,
-    }));
 };
 
 const buildAcademicBadge = ({
@@ -463,7 +445,9 @@ const loadAcademicPreviewItems = async ({
   const schedules = await academicRepository.getSchedules();
 
   return schedules
-    .filter(schedule => normalizeDate(schedule.endDate).getTime() >= today.getTime())
+    .filter(
+      schedule => normalizeDate(schedule.endDate).getTime() >= today.getTime(),
+    )
     .sort(
       (left, right) =>
         normalizeDate(left.startDate).getTime() -
@@ -492,28 +476,20 @@ export const loadCampusHomeQueryResult = async ({
 }): Promise<CampusHomeViewData> => {
   const currentDate = new Date();
   const currentDateKey = formatLocalDateKey(currentDate);
-  const [
-    noticesResult,
-    timetableResult,
-    taxiResult,
-    cafeteriaResult,
-    academicResult,
-  ] = await Promise.allSettled([
-    loadNoticePreviewItems({
-      currentUserId,
-      noticeRepository,
-      userRepository,
-    }),
-    loadTimetablePreview({
-      courseRepository,
-      currentDate,
-      currentUserId,
-      timetableRepository,
-    }),
-    loadTaxiPreviewItems(),
-    cafeteriaRepository
-      .getCurrentWeekMenu()
-      .then(menu =>
+  const [noticesResult, timetableResult, cafeteriaResult, academicResult] =
+    await Promise.allSettled([
+      loadNoticePreviewItems({
+        currentUserId,
+        noticeRepository,
+        userRepository,
+      }),
+      loadTimetablePreview({
+        courseRepository,
+        currentDate,
+        currentUserId,
+        timetableRepository,
+      }),
+      cafeteriaRepository.getCurrentWeekMenu().then(menu =>
         menu
           ? buildCampusRecommendedMenus({
               currentDate: currentDateKey,
@@ -521,14 +497,17 @@ export const loadCampusHomeQueryResult = async ({
             })
           : [],
       ),
-    loadAcademicPreviewItems({
-      academicRepository,
-      currentDate,
-    }),
-  ]);
+      loadAcademicPreviewItems({
+        academicRepository,
+        currentDate,
+      }),
+    ]);
 
   if (noticesResult.status === 'rejected') {
-    console.warn('Campus 공지 프리뷰를 불러오지 못했습니다.', noticesResult.reason);
+    console.warn(
+      'Campus 공지 프리뷰를 불러오지 못했습니다.',
+      noticesResult.reason,
+    );
   }
 
   if (timetableResult.status === 'rejected') {
@@ -536,10 +515,6 @@ export const loadCampusHomeQueryResult = async ({
       'Campus 시간표 프리뷰를 불러오지 못했습니다.',
       timetableResult.reason,
     );
-  }
-
-  if (taxiResult.status === 'rejected') {
-    console.warn('Campus 택시 프리뷰를 불러오지 못했습니다.', taxiResult.reason);
   }
 
   if (cafeteriaResult.status === 'rejected') {
@@ -566,9 +541,6 @@ export const loadCampusHomeQueryResult = async ({
     },
     notices: {
       items: noticesResult.status === 'fulfilled' ? noticesResult.value : [],
-    },
-    taxi: {
-      items: taxiResult.status === 'fulfilled' ? taxiResult.value : [],
     },
     timetable:
       timetableResult.status === 'fulfilled'

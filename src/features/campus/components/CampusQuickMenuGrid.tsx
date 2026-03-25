@@ -2,11 +2,7 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {
-  COLORS,
-  RADIUS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CampusHomeQuickMenuItem} from '../constants/campusHomePreview';
 
@@ -30,10 +26,7 @@ export const CampusQuickMenuGrid = ({
             onPress={() => onPressItem(item.routeName)}
             style={styles.item}>
             <View
-              style={[
-                styles.iconBox,
-                {backgroundColor: item.backgroundColor},
-              ]}>
+              style={[styles.iconBox, {backgroundColor: item.backgroundColor}]}>
               <Icon color={item.iconColor} name={item.icon} size={22} />
             </View>
             <Text style={styles.label}>{item.label}</Text>
@@ -46,8 +39,8 @@ export const CampusQuickMenuGrid = ({
 
 const styles = StyleSheet.create({
   section: {
+    marginBottom: SPACING.xxl,
     paddingHorizontal: SPACING.lg,
-    paddingTop: 4,
   },
   title: {
     color: COLORS.text.primary,
@@ -73,7 +66,7 @@ const styles = StyleSheet.create({
     width: 56,
   },
   label: {
-    color: COLORS.text.strong,
+    color: COLORS.text.secondary,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
