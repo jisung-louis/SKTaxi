@@ -29,7 +29,7 @@ const escapeHtml = (value: string) =>
 
 const buildContentDetail = (
   noticeId: string,
-  bodyBlocks: typeof NOTICE_DETAIL_MOCK[number]['bodyBlocks'],
+  bodyBlocks: (typeof NOTICE_DETAIL_MOCK)[number]['bodyBlocks'],
 ) =>
   bodyBlocks
     .map((block, index) => {
@@ -46,7 +46,8 @@ const buildContentDetail = (
 const buildSeedNotices = (): Notice[] =>
   NOTICE_DETAIL_MOCK.map(detail => {
     const firstParagraph = detail.bodyBlocks.find(
-      (block): block is NoticeDetailParagraphBlock => block.type === 'paragraph',
+      (block): block is NoticeDetailParagraphBlock =>
+        block.type === 'paragraph',
     );
 
     return {
@@ -74,21 +75,23 @@ const buildSeedNotices = (): Notice[] =>
 
 const buildSeedComments = (): Map<string, Comment[]> =>
   new Map<string, Comment[]>(
-    NOTICE_DETAIL_MOCK.filter(detail => detail.comments.length > 0).map(detail => [
-      detail.id,
-      detail.comments.map<Comment>(comment => ({
-        id: comment.id,
-        noticeId: detail.id,
-        userId: `mock-${comment.authorName}`,
-        userDisplayName: comment.authorName,
-        content: comment.content,
-        createdAt: new Date(comment.postedAt),
-        updatedAt: new Date(comment.postedAt),
-        isDeleted: false,
-        parentId: null,
-        replies: [],
-      })),
-    ]),
+    NOTICE_DETAIL_MOCK.filter(detail => detail.comments.length > 0).map(
+      detail => [
+        detail.id,
+        detail.comments.map<Comment>(comment => ({
+          id: comment.id,
+          noticeId: detail.id,
+          userId: `mock-${comment.authorName}`,
+          userDisplayName: comment.authorName,
+          content: comment.content,
+          createdAt: new Date(comment.postedAt),
+          updatedAt: new Date(comment.postedAt),
+          isDeleted: false,
+          parentId: null,
+          replies: [],
+        })),
+      ],
+    ),
   );
 
 export class MockNoticeRepository implements INoticeRepository {
@@ -97,6 +100,8 @@ export class MockNoticeRepository implements INoticeRepository {
   private readStatus = new Map<string, Set<string>>();
 
   private likes = new Map<string, Set<string>>();
+
+  private bookmarks = new Map<string, Set<string>>();
 
   private comments = buildSeedComments();
 
@@ -145,9 +150,12 @@ export class MockNoticeRepository implements INoticeRepository {
     return () => {};
   }
 
-  async getReadStatus(userId: string, noticeIds: string[]): Promise<ReadStatusMap> {
+  async getReadStatus(
+    userId: string,
+    noticeIds: string[],
+  ): Promise<ReadStatusMap> {
     const result: ReadStatusMap = {};
-    noticeIds.forEach((noticeId) => {
+    noticeIds.forEach(noticeId => {
       result[noticeId] =
         this.readStatus.get(noticeId)?.has(userId) ||
         this.defaultReadNoticeIds.has(noticeId) ||
@@ -196,16 +204,45 @@ export class MockNoticeRepository implements INoticeRepository {
     return this.likes.get(noticeId)?.has(userId) || false;
   }
 
+  async toggleBookmark(noticeId: string, userId: string): Promise<boolean> {
+    if (!this.bookmarks.has(noticeId)) {
+      this.bookmarks.set(noticeId, new Set());
+    }
+
+    const noticeBookmarks = this.bookmarks.get(noticeId)!;
+    const notice = this.notices.get(noticeId);
+
+    if (noticeBookmarks.has(userId)) {
+      noticeBookmarks.delete(userId);
+      if (notice) {
+        notice.bookmarkCount = Math.max(0, (notice.bookmarkCount || 0) - 1);
+        notice.isBookmarked = false;
+      }
+      return false;
+    }
+
+    noticeBookmarks.add(userId);
+    if (notice) {
+      notice.bookmarkCount = (notice.bookmarkCount || 0) + 1;
+      notice.isBookmarked = true;
+    }
+    return true;
+  }
+
+  async isBookmarked(noticeId: string, userId: string): Promise<boolean> {
+    return this.bookmarks.get(noticeId)?.has(userId) || false;
+  }
+
   async getComments(noticeId: string): Promise<NoticeCommentTreeNode[]> {
     const comments = this.comments.get(noticeId) || [];
-    return comments.map((comment) => ({ ...comment, replies: [] }));
+    return comments.map(comment => ({...comment, replies: []}));
   }
 
   subscribeToComments(
     noticeId: string,
     callbacks: SubscriptionCallbacks<NoticeCommentTreeNode[]>,
   ): Unsubscribe {
-    this.getComments(noticeId).then((comments) => {
+    this.getComments(noticeId).then(comments => {
       callbacks.onData(comments);
     });
     return () => {};
@@ -251,9 +288,9 @@ export class MockNoticeRepository implements INoticeRepository {
     content: string,
   ): Promise<void> {
     const comments = this.comments.get(noticeId) || [];
-    const updated = comments.map((comment) =>
+    const updated = comments.map(comment =>
       comment.id === commentId
-        ? { ...comment, content, updatedAt: new Date() }
+        ? {...comment, content, updatedAt: new Date()}
         : comment,
     );
     this.comments.set(noticeId, updated);
@@ -261,8 +298,8 @@ export class MockNoticeRepository implements INoticeRepository {
 
   async deleteComment(noticeId: string, commentId: string): Promise<void> {
     const comments = this.comments.get(noticeId) || [];
-    const updated = comments.map((comment) =>
-      comment.id === commentId ? { ...comment, isDeleted: true } : comment,
+    const updated = comments.map(comment =>
+      comment.id === commentId ? {...comment, isDeleted: true} : comment,
     );
     this.comments.set(noticeId, updated);
 
@@ -287,12 +324,13 @@ export class MockNoticeRepository implements INoticeRepository {
     this.notices.clear();
     this.readStatus.clear();
     this.likes.clear();
+    this.bookmarks.clear();
     this.comments.clear();
   }
 
   private getOrderedNotices(category: string): Notice[] {
     return Array.from(this.notices.values())
-      .filter((notice) => category === '전체' || notice.category === category)
+      .filter(notice => category === '전체' || notice.category === category)
       .sort(
         (first, second) =>
           new Date(second.createdAt).getTime() -
@@ -312,11 +350,11 @@ export class MockNoticeRepository implements INoticeRepository {
     const notices = this.getOrderedNotices(category);
     const cursorId = typeof cursor === 'string' ? cursor : null;
     const startIndex = cursorId
-      ? notices.findIndex((notice) => notice.id === cursorId) + 1
+      ? notices.findIndex(notice => notice.id === cursorId) + 1
       : 0;
 
     if (cursorId && startIndex === 0) {
-      return { data: [], hasMore: false, cursor: null };
+      return {data: [], hasMore: false, cursor: null};
     }
 
     const page = notices.slice(startIndex, startIndex + limit);

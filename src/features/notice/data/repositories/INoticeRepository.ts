@@ -1,4 +1,4 @@
-import type { PaginatedResult } from '@/shared/types/pagination';
+import type {PaginatedResult} from '@/shared/types/pagination';
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
@@ -37,6 +37,8 @@ export interface INoticeRepository {
   markAllAsRead(userId: string, noticeIds: string[]): Promise<void>;
   toggleLike(noticeId: string, userId: string): Promise<boolean>;
   isLiked(noticeId: string, userId: string): Promise<boolean>;
+  toggleBookmark(noticeId: string, userId: string): Promise<boolean>;
+  isBookmarked(noticeId: string, userId: string): Promise<boolean>;
   getComments(noticeId: string): Promise<NoticeCommentTreeNode[]>;
   subscribeToComments(
     noticeId: string,
@@ -44,9 +46,13 @@ export interface INoticeRepository {
   ): Unsubscribe;
   createComment(
     noticeId: string,
-    comment: CommentFormData & { userId: string; userDisplayName: string },
+    comment: CommentFormData & {userId: string; userDisplayName: string},
   ): Promise<string>;
-  updateComment(noticeId: string, commentId: string, content: string): Promise<void>;
+  updateComment(
+    noticeId: string,
+    commentId: string,
+    content: string,
+  ): Promise<void>;
   deleteComment(noticeId: string, commentId: string): Promise<void>;
   incrementViewCount(noticeId: string): Promise<void>;
 }

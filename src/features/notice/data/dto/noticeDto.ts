@@ -25,8 +25,10 @@ export interface NoticeSummaryDto {
   viewCount: number;
   likeCount: number;
   commentCount: number;
+  bookmarkCount: number;
   isRead: boolean;
   isLiked: boolean;
+  isBookmarked: boolean;
 }
 
 export interface NoticeDetailDto {
@@ -43,9 +45,11 @@ export interface NoticeDetailDto {
   viewCount: number;
   likeCount: number;
   commentCount: number;
+  bookmarkCount: number;
   attachments: NoticeAttachmentDto[];
   isRead: boolean;
   isLiked: boolean;
+  isBookmarked: boolean;
 }
 
 export interface NoticeCommentDto {
@@ -66,6 +70,19 @@ export interface NoticeCommentDto {
 export interface NoticeLikeResponseDto {
   isLiked: boolean;
   likeCount: number;
+}
+
+export interface NoticeBookmarkResponseDto {
+  isBookmarked: boolean;
+  bookmarkCount: number;
+}
+
+export interface NoticeBookmarkSummaryDto {
+  id: string;
+  title: string;
+  rssPreview: string;
+  category: string;
+  postedAt: string;
 }
 
 export interface NoticeReadResponseDto {

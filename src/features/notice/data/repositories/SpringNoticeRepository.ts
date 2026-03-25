@@ -15,6 +15,7 @@ import type {
 } from './INoticeRepository';
 import {noticeApiClient, NoticeApiClient} from '../api/noticeApiClient';
 import {
+  mapNoticeBookmarkResponseDto,
   mapNoticeCommentDto,
   mapNoticeDetailDto,
   mapNoticeLikeResponseDto,
@@ -164,7 +165,10 @@ export class SpringNoticeRepository implements INoticeRepository {
     }
   }
 
-  async getReadStatus(_userId: string, noticeIds: string[]): Promise<ReadStatusMap> {
+  async getReadStatus(
+    _userId: string,
+    noticeIds: string[],
+  ): Promise<ReadStatusMap> {
     return noticeIds.reduce<ReadStatusMap>((result, noticeId) => {
       result[noticeId] = Boolean(this.noticeCache.get(noticeId)?.isRead);
       return result;
@@ -185,8 +189,15 @@ export class SpringNoticeRepository implements INoticeRepository {
     return Boolean(notice.isLiked);
   }
 
+  async isBookmarked(noticeId: string, _userId: string): Promise<boolean> {
+    const notice = await this.requireNoticeDetail(noticeId);
+    return Boolean(notice.isBookmarked);
+  }
+
   async markAllAsRead(userId: string, noticeIds: string[]): Promise<void> {
-    await Promise.all(noticeIds.map(noticeId => this.markAsRead(userId, noticeId)));
+    await Promise.all(
+      noticeIds.map(noticeId => this.markAsRead(userId, noticeId)),
+    );
   }
 
   async markAsRead(_userId: string, noticeId: string): Promise<void> {
@@ -245,6 +256,20 @@ export class SpringNoticeRepository implements INoticeRepository {
     return nextLikeState.isLiked;
   }
 
+  async toggleBookmark(noticeId: string, _userId: string): Promise<boolean> {
+    const currentNotice = await this.requireNoticeDetail(noticeId);
+    const response = currentNotice.isBookmarked
+      ? await this.apiClient.unbookmarkNotice(noticeId)
+      : await this.apiClient.bookmarkNotice(noticeId);
+    const nextBookmarkState = mapNoticeBookmarkResponseDto(response.data);
+    this.noticeCache.set(noticeId, {
+      ...currentNotice,
+      bookmarkCount: nextBookmarkState.bookmarkCount,
+      isBookmarked: nextBookmarkState.isBookmarked,
+    });
+    return nextBookmarkState.isBookmarked;
+  }
+
   async updateComment(
     noticeId: string,
     commentId: string,
@@ -293,7 +318,9 @@ export class SpringNoticeRepository implements INoticeRepository {
     });
 
     return {
-      cursor: pageData.hasNext ? {page: page + 1} satisfies NoticePageCursor : null,
+      cursor: pageData.hasNext
+        ? ({page: page + 1} satisfies NoticePageCursor)
+        : null,
       data: notices,
       hasMore: pageData.hasNext,
     };

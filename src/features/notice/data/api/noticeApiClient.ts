@@ -2,6 +2,8 @@ import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 
 import type {
   CreateNoticeCommentRequestDto,
+  NoticeBookmarkResponseDto,
+  NoticeBookmarkSummaryDto,
   NoticeCommentDto,
   NoticeDetailDto,
   NoticeLikeResponseDto,
@@ -18,7 +20,18 @@ interface GetNoticesParams {
   size?: number;
 }
 
+interface GetMyNoticeBookmarksParams {
+  page?: number;
+  size?: number;
+}
+
 export class NoticeApiClient {
+  bookmarkNotice(noticeId: string) {
+    return httpClient.post<ApiSuccessResponse<NoticeBookmarkResponseDto>>(
+      `/v1/notices/${noticeId}/bookmark`,
+    );
+  }
+
   createComment(noticeId: string, data: CreateNoticeCommentRequestDto) {
     return httpClient.post<
       ApiSuccessResponse<NoticeCommentDto>,
@@ -36,6 +49,14 @@ export class NoticeApiClient {
     return httpClient.get<ApiSuccessResponse<NoticeCommentDto[]>>(
       `/v1/notices/${noticeId}/comments`,
     );
+  }
+
+  getMyNoticeBookmarks(params?: GetMyNoticeBookmarksParams) {
+    return httpClient.get<
+      ApiSuccessResponse<NoticePageResponseDto<NoticeBookmarkSummaryDto>>
+    >('/v1/members/me/notice-bookmarks', {
+      params,
+    });
   }
 
   getNotice(noticeId: string) {
@@ -67,6 +88,12 @@ export class NoticeApiClient {
   unlikeNotice(noticeId: string) {
     return httpClient.delete<ApiSuccessResponse<NoticeLikeResponseDto>>(
       `/v1/notices/${noticeId}/like`,
+    );
+  }
+
+  unbookmarkNotice(noticeId: string) {
+    return httpClient.delete<ApiSuccessResponse<NoticeBookmarkResponseDto>>(
+      `/v1/notices/${noticeId}/bookmark`,
     );
   }
 

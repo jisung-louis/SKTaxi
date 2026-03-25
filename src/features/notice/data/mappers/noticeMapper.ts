@@ -1,4 +1,5 @@
 import type {
+  NoticeBookmarkResponseDto,
   NoticeCommentDto,
   NoticeDetailDto,
   NoticeLikeResponseDto,
@@ -29,7 +30,9 @@ export const mapNoticeSummaryDto = (dto: NoticeSummaryDto): Notice => ({
   department: dto.department,
   id: dto.id,
   isLiked: dto.isLiked,
+  isBookmarked: dto.isBookmarked,
   isRead: dto.isRead,
+  bookmarkCount: dto.bookmarkCount,
   likeCount: dto.likeCount,
   link: '',
   postedAt: dto.postedAt,
@@ -49,7 +52,9 @@ export const mapNoticeDetailDto = (dto: NoticeDetailDto): Notice => ({
   department: dto.department,
   id: dto.id,
   isLiked: dto.isLiked,
+  isBookmarked: dto.isBookmarked,
   isRead: dto.isRead,
+  bookmarkCount: dto.bookmarkCount,
   likeCount: dto.likeCount,
   link: dto.link,
   postedAt: dto.postedAt,
@@ -83,6 +88,13 @@ export const mapNoticeCommentDto = (
 export const mapNoticeLikeResponseDto = (dto: NoticeLikeResponseDto) => ({
   isLiked: dto.isLiked,
   likeCount: dto.likeCount,
+});
+
+export const mapNoticeBookmarkResponseDto = (
+  dto: NoticeBookmarkResponseDto,
+) => ({
+  bookmarkCount: dto.bookmarkCount,
+  isBookmarked: dto.isBookmarked,
 });
 
 export const mapNoticeReadResponseDto = (dto: NoticeReadResponseDto) => ({

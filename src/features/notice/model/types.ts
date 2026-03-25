@@ -18,10 +18,12 @@ export interface Notice {
   contentDetail: string;
   contentAttachments: NoticeAttachment[];
   likeCount?: number;
+  bookmarkCount?: number;
   commentCount?: number;
   viewCount?: number;
   isRead?: boolean;
   isLiked?: boolean;
+  isBookmarked?: boolean;
 }
 
 export type ReadStatusMap = Record<string, boolean>;
