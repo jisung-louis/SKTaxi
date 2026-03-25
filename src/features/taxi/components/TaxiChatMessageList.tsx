@@ -918,7 +918,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   messageWrap: {
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
     marginTop: SPACING.sm,
   },
   messageWrapCompact: {

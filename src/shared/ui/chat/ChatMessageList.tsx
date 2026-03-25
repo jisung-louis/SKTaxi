@@ -152,7 +152,8 @@ export const ChatMessageList = ({
               style={[
                 styles.messageWrap,
                 wrapperStyle,
-                !isGroupStart ? styles.messageWrapCompact : null,
+                !isGroupEnd ? styles.messageWrapCompact : null,
+                { marginTop: isGroupStart ? SPACING.sm : 0 },
               ]}>
               <View style={styles.outgoingRow}>
                 {isGroupEnd ? (
@@ -176,7 +177,8 @@ export const ChatMessageList = ({
             style={[
               styles.messageWrap,
               wrapperStyle,
-              !isGroupStart ? styles.messageWrapCompact : null,
+              !isGroupEnd ? styles.messageWrapCompact : null,
+              { marginTop: isGroupStart ? SPACING.sm : 0 },
             ]}>
             <View style={styles.incomingRow}>
               <View style={styles.avatarWrap}>
@@ -286,7 +288,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   messageWrap: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.xs,
+    marginTop: SPACING.sm,
   },
   messageWrapCompact: {
     marginBottom: SPACING.xs,
