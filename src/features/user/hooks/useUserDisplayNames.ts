@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
-import { UserDisplayNameMap } from '../model/types';
-import { useUserRepository } from './useUserRepository';
+import {memberDirectoryRepository} from '@/features/member';
+
+import {UserDisplayNameMap} from '../model/types';
 
 export interface UseUserDisplayNamesResult {
   displayNameMap: UserDisplayNameMap;
@@ -9,11 +10,7 @@ export interface UseUserDisplayNamesResult {
   error: string | null;
 }
 
-export function useUserDisplayNames(
-  uids: string[],
-): UseUserDisplayNamesResult {
-  const userRepository = useUserRepository();
-
+export function useUserDisplayNames(uids: string[]): UseUserDisplayNamesResult {
   const [displayNameMap, setDisplayNameMap] = useState<UserDisplayNameMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,10 +21,7 @@ export function useUserDisplayNames(
     return uniqueIds.join(',');
   }, [uids]);
 
-  const uniqueUids = useMemo(
-    () => (uidKey ? uidKey.split(',') : []),
-    [uidKey],
-  );
+  const uniqueUids = useMemo(() => (uidKey ? uidKey.split(',') : []), [uidKey]);
 
   useEffect(() => {
     if (uniqueUids.length === 0) {
@@ -42,7 +36,9 @@ export function useUserDisplayNames(
       try {
         setLoading(true);
         setError(null);
-        const result = await userRepository.getUserDisplayNames(uniqueUids);
+        const result = await memberDirectoryRepository.getMemberDisplayNames(
+          uniqueUids,
+        );
 
         if (!cancelled) {
           setDisplayNameMap(result);
@@ -64,7 +60,7 @@ export function useUserDisplayNames(
     return () => {
       cancelled = true;
     };
-  }, [uniqueUids, userRepository]);
+  }, [uniqueUids]);
 
   return {
     displayNameMap,

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
-import { useAuth } from '@/features/auth';
+import {useAuth} from '@/features/auth';
+import {memberDirectoryRepository} from '@/features/member';
 
-import { UserProfile } from '../model/types';
-import { saveUserProfileChanges } from '../services/userProfileService';
-import { useUserRepository } from './useUserRepository';
+import {UserProfile} from '../model/types';
+import {saveUserProfileChanges} from '../services/userProfileService';
+import {useUserRepository} from './useUserRepository';
 
 export interface UseUserProfileResult {
   profile: UserProfile | null;
@@ -23,7 +24,7 @@ export interface UseUserProfileResult {
 }
 
 export function useUserProfile(): UseUserProfileResult {
-  const { user } = useAuth();
+  const {user} = useAuth();
   const userRepository = useUserRepository();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -180,8 +181,6 @@ export function useUserProfileById(userId: string | undefined): {
   loading: boolean;
   error: string | null;
 } {
-  const userRepository = useUserRepository();
-
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -196,27 +195,51 @@ export function useUserProfileById(userId: string | undefined): {
     setLoading(true);
     setError(null);
 
-    const unsubscribe = userRepository.subscribeToUserProfile(userId, {
-      onData: updatedProfile => {
-        setProfile(updatedProfile);
-        setLoading(false);
+    let cancelled = false;
 
-        if (!updatedProfile) {
-          setError('사용자를 찾을 수 없습니다.');
-        } else {
-          setError(null);
+    const loadProfile = async () => {
+      try {
+        const publicProfile =
+          await memberDirectoryRepository.getMemberPublicProfile(userId);
+
+        if (cancelled) {
+          return;
         }
-      },
-      onError: err => {
+
+        if (!publicProfile) {
+          setProfile(null);
+          setError('사용자를 찾을 수 없습니다.');
+          setLoading(false);
+          return;
+        }
+
+        setProfile({
+          department: publicProfile.department,
+          displayName: publicProfile.nickname ?? undefined,
+          id: publicProfile.id,
+          photoURL: publicProfile.photoUrl,
+          photoUrl: publicProfile.photoUrl,
+          uid: publicProfile.id,
+        });
+        setError(null);
+        setLoading(false);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
         console.error('사용자 프로필 조회 실패:', err);
         setError('사용자 정보를 불러오는데 실패했습니다.');
         setLoading(false);
-      },
-    });
+      }
+    };
 
-    return () => unsubscribe();
-  }, [userId, userRepository]);
+    loadProfile().catch(() => undefined);
 
-  return { profile, loading, error };
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  return {profile, loading, error};
 }
-
