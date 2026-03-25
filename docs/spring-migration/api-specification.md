@@ -530,9 +530,9 @@ FCM 토큰 삭제
 |---|---|---|
 | `contractVersion` | push payload 계약 버전. 현재 `"1"` | X |
 | `type` | canonical 알림 타입 enum | X |
-| `partyId` | 파티 상세/파티 채팅 이동 식별자 | O |
+| `partyId` | 파티 알림 계열 이동 식별자 (`CHAT_MESSAGE`는 사용하지 않음) | O |
 | `requestId` | 동승 요청 식별자 | O |
-| `chatRoomId` | 채팅방 식별자 | O |
+| `chatRoomId` | 채팅방 식별자 (`CHAT_MESSAGE` canonical 식별자, 파티 채팅도 동일) | O |
 | `postId` | 게시글 식별자 | O |
 | `commentId` | 댓글 식별자 | O |
 | `noticeId` | 학교 공지 식별자 | O |
@@ -765,15 +765,19 @@ FCM 토큰 삭제
         "memberSettlements": [
           {
             "memberId": "uuid",
-            "memberName": "홍길동",
+            "displayName": "홍길동",
             "settled": true,
-            "settledAt": "2026-02-03T14:30:00Z"
+            "settledAt": "2026-02-03T14:30:00Z",
+            "leftParty": false,
+            "leftAt": null
           },
           {
             "memberId": "uuid2",
-            "memberName": "김철수",
+            "displayName": "김철수",
             "settled": false,
-            "settledAt": null
+            "settledAt": null,
+            "leftParty": true,
+            "leftAt": "2026-02-03T14:40:00Z"
           }
         ]
       }
@@ -807,7 +811,7 @@ FCM 토큰 삭제
       "id": "party-20260304-001",
       "departureLabel": "성결대학교",
       "arrivalLabel": "안양역",
-      "dateTime": "2026-03-04T21:00:00Z",
+      "dateTime": "2026-03-04T21:00:00",
       "passengerCount": 3,
       "paymentAmount": 5000,
       "role": "LEADER",
@@ -817,7 +821,7 @@ FCM 토큰 삭제
       "id": "party-20260303-101",
       "departureLabel": "성결대학교",
       "arrivalLabel": "범계역",
-      "dateTime": "2026-03-03T18:30:00Z",
+      "dateTime": "2026-03-03T18:30:00",
       "passengerCount": 2,
       "paymentAmount": null,
       "role": "MEMBER",
@@ -1008,6 +1012,10 @@ FCM 토큰 삭제
 }
 ```
 
+- `memberSettlements[*].displayName`은 ARRIVED 시점에 확정된 표시 이름 snapshot입니다.
+- `memberSettlements[*].leftParty=true`이면 현재 파티 멤버에서는 제거되었지만 정산 대상에는 남아 있는 멤버입니다.
+- ARRIVED 이후 멤버가 나가더라도 `taxiFare`, `perPersonAmount`, `splitMemberCount`, `settlementTargetMemberIds`는 재계산하지 않습니다.
+
 **에러 코드 (arrive 전용):**
 
 | 에러 코드 | HTTP | 설명 |
@@ -1090,7 +1098,12 @@ FCM 토큰 삭제
 파티 나가기 (멤버)
 
 - 리더는 나가기 불가 (취소 또는 위임 불가 정책)
-- ARRIVED 상태에서는 나가기 불가 (정산 진행/완료 여부와 무관)
+- 일반 멤버는 `OPEN`, `CLOSED`, `ARRIVED` 상태에서 나갈 수 있음
+- `ENDED` 상태에서는 나가기 불가
+- `ARRIVED` 상태에서 나가면 현재 파티 멤버에서는 제거되지만, ARRIVED 시점에 확정된 정산 snapshot은 유지됩니다.
+  - `settlementTargetMemberIds`, `taxiFare`, `perPersonAmount`, `splitMemberCount` 재계산 없음
+  - `memberSettlements[*].leftParty`, `leftAt`, `displayName`으로 이탈 멤버를 식별
+  - 리더는 나간 정산 대상 멤버에 대해서도 계속 `confirmSettlement` 가능
 - 리더가 탈퇴(회원탈퇴)하면 파티 강제 종료 (`endReason: WITHDRAWED`)
 - 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"홍길동님이 파티에서 나갔어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"멤버가 파티에서 나갔어요."`를 사용합니다.
 
@@ -1106,7 +1119,7 @@ FCM 토큰 삭제
 | 에러 코드 | HTTP | 설명 |
 |----------|------|------|
 | `LEADER_CANNOT_LEAVE` | 409 | 리더는 나가기 불가 |
-| `CANNOT_LEAVE_ARRIVED_PARTY` | 409 | ARRIVED 상태에서 나가기 불가 |
+| `PARTY_ENDED` | 409 | 이미 종료된 파티에서는 나갈 수 없음 |
 
 #### DELETE /v1/parties/{partyId}/members/{memberId}
 멤버 강퇴 (리더만)
@@ -1178,6 +1191,10 @@ FCM 토큰 삭제
 동승 요청 수락 (리더만)
 
 - 요청 수락으로 파티 인원이 정원(`maxMembers`)에 도달하면 파티 상태는 자동으로 `CLOSED` 전이됩니다.
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"{requesterName}님이 파티에 합류했어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"새 멤버가 파티에 합류했어요."`를 사용합니다.
+- 정원 도달로 자동 `CLOSED` 되면 같은 트랜잭션 안에서 위 합류 안내 뒤에 `"모집이 마감되었어요."` `SYSTEM` 메시지가 추가됩니다.
+- 실시간 브로드캐스트는 `합류 안내 -> 모집 마감 안내` 순서로 수행됩니다.
+- history 조회는 기본 정렬이 `createdAt DESC`라서 더 나중에 저장된 모집 마감 메시지가 먼저 보일 수 있으며, 같은 `createdAt`인 경우에도 서버가 저장 순서를 기준으로 결정적으로 tie-break 합니다.
 
 **Response:**
 ```json
@@ -1239,7 +1256,6 @@ FCM 토큰 삭제
 | `PARTY_NOT_CANCELABLE` | ARRIVED 상태에서 취소 불가 |
 | `NO_MEMBERS_TO_SETTLE` | 정산 대상 멤버 없음 (리더만 남은 파티) |
 | `LEADER_CANNOT_LEAVE` | 리더는 파티 나가기 불가 |
-| `CANNOT_LEAVE_ARRIVED_PARTY` | ARRIVED 상태에서 나가기 불가 |
 | `CANNOT_KICK_IN_ARRIVED` | ARRIVED 상태에서 강퇴 불가 |
 | `CANNOT_KICK_LEADER` | 리더 본인 강퇴 불가 |
 | `INVALID_PARTY_STATE_TRANSITION` | 허용되지 않는 파티 상태 전이 |
@@ -1435,10 +1451,10 @@ FCM 토큰 삭제
 | `size` | int | 페이지 크기 (기본 50, 최대 100) |
 
 **정렬/커서 규칙:**
-- 정렬은 `createdAt DESC, id DESC` 고정입니다.
+- 정렬은 `createdAt DESC` 고정이며, 같은 `createdAt`에서는 서버 내부 저장 순서 tie-breaker를 사용해 결정적으로 정렬합니다.
 - 다음 페이지 조회 조건은 아래와 같습니다.
   - `createdAt < cursorCreatedAt`
-  - 또는 `createdAt == cursorCreatedAt AND id < cursorId`
+  - 또는 `createdAt == cursorCreatedAt AND cursorId`가 가리키는 메시지보다 내부 저장 순서상 더 오래된 메시지
 - `nextCursor`는 현재 페이지의 마지막 메시지 `(createdAt, id)`로 생성됩니다.
 
 **Response:**
@@ -1491,8 +1507,13 @@ FCM 토큰 삭제
 읽음 처리
 
 - 클라이언트는 채팅방 포커스 획득/이탈, 앱 백그라운드 전환 시점마다 `lastReadAt`을 갱신합니다.
-- 요청 `lastReadAt`은 JS/React Native의 `new Date().toISOString()` 형태와 같은 ISO 8601 UTC 문자열(`...Z`)을 사용합니다.
+- 요청 `lastReadAt`은 아래 형식을 모두 허용합니다.
+  - timezone 없는 `LocalDateTime` 문자열: `2026-03-25T21:36:29`, `2026-03-25T21:36:29.837`, `2026-03-25T21:36:29.837407`
+  - UTC/Z 문자열: `2026-03-25T12:36:29Z`, `2026-03-25T12:36:29.837Z`
+  - offset 포함 ISO 8601 문자열: `2026-03-25T21:36:29+09:00`
+- 프론트가 채팅 메시지 `createdAt` 값을 그대로 `lastReadAt`으로 보내는 현재 앱 입력도 서버가 그대로 수용합니다.
 - 서버는 요청 문자열을 절대 시각으로 해석한 뒤 `Asia/Seoul` 기준 `LocalDateTime`으로 정규화하여 비교/저장합니다.
+- timezone 없는 값은 `Asia/Seoul` 기준 로컬 시각으로 해석하고, `Z`/offset 값은 해당 절대 시각을 그대로 사용합니다.
 - 서버는 저장된 `lastReadAt`보다 과거 시각 요청을 무시해 단조 증가를 보장하고, 미래 시각 요청은 서버 현재 시각과 마지막 메시지 시각을 상한으로 clamp합니다.
 - 미읽음 계산 기준은 `message.createdAt > lastReadAt` 입니다. (`==` 는 읽음으로 간주)
 - `PATCH /read` 응답과 채팅방 detail의 `lastReadAt`도 ISO 8601 UTC 문자열로 반환합니다.
@@ -1500,7 +1521,7 @@ FCM 토큰 삭제
 **Request:**
 ```json
 {
-  "lastReadAt": "2026-02-03T12:00:00Z"
+  "lastReadAt": "2026-03-25T21:36:29.837407"
 }
 ```
 
@@ -1510,7 +1531,7 @@ FCM 토큰 삭제
   "success": true,
   "data": {
     "chatRoomId": "public:university",
-    "lastReadAt": "2026-02-03T12:00:00Z",
+    "lastReadAt": "2026-03-25T12:36:29.837407Z",
     "updated": true
   }
 }
@@ -1527,6 +1548,8 @@ FCM 토큰 삭제
 - 파티 채팅 이력 조회는 `GET /v1/chat-rooms/{chatRoomId}/messages`를 사용합니다.
   - 예: `chatRoomId = party:{partyId}`
 - 서버 생성 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)도 동일한 조회/구독 경로로 전달됩니다.
+- 동승 요청 수락/멤버 나가기 안내도 서버 생성 `SYSTEM` 메시지로만 저장/브로드캐스트되며, 클라이언트가 직접 전송하지 않습니다.
+- 동승 요청 수락으로 파티가 정원에 도달하면 `SYSTEM` 메시지는 `합류 안내 -> 모집 마감 안내` 순서로 저장되고, 같은 순서로 브로드캐스트됩니다.
 
 ### 4.5 WebSocket (STOMP)
 
@@ -1619,6 +1642,7 @@ Authorization:Bearer <firebase_id_token>
 - 서버가 생성하는 타입: `SYSTEM`, `ARRIVED`, `END`
 - 파티 채팅의 `SYSTEM`/`ARRIVED`/`END`는 도메인 이벤트(동승 승인, 멤버 나가기, 도착 처리, 취소/종료) 기준으로만 생성됨
 - `SYSTEM` 메시지 예: 동승 승인, 모집 마감, 모집 재개, 멤버 나가기
+- 파티 채팅 `CHAT_MESSAGE` push payload의 canonical 식별자는 항상 `chatRoomId`이며, 파티 채팅이라고 해서 별도 `partyId`를 추가하지 않습니다.
 
 **전송 포맷:**
 ```json
@@ -1637,6 +1661,17 @@ Authorization:Bearer <firebase_id_token>
 > `ACCOUNT` 타입: 계좌 snapshot을 payload로 전달합니다.
 > `remember=true`이면 전송한 snapshot을 회원 프로필 계좌 정보에도 함께 저장합니다.
 > 클라이언트가 `SYSTEM`, `ARRIVED`, `END`를 직접 보내면 `INVALID_REQUEST`로 거부됩니다.
+
+**파티 채팅 `CHAT_MESSAGE` 알림 포맷 정책:**
+
+| 메시지 타입 | title 예시 | body 예시 | data |
+|---|---|---|---|
+| `TEXT` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 안녕하세요` | `chatRoomId=party:party_uuid` |
+| `IMAGE` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 사진을 보냈어요.` | `chatRoomId=party:party_uuid` |
+| `ACCOUNT` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 계좌 정보를 공유했어요. (카카오뱅크 3333-01-1234567)` | `chatRoomId=party:party_uuid` |
+| `SYSTEM` (일반 안내) | `파티 안내 메시지` | `김철수님이 파티에서 나갔어요.` | `chatRoomId=party:party_uuid` |
+
+> `SYSTEM`의 `"모집이 마감되었어요."`, `"모집이 재개되었어요."`, `ARRIVED`, `END` 메시지는 각각 `PARTY_CLOSED`, `PARTY_REOPENED`, `PARTY_ARRIVED`, `PARTY_ENDED` 도메인 알림으로만 푸시되며, 중복 `CHAT_MESSAGE` push는 보내지 않습니다.
 
 **수신 포맷 (서버 → 클라이언트):**
 ```json
@@ -1670,6 +1705,24 @@ Authorization:Bearer <firebase_id_token>
     "splitMemberCount": 3,
     "perPersonAmount": 4666,
     "settlementTargetMemberIds": ["member-2", "member-3"],
+    "memberSettlements": [
+      {
+        "memberId": "member-2",
+        "displayName": "김철수",
+        "settled": false,
+        "settledAt": null,
+        "leftParty": false,
+        "leftAt": null
+      },
+      {
+        "memberId": "member-3",
+        "displayName": "이영희",
+        "settled": true,
+        "settledAt": "2026-02-03T12:12:00Z",
+        "leftParty": true,
+        "leftAt": "2026-02-03T12:20:00Z"
+      }
+    ],
     "accountData": {
       "bankName": "카카오뱅크",
       "accountNumber": "3333-01-1234567",
@@ -1700,7 +1753,7 @@ Authorization:Bearer <firebase_id_token>
 |------|------------|
 | 메시지 전송 (STOMP 핸들러) | 메시지 DB 저장 + ChatRoom.messageCount 증가 → 커밋 후 구독자 브로드캐스트 |
 | 채팅방 목록 요약 이벤트 | 메시지 저장/멤버수 변경 커밋 후 `/user/queue/chat-rooms`로 요약 이벤트 전송 |
-| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | ISO 8601 UTC `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
+| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | timezone 없는 `LocalDateTime` 또는 ISO 8601 `Z`/offset `lastReadAt` 허용, 단조 증가 갱신 + 미래 시각 clamp |
 | 설정 수정 (`PATCH /v1/chat-rooms/{chatRoomId}/settings`) | ChatRoomMember.muted 갱신 |
 | ACCOUNT 메시지 | payload snapshot 검증 + 선택적 회원 계좌 저장(`remember=true`) + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
 | 파티 상태 기반 서버 메시지 | party 상태/정산 snapshot 저장 후 `SYSTEM`/`ARRIVED`/`END` 메시지 DB 저장 → 커밋 후 브로드캐스트 |
@@ -2024,6 +2077,7 @@ Authorization:Bearer <firebase_id_token>
     "viewCount": 501,
     "likeCount": 11,
     "commentCount": 10,
+    "bookmarkCount": 4,
     "attachments": [
       {
         "name": "수강신청 안내.pdf",
@@ -2032,7 +2086,8 @@ Authorization:Bearer <firebase_id_token>
       }
     ],
     "isRead": true,
-    "isLiked": true
+    "isLiked": true,
+    "isBookmarked": true
   }
 }
 ```
@@ -2087,6 +2142,39 @@ Authorization:Bearer <firebase_id_token>
   }
 }
 ```
+
+#### POST /v1/notices/{noticeId}/bookmark
+공지 북마크 등록
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "isBookmarked": true,
+    "bookmarkCount": 4
+  }
+}
+```
+
+- `NoticeLike`와 분리된 `notice_bookmarks` 저장 모델을 사용한다.
+- 이미 북마크한 공지에 다시 요청해도 `200 OK`와 `isBookmarked=true`를 반환한다.
+
+#### DELETE /v1/notices/{noticeId}/bookmark
+공지 북마크 취소
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "isBookmarked": false,
+    "bookmarkCount": 3
+  }
+}
+```
+
+- 북마크가 없는 공지에 요청해도 `200 OK`와 `isBookmarked=false`를 반환한다.
 
 ### 6.2 공지 댓글
 
@@ -2214,7 +2302,41 @@ Authorization:Bearer <firebase_id_token>
 #### DELETE /v1/notice-comments/{commentId}
 공지 댓글 삭제
 
-### 6.3 앱 공지
+### 6.3 내 공지 북마크
+
+#### GET /v1/members/me/notice-bookmarks
+
+- 내 북마크 공지 페이징 조회.
+- `page < 0` 또는 `size < 1 || size > 100`이면 `422 VALIDATION_ERROR`
+- 목록 item은 기존 Notice 공개 계약과 화면 필드 naming을 맞추기 위해 `rssPreview`, `postedAt`를 그대로 사용한다.
+- `summary`, `createdAt` 같은 새 이름은 도입하지 않는다.
+- 정렬은 `postedAt DESC, createdAt DESC` 기준이다.
+
+**Response**
+```json
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": "notice_id",
+        "title": "2026학년도 1학기 수강신청 안내",
+        "rssPreview": "수강신청 일정, 대상 학년, 유의사항을 안내합니다.",
+        "category": "학사",
+        "postedAt": "2026-02-01T00:00:00"
+      }
+    ],
+    "page": 0,
+    "size": 20,
+    "totalElements": 3,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  }
+}
+```
+
+### 6.4 앱 공지
 
 #### GET /v1/app-notices
 앱 공지 목록 **(Public API — 인증 불필요)**
@@ -2268,7 +2390,7 @@ Authorization:Bearer <firebase_id_token>
 }
 ```
 
-### 6.4 에러 코드
+### 6.5 에러 코드
 
 | 에러 코드 | HTTP | 설명 |
 |----------|------|------|
@@ -2867,12 +2989,12 @@ Authorization:Bearer <firebase_id_token>
 | `PARTY_CREATED` | 새 파티 생성 | 생성자 제외 전체 사용자 | `allNotifications` + `partyNotifications` | X |
 | `PARTY_JOIN_REQUEST` | 동승 요청 생성 | 파티 리더 | `allNotifications` + `partyNotifications` | O |
 | `PARTY_JOIN_ACCEPTED` / `PARTY_JOIN_DECLINED` | 요청 상태 변경 | 요청자 | `allNotifications` + `partyNotifications` | O |
-| `PARTY_CLOSED` / `PARTY_ARRIVED` | 파티 상태 변경 | 리더 제외 파티 멤버 | `allNotifications` + `partyNotifications` | `PARTY_CLOSED`: X / `PARTY_ARRIVED`: O |
+| `PARTY_CLOSED` / `PARTY_REOPENED` / `PARTY_ARRIVED` | 파티 상태 변경 | 리더 제외 파티 멤버 | `allNotifications` + `partyNotifications` | `PARTY_CLOSED`: X / `PARTY_REOPENED`: X / `PARTY_ARRIVED`: O |
 | `SETTLEMENT_COMPLETED` | 마지막 정산 완료 | 파티 전체 멤버 | `allNotifications` + `partyNotifications` | O |
 | `MEMBER_KICKED` | 강퇴 감지 | 강퇴된 멤버 | `allNotifications` + `partyNotifications` | O |
 | `PARTY_ENDED` | 파티 해체 | 리더 제외 파티 멤버 | `allNotifications` + `partyNotifications` | O |
 | `CHAT_MESSAGE` (공개 채팅) | 공개 채팅방 메시지 | 채팅방 멤버(송신자 제외) | `allNotifications` + 채팅방 mute | X |
-| `CHAT_MESSAGE` (파티 채팅) | 파티 채팅 메시지 | 파티 멤버(송신자 제외) | 채팅 mute 중심 parity 우선, 전역 토글은 현재 미반영 | X |
+| `CHAT_MESSAGE` (파티 채팅) | 파티 채팅 메시지 (`TEXT`, `IMAGE`, `ACCOUNT`, 일반 `SYSTEM`) | 파티 멤버(송신자 제외) | 파티 채팅 mute 대상 제외, `data`는 `chatRoomId` canonical 사용. `모집 마감`/`모집 재개`/`도착`/`종료`는 `PARTY_*` 알림으로 전송 | X |
 | `POST_LIKED` | 게시글 좋아요 | 게시글 작성자 | `allNotifications` + `boardLikeNotifications` | O |
 | `COMMENT_CREATED` (게시글) | 댓글/답글 생성 | 게시글 작성자, 부모 댓글 작성자, 게시글 북마크 사용자 | `allNotifications` + `commentNotifications` + `bookmarkedPostCommentNotifications` (중복 수신자는 1회 dedupe) | O |
 | `COMMENT_CREATED` (공지) | 공지 댓글 답글 생성 | 부모 댓글 작성자 | `allNotifications` + `commentNotifications` | O |
@@ -4689,3 +4811,4 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 > - 2026-03-08: Phase 8 Notification 계약 반영 — `PARTY_*` canonical enum 정렬, Notification API pagination/FCM token/SSE strict DTO(`ACADEMIC_SCHEDULE`, `academicScheduleId`) 동기화, 학사 일정 알림 설정 필드 추가
 > - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `@AdminApiAccess` 공통화, `admin_audit_logs` 저장 규약, Support Admin 목록 고정 정렬/페이지 정책, CSV 보류 및 운영 데이터 노출 정책 문서화
 > - 2026-03-10: Image 계약 구현 반영 — `/v1/images`를 런타임 계약으로 승격하고, context enum(`POST/CHAT/APP_NOTICE/PROFILE`), LOCAL storage 기본 전략, Board/Chat/AppNotice/Profile 재사용 플로우를 `/v3/api-docs` 기준으로 동기화
+> - 2026-03-25: Notice 북마크 계약 추가 — `GET /v1/members/me/notice-bookmarks`, `POST/DELETE /v1/notices/{noticeId}/bookmark`와 `rssPreview`/`postedAt` 기반 목록 naming을 `/v3/api-docs` 기준으로 동기화

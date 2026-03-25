@@ -1,6 +1,6 @@
 # Spring 백엔드 도메인 분석
 
-> 최종 수정일: 2026-03-10
+> 최종 수정일: 2026-03-23
 > 분석 기준: Firestore 컬렉션, Cloud Functions 트리거, Context/Hook 구조
 
 본 문서는 현재 Firebase 기반 SKURI Taxi 앱을 Spring Boot + MySQL 백엔드로 마이그레이션하기 위한 **도메인 분석 결과**입니다.
@@ -182,6 +182,7 @@ Hooks:
   - `perPersonAmount`는 `taxiFare / (정산대상인원 + 리더 1명)` 정수 나눗셈(버림)으로 계산
   - 정수 나눗셈으로 생기는 잔여 1원 단위 금액은 서버에서 분배하지 않음(리더 현장 정산 정책)
   - 동승 요청 승인, 모집 마감/재개, 멤버 나가기, 도착 처리, 취소/종료는 서버가 파티 채팅방 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)를 생성한다
+  - 동승 요청 승인으로 파티가 정원에 도달하면 `SYSTEM` 메시지는 `합류 안내 -> 모집 마감 안내` 순서로 같은 트랜잭션 안에서 저장되고, 커밋 후 같은 순서로 브로드캐스트된다
 
 상태 머신:
   Party:
@@ -303,6 +304,16 @@ Hooks:
 역할:
   - 파티 채팅: TaxiParty 도메인이 규칙 관리, Chat은 엔진만 제공
   - 공개 채팅: Chat 도메인이 전체 관리
+  - 공식 공개방은 seed migration으로 `UNIVERSITY 1개 + GAME 1개 + 학과방들 + 사용자 생성 CUSTOM` 구조를 유지
+  - 공개방 visibility는 서버가 강제한다.
+    - `UNIVERSITY`, `GAME`, `CUSTOM`: 전체 사용자 노출
+    - `DEPARTMENT`: 본인 학과와 일치하는 방만 노출
+    - 회원 `department`는 서버 카탈로그 기준 canonical 값으로 정규화하고 legacy 학과명은 alias 매핑으로 흡수
+  - 미참여 공개방도 목록/상세 조회는 가능하지만, 메시지 조회/읽음/mute는 참여자만 가능
+  - 공개방 참여/나가기/커스텀방 생성은 REST(`POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`)로 처리
+  - 공개방 create/join은 가입 완료된 active member만 가능하며, 미가입 UID는 `MEMBER_NOT_FOUND`
+  - 커스텀 공개방 생성자는 자동으로 joined 상태가 되며, join 시 초기 unread는 0으로 시작한다
+  - 회원 프로필 학과 변경 시 기존 학과방 membership은 자동 제거하고, 새 학과방은 자동 참여시키지 않는다
   - 채팅방 목록 실시간: `/user/queue/chat-rooms` 사용자 전용 요약 채널 1개 구독
   - 채팅방 상세 실시간: `/topic/chat/{chatRoomId}` 방 단위 구독
   - 채팅방 메시지 전송: `/app/chat/{chatRoomId}`
@@ -412,7 +423,7 @@ Hooks:
     - contentHash (실제 내용 기반 dedup용)
     - bodyText (plain text), bodyHtml (HTML), attachments[]
     - detailCheckedAt (상세 재검증 시각)
-    - viewCount, likeCount, commentCount
+    - viewCount, likeCount, commentCount, bookmarkCount
   - NoticeComment
     - id, noticeId, userId, userDisplayName
     - content, isAnonymous, anonId (= "{noticeId}:{userId}")
@@ -426,11 +437,20 @@ Hooks:
   - NoticeLike
     - userId, noticeId
     - 공지 좋아요 중복 방지 및 likeCount 동기화 용도
+  - NoticeBookmark
+    - userId, noticeId
+    - 공지 북마크 중복 방지 및 내 북마크 목록 조회 용도
   - AppNotice
     - id, title, content
     - category (UPDATE, MAINTENANCE, EVENT, GENERAL)
     - priority (HIGH, NORMAL, LOW)
     - imageUrls[], actionUrl, publishedAt
+
+조회/응답 정책:
+  - 내 북마크 공지: GET /v1/members/me/notice-bookmarks
+  - 목록 item은 공개 Notice API와 naming parity를 유지하기 위해 `rssPreview`, `postedAt`를 그대로 사용
+  - 북마크 등록/취소는 `NoticeLike`와 별도 저장 모델을 사용하며 idempotent 하게 처리
+  - 공개 Notice 목록/상세는 `bookmarkCount`와 현재 사용자 기준 `isBookmarked`를 함께 반환
 
 동기화 정책:
   - 스케줄: 평일 08:00~19:50, 10분 주기, Asia/Seoul
@@ -454,7 +474,7 @@ Hooks:
 회원 탈퇴 연계 정책:
   - 공지 본문은 회원과 독립적인 외부 데이터이므로 영향 없음
   - `NoticeComment`는 본문을 유지하고 `userId`, `userDisplayName`만 익명화
-  - `NoticeLike`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
+  - `NoticeLike`, `NoticeBookmark`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
 
 댓글 수정 정책:
   - `PATCH /v1/notice-comments/{commentId}`는 `content`만 수정 가능
@@ -668,6 +688,7 @@ Hooks:
   - `/v1/sse/parties/{partyId}/join-requests` (파티 리더용 동승요청 목록/상태)
   - `/v1/sse/members/me/join-requests` (요청자 본인 동승요청 상태)
   - 알림, 게시물 목록/조회수
+  - subscribe 시점의 초기 snapshot은 전용 read-only 서비스에서 DTO로 계산한 뒤 emitter에 전송하며, `spring.jpa.open-in-view=false`를 전제로 long-lived 연결과 JPA/커넥션 수명을 분리한다.
 - WebSocket: 채팅(목록 요약 `/user/queue/chat-rooms`, 상세 메시지 `/topic/chat/{chatRoomId}`, 전송 `/app/chat/{chatRoomId}`)
   - 파티 멤버 변화(수락/탈퇴/강퇴)는 `chat_room_members`와 `chat_rooms.member_count`를 즉시 동기화한다.
 
@@ -716,7 +737,7 @@ UserNotification 엔티티:
   - `MEMBER_KICKED`: 강퇴된 멤버 대상, 자진 이탈과 리더 제외, `allNotifications` + `partyNotifications` 반영, 인앱 인박스 생성
   - `PARTY_ENDED`: 리더 제외 파티 멤버 대상, `allNotifications` + `partyNotifications` 반영, 인앱 인박스 생성
   - `CHAT_MESSAGE`(공개 채팅): 채팅방 멤버 대상, `allNotifications` + 채팅방 mute 반영, 인앱 인박스 미생성
-  - `CHAT_MESSAGE`(파티 채팅): 파티 멤버 대상, 채팅 mute 중심 parity를 유지하고 전역 토글은 현재 미반영, 인앱 인박스 미생성
+  - `CHAT_MESSAGE`(파티 채팅): 파티 멤버 대상, `TEXT`/`IMAGE`뿐 아니라 `ACCOUNT`/`SYSTEM`/`ARRIVED`/`END`도 포함, 채팅 mute 중심 parity를 유지하고 전역 토글은 현재 미반영, 인앱 인박스 미생성, payload canonical 식별자는 `chatRoomId`
   - `POST_LIKED`: 게시글 작성자 대상, 자기 좋아요 제외, `allNotifications` + `boardLikeNotifications` 반영, 인앱 인박스 생성
   - `COMMENT_CREATED`(게시글): 게시글 작성자, 부모 댓글 작성자, 게시글 북마크 사용자 대상, 자기 자신 제외, `allNotifications` + `commentNotifications` + `bookmarkedPostCommentNotifications` 반영, 중복 대상자는 1회 dedupe 후 인앱 인박스 생성
   - `COMMENT_CREATED`(공지): 현재 `Notice.author`는 문자열 필드만 있어 공지 작성자 식별이 불가능하므로, 부모 댓글 작성자 대상 답글 알림만 발송하며 `allNotifications` + `commentNotifications`를 반영
@@ -1298,6 +1319,7 @@ public enum MessageDirection {
   - 동승 요청 승인, 모집 마감, 모집 재개, 멤버 나가기 → `SYSTEM` 메시지 생성
   - 도착 처리 → 정산 snapshot이 포함된 `ARRIVED` 메시지 생성
   - 리더 취소/종료/탈퇴 종료 → `END` 메시지 생성
+- 위 서버 생성 메시지는 모두 `GET /v1/chat-rooms/{chatRoomId}/messages`와 `/topic/chat/{chatRoomId}`의 동일 계약으로 전달된다.
 - 파티 상태 변경과 서버 생성 채팅 메시지는 같은 트랜잭션 안에서 저장하고, WebSocket 브로드캐스트는 커밋 후 수행한다.
 
 ---
@@ -1362,3 +1384,4 @@ public enum MessageDirection {
 > - 2026-03-08: Phase 8 Notification 인프라 반영 — RDB 저장 모델(`user_notifications`, `fcm_tokens`), after-commit 이벤트, 학사 일정 알림 설정, `PARTY_*` canonical enum 동기화
 > - 2026-03-09: Phase 10 Member 라이프사이클 반영 — soft delete tombstone, 동일 UID 재가입 차단, TaxiParty/Chat/Board/Notice/Support/Notification/Academic 탈퇴 정합성 정책 추가
 > - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `AdminAuditLog` 엔티티를 `actorId/action/targetType/targetId/diffBefore/diffAfter/timestamp` 구조로 구체화하고, Support 운영 목록/인가 공통 규약을 반영
+> - 2026-03-25: Notice 북마크 구현 반영 — `NoticeBookmark` 저장 모델, 내 북마크 공지 목록 naming parity(`rssPreview`, `postedAt`), withdrawal cleanup 정책 추가
