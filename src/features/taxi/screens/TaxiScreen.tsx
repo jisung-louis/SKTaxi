@@ -121,6 +121,7 @@ export const TaxiScreen = () => {
   const [expandedPartyId, setExpandedPartyId] = React.useState<string | null>(
     null,
   );
+  const [refreshing, setRefreshing] = React.useState(false);
   const hasFocusedRef = React.useRef(false);
 
   const contentContainerStyle = React.useMemo(
@@ -174,6 +175,16 @@ export const TaxiScreen = () => {
       partyId: activePartyId,
     });
   }, [activePartyId, navigation]);
+
+  const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+
+    try {
+      await refetch();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refetch]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -306,8 +317,8 @@ export const TaxiScreen = () => {
           contentContainerStyle={contentContainerStyle}
           refreshControl={
             <RefreshControl
-              onRefresh={refetch}
-              refreshing={loading && !!data}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
               tintColor={COLORS.brand.primary}
             />
           }
