@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {useState, useEffect, useCallback, useRef} from 'react';
 
-import type { Notice, ReadStatusMap } from '../model/types';
-import { useNoticeReadState } from './useNoticeReadState';
-import { useNoticeRepository } from './useNoticeRepository';
+import type {Notice, ReadStatusMap} from '../model/types';
+import type {NoticeListPage} from '../data/repositories/INoticeRepository';
+import {useNoticeReadState} from './useNoticeReadState';
+import {useNoticeRepository} from './useNoticeRepository';
 
 const NOTICES_PER_PAGE = 20;
 
@@ -18,6 +19,7 @@ export interface UseNoticesResult {
   markAsRead: (noticeId: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
   loadMore: () => Promise<void>;
+  refresh: () => Promise<void>;
   refreshReadStatus: () => Promise<void>;
   userJoinedAt: unknown;
   userJoinedAtLoaded: boolean;
@@ -29,7 +31,9 @@ export interface UseNoticesResult {
  * @param selectedCategory - 선택된 카테고리 ('전체' 또는 특정 카테고리)
  * @returns 공지 목록 및 읽음 상태
  */
-export function useNotices(selectedCategory: string = '전체'): UseNoticesResult {
+export function useNotices(
+  selectedCategory: string = '전체',
+): UseNoticesResult {
   const noticeRepository = useNoticeRepository();
 
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -52,6 +56,7 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
 
   const cursorRef = useRef<unknown>(null);
   const isMountedRef = useRef<boolean>(true);
+  const firstPageRequestIdRef = useRef(0);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const categoryCacheRef = useRef(categoryCache);
 
@@ -59,58 +64,92 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
     categoryCacheRef.current = categoryCache;
   }, [categoryCache]);
 
+  const applyFirstPage = useCallback((catKey: string, page: NoticeListPage) => {
+    setCategoryCache(prev => ({
+      ...prev,
+      [catKey]: {
+        items: page.data,
+        cursor: page.cursor,
+        hasMore: page.hasMore,
+        initialized: true,
+      },
+    }));
+
+    setNotices(page.data);
+    cursorRef.current = page.cursor;
+    setHasMore(page.hasMore);
+    setLoading(false);
+    setError(null);
+  }, []);
+
+  const loadFirstPage = useCallback(
+    async (catKey: string, options?: {useCache?: boolean}) => {
+      const useCache = options?.useCache ?? true;
+      const cached = categoryCacheRef.current[catKey];
+
+      if (useCache && cached?.initialized) {
+        setNotices(cached.items);
+        cursorRef.current = cached.cursor;
+        setHasMore(cached.hasMore);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      const requestId = firstPageRequestIdRef.current + 1;
+      firstPageRequestIdRef.current = requestId;
+
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+
+      try {
+        const page = await new Promise<NoticeListPage>((resolve, reject) => {
+          unsubscribeRef.current = noticeRepository.subscribeToNotices(
+            catKey,
+            NOTICES_PER_PAGE,
+            {
+              onData: resolve,
+              onError: reject,
+            },
+          );
+        });
+
+        if (
+          !isMountedRef.current ||
+          firstPageRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
+        applyFirstPage(catKey, page);
+      } catch (err) {
+        if (
+          !isMountedRef.current ||
+          firstPageRequestIdRef.current !== requestId
+        ) {
+          return;
+        }
+
+        console.error('공지사항 로드 실패:', err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : '공지사항을 불러오지 못했습니다.',
+        );
+        setLoading(false);
+      }
+    },
+    [applyFirstPage, noticeRepository],
+  );
+
   useEffect(() => {
     isMountedRef.current = true;
     const catKey = selectedCategory || '전체';
-
-    const cached = categoryCacheRef.current[catKey];
-    if (cached?.initialized) {
-      setNotices(cached.items);
-      cursorRef.current = cached.cursor;
-      setHasMore(cached.hasMore);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-
-    setLoading(true);
-
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-
-    unsubscribeRef.current = noticeRepository.subscribeToNotices(
-      catKey,
-      NOTICES_PER_PAGE,
-      {
-        onData: (page) => {
-          if (!isMountedRef.current) {return;}
-
-          setCategoryCache((prev) => ({
-            ...prev,
-            [catKey]: {
-              items: page.data,
-              cursor: page.cursor,
-              hasMore: page.hasMore,
-              initialized: true,
-            },
-          }));
-
-          setNotices(page.data);
-          cursorRef.current = page.cursor;
-          setHasMore(page.hasMore);
-          setLoading(false);
-          setError(null);
-        },
-        onError: (err: Error) => {
-          if (!isMountedRef.current) {return;}
-          console.error('공지사항 로드 실패:', err);
-          setError(err.message);
-          setLoading(false);
-        },
-      }
-    );
+    loadFirstPage(catKey, {useCache: true}).catch(() => undefined);
 
     return () => {
       isMountedRef.current = false;
@@ -119,7 +158,7 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
         unsubscribeRef.current = null;
       }
     };
-  }, [noticeRepository, selectedCategory]);
+  }, [loadFirstPage, selectedCategory]);
 
   const {
     markAllAsRead,
@@ -130,10 +169,17 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
     unreadCount,
     userJoinedAt,
     userJoinedAtLoaded,
-  } = useNoticeReadState({ notices });
+  } = useNoticeReadState({notices});
+
+  const refresh = useCallback(async () => {
+    const catKey = selectedCategory || '전체';
+    await loadFirstPage(catKey, {useCache: false});
+  }, [loadFirstPage, selectedCategory]);
 
   const loadMore = useCallback(async () => {
-    if (loadingMore || !hasMore || !cursorRef.current) {return;}
+    if (loadingMore || !hasMore || !cursorRef.current) {
+      return;
+    }
 
     setLoadingMore(true);
 
@@ -142,23 +188,25 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
       const result = await noticeRepository.getMoreNotices(
         catKey,
         cursorRef.current,
-        NOTICES_PER_PAGE
+        NOTICES_PER_PAGE,
       );
 
-      if (!isMountedRef.current) {return;}
+      if (!isMountedRef.current) {
+        return;
+      }
 
       if (result.data.length === 0) {
         setHasMore(false);
-        setCategoryCache((prev) => ({
+        setCategoryCache(prev => ({
           ...prev,
-          [catKey]: { ...prev[catKey], hasMore: false },
+          [catKey]: {...prev[catKey], hasMore: false},
         }));
         return;
       }
 
-      setNotices((prev) => {
+      setNotices(prev => {
         const merged = [...prev, ...result.data];
-        setCategoryCache((prevCache) => ({
+        setCategoryCache(prevCache => ({
           ...prevCache,
           [catKey]: {
             items: merged,
@@ -191,6 +239,7 @@ export function useNotices(selectedCategory: string = '전체'): UseNoticesResul
     markAsRead,
     markAllAsRead,
     loadMore,
+    refresh,
     refreshReadStatus,
     userJoinedAt,
     userJoinedAtLoaded,

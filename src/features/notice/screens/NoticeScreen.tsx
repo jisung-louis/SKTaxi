@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import {useIsFocused, useNavigation} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
@@ -29,7 +29,6 @@ export const NoticeScreen = () => {
 
   const navigation =
     useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
-  const isFocused = useIsFocused();
   const [panelVisible, setPanelVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const loadMoreRequestedRef = React.useRef(false);
@@ -44,18 +43,12 @@ export const NoticeScreen = () => {
     loadingMore,
     markAsRead,
     noticeSettings,
-    refreshReadStatus,
+    refresh,
     selectCategory,
     updateDetail,
     updateMaster,
     userJoinedAtLoaded,
   } = useNoticeHomeData();
-
-  React.useEffect(() => {
-    if (isFocused) {
-      refreshReadStatus().catch(() => undefined);
-    }
-  }, [isFocused, refreshReadStatus]);
 
   React.useEffect(() => {
     if (!loadingMore) {
@@ -65,10 +58,10 @@ export const NoticeScreen = () => {
 
   const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
-    refreshReadStatus().finally(() => {
+    refresh().finally(() => {
       setRefreshing(false);
     });
-  }, [refreshReadStatus]);
+  }, [refresh]);
 
   const handleOpenNotice = React.useCallback(
     (noticeId: string) => {

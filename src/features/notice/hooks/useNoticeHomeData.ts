@@ -160,9 +160,8 @@ const buildNoticeHomeViewData = ({
 const getSelectedCategoryDefinition = (
   selectedCategoryId: NoticeHomeCategoryId,
 ) =>
-  NOTICE_HOME_CATEGORIES.find(
-    category => category.id === selectedCategoryId,
-  ) ?? NOTICE_HOME_CATEGORIES[0];
+  NOTICE_HOME_CATEGORIES.find(category => category.id === selectedCategoryId) ??
+  NOTICE_HOME_CATEGORIES[0];
 
 export const useNoticeHomeData = () => {
   const [selectedCategoryId, setSelectedCategoryId] =
@@ -181,7 +180,7 @@ export const useNoticeHomeData = () => {
     markAsRead,
     notices,
     readStatus,
-    refreshReadStatus,
+    refresh,
     unreadCount,
     userJoinedAt,
     userJoinedAtLoaded,
@@ -232,7 +231,7 @@ export const useNoticeHomeData = () => {
     noticeSettings,
     noticeSettingsError,
     noticeSettingsLoading,
-    refreshReadStatus,
+    refresh,
     selectCategory: setSelectedCategoryId,
     updateDetail,
     updateMaster,
