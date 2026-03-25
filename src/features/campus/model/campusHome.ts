@@ -1,3 +1,5 @@
+import type {CampusBannerViewData} from './campusHomeBanner';
+
 export type CampusNoticeTone = 'brand' | 'blue' | 'orange' | 'purple';
 
 export type CampusHighlightTone = 'brand' | 'blue' | 'orange' | 'pink';
@@ -64,6 +66,7 @@ export interface CampusAcademicEventViewData {
 }
 
 export interface CampusHomeViewData {
+  banners: CampusBannerViewData[];
   notices: {
     items: CampusNoticeItemViewData[];
   };

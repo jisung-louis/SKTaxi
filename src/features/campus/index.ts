@@ -1,4 +1,5 @@
 export type {IAcademicRepository} from './data/repositories/IAcademicRepository';
+export type {ICampusBannerRepository} from './data/repositories/ICampusBannerRepository';
 export type {ICafeteriaRepository} from './data/repositories/ICafeteriaRepository';
 
 export {useAcademicSchedules} from './hooks/useAcademicSchedules';
@@ -12,7 +13,12 @@ export type {
 export {useCampusHomeViewData} from './hooks/useCampusHomeViewData';
 export type {UseCampusHomeViewDataResult} from './hooks/useCampusHomeViewData';
 export type {
+  CampusBannerAction,
+  CampusBannerExternalUrlAction,
+  CampusBannerInAppAction,
+  CampusBannerInAppActionTarget,
   CampusBannerPalette,
+  CampusBannerPaletteKey,
   CampusBannerSourceData,
   CampusBannerViewData,
 } from './model/campusHomeBanner';

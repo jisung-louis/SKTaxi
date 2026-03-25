@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import {useRepository} from '@/di/useRepository';
 import {useAuth} from '@/features/auth';
 
 import {loadCampusHomeQueryResult} from '../application/campusHomeQuery';
-import type { CampusHomeViewData } from '../model/campusHome';
+import type {CampusHomeViewData} from '../model/campusHome';
 
 export interface UseCampusHomeViewDataResult {
   data: CampusHomeViewData | null;
@@ -16,6 +16,7 @@ export interface UseCampusHomeViewDataResult {
 export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
   const {
     academicRepository,
+    campusBannerRepository,
     cafeteriaRepository,
     courseRepository,
     noticeRepository,
@@ -36,6 +37,7 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
 
       const result = await loadCampusHomeQueryResult({
         academicRepository,
+        campusBannerRepository,
         cafeteriaRepository,
         courseRepository,
         currentUserId: effectiveUserId,
@@ -52,6 +54,7 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
     }
   }, [
     academicRepository,
+    campusBannerRepository,
     cafeteriaRepository,
     courseRepository,
     effectiveUserId,

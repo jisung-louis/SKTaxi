@@ -8,6 +8,7 @@ import {SpringMemberRepository} from '@/features/member';
 import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
 import {FirebaseAuthRepository} from '@/features/auth';
 import {SpringAcademicRepository} from '@/features/campus/data/repositories/SpringAcademicRepository';
+import {SpringCampusBannerRepository} from '@/features/campus/data/repositories/SpringCampusBannerRepository';
 import {SpringCafeteriaRepository} from '@/features/campus/data/repositories/SpringCafeteriaRepository';
 import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
 import {SpringNoticeRepository} from '@/features/notice/data/repositories/SpringNoticeRepository';
@@ -55,6 +56,7 @@ export function RepositoryProvider({
       appNoticeRepository: new SpringAppNoticeRepository(),
       cafeteriaRepository: new SpringCafeteriaRepository(),
       academicRepository: new SpringAcademicRepository(),
+      campusBannerRepository: new SpringCampusBannerRepository(),
       inquiryRepository: new MockInquiryRepository(),
       storageRepository: new MockStorageRepository(),
       timetableRepository: new MockTimetableRepository(),

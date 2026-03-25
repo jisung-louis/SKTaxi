@@ -1,12 +1,13 @@
-export type { IAuthRepository } from '@/features/auth';
+export type {IAuthRepository} from '@/features/auth';
 export type {
   IAcademicRepository,
+  ICampusBannerRepository,
   ICafeteriaRepository,
 } from '@/features/campus';
-export type { IBoardRepository } from '@/features/board';
-export type { IChatRepository } from '@/features/chat';
-export type { IMemberRepository } from '@/features/member';
-export type { INoticeRepository } from '@/features/notice';
+export type {IBoardRepository} from '@/features/board';
+export type {IChatRepository} from '@/features/chat';
+export type {IMemberRepository} from '@/features/member';
+export type {INoticeRepository} from '@/features/notice';
 export type {
   IAppNoticeRepository,
   IInquiryRepository,
@@ -20,8 +21,5 @@ export type {
   ICourseRepository,
   ITimetableRepository,
 } from '@/features/timetable';
-export type {
-  INotificationRepository,
-  IUserRepository,
-} from '@/features/user';
-export type { IStorageRepository } from '@/shared/lib/firebase/storageRepository';
+export type {INotificationRepository, IUserRepository} from '@/features/user';
+export type {IStorageRepository} from '@/shared/lib/firebase/storageRepository';
