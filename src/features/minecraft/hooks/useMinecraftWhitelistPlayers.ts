@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 
-import { useUserRepository } from '@/features/user';
+import {memberDirectoryRepository} from '@/features/member';
 
-import type { MinecraftWhitelistPlayer } from '../model/types';
-import { subscribeToMinecraftWhitelistPlayers } from '../services/minecraftRealtimeService';
+import type {MinecraftWhitelistPlayer} from '../model/types';
+import {subscribeToMinecraftWhitelistPlayers} from '../services/minecraftRealtimeService';
 
 export type MinecraftWhitelistPlayerWithMeta = MinecraftWhitelistPlayer & {
   addedByDisplayName: string;
@@ -18,9 +18,9 @@ export interface UseMinecraftWhitelistPlayersResult {
 
 export const useMinecraftWhitelistPlayers =
   (): UseMinecraftWhitelistPlayersResult => {
-    const userRepository = useUserRepository();
-
-    const [rawPlayers, setRawPlayers] = useState<MinecraftWhitelistPlayer[]>([]);
+    const [rawPlayers, setRawPlayers] = useState<MinecraftWhitelistPlayer[]>(
+      [],
+    );
     const [userCache, setUserCache] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const [fetchingUsers, setFetchingUsers] = useState(false);
@@ -55,8 +55,8 @@ export const useMinecraftWhitelistPlayers =
 
       setFetchingUsers(true);
 
-      userRepository
-        .getUserDisplayNames(missingUserIds)
+      memberDirectoryRepository
+        .getMemberDisplayNames(missingUserIds)
         .then(displayNameMap => {
           setUserCache(prev => ({
             ...prev,
@@ -67,7 +67,7 @@ export const useMinecraftWhitelistPlayers =
           console.error('마인크래프트 멤버 표시 이름 조회 실패:', nextError);
         })
         .finally(() => setFetchingUsers(false));
-    }, [rawPlayers, userCache, userRepository]);
+    }, [rawPlayers, userCache]);
 
     const players = useMemo(() => {
       return rawPlayers.map(player => ({
