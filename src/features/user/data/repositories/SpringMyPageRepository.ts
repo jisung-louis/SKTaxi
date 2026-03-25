@@ -6,13 +6,16 @@ import {
   noticeApiClient,
   NoticeApiClient,
 } from '@/features/notice/data/api/noticeApiClient';
+import {
+  taxiHomeApiClient,
+  TaxiHomeApiClient,
+} from '@/features/taxi/data/api/taxiHomeApiClient';
 
 import {
   memberBoardApiClient,
   MemberBoardApiClient,
 } from '../api/memberBoardApiClient';
 import type {MyPageSource} from '../../model/myPageSource';
-import type {IUserActivityRepository} from './IUserActivityRepository';
 import type {IMyPageRepository} from './IMyPageRepository';
 
 const DEFAULT_DISPLAY_NAME = '스쿠리 유저';
@@ -32,10 +35,10 @@ const buildProfileSubtitle = ({
 
 export class SpringMyPageRepository implements IMyPageRepository {
   constructor(
-    private readonly activityRepository: IUserActivityRepository,
     private readonly boardApiClient: MemberBoardApiClient = memberBoardApiClient,
     private readonly memberClient: MemberApiClient = memberApiClient,
     private readonly noticeClient: NoticeApiClient = noticeApiClient,
+    private readonly taxiClient: TaxiHomeApiClient = taxiHomeApiClient,
   ) {}
 
   async getMyPage(): Promise<MyPageSource> {
@@ -44,7 +47,7 @@ export class SpringMyPageRepository implements IMyPageRepository {
       myPostsResponse,
       communityBookmarksResponse,
       noticeBookmarksResponse,
-      taxiHistory,
+      taxiHistorySummaryResponse,
     ] = await Promise.all([
       this.memberClient.getMyMemberProfile(),
       this.boardApiClient.getMyPosts({
@@ -59,7 +62,7 @@ export class SpringMyPageRepository implements IMyPageRepository {
         page: 0,
         size: 1,
       }),
-      this.activityRepository.getTaxiHistory(),
+      this.taxiClient.getMyTaxiHistorySummary(),
     ]);
 
     const member = memberResponse.data;
@@ -77,7 +80,7 @@ export class SpringMyPageRepository implements IMyPageRepository {
           communityBookmarksResponse.data.totalElements +
           noticeBookmarksResponse.data.totalElements,
         myPosts: myPostsResponse.data.totalElements,
-        taxiHistory: taxiHistory.entries.length,
+        taxiHistory: taxiHistorySummaryResponse.data.totalRideCount,
       },
     };
   }
