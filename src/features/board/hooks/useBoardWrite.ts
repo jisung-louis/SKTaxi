@@ -54,49 +54,35 @@ export function useBoardWrite(): UseBoardWriteResult {
         setSubmitting(true);
         setError(null);
 
+        const uploadedImages = await uploadImages();
         const postId = await boardRepository.createPost(
-          buildBoardPostCreatePayload(
-            {
-              uid: user.uid,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-            },
-            formData,
-          ),
+          {
+            ...buildBoardPostCreatePayload(
+              {
+                uid: user.uid,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+              },
+              formData,
+            ),
+            images: uploadedImages.map((image) => ({
+              url: image.remoteUrl!,
+              width: image.width,
+              height: image.height,
+              thumbUrl: image.thumbUrl,
+              size: image.size,
+              mime: image.mime,
+            })),
+          },
         );
 
         await logEvent('board_post_created', {
           post_id: postId,
           category: formData.category,
           is_anonymous: formData.isAnonymous ?? false,
-          has_images: selectedImages.length > 0,
-          image_count: selectedImages.length,
+          has_images: uploadedImages.length > 0,
+          image_count: uploadedImages.length,
         });
-
-        if (formData.isAnonymous) {
-          await boardRepository.updatePost(postId, {
-            anonId: `${postId}:${user.uid}`,
-            isAnonymous: true,
-          });
-        }
-
-        if (selectedImages.length > 0) {
-          try {
-            const uploadedImages = await uploadImages(postId);
-            await boardRepository.updatePost(postId, {
-              images: uploadedImages.map((image) => ({
-                url: image.remoteUrl!,
-                width: image.width,
-                height: image.height,
-                thumbUrl: image.thumbUrl,
-                size: image.size,
-                mime: image.mime,
-              })),
-            });
-          } catch (imageError) {
-            console.error('이미지 업로드 실패:', imageError);
-          }
-        }
 
         clearImages();
         return postId;
@@ -108,7 +94,7 @@ export function useBoardWrite(): UseBoardWriteResult {
         setSubmitting(false);
       }
     },
-    [boardRepository, clearImages, selectedImages.length, uploadImages, user],
+    [boardRepository, clearImages, uploadImages, user],
   );
 
   return {

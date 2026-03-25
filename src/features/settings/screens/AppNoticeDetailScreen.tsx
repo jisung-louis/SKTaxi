@@ -1,369 +1,256 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Text, StyleSheet, ScrollView, View, TouchableOpacity, ActivityIndicator, Linking, Image, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { ImageViewer } from '@/features/board';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import PageHeader from '@/shared/ui/PageHeader';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import React from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import type {RouteProp} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { format } from 'date-fns';
-import { useScreenView } from '@/shared/hooks/useScreenView';
 
-import { useAppNotice } from '../hooks/useAppNotice';
+import type {CampusStackParamList} from '@/app/navigation/types';
+import {
+  StackHeader,
+  StateCard,
+} from '@/shared/design-system/components';
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
 
-const WINDOW_WIDTH = Dimensions.get('window').width;
+import {AppNoticeBadge} from '../components/AppNoticeBadge';
+import {AppNoticeHeroCarousel} from '../components/AppNoticeHeroCarousel';
+import {useAppNoticeDetailData} from '../hooks/useAppNoticeDetailData';
 
-const NoticeImage = ({
-  uri,
-  ratio,
-  onPress,
-}: {
-  uri: string;
-  ratio?: number;
-  onPress?: () => void;
-}) => (
-  <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
-    <Image
-      source={{ uri }}
-      style={[
-        styles.noticeImage,
-        ratio ? { aspectRatio: ratio } : { height: WINDOW_WIDTH - 40 },
-      ]}
-      resizeMode="cover"
-    />
-  </TouchableOpacity>
-);
-
-const CATEGORY_LABELS = {
-  update: '앱 업데이트',
-  service: '서비스 공지',
-  event: '이벤트',
-  policy: '정책 변경',
-};
-
-const PRIORITY_LABELS = {
-  urgent: '긴급',
-  normal: '일반',
-  info: '정보',
-};
-
-const PRIORITY_COLORS = {
-  urgent: COLORS.accent.red,
-  normal: COLORS.accent.blue,
-  info: COLORS.text.secondary,
-};
+type AppNoticeDetailNavigationProp = NativeStackNavigationProp<
+  CampusStackParamList,
+  'AppNoticeDetail'
+>;
+type AppNoticeDetailRouteProp = RouteProp<
+  CampusStackParamList,
+  'AppNoticeDetail'
+>;
 
 export const AppNoticeDetailScreen = () => {
   useScreenView();
-  const navigation = useNavigation<NativeStackNavigationProp<any>>();
-  const route = useRoute<any>();
-  const noticeId = route?.params?.noticeId;
 
-  // Repository 패턴 훅 사용
-  const { notice, loading, error } = useAppNotice(noticeId);
+  const navigation = useNavigation<AppNoticeDetailNavigationProp>();
+  const route = useRoute<AppNoticeDetailRouteProp>();
+  const {data, error, loading, reload} = useAppNoticeDetailData(
+    route.params?.noticeId,
+  );
+  const hasGallery = (data?.galleryImages.length ?? 0) > 0;
 
-  const [imageRatios, setImageRatios] = useState<Record<string, number>>({});
-  const [imageMetadata, setImageMetadata] = useState<Record<string, { width: number; height: number }>>({});
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const renderLoadingState = () => (
+    <View style={styles.stateContainer}>
+      <StateCard
+        description="앱 공지사항 상세 내용을 준비하고 있습니다."
+        icon={<ActivityIndicator color={COLORS.brand.primary} />}
+        title="앱 공지사항을 불러오는 중"
+      />
+    </View>
+  );
 
-  const isEdited = useMemo(() => {
-    return notice?.updatedAt && notice?.updatedAt > notice?.publishedAt;
-  }, [notice]);
+  const renderErrorState = () => (
+    <View style={styles.stateContainer}>
+      <StateCard
+        actionLabel="다시 시도"
+        description={
+          error ?? '앱 공지사항을 찾지 못했습니다. 잠시 후 다시 시도해주세요.'
+        }
+        icon={
+          <Icon
+            color={COLORS.accent.orange}
+            name="alert-circle-outline"
+            size={26}
+          />
+        }
+        onPressAction={reload}
+        title="앱 공지사항을 열 수 없습니다"
+      />
+    </View>
+  );
 
-  // 이미지 메타데이터 로드
-  useEffect(() => {
-    if (notice?.imageUrls?.length) {
-      notice.imageUrls.forEach((url: string) => {
-        Image.getSize(
-          url,
-          (width, height) => {
-            if (width > 0 && height > 0) {
-              setImageRatios((prev) => ({ ...prev, [url]: width / height }));
-              setImageMetadata((prev) => ({ ...prev, [url]: { width, height } }));
-            }
-          },
-          () => {}
-        );
-      });
-    }
-  }, [notice?.imageUrls]);
-
-  const handleActionPress = () => {
-    if (notice?.actionUrl) {
-      Linking.openURL(notice.actionUrl);
-    }
-  };
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PageHeader onBack={() => navigation.goBack()} title="공지사항" borderBottom />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={COLORS.accent.blue} />
-          <Text style={styles.loadingText}>공지사항을 불러오는 중...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error || !notice) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <PageHeader onBack={() => navigation.goBack()} title="공지사항" borderBottom />
-        <View style={styles.errorContainer}>
-          <Icon name="alert-circle" size={48} color={COLORS.accent.red} />
-          <Text style={styles.errorText}>{error || '공지사항을 찾을 수 없습니다.'}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.retryButtonText}>돌아가기</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
   return (
-    <SafeAreaView style={styles.container}>
-      <PageHeader onBack={() => navigation.goBack()} title="공지사항" borderBottom />
-      
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.contentContainer}>
-        {/* 헤더 정보 */}
-        <View style={styles.headerSection}>
-          <View style={styles.noticeHeader}>
-            <View style={styles.noticeLeft}>
-              <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[notice.priority] }]}>
-                <Text style={styles.priorityText}>{PRIORITY_LABELS[notice.priority]}</Text>
-              </View>
-              <Text style={styles.categoryText}>{CATEGORY_LABELS[notice.category]}</Text>
-            </View>
-            <View style={styles.noticeRight}>
-                <Text style={styles.dateText}>운영자</Text>
-                <Text style={styles.dateText}>•</Text>
-                <Text style={styles.dateText}>{format(isEdited ? notice.updatedAt! : notice.publishedAt!, 'yyyy.MM.dd')}</Text>
-                {isEdited && (
-                  <>
-                    <Text style={styles.dateText}>•</Text>
-                    <Text style={styles.dateText}>수정됨</Text>
-                  </>
-                )}
-            </View>
-          </View>
-          
-          <Text style={styles.title}>{notice.title}</Text>
-        </View>
+    <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
+      <StackHeader
+        onPressBack={() => navigation.goBack()}
+        title="앱 공지사항"
+      />
 
-        {/* 이미지 (있는 경우) */}
-        {notice.imageUrls?.length ? (
-          <View style={styles.carouselContainer}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={(event) => {
-                const index = Math.round(event.nativeEvent.contentOffset.x / WINDOW_WIDTH);
-                setCurrentImageIndex(index);
-              }}
-              scrollEventThrottle={16}
-            >
-              {notice.imageUrls.map((url, idx) => (
-                <View key={url} style={{ width: WINDOW_WIDTH - 40 }}>
-                  <NoticeImage
-                    uri={url}
-                    ratio={imageRatios[url]}
-                    onPress={() => {
-                      setSelectedImageIndex(idx);
-                      setImageViewerVisible(true);
-                    }}
+      {loading && !data ? renderLoadingState() : null}
+      {!loading && (!data || error) ? renderErrorState() : null}
+
+      {data ? (
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          {data.galleryImages.length > 0 ? (
+            <AppNoticeHeroCarousel images={data.galleryImages} />
+          ) : null}
+
+          <View
+            style={[
+              styles.bodyCard,
+              hasGallery ? styles.bodyCardWithGallery : styles.bodyCardStandalone,
+            ]}>
+            <View style={styles.badgeRow}>
+              {data.badges.map(badge => (
+                <AppNoticeBadge key={badge.id} badge={badge} />
+              ))}
+            </View>
+
+            <Text style={styles.title}>{data.title}</Text>
+
+            <View style={styles.metaRow}>
+              <View style={styles.authorRow}>
+                <View style={styles.authorIcon}>
+                  <Icon
+                    color={COLORS.brand.primaryStrong}
+                    name="shield-checkmark"
+                    size={14}
                   />
                 </View>
-              ))}
-            </ScrollView>
-            {notice.imageUrls.length > 1 && (
-              <View style={styles.pagination}>
-                {notice.imageUrls.map((_, idx) => (
-                  <View
-                    key={`${idx}`}
-                    style={[
-                      styles.dot,
-                      idx === currentImageIndex && styles.dotActive,
-                    ]}
-                  />
-                ))}
+                <Text style={styles.authorLabel}>{data.authorLabel}</Text>
               </View>
-            )}
-            {notice.imageUrls && (
-              <ImageViewer
-                visible={imageViewerVisible}
-                images={notice.imageUrls.map((url) => ({
-                  url,
-                  width: imageMetadata[url]?.width || WINDOW_WIDTH,
-                  height: imageMetadata[url]?.height || WINDOW_WIDTH,
-                }))}
-                initialIndex={selectedImageIndex}
-                onClose={() => setImageViewerVisible(false)}
-              />
-            )}
+
+              <Text style={styles.metaSeparator}>|</Text>
+              <Text style={styles.metaLabel}>{data.publishedLabel}</Text>
+              {data.viewCountLabel ? (
+                <>
+                  <Text style={styles.metaSeparator}>|</Text>
+
+                  <View style={styles.viewCountRow}>
+                    <Icon
+                      color={COLORS.text.muted}
+                      name="eye-outline"
+                      size={14}
+                    />
+                    <Text style={styles.metaLabel}>{data.viewCountLabel}</Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
+
+            <View style={styles.divider} />
+
+            <View style={styles.paragraphGroup}>
+              {data.bodyParagraphs.map((paragraph, index) => (
+                <Text key={`${data.id}-paragraph-${index}`} style={styles.bodyText}>
+                  {paragraph}
+                </Text>
+              ))}
+            </View>
           </View>
-        ) : null}
-
-        {/* 본문 내용 */}
-        <View style={styles.contentSection}>
-          <Text style={styles.content}>{notice.content}</Text>
-        </View>
-
-        {/* 액션 버튼 (링크가 있는 경우) */}
-        {notice.actionUrl && (
-          <TouchableOpacity style={styles.actionButton} onPress={handleActionPress}>
-            <Icon name="link-outline" size={20} color={COLORS.accent.blue} />
-            <Text style={styles.actionButtonText}>자세히 보기</Text>
-            <Icon name="open-outline" size={16} color={COLORS.accent.blue} />
-          </TouchableOpacity>
-        )}
-      </ScrollView>
+        </ScrollView>
+      ) : null}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-  },
-  errorContainer: {
+  stateContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-    gap: 16,
+    paddingHorizontal: SPACING.lg,
   },
-  errorText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
+  scrollContent: {
+    paddingBottom: 40,
   },
-  retryButton: {
-    backgroundColor: COLORS.accent.blue,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+  bodyCard: {
+    backgroundColor: COLORS.background.surface,
+    minHeight: 320,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xl,
+    ...SHADOWS.card,
   },
-  retryButtonText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.white,
-    fontWeight: '600',
+  bodyCardWithGallery: {
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: RADIUS.lg,
+    marginTop: -1,
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+  bodyCardStandalone: {
+    borderRadius: RADIUS.lg,
+    marginHorizontal: SPACING.lg,
+    marginTop: SPACING.lg,
   },
-  headerSection: {
-    marginBottom: 24,
-  },
-  noticeHeader: {
+  badgeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  noticeLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  priorityBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  priorityText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.white,
-    fontWeight: '600',
-  },
-  categoryText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    fontWeight: '500',
-  },
-  noticeRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.disabled,
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
   },
   title: {
-    ...TYPOGRAPHY.title1,
     color: COLORS.text.primary,
+    fontSize: 20,
     fontWeight: '700',
-    lineHeight: 32,
+    lineHeight: 30,
+    marginBottom: SPACING.md,
   },
-  carouselContainer: {
-    marginBottom: 20,
-  },
-  noticeImage: {
-    width: '100%',
-    borderRadius: 12,
-    backgroundColor: COLORS.background.secondary,
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  metaRow: {
     alignItems: 'center',
+    columnGap: SPACING.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 6,
+  },
+  authorRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 6,
-    marginTop: 12,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.border.default,
-  },
-  dotActive: {
-    backgroundColor: COLORS.accent.blue,
-  },
-  contentSection: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  content: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    lineHeight: 24,
-  },
-  actionButton: {
-    flexDirection: 'row',
+  authorIcon: {
     alignItems: 'center',
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.pill,
+    height: 24,
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: COLORS.accent.blue + '10',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent.blue + '30',
+    width: 24,
   },
-  actionButtonText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.accent.blue,
+  authorLabel: {
+    color: COLORS.brand.primaryStrong,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  metaSeparator: {
+    color: COLORS.border.default,
+    fontSize: 12,
     fontWeight: '600',
+    lineHeight: 18,
+  },
+  metaLabel: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  viewCountRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  divider: {
+    backgroundColor: COLORS.border.subtle,
+    height: 1,
+    marginVertical: SPACING.lg,
+  },
+  paragraphGroup: {
+    gap: SPACING.md,
+  },
+  bodyText: {
+    color: COLORS.text.strong,
+    fontSize: 14,
+    lineHeight: 28,
   },
 });

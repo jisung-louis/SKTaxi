@@ -1,6 +1,12 @@
 export type BoardStackParamList = {
-  BoardMain: undefined;
-  BoardDetail: { postId: string };
+  BoardMain:
+    | {
+        fromHashtag?: boolean;
+        initialSegment?: 'board' | 'chat';
+        searchText?: string;
+      }
+    | undefined;
+  BoardDetail: {postId: string};
   BoardWrite: undefined;
-  BoardEdit: { postId: string };
+  BoardEdit: {postId: string};
 };

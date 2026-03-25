@@ -1,149 +1,178 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Icon from 'react-native-vector-icons/Ionicons';
-
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks/useScreenView';
-
+import React from 'react';
 import {
-  NoticeCategoryBar,
-  NoticeList,
-  NoticeSettingsPanel,
-  UnreadNoticeBanner,
-} from '../components';
-import { NoticeStackParamList } from '../model/navigation';
-import type { Notice } from '../model/types';
-import { useNoticeSettings } from '../hooks/useNoticeSettings';
-import { useNotices } from '../hooks/useNotices';
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import Animated from 'react-native-reanimated';
+import {useIsFocused, useNavigation} from '@react-navigation/native';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
+
+import {PageHeader} from '@/shared/design-system/components';
+import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
+
+import {NoticeSettingsPanel} from '../components/NoticeSettingsPanel';
+import {NoticeCategoryBar} from '../components/NoticeCategoryBar';
+import {NoticeHomeList} from '../components/NoticeHomeList';
+import {NoticeUnreadBanner} from '../components/NoticeUnreadBanner';
+import {useNoticeHomeData} from '../hooks/useNoticeHomeData';
+import type {NoticeStackParamList} from '../model/navigation';
 
 export const NoticeScreen = () => {
   useScreenView();
 
-  const navigation = useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<NoticeStackParamList>>();
   const isFocused = useIsFocused();
-
-  const [selectedCategory, setSelectedCategory] = useState('전체');
-  const [refreshing, setRefreshing] = useState(false);
-  const [panelVisible, setPanelVisible] = useState(false);
+  const [panelVisible, setPanelVisible] = React.useState(false);
+  const [refreshing, setRefreshing] = React.useState(false);
+  const loadMoreRequestedRef = React.useRef(false);
+  const screenAnimatedStyle = useScreenEnterAnimation();
 
   const {
-    notices,
-    loading,
-    loadingMore,
+    data,
     error,
     hasMore,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
     loadMore,
+    loading,
+    loadingMore,
+    markAsRead,
+    noticeSettings,
     refreshReadStatus,
-    readStatus,
+    selectCategory,
+    updateDetail,
+    updateMaster,
     userJoinedAtLoaded,
-    userJoinedAt,
-  } = useNotices(selectedCategory);
-  const { settings: noticeSettings, updateMaster, updateDetail } = useNoticeSettings();
+  } = useNoticeHomeData();
 
-  const opacity = useSharedValue(1);
-  const translateY = useSharedValue(0);
-
-  useEffect(() => {
-    opacity.value = withTiming(isFocused ? 1 : 0, { duration: 200 });
-    translateY.value = withTiming(isFocused ? 0 : 10, { duration: 200 });
-  }, [isFocused, opacity, translateY]);
-
-  useEffect(() => {
-    if (isFocused && notices.length > 0) {
-      refreshReadStatus();
+  React.useEffect(() => {
+    if (isFocused) {
+      refreshReadStatus().catch(() => undefined);
     }
-  }, [isFocused, notices.length, refreshReadStatus]);
+  }, [isFocused, refreshReadStatus]);
 
-  const screenAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
+  React.useEffect(() => {
+    if (!loadingMore) {
+      loadMoreRequestedRef.current = false;
+    }
+  }, [loadingMore, data.items.length]);
 
-  const handleRefresh = () => {
+  const handleRefresh = React.useCallback(() => {
     setRefreshing(true);
     refreshReadStatus().finally(() => {
       setRefreshing(false);
     });
-  };
+  }, [refreshReadStatus]);
 
-  const handleNoticePress = (notice: Notice) => {
-    markAsRead(notice.id);
-    navigation.navigate('NoticeDetail', { noticeId: notice.id });
-  };
+  const handleOpenNotice = React.useCallback(
+    (noticeId: string) => {
+      markAsRead(noticeId).catch(() => undefined);
+      navigation.navigate('NoticeDetail', {noticeId});
+    },
+    [markAsRead, navigation],
+  );
+
+  const handlePressUnreadBanner = React.useCallback(() => {
+    if (!data.firstUnreadNoticeId) {
+      return;
+    }
+
+    handleOpenNotice(data.firstUnreadNoticeId);
+  }, [data.firstUnreadNoticeId, handleOpenNotice]);
+
+  const handleListSectionScroll = React.useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (
+        loading ||
+        loadingMore ||
+        !hasMore ||
+        error ||
+        loadMoreRequestedRef.current
+      ) {
+        return;
+      }
+
+      const {contentOffset, contentSize, layoutMeasurement} = event.nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - (contentOffset.y + layoutMeasurement.height);
+
+      if (distanceFromBottom > 120) {
+        return;
+      }
+
+      loadMoreRequestedRef.current = true;
+      loadMore().catch(() => {
+        loadMoreRequestedRef.current = false;
+      });
+    },
+    [error, hasMore, loadMore, loading, loadingMore],
+  );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View style={[{ flex: 1 }, screenAnimatedStyle]}>
-        <View style={styles.header}>
-          <Text style={styles.title}>학교 공지사항</Text>
-          <View style={styles.headerRight}>
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                style={styles.markAllButton}
-                onPress={() => markAllAsRead()}
-              >
-                <Text style={styles.markAllText}>모두 읽음</Text>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={styles.menuButtonContainer}
-              onPress={() => setPanelVisible(true)}
-            >
-              <Icon
-                name="notifications-circle-outline"
-                size={28}
-                color={COLORS.text.primary}
-              />
-              <Text style={styles.menuButtonText}>세부 알림 설정</Text>
-            </TouchableOpacity>
-          </View>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <Animated.View style={[styles.content, screenAnimatedStyle]}>
+        <View style={styles.headerSection}>
+          <PageHeader
+            actionAccessibilityLabel="공지 알림 설정 열기"
+            onPressAction={() => setPanelVisible(true)}
+            subtitle={data.subtitle}
+            title={data.title}
+          />
+          <NoticeUnreadBanner
+            banner={data.banner}
+            onPressAction={
+              data.banner.actionLabel ? handlePressUnreadBanner : undefined
+            }
+          />
         </View>
 
-        <UnreadNoticeBanner
-          unreadCount={unreadCount}
-          selectedCategory={selectedCategory}
-        />
+        <View style={styles.categorySection}>
+          <NoticeCategoryBar
+            categories={data.categoryChips}
+            onSelectCategory={selectCategory}
+          />
+        </View>
 
-        <NoticeCategoryBar
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
-
-        <NoticeList
-          notices={notices}
-          loading={loading}
-          error={error}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          onLoadMore={loadMore}
-          onNoticePress={handleNoticePress}
-          readStatus={readStatus}
-          userJoinedAt={userJoinedAt}
-          userJoinedAtLoaded={userJoinedAtLoaded}
-          selectedCategory={selectedCategory}
-        />
+        <View style={styles.listSection}>
+          <ScrollView
+            contentContainerStyle={styles.listScrollContent}
+            onScroll={handleListSectionScroll}
+            refreshControl={
+              <RefreshControl
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+                tintColor={COLORS.brand.primary}
+              />
+            }
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}>
+            <NoticeHomeList
+              emptyState={data.emptyState}
+              error={error}
+              hasMore={hasMore}
+              items={data.items}
+              loading={loading}
+              loadingMore={loadingMore}
+              onPressNotice={handleOpenNotice}
+              onRefresh={handleRefresh}
+              userJoinedAtLoaded={userJoinedAtLoaded}
+            />
+          </ScrollView>
+        </View>
       </Animated.View>
 
       <NoticeSettingsPanel
-        visible={panelVisible}
-        onClose={() => setPanelVisible(false)}
         noticeSettings={noticeSettings}
-        onUpdateMaster={updateMaster}
+        onClose={() => setPanelVisible(false)}
         onUpdateDetail={updateDetail}
+        onUpdateMaster={updateMaster}
+        visible={panelVisible}
       />
     </SafeAreaView>
   );
@@ -152,46 +181,25 @@ export const NoticeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: COLORS.background.page,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
+  content: {
+    flex: 1,
   },
-  title: {
-    ...TYPOGRAPHY.title1,
-    color: COLORS.text.primary,
-    fontWeight: '700',
+  headerSection: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
+  categorySection: {
+    paddingHorizontal: SPACING.lg,
   },
-  markAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 16,
+  listSection: {
+    flex: 1,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xs,
   },
-  markAllText: {
-    ...TYPOGRAPHY.caption,
-    color: COLORS.text.buttonText,
-    fontWeight: '600',
-  },
-  menuButtonContainer: {
-    paddingVertical: 8,
-    alignItems: 'center',
-    gap: 2,
-  },
-  menuButtonText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
+  listScrollContent: {
+    flexGrow: 1,
+    paddingBottom: BOTTOM_TAB_BAR_HEIGHT + SPACING.xxl,
   },
 });

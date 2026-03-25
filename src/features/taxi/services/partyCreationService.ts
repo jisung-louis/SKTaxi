@@ -1,8 +1,7 @@
-import { logEvent } from '@/shared/lib/analytics';
+import {logEvent} from '@/shared/lib/analytics';
 
-import { IPartyRepository } from '../data/repositories/IPartyRepository';
-import { Party } from '../model/types';
-import { sendSystemMessage } from './partyMessageService';
+import {IPartyRepository} from '../data/repositories/IPartyRepository';
+import {Party} from '../model/types';
 
 interface CreateTaxiPartyParams {
   partyRepository: IPartyRepository;
@@ -24,16 +23,6 @@ export async function createTaxiParty({
     keyword_count: party.tags?.length ?? 0,
     has_detail: Boolean(party.detail?.trim()),
   });
-
-  try {
-    await sendSystemMessage({
-      partyRepository,
-      partyId,
-      text: '채팅방이 생성되었어요!',
-    });
-  } catch (error) {
-    console.error('createTaxiParty: Error sending initial system message:', error);
-  }
 
   return partyId;
 }

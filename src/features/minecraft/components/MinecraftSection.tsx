@@ -11,11 +11,13 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Button from '@/shared/ui/Button';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
 
 import type { MinecraftAccountEntry, MinecraftEdition } from '../model/types';
 import { useMinecraftAccounts } from '../hooks/useMinecraftAccounts';
+import {
+  MINECRAFT_COLORS as COLORS,
+  MINECRAFT_TYPOGRAPHY as TYPOGRAPHY,
+} from '../constants/minecraftDesignTokens';
 
 export interface MinecraftSectionProps {
   onOpenMinecraftDetail: () => void;
@@ -127,7 +129,7 @@ export const MinecraftSection: React.FC<MinecraftSectionProps> = ({
                   source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
                   style={styles.minecraftAccountAvatar}
                 />
-                <View style={{ flex: 1 }}>
+                <View style={styles.minecraftAccountInfo}>
                   <View style={styles.minecraftAccountHeader}>
                     <Text style={styles.minecraftAccountName}>{account.nickname}</Text>
                     {account.whoseFriend && (
@@ -213,7 +215,7 @@ export const MinecraftSection: React.FC<MinecraftSectionProps> = ({
             onPress={handleRegisterMinecraft}
             loading={registering}
             disabled={!mcNickname.trim()}
-            style={{ marginTop: 24 }}
+            style={styles.registerButton}
           />
         </View>
       )}
@@ -359,6 +361,9 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 4,
   },
+  minecraftAccountInfo: {
+    flex: 1,
+  },
   minecraftAccountName: {
     ...TYPOGRAPHY.body1,
     color: COLORS.text.primary,
@@ -390,5 +395,8 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption1,
     color: COLORS.text.secondary,
     marginTop: 2,
+  },
+  registerButton: {
+    marginTop: 24,
   },
 });

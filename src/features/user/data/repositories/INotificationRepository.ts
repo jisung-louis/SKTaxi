@@ -27,6 +27,13 @@ export interface Notification {
  */
 export interface INotificationRepository {
   /**
+   * 사용자 알림 목록 조회
+   * @param userId - 사용자 ID
+   * @param limit - 가져올 알림 수
+   */
+  getNotifications(userId: string, limit: number): Promise<Notification[]>;
+
+  /**
    * 사용자 알림 목록 실시간 구독
    * @param userId - 사용자 ID
    * @param limit - 가져올 알림 수

@@ -21,4 +21,5 @@ export {
   useStorageRepository,
   useTimetableRepository,
   useAuthRepository,
+  useMemberRepository,
 } from './useRepository';

@@ -13,7 +13,7 @@ const path = require('path');
 const admin = require('firebase-admin');
 
 // Firebase Admin 초기화
-const serviceKeyPath = path.resolve(__dirname, '../functions/serviceAccountKey.json');
+const serviceKeyPath = path.resolve(__dirname, '../firebase-cloud-functions/serviceAccountKey.json');
 if (!fs.existsSync(serviceKeyPath)) {
   console.error('❌ serviceAccountKey.json을 찾을 수 없습니다:', serviceKeyPath);
   process.exit(1);

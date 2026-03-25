@@ -1,43 +1,35 @@
-import { useEffect } from 'react';
+import {useCallback, useState} from 'react';
 
-import { useUserRepository } from '@/features/user';
+import {useMemberRepository} from '@/di';
 
-import { PermissionOnboardingStep } from '../model/types';
-import { completePermissionOnboarding } from '../services/permissionOnboardingService';
-import { useAuth } from './useAuth';
+import {completePermissionOnboarding} from '../services/permissionOnboardingService';
+import {useAuth} from './useAuth';
 
-export const usePermissionOnboarding = (
-  currentStep: PermissionOnboardingStep,
-  completeOnboarding: () => void,
-) => {
-  const { user } = useAuth();
-  const userRepository = useUserRepository();
+export const usePermissionOnboarding = () => {
+  const {markPermissionOnboardingComplete, refreshCurrentUser, user} = useAuth();
+  const memberRepository = useMemberRepository();
+  const [completing, setCompleting] = useState(false);
 
-  useEffect(() => {
-    if (currentStep !== 'complete') {
-      return;
-    }
+  const finalizeOnboarding = useCallback(
+    async (completeOnboarding: () => void) => {
+      try {
+        setCompleting(true);
+        await completePermissionOnboarding({
+          completeOnboarding,
+          markPermissionOnboardingComplete,
+          refreshCurrentUser,
+          userId: user?.uid,
+          memberRepository,
+        });
+      } finally {
+        setCompleting(false);
+      }
+    },
+    [markPermissionOnboardingComplete, memberRepository, refreshCurrentUser, user?.uid],
+  );
 
-    let cancelled = false;
-
-    const handleComplete = async () => {
-      await completePermissionOnboarding({
-        completeOnboarding: () => {
-          if (!cancelled) {
-            completeOnboarding();
-          }
-        },
-        userId: user?.uid,
-        userRepository,
-      });
-    };
-
-    handleComplete().catch(error => {
-      console.warn('권한 온보딩 완료 처리 실패:', error);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [completeOnboarding, currentStep, user?.uid, userRepository]);
+  return {
+    completing,
+    finalizeOnboarding,
+  };
 };

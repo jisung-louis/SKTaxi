@@ -21,12 +21,7 @@ yarn lint               # ESLint check (required before PR)
 yarn test               # Jest tests
 
 # Cloud Functions (in functions/ directory)
-cd functions && npm run build && firebase deploy --only functions
-
-# Operational scripts
-node scripts/manage-app-version.js    # iOS/Android version control
-node scripts/manage-app-notices.js    # App notice CRUD
-node scripts/upload-notices.js        # Sync university notices
+cd firebase-cloud-functions && npm run build && firebase deploy --only functions
 ```
 
 ## Architecture
@@ -43,7 +38,7 @@ node scripts/upload-notices.js        # Sync university notices
 
 ### Key Patterns
 - Firestore is the single source of truth; schema documented in `docs/firestore-data-structure.md`
-- Cloud Functions in `functions/src/index.ts` handle triggers, FCM push, and data consistency
+- Cloud Functions in `firebase-cloud-functions/src/index.ts` handle triggers, FCM push, and data consistency
 - Design tokens in `src/constants/` (COLORS, TYPOGRAPHY)
 
 ### Project Structure

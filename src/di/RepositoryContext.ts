@@ -11,11 +11,13 @@ import type {
   IChatRepository,
   ICourseRepository,
   IInquiryRepository,
+  IMemberRepository,
   INotificationActionRepository,
   INotificationRepository,
   INoticeRepository,
   IPartyRepository,
   IStorageRepository,
+  ITaxiChatRepository,
   ITimetableRepository,
   IUserRepository,
 } from './repositoryContracts';
@@ -38,7 +40,9 @@ export interface RepositoryContainer {
   storageRepository: IStorageRepository;
   timetableRepository: ITimetableRepository;
   authRepository: IAuthRepository;
+  memberRepository: IMemberRepository;
   notificationActionRepository: INotificationActionRepository;
+  taxiChatRepository: ITaxiChatRepository;
 }
 
 /**

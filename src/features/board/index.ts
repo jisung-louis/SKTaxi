@@ -1,16 +1,7 @@
 export {
-  BoardCommentList,
-  BoardHeader,
-  BoardSearch,
   ImageSelector,
-  ImageViewer,
-  PostCard,
 } from './components';
 
-export {
-  FirebaseBoardRepository,
-  FirestoreBoardRepository,
-} from './data/repositories/FirebaseBoardRepository';
 export type {
   BoardCommentTreeNode,
   BoardFilterOptions,
@@ -21,21 +12,18 @@ export {
   useBoardActions,
   useBoardBookmarks,
   useBoardCategoryCounts,
-  useBoardComments,
   useBoardEdit,
   useBoardLikes,
   useBoardPost,
   useBoardPosts,
   useBoardRepository,
   useBoardWrite,
-  usePostActions,
   useUserBoardInteractions,
 } from './hooks';
 export type {
   UseBoardActionsResult,
   UseBoardBookmarksResult,
   UseBoardCategoryCountsResult,
-  UseBoardCommentsResult,
   UseBoardEditResult,
   UseBoardLikesResult,
   UseBoardPostResult,
@@ -58,13 +46,11 @@ export type { BoardStackParamList } from './model/navigation';
 export { BOARD_CATEGORIES, POST_CATEGORY_LABELS, SORT_OPTIONS } from './model/constants';
 export {
   formatBoardUpdatedTime,
-  getBoardCategoryColor,
   isBoardPostEdited,
 } from './model/selectors';
 
 export { BoardDetailScreen } from './screens/BoardDetailScreen';
 export { BoardEditScreen } from './screens/BoardEditScreen';
-export { BoardScreen } from './screens/BoardScreen';
 export { BoardWriteScreen } from './screens/BoardWriteScreen';
 
 export {
@@ -76,5 +62,4 @@ export {
 } from './services/boardModerationService';
 export {
   navigateToBoardDetail,
-  navigateToBoardSearch,
 } from './services/boardNavigationService';

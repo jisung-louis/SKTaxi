@@ -15,6 +15,14 @@ export interface WeeklyMenu {
   updatedAt: Date;
 }
 
+export const formatLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 // 특정 날짜의 메뉴를 가져오는 헬퍼 함수
 export const getMenuForDate = (
   menuItems: MenuItems,
@@ -52,20 +60,20 @@ export const CAFETERIA_CATEGORIES: MenuCategory[] = [
     name: 'Roll & Noodles',
     icon: 'restaurant',
     color: '#FF6B6B',
-    items: []
+    items: [],
   },
   {
     id: 'theBab',
     name: 'The bab',
     icon: 'bowl-rice',
     color: '#4ECDC4',
-    items: []
+    items: [],
   },
   {
     id: 'fryRice',
     name: 'Fry & Rice',
     icon: 'fast-food',
     color: '#45B7D1',
-    items: []
-  }
+    items: [],
+  },
 ];

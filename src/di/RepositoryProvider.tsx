@@ -1,42 +1,32 @@
 // SKTaxi: Repository Provider 컴포넌트 - DIP 의존성 주입 구현
 // Repository 인스턴스를 앱 전체에 제공하는 Provider
 
-import React, { useMemo, type ReactNode } from 'react';
+import React, {useMemo, type ReactNode} from 'react';
 
-import {
-  FirebaseAcademicRepository,
-  FirebaseCafeteriaRepository,
-} from '@/features/campus';
-import {
-  FirebaseBoardRepository,
-} from '@/features/board';
-import { FirebaseChatRepository } from '@/features/chat';
-import { FirebaseNoticeRepository } from '@/features/notice';
-import {
-  FirebaseAppNoticeRepository,
-  FirebaseInquiryRepository,
-} from '@/features/settings';
-import { RepositoryContext, RepositoryContainer } from './RepositoryContext';
-import { FirebaseAuthRepository } from '@/features/auth';
-import {
-  FirebaseNotificationActionRepository,
-  FirebasePartyRepository,
-} from '@/features/taxi';
-import {
-  FirebaseCourseRepository,
-  FirebaseTimetableRepository,
-} from '@/features/timetable';
-import {
-  FirebaseNotificationRepository,
-  FirebaseUserRepository,
-} from '@/features/user';
-import { FirestoreStorageRepository } from '@/shared/lib/firebase/storageRepository';
+import {SpringBoardRepository} from '@/features/board/data/repositories/SpringBoardRepository';
+import {SpringMemberRepository} from '@/features/member';
+import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
+import {FirebaseAuthRepository} from '@/features/auth';
+import {SpringAcademicRepository} from '@/features/campus/data/repositories/SpringAcademicRepository';
+import {SpringCafeteriaRepository} from '@/features/campus/data/repositories/SpringCafeteriaRepository';
+import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
+import {SpringNoticeRepository} from '@/features/notice/data/repositories/SpringNoticeRepository';
+import {SpringAppNoticeRepository} from '@/features/settings/data/repositories/SpringAppNoticeRepository';
+import {MockInquiryRepository} from '@/features/settings/data/repositories/MockInquiryRepository';
+import {SpringPartyRepository} from '@/features/taxi/data/repositories/SpringPartyRepository';
+import {SpringNotificationActionRepository} from '@/features/taxi/data/repositories/SpringNotificationActionRepository';
+import {SpringTaxiChatRepository} from '@/features/taxi/data/repositories/SpringTaxiChatRepository';
+import {MockCourseRepository} from '@/features/timetable/data/repositories/MockCourseRepository';
+import {MockTimetableRepository} from '@/features/timetable/data/repositories/MockTimetableRepository';
+import {SpringNotificationRepository} from '@/features/user/data/repositories/SpringNotificationRepository';
+import {MockUserRepository} from '@/features/user/data/repositories/MockUserRepository';
+import {MockStorageRepository} from '@/shared/lib/mock/MockStorageRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
   /**
    * 커스텀 Repository 컨테이너 주입 (테스트용)
-   * 제공되지 않으면 기본 Firestore 구현체 사용
+   * 제공되지 않으면 기본 mock 구현체 사용
    */
   customRepositories?: Partial<RepositoryContainer>;
 }
@@ -45,27 +35,33 @@ interface RepositoryProviderProps {
  * Repository Provider 컴포넌트
  * App.tsx 최상위에서 사용하여 모든 하위 컴포넌트에 Repository 제공
  */
-export function RepositoryProvider({ children, customRepositories }: RepositoryProviderProps) {
+export function RepositoryProvider({
+  children,
+  customRepositories,
+}: RepositoryProviderProps) {
   // Repository 인스턴스를 메모이제이션하여 불필요한 재생성 방지
   // 이는 Context re-render 문제를 방지
   const repositories = useMemo<RepositoryContainer>(() => {
-    // 기본 Firestore 구현체
+    // Spring으로 이전된 경계는 실서비스 구현을 우선 사용하고
+    // 나머지 미이전 영역만 mock 구현체를 유지한다.
     const defaultRepositories: RepositoryContainer = {
-      partyRepository: new FirebasePartyRepository(),
-      chatRepository: new FirebaseChatRepository(),
-      userRepository: new FirebaseUserRepository(),
-      boardRepository: new FirebaseBoardRepository(),
-      noticeRepository: new FirebaseNoticeRepository(),
-      courseRepository: new FirebaseCourseRepository(),
-      notificationRepository: new FirebaseNotificationRepository(),
-      appNoticeRepository: new FirebaseAppNoticeRepository(),
-      cafeteriaRepository: new FirebaseCafeteriaRepository(),
-      academicRepository: new FirebaseAcademicRepository(),
-      inquiryRepository: new FirebaseInquiryRepository(),
-      storageRepository: new FirestoreStorageRepository(),
-      timetableRepository: new FirebaseTimetableRepository(),
+      partyRepository: new SpringPartyRepository(),
+      chatRepository: new SpringChatRepository(),
+      userRepository: new MockUserRepository(),
+      boardRepository: new SpringBoardRepository(),
+      noticeRepository: new SpringNoticeRepository(),
+      courseRepository: new MockCourseRepository(),
+      notificationRepository: new SpringNotificationRepository(),
+      appNoticeRepository: new SpringAppNoticeRepository(),
+      cafeteriaRepository: new SpringCafeteriaRepository(),
+      academicRepository: new SpringAcademicRepository(),
+      inquiryRepository: new MockInquiryRepository(),
+      storageRepository: new MockStorageRepository(),
+      timetableRepository: new MockTimetableRepository(),
       authRepository: new FirebaseAuthRepository(),
-      notificationActionRepository: new FirebaseNotificationActionRepository(),
+      memberRepository: new SpringMemberRepository(),
+      notificationActionRepository: new SpringNotificationActionRepository(),
+      taxiChatRepository: new SpringTaxiChatRepository(),
     };
 
     // 커스텀 Repository가 제공되면 병합 (테스트용)

@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
 import Icon from 'react-native-vector-icons/Ionicons';
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 interface ForegroundNotificationProps {
   visible: boolean;
@@ -17,7 +21,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
   title,
   body,
   onPress,
-  onDismiss
+  onDismiss,
 }) => {
   const [slideAnim] = useState(new Animated.Value(-100));
   const [opacityAnim] = useState(new Animated.Value(0));
@@ -40,11 +44,7 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
   }, [onDismiss, opacityAnim, slideAnim]);
 
   useEffect(() => {
-    // console.log('🔔 ForegroundNotification useEffect:', { visible, title, body });
-    
     if (visible) {
-      console.log('🔔 알림 표시 애니메이션 시작');
-      // 알림 표시 애니메이션
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -60,18 +60,13 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
 
       // 5초 후 자동 숨김
       const timer = setTimeout(() => {
-        console.log('🔔 5초 후 자동 숨김');
         handleDismiss();
       }, 5000);
 
       return () => clearTimeout(timer);
     }
   }, [handleDismiss, opacityAnim, slideAnim, visible]);
-
-  console.log('🔔 ForegroundNotification render:', { visible, title, body });
-  
   if (!visible) {
-    // console.log('🔔 ForegroundNotification: visible=false, 렌더링하지 않음');
     return null;
   }
 
@@ -91,7 +86,11 @@ export const ForegroundNotification: React.FC<ForegroundNotificationProps> = Rea
         activeOpacity={0.8}
       >
         <View style={styles.iconContainer}>
-          <Icon name="notifications" size={24} color={COLORS.accent.green} />
+          <Icon
+            name="notifications"
+            size={24}
+            color={COLORS.brand.primary}
+          />
         </View>
         <View style={styles.content}>
           <Text style={styles.title} numberOfLines={1}>
@@ -122,19 +121,12 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   notification: {
-    backgroundColor: COLORS.background.card,
-    borderRadius: 12,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.md,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...SHADOWS.raised,
     borderWidth: 1,
     borderColor: COLORS.border.default,
   },
@@ -142,7 +134,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: COLORS.accent.green + '15',
+    backgroundColor: COLORS.brand.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,

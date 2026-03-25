@@ -1,7 +1,7 @@
 # SKURI 백엔드 구현 로드맵
 
-> 최종 수정일: 2026-03-09
-> 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [API 명세](./api-specification.md) | [기술 전략](./tech-strategy.md) | [역할 정의](./role-definition.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
+> 최종 수정일: 2026-03-24
+> 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [API 명세](./api-specification.md) | [기술 전략](./tech-strategy.md) | [역할 정의](./role-definition.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md) | [채팅 Firestore → MySQL 마이그레이션 참고](./chat-firestore-to-mysql-migration-reference.md)
 
 ---
 
@@ -12,8 +12,24 @@
 | Spring Boot | 4.0.3 |
 | Java | 21 |
 | 빌드 도구 | Gradle |
-| 현재 의존성 | JPA, Web MVC, Validation, Security, Firebase Admin, Springdoc OpenAPI(Swagger UI/Scalar), Lombok, MySQL Connector |
-| 구현 상태 | Phase 0 완료 (공통 기반 구축), Phase 1 완료, Phase 2 완료 (TaxiParty + SSE 반영), Phase 3 완료 (Chat + WebSocket 반영), Phase 4 완료 (Board 반영), Phase 5 완료 (Notice + AppNotice + 공통 Comment 정책 반영), Phase 6 완료 (Academic + 시간표/학사일정/관리자 강의 bulk 반영), Phase 7 완료 (Support + 문의/신고/앱 버전/학식 운영 API 반영), Phase 8 완료 (Notification 인프라), Phase 9 완료 (인프라/배포 기준 정리), Phase 10 완료 (Member 탈퇴/계정 라이프사이클) |
+| 현재 의존성 | JPA, Web MVC, Validation, Security, Firebase Admin, Springdoc OpenAPI(Swagger UI/Scalar), Thumbnailator, TwelveMonkeys WebP, Lombok, MySQL Connector |
+| 구현 상태 | Phase 0 완료 (공통 기반 구축), Phase 1 완료, Phase 2 완료 (TaxiParty + SSE 반영), Phase 3 완료 (Chat + WebSocket 반영), Phase 4 완료 (Board 반영), Phase 5 완료 (Notice + AppNotice + 공통 Comment 정책 반영), Phase 6 완료 (Academic + 시간표/학사일정/관리자 강의 bulk 반영), Phase 7 완료 (Support + 문의/신고/앱 버전/학식 운영 API 반영), Phase 8 완료 (Notification 인프라), Phase 9 완료 (인프라/배포 기준 정리), Phase 10 완료 (Member 탈퇴/계정 라이프사이클), Phase 11 완료 (운영 공통 인프라 / Admin 공통), Phase 12 완료 (이미지/미디어 업로드 인프라 1차) |
+
+---
+
+## 1.1 문서 동기화 및 데이터 마이그레이션 운영 규칙
+
+- `docs/` 아래의 공유 계약 문서(`api-specification.md`, `domain-analysis.md`, `erd.md`, `implementation-roadmap.md`, `role-definition.md`)는 백엔드 레포 최신본을 기준으로 유지하고, 프론트 레포 대응 문서에도 즉시 동일 내용으로 동기화한다.
+- 채팅 Firestore → MySQL 이관 참고사항은 [chat-firestore-to-mysql-migration-reference.md](./chat-firestore-to-mysql-migration-reference.md)에 누적 관리한다.
+- 데이터 마이그레이션 관련 신규 발견사항(컬렉션 구조, ID 매핑, seed 충돌 가능성, 요약 필드 재계산 규칙 등)이 생기면 위 참고 문서를 먼저 갱신하고, 필요 시 `api-specification.md`, `domain-analysis.md`, `erd.md`에도 함께 반영한다.
+- 프론트/백엔드 구현 에이전트의 최종 보고에는 “상대 레포의 동일 문서를 바로 동기화하라”는 문구를 반드시 포함한다.
+
+## 1.2 완료 작업: OpenAPI Show Schema 전수 보강
+
+- 전체 REST 성공 응답 중 `2xx + application/json`이며 `ApiResponse<T>`의 `T`가 DTO/List/PageResponse인 API에 대해 `Scalar Show schema`가 concrete `data` 타입을 노출하도록 전수 보강했다.
+- `useReturnTypeSchema` 대신 도메인별 OpenAPI wrapper schema(`OpenApi*Schemas`)를 사용해 `Show schema` 품질을 고정했다.
+- 예외 대상은 기존 정책대로 `ApiResponse<Void>`, `204`, SSE로 유지한다.
+- `/v3/api-docs` 전수 회귀 테스트를 추가해 대상 성공 응답이 다시 generic `data`로 후퇴하지 않도록 검증한다.
 
 ---
 
@@ -43,6 +59,8 @@ Phase 9: 인프라 및 배포
 Phase 10: Member 탈퇴/계정 라이프사이클
     ↓
 Phase 11: 운영 공통 인프라 (Admin 공통)
+    ↓
+Phase 12: 이미지/미디어 업로드 인프라
 ```
 
 ---
@@ -302,7 +320,7 @@ SSE 운영 제약:
 
 | 항목 | 설명 |
 |------|------|
-| WebSocket 설정 | STOMP + SockJS, Firebase ID Token 인증 |
+| WebSocket 설정 | STOMP over SockJS(`/ws`) + native WebSocket(`/ws-native`), Firebase ID Token 인증 |
 | WebSocket 인가 | CONNECT 이후 SEND/SUBSCRIBE 목적지별 멤버십 검증 |
 | 브라우저/실시간 CORS | 프로필/환경별 허용 Origin 설정 (`API_ALLOWED_ORIGIN_PATTERNS`, `CHAT_WS_ALLOWED_ORIGIN_PATTERNS`) |
 | ChatService | 공통 채팅 엔진 (메시지 저장, 전송, 읽음 처리) |
@@ -357,6 +375,7 @@ SSE 운영 제약:
 | 익명 처리 | `anonId` = `{postId}:{userId}`, `anonymousOrder` 서버 계산 (글 단위 순번) |
 | 좋아요/북마크 | `PostInteraction` 단일 테이블, 등록/취소 방식 |
 | 카운트 관리 | `viewCount`, `likeCount`, `commentCount`, `bookmarkCount` 동기화 |
+| 게시글 수정 정책 | `PATCH /v1/posts/{postId}`는 `title/content/category/isAnonymous`와 `images` 전체 교체를 지원하며 `images[]` 원소는 null 불가 |
 | 댓글 구조 | 무제한 depth 저장 + flat list 조회 응답 (`parentId`, `depth`) |
 | 부모 삭제 정책(B) | 부모 댓글은 placeholder soft delete(`삭제된 댓글입니다`), 자식 댓글은 유지 |
 
@@ -367,7 +386,7 @@ SSE 운영 제약:
 | `POST` | `/v1/posts` | 게시글 작성 |
 | `GET` | `/v1/posts` | 게시글 목록 (카테고리 필터, 페이지네이션) |
 | `GET` | `/v1/posts/{postId}` | 게시글 상세 (조회수 증가) |
-| `PATCH` | `/v1/posts/{postId}` | 게시글 부분 수정 (작성자) |
+| `PATCH` | `/v1/posts/{postId}` | 게시글 부분 수정 (작성자, `isAnonymous`/`images` 전체 교체 포함) |
 | `DELETE` | `/v1/posts/{postId}` | 게시글 삭제 (작성자) |
 | `POST` | `/v1/posts/{postId}/like` | 좋아요 토글 |
 | `POST` | `/v1/posts/{postId}/bookmark` | 북마크 토글 |
@@ -380,7 +399,7 @@ SSE 운영 제약:
 | `DELETE` | `/v1/comments/{commentId}` | 댓글 삭제 |
 | `GET` | `/v1/members/me/posts` | 내가 작성한 게시글 목록 |
 | `GET` | `/v1/members/me/bookmarks` | 내가 북마크한 게시글 목록 |
-| `POST` | `/v1/images` | 이미지 업로드 (후속 범위) |
+| `POST` | `/v1/images` | 이미지 업로드 |
 | `GET` | `/v1/sse/posts` | 게시물 목록/조회수 실시간 구독 (후속 범위) |
 
 #### 4-4. 완료 기준
@@ -416,6 +435,7 @@ SSE 운영 제약:
 | detail 재검증 | 신규/메타 변경/`detailHash` 없음/24시간 초과 시 재크롤링 |
 | 공지 ID | `Base64(link).replace(/=+$/, '').slice(0, 120)` — 링크 기반 안정 ID |
 | 저장 구조 | `rssPreview`(RSS 미리보기), `bodyHtml`(원문 HTML), `bodyText`(정규화 text), `summary`(향후 AI 요약 예약) |
+| 공지 댓글 수정 정책 | `PATCH /v1/notice-comments/{id}`는 `content`만 수정 가능하고 익명 여부는 유지 |
 
 #### 5-3. API
 
@@ -428,6 +448,7 @@ SSE 운영 제약:
 | `DELETE` | `/v1/notices/{id}/like` | 좋아요 취소 |
 | `GET` | `/v1/notices/{noticeId}/comments` | 공지 댓글 목록 |
 | `POST` | `/v1/notices/{noticeId}/comments` | 공지 댓글 작성 |
+| `PATCH` | `/v1/notice-comments/{id}` | 공지 댓글 본문 수정 |
 | `DELETE` | `/v1/notice-comments/{id}` | 공지 댓글 삭제 |
 | `GET` | `/v1/app-notices` | 앱 공지 목록 (**Public**) |
 | `GET` | `/v1/app-notices/{id}` | 앱 공지 상세 |
@@ -756,14 +777,57 @@ SSE 운영 제약:
 - 특정 도메인에 귀속되지 않는 운영 공통 기능/엔드포인트만 Phase 11 대상으로 관리한다.
 - 2안 적용 기준:
   - Firebase 인증 필터에서 `members.isAdmin=true` 사용자에 `ROLE_ADMIN` authority를 부여한다.
-  - Admin 엔드포인트는 `@PreAuthorize("hasRole('ADMIN')")`로 보호한다.
+  - Admin 엔드포인트는 공통 메타 어노테이션(`@AdminApiAccess`, 내부적으로 `@PreAuthorize("hasRole('ADMIN')")`)으로 보호한다.
   - Admin 경로 접근 거부는 `ADMIN_REQUIRED`(`403`)를 반환한다.
+- Phase 11 구현 결정:
+  - `ADMIN_REQUIRED` 판별은 `/v1/admin/**` 경로 기준 공통 resolver로 정리한다.
+  - 감사 로그는 상태 변경 Admin API(`POST`, `PUT`, `PATCH`, `DELETE`)만 저장하고, `GET` 조회는 고빈도/저효용 로그와 개인정보 중복 적재를 피하기 위해 제외한다.
+  - Support 운영 목록(`GET /v1/admin/inquiries`, `GET /v1/admin/reports`)은 `PageResponse` + `page=0`/`size=20`/`size<=100` + 고정 정렬 `createdAt,DESC` 규약을 사용한다.
+  - CSV export와 자유 검색은 백오피스 요구사항이 확정될 때까지 문서 규약만 유지하고 런타임 API는 추가하지 않는다.
 
 #### 11-3. 완료 기준
 
-- [ ] Admin 공통 인가/감사 로그가 모든 Admin API에 일관 적용됨
-- [ ] 운영 대상(문의/신고) 조회/처리 API 계약 및 권한 검증 완료
-- [ ] 백오피스 연동 시나리오(검색/필터/처리/재처리) 회귀 검증 완료
+- [x] Admin 공통 인가/감사 로그가 모든 Admin API에 일관 적용됨
+- [x] 운영 대상(문의/신고) 조회/처리 API 계약 및 권한 검증 완료
+- [x] 백오피스 연동 기본 규약(페이지네이션/필터/정렬/CSV 보류)이 문서와 테스트 기준으로 정리됨
+
+---
+
+### Phase 12: 이미지/미디어 업로드 인프라
+
+> 현재 도메인 API가 "업로드된 URL 입력"을 받는 구조를 공통 업로드 인프라로 정리한다.
+> 1차 범위는 이미지 업로드부터 구현하고, 이후 미디어 확장이 가능한 storage/context 구조를 확보한다.
+
+#### 12-1. 구현 항목
+
+| # | 항목 | 설명 |
+|---|------|------|
+| 1 | 업로드 API | `POST /v1/images` multipart 업로드 API 구현, 인증 사용자 기준 접근 정책 정리 |
+| 2 | Storage 추상화 | 스토리지 구현체 교체가 가능한 공통 repository/service 인터페이스 정리 |
+| 3 | 업로드 정책 | 파일 크기, MIME type, 경로 naming, 썸네일 생성, context별 허용 규칙 확정 |
+| 4 | 도메인 연동 | 게시판(`images[]`), 채팅(`imageUrl`), 앱 공지(`imageUrls[]`), 프로필(`photoUrl`) 업로드 플로우 연결 |
+| 5 | 계약/검증 | OpenAPI, Postman, Contract 테스트, 운영 문서 동기화 |
+
+#### 12-2. API
+
+| Method | Path | 설명 |
+|--------|------|------|
+| `POST` | `/v1/images` | 이미지 업로드 (multipart/form-data, context 기반) |
+
+#### 12-3. 비고
+
+- 1차 런타임 범위는 **이미지(image)** 업로드이며, video/audio 등 일반 media 확장은 storage/context 설계를 먼저 열어 두고 후속 범위로 둔다.
+- context enum은 `POST_IMAGE`, `CHAT_IMAGE`, `APP_NOTICE_IMAGE`, `PROFILE_IMAGE`로 확정한다.
+- 권한 정책은 `POST_IMAGE`, `CHAT_IMAGE`, `PROFILE_IMAGE`는 인증 사용자, `APP_NOTICE_IMAGE`는 관리자 전용으로 운영한다.
+- 기존 Board/Chat/AppNotice/Profile 계약과의 호환성을 우선하며, URL 직접 입력 경로는 유지한다.
+- 기본 storage provider는 **LOCAL 파일시스템**이며, `StorageRepository` 인터페이스를 통해 `FIREBASE` provider를 포함한 cloud provider(S3/OCI/Firebase 등) 구현체를 교체 가능하게 둔다.
+
+#### 12-4. 완료 기준
+
+- [x] `/v1/images` 런타임 API와 OpenAPI 문서가 `/v3/api-docs` 기준으로 동기화됨
+- [x] 파일 크기/MIME/context validation 및 대표 실패 케이스 Contract 테스트가 추가됨
+- [x] 게시판/채팅/앱 공지/프로필 중 최소 1개 이상에서 업로드 후 저장 플로우가 실제로 검증됨
+- [x] `README`, `docs/api-specification.md`, `etc/postman_collection.json`이 업로드 정책 기준으로 동기화됨
 
 ---
 
@@ -781,6 +845,7 @@ Phase 2~7 ── 연동 ──→ Phase 8 (Notification)
 전체 ───────────────→ Phase 9 (인프라/배포)
 Phase 1~9 ─────────────→ Phase 10 (Member 탈퇴)
 Phase 3/5/6/7 ── 연동 ──→ Phase 11 (운영 공통 Admin 인프라)
+Phase 1/3/4/5 ── 연동 ──→ Phase 12 (이미지/미디어 업로드 인프라)
 ```
 
 **참고:** Phase 4~7 (Board, Notice, Academic, Support)은 서로 독립적이므로 **병렬 구현 가능**합니다.
@@ -840,3 +905,5 @@ Phase 3/5/6/7 ── 연동 ──→ Phase 11 (운영 공통 Admin 인프라)
 > - 2026-03-08: Phase 7 완료 기준으로 현재 상태를 갱신하고, Support 운영 API/기본 앱 버전 fallback/Postman 수동 검증 컬렉션 경로를 반영
 > - 2026-03-08: Phase 8 Notification 구현 반영 — `PARTY_*` canonical enum, RDB 저장 구조, FCM token/no-op sender, 학사 일정 리마인더, Notification SSE/인박스/정책 parity 동기화
 > - 2026-03-08: Phase 8 Push payload 계약 보강 — canonical `type + data`, `contractVersion`, platform별 sound/channel presentation profile 문서화
+> - 2026-03-10: Phase 11 완료 반영 — `@AdminApiAccess` 기반 공통 인가, `admin_audit_logs` 저장 인프라, Support 운영 목록 규약(`PageResponse`, `createdAt,DESC`, `page/size` 검증), Admin guard/OpenAPI convention 테스트 기준 문서화
+> - 2026-03-10: Phase 12 구현 반영 — `/v1/images` 런타임/OpenAPI/Postman, `StorageRepository` + LOCAL/FIREBASE provider, context 권한 정책(`POST/CHAT/PROFILE` 인증, `APP_NOTICE` 관리자)을 문서 기준으로 동기화

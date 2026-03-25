@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
 
-import type { BoardFormData, BoardPost, BoardSelectedImage } from '../model/types';
+import type {
+  BoardFormData,
+  BoardImage,
+  BoardPost,
+  BoardSelectedImage,
+} from '../model/types';
 import { buildBoardPostUpdatePayload } from '../services/boardPostService';
 import { useBoardImageUpload } from './useBoardImageUpload';
 import { useBoardRepository } from './useBoardRepository';
@@ -22,6 +27,42 @@ export interface UseBoardEditResult {
   clearImages: () => void;
 }
 
+const mapSelectedImageToBoardImage = (
+  image: BoardSelectedImage,
+): BoardImage => ({
+  height: image.height,
+  mime: image.mime,
+  size: image.size,
+  thumbUrl: image.thumbUrl,
+  url: image.remoteUrl ?? image.localUri,
+  width: image.width,
+});
+
+const getSelectedImageIdentity = (image: BoardSelectedImage) =>
+  image.remoteUrl ?? image.localUri;
+
+const getBoardImageIdentity = (image: BoardImage) => image.url;
+
+const haveImagesChanged = (
+  currentImages: BoardImage[] | undefined,
+  selectedImages: BoardSelectedImage[],
+) => {
+  const normalizedCurrent = currentImages ?? [];
+
+  if (normalizedCurrent.length !== selectedImages.length) {
+    return true;
+  }
+
+  return selectedImages.some((selectedImage, index) => {
+    const currentImage = normalizedCurrent[index];
+
+    return (
+      !currentImage ||
+      getSelectedImageIdentity(selectedImage) !== getBoardImageIdentity(currentImage)
+    );
+  });
+};
+
 export function useBoardEdit(postId: string): UseBoardEditResult {
   const { user } = useAuth();
   const boardRepository = useBoardRepository();
@@ -36,9 +77,9 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
     pickImages,
     removeImage,
     reorderImages,
-    uploadImages,
     clearImages,
     setImages,
+    uploadImages,
   } = useBoardImageUpload({ maxImages: 10 });
 
   useEffect(() => {
@@ -57,7 +98,8 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
           setError('게시글을 찾을 수 없습니다.');
           return;
         }
-        if (postData.authorId !== user.uid) {
+        const canEdit = postData.isAuthor ?? postData.authorId === user.uid;
+        if (!canEdit) {
           setError('수정 권한이 없습니다.');
           return;
         }
@@ -90,12 +132,12 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
       }
     };
 
-    void loadPost();
+    loadPost().catch(() => undefined);
   }, [boardRepository, postId, setImages, user]);
 
   const updatePost = useCallback(
     async (formData: BoardFormData): Promise<void> => {
-      if (!postId || !user) {
+      if (!postId || !user || !post) {
         throw new Error('수정할 수 없습니다.');
       }
       if (!formData.title.trim()) {
@@ -109,32 +151,21 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(true);
         setError(null);
 
-        let uploadedImages = selectedImages;
-        if (selectedImages.length > 0) {
-          try {
-            uploadedImages = await uploadImages(postId);
-          } catch (imageError) {
-            console.error('이미지 업로드 실패:', imageError);
-          }
-        }
-
-        const finalImages = uploadedImages
-          .filter((image) => image.status === 'uploaded' && (image.remoteUrl || image.localUri))
-          .map((image) => ({
-            url: image.remoteUrl || image.localUri,
-            width: image.width,
-            height: image.height,
-            thumbUrl: image.thumbUrl,
-            size: image.size,
-            mime: image.mime,
-          }));
+        const shouldUpdateAnonymous = formData.isAnonymous !== post.isAnonymous;
+        const shouldUpdateImages = haveImagesChanged(post.images, selectedImages);
+        const uploadedImages = shouldUpdateImages ? await uploadImages(postId) : [];
 
         await boardRepository.updatePost(postId, {
           ...buildBoardPostUpdatePayload(formData),
-          images: finalImages,
+          ...(shouldUpdateAnonymous
+            ? {isAnonymous: Boolean(formData.isAnonymous)}
+            : {}),
+          ...(shouldUpdateImages
+            ? {
+                images: uploadedImages.map(mapSelectedImageToBoardImage),
+              }
+            : {}),
         });
-
-        clearImages();
       } catch (err) {
         const message = err instanceof Error ? err.message : '게시글 수정에 실패했습니다.';
         setError(message);
@@ -143,7 +174,7 @@ export function useBoardEdit(postId: string): UseBoardEditResult {
         setSubmitting(false);
       }
     },
-    [boardRepository, clearImages, postId, selectedImages, uploadImages, user],
+    [boardRepository, post, postId, selectedImages, uploadImages, user],
   );
 
   return {

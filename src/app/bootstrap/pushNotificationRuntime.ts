@@ -1,12 +1,12 @@
-import type { FirebaseMessagingTypes } from '@/shared/lib/firebase/messaging';
+import type {FirebaseMessagingTypes} from '@/shared/lib/firebase/messaging';
 import {
   getInitialNotificationMessage,
   registerBackgroundMessageHandler,
   subscribeForegroundMessages,
   subscribeNotificationOpenedApp,
 } from '@/shared/lib/firebase/messaging';
-import { navigateToBoardDetail } from '@/features/board';
-import { navigateToAppNoticeDetail } from '@/features/settings';
+import {handlePushNotificationNavigation} from '@/app/navigation/services/notificationNavigation';
+import {normalizePushNotificationType} from '@/app/navigation/services/normalizePushNotificationType';
 
 export interface ForegroundMessageCallbacks {
   showModal: (data: any) => void;
@@ -351,7 +351,9 @@ export function initForegroundMessageHandler(
     const data = remoteMessage.data || {};
     console.log('🔔 메시지 데이터:', data);
 
-    switch (data.type) {
+    const normalizedType = normalizePushNotificationType(data.type, data);
+
+    switch (normalizedType) {
       case 'join_request':
         handleJoinRequest(data, callbacks);
         break;
@@ -407,110 +409,21 @@ export function initBackgroundMessageHandler(
     const data = remoteMessage.data || {};
     console.log('백그라운드에서 받은 알림:', data);
 
-    if (data.type === 'notice') {
+    const normalizedType = normalizePushNotificationType(data.type, data);
+
+    if (normalizedType === 'notice') {
       console.log('백그라운드 공지사항 알림:', data.noticeId);
-    } else if (data.type === 'join_request' && onJoinRequestReceived) {
+    } else if (normalizedType === 'join_request' && onJoinRequestReceived) {
       console.log('백그라운드 동승 요청 알림:', data);
       onJoinRequestReceived(data);
     } else if (
-      data.type === 'party_join_accepted' ||
-      data.type === 'party_join_rejected' ||
-      data.type === 'party_deleted'
+      normalizedType === 'party_join_accepted' ||
+      normalizedType === 'party_join_rejected' ||
+      normalizedType === 'party_deleted'
     ) {
-      console.log('백그라운드 알림:', data.type);
+      console.log('백그라운드 알림:', normalizedType);
     }
   });
-}
-
-function handleNotificationNavigation(
-  navigation: any,
-  data: any,
-  onJoinRequestReceived?: (joinData: any) => void,
-) {
-  switch (data.type) {
-    case 'notice':
-      if (data.noticeId) {
-        navigation.navigate('Main', {
-          screen: 'NoticeTab',
-          params: {
-            screen: 'NoticeDetail',
-            params: { noticeId: data.noticeId },
-          },
-        });
-      }
-      break;
-    case 'app_notice':
-      if (data.appNoticeId) {
-        navigateToAppNoticeDetail(navigation, data.appNoticeId);
-      }
-      break;
-    case 'join_request':
-      if (onJoinRequestReceived) {
-        console.log('알림을 통해 동승 요청 수신:', data);
-        onJoinRequestReceived(data);
-      }
-      break;
-    case 'party_join_accepted':
-      if (data.partyId) {
-        navigation.navigate('Main', {
-          screen: 'TaxiTab',
-          params: {
-            screen: 'Chat',
-            params: { partyId: data.partyId },
-          },
-        });
-      }
-      break;
-    case 'party_join_rejected':
-      navigation.goBack();
-      break;
-    case 'party_deleted':
-      navigation.navigate('Main', { screen: 'TaxiTab' });
-      break;
-    case 'chat_message':
-    case 'party_closed':
-    case 'party_arrived':
-      if (data.partyId) {
-        navigation.navigate('Main', {
-          screen: 'TaxiTab',
-          params: {
-            screen: 'Chat',
-            params: { partyId: data.partyId },
-          },
-        });
-      }
-      break;
-    case 'chat_room_message':
-      if (data.chatRoomId) {
-        navigation.navigate('Main', {
-          screen: 'ChatTab',
-          params: {
-            screen: 'ChatDetail',
-            params: { chatRoomId: data.chatRoomId },
-          },
-        });
-      }
-      break;
-    case 'board_post_comment':
-    case 'board_comment_reply':
-    case 'board_post_like':
-      if (data.postId) {
-        navigateToBoardDetail(navigation, data.postId);
-      }
-      break;
-    case 'notice_post_comment':
-    case 'notice_comment_reply':
-      if (data.noticeId) {
-        navigation.navigate('Main', {
-          screen: 'NoticeTab',
-          params: {
-            screen: 'NoticeDetail',
-            params: { noticeId: data.noticeId },
-          },
-        });
-      }
-      break;
-  }
 }
 
 export function initNotificationOpenedAppHandler(
@@ -520,7 +433,11 @@ export function initNotificationOpenedAppHandler(
   return subscribeNotificationOpenedApp(remoteMessage => {
     console.log('알림을 통해 앱이 열렸습니다:', remoteMessage);
     const data = remoteMessage.data || {};
-    handleNotificationNavigation(navigation, data, onJoinRequestReceived);
+    handlePushNotificationNavigation({
+      navigation,
+      data,
+      onJoinRequestReceived,
+    });
   });
 }
 
@@ -533,6 +450,10 @@ export async function checkInitialNotification(
   if (remoteMessage) {
     console.log('앱 종료 상태에서 알림을 통해 앱이 열렸습니다:', remoteMessage);
     const data = remoteMessage.data || {};
-    handleNotificationNavigation(navigation, data, onJoinRequestReceived);
+    handlePushNotificationNavigation({
+      navigation,
+      data,
+      onJoinRequestReceived,
+    });
   }
 }

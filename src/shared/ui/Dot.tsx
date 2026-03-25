@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
+import { COLORS, RADIUS } from '@/shared/design-system/tokens';
 
 interface DotProps {
   visible?: boolean;
@@ -9,7 +9,9 @@ interface DotProps {
 }
 
 export const Dot: React.FC<DotProps> = ({ visible = true, size = 'medium', style }) => {
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
 
   const sizeStyle =
     size === 'small' ? styles.small : size === 'large' ? styles.large : styles.medium;
@@ -19,8 +21,8 @@ export const Dot: React.FC<DotProps> = ({ visible = true, size = 'medium', style
 
 const styles = StyleSheet.create({
   dot: {
-    backgroundColor: COLORS.accent.red,
-    borderRadius: 8,
+    backgroundColor: COLORS.status.danger,
+    borderRadius: RADIUS.sm,
   },
   small: {
     width: 8,
@@ -35,5 +37,3 @@ const styles = StyleSheet.create({
     height: 12,
   },
 });
-
-

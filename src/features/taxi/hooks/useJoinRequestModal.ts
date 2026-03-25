@@ -1,16 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import { useUserDisplayNames } from '@/features/user';
+import {useState, useEffect, useCallback} from 'react';
+import {useNavigation} from '@react-navigation/native';
+import {useUserDisplayNames} from '@/features/user';
 
-import { acceptJoinRequest, declineJoinRequest } from '../services/joinRequestService';
-import { useJoinRequestStatus } from './useJoinRequestStatus';
-import { useNotificationActionRepository } from './useNotificationActionRepository';
-import { usePartyRepository } from './usePartyRepository';
+import {
+  acceptJoinRequest,
+  declineJoinRequest,
+} from '../services/joinRequestService';
+import {useJoinRequestStatus} from './useJoinRequestStatus';
+import {useNotificationActionRepository} from './useNotificationActionRepository';
+import {usePartyRepository} from './usePartyRepository';
 
 export interface JoinRequestData {
   requestId: string;
   partyId: string;
-  requesterId: string;
+  requesterId?: string;
+  requesterName?: string;
 }
 
 export interface UseJoinRequestModalResult {
@@ -25,18 +29,24 @@ export interface UseJoinRequestModalResult {
   handleJoinRequestRejected: () => void;
 }
 
-export function useJoinRequestModal(userId: string | undefined): UseJoinRequestModalResult {
+export function useJoinRequestModal(
+  userId: string | undefined,
+): UseJoinRequestModalResult {
   const navigation = useNavigation();
   const [joinData, setJoinData] = useState<JoinRequestData | null>(null);
   const partyRepository = usePartyRepository();
   const notificationActionRepository = useNotificationActionRepository();
-  const { requestStatus } = useJoinRequestStatus(joinData?.requestId);
-  const { displayNameMap } = useUserDisplayNames(
-    joinData?.requesterId ? [joinData.requesterId] : [],
+  const {requestStatus} = useJoinRequestStatus(joinData?.requestId);
+  const {displayNameMap} = useUserDisplayNames(
+    joinData?.requesterId && !joinData.requesterName
+      ? [joinData.requesterId]
+      : [],
   );
-  const requesterName = joinData?.requesterId
+  const requesterName = joinData?.requesterName
+    ? joinData.requesterName
+    : joinData?.requesterId
     ? displayNameMap[joinData.requesterId] || '익명'
-    : '';
+    : '새 요청';
 
   useEffect(() => {
     if (requestStatus?.status === 'canceled') {
@@ -53,18 +63,10 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
         leaderId: userId,
         partyId: joinData.partyId,
         requestId: joinData.requestId,
-        requesterId: joinData.requesterId,
-        requesterName,
       });
     }
     setJoinData(null);
-  }, [
-    joinData,
-    userId,
-    partyRepository,
-    notificationActionRepository,
-    requesterName,
-  ]);
+  }, [joinData, userId, partyRepository, notificationActionRepository]);
 
   // 거절 핸들러
   const handleDecline = useCallback(async () => {
@@ -86,15 +88,18 @@ export function useJoinRequestModal(userId: string | undefined): UseJoinRequestM
   }, []);
 
   // 동승 요청 승인 알림 핸들러 (FCM)
-  const handleJoinRequestAccepted = useCallback((partyId: string) => {
-    (navigation as any).navigate('Main', {
-      screen: 'TaxiTab',
-      params: {
-        screen: 'Chat',
-        params: { partyId },
-      },
-    });
-  }, [navigation]);
+  const handleJoinRequestAccepted = useCallback(
+    (partyId: string) => {
+      (navigation as any).navigate('Main', {
+        screen: 'TaxiTab',
+        params: {
+          screen: 'Chat',
+          params: {partyId},
+        },
+      });
+    },
+    [navigation],
+  );
 
   // 동승 요청 거절 알림 핸들러 (FCM)
   const handleJoinRequestRejected = useCallback(() => {

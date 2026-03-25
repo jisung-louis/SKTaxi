@@ -1,13 +1,23 @@
 import type { NoticeForegroundNotificationPayload } from '../model/types';
 
 export const navigateToNoticeDetail = (navigation: any, noticeId: string) => {
-  navigation.navigate('Main', {
-    screen: 'NoticeTab',
-    params: {
+  try {
+    navigation.navigate('Main', {
+      screen: 'NoticeTab',
+      params: {
+        screen: 'NoticeDetail',
+        params: { noticeId },
+      },
+    });
+    return;
+  } catch {}
+
+  try {
+    navigation.navigate('NoticeTab', {
       screen: 'NoticeDetail',
       params: { noticeId },
-    },
-  });
+    });
+  } catch {}
 };
 
 export const buildNoticeForegroundNotification = ({
@@ -43,6 +53,9 @@ export const buildNoticePushForegroundNotification = (data: {
   };
 };
 
+/**
+ * 공지사항 목록 조회 페이지 URL에서 공지사항 상세 웹뷰 URL로 변환하기 위한 매핑 정보
+ */
 const bbsToSubviewMap: Record<string, string> = {
   '97': '342',
   '96': '343',
@@ -60,7 +73,12 @@ const bbsToSubviewMap: Record<string, string> = {
   '80': '354',
 };
 
-export const toNoticeSubviewUrl = (link: string) => {
+/**
+ * 공지사항 목록 조회 페이지 URL에서 공지사항 상세 웹뷰 URL로 변환
+ * @param link 공지사항 상세 웹뷰 URL
+ * @returns 공지사항 상세 웹뷰 URL
+ */
+export const toNoticeDetailWebViewUrl = (link: string) => {
   const match = link.match(/bbs\/skukr\/(\d+)\/(\d+)\/artclView\.do/);
   if (!match) {
     return link;

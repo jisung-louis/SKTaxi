@@ -1,4 +1,5 @@
-import type { User } from '@/shared/types/user';
+import type {MemberProfile} from '@/features/member';
+import type {User} from '@/shared/types/user';
 
 export interface AuthState {
   user: User | null;
@@ -6,10 +7,15 @@ export interface AuthState {
 }
 
 export interface AuthContextValue extends AuthState {
-  signInWithGoogle: () => Promise<{ firstLogin: boolean }>;
-  signInWithEmailAndPassword: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<{firstLogin: boolean}>;
+  signInWithEmailAndPassword: (
+    email: string,
+    password: string,
+  ) => Promise<void>;
   signOut: () => Promise<void>;
   refreshAuthToken: () => Promise<string | null>;
+  refreshCurrentUser: (memberProfile?: MemberProfile) => Promise<void>;
+  markPermissionOnboardingComplete: () => void;
 }
 
 export interface CompleteProfileFormValues {

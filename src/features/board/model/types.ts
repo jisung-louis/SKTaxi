@@ -40,6 +40,9 @@ export interface BoardPost {
   bookmarkCount: number;
   isPinned: boolean;
   isDeleted: boolean;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+  isAuthor?: boolean;
   images?: BoardImage[];
   createdAt: Date;
   updatedAt: Date;

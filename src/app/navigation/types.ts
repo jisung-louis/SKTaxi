@@ -4,6 +4,7 @@ import type { BoardStackParamList } from '@/features/board';
 import type { ChatStackParamList } from '@/features/chat';
 import type { NoticeStackParamList } from '@/features/notice';
 import type { TaxiStackParamList } from '@/features/taxi';
+import type {TimetableDetailViewMode} from '@/features/timetable/model/timetableDetailViewData';
 
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
@@ -13,12 +14,14 @@ export type RootStackParamList = {
   TermsOfUseForAuth: undefined;
 };
 
+export type CommunityStackParamList =
+  BoardStackParamList & ChatStackParamList;
+
 export type MainTabParamList = {
-  HomeTab: NavigatorScreenParams<HomeStackParamList>;
+  CampusTab: NavigatorScreenParams<CampusStackParamList>;
   TaxiTab: NavigatorScreenParams<TaxiStackParamList>;
   NoticeTab: NavigatorScreenParams<NoticeStackParamList>;
-  BoardTab: NavigatorScreenParams<BoardStackParamList>;
-  ChatTab: NavigatorScreenParams<ChatStackParamList>;
+  CommunityTab: NavigatorScreenParams<CommunityStackParamList>;
 };
 export type {
   BoardStackParamList,
@@ -27,13 +30,19 @@ export type { ChatStackParamList } from '@/features/chat';
 export type { NoticeStackParamList } from '@/features/notice';
 export type { TaxiStackParamList } from '@/features/taxi';
 
-export type HomeStackParamList = {
-  HomeMain: undefined;
+export type CampusStackParamList = {
+  CampusMain: undefined;
   Notification: undefined;
   Setting: undefined;
   Profile: undefined;
   ProfileEdit: undefined;
-  AppNotice: undefined;
+  MyPosts: undefined;
+  Bookmarks:
+    | {
+        initialTab?: 'community' | 'notice';
+      }
+    | undefined;
+  TaxiHistory: undefined;
   AppNoticeDetail: { noticeId: string };
   AccountModification: undefined;
   NotificationSettings: undefined;
@@ -41,8 +50,18 @@ export type HomeStackParamList = {
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;
   CafeteriaDetail: { scrollToCategory?: string };
-  AcademicCalendarDetail: undefined;
-  TimetableDetail: { mode?: 'edit' };
+  AcademicCalendarDetail:
+    | {
+        initialDate?: string;
+        scheduleId?: string;
+      }
+    | undefined;
+  TimetableDetail:
+    | {
+        initialView?: TimetableDetailViewMode;
+        mode?: 'edit';
+      }
+    | undefined;
   MinecraftDetail: undefined;
   MinecraftMapDetail: undefined;
 };

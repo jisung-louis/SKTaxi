@@ -26,10 +26,12 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
 import { useScreenView } from '@/shared/hooks/useScreenView';
 
+import {
+  MINECRAFT_COLORS as COLORS,
+  MINECRAFT_TYPOGRAPHY as TYPOGRAPHY,
+} from '../constants/minecraftDesignTokens';
 import { useMinecraftServerOverview } from '../hooks/useMinecraftServerOverview';
 import { useMinecraftWhitelistPlayers } from '../hooks/useMinecraftWhitelistPlayers';
 
@@ -192,7 +194,7 @@ export const MinecraftDetailScreen = () => {
               style={styles.chatRoomButton}
               onPress={() => {
                 (navigation as any).navigate('Main', {
-                  screen: 'ChatTab',
+                  screen: 'CommunityTab',
                   params: {
                     screen: 'ChatDetail',
                     params: { chatRoomId: 'game-minecraft' },

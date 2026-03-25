@@ -4,11 +4,11 @@
 
 ---
 
-## 1. `functions/src/index.ts` vs `src/repositories` 역할 차이
+## 1. `firebase-cloud-functions/src/index.ts` vs `src/repositories` 역할 차이
 
 ### 요약
 
-| 구분 | `functions/src/index.ts` (Cloud Functions) | `src/repositories` (Repository) |
+| 구분 | `firebase-cloud-functions/src/index.ts` (Cloud Functions) | `src/repositories` (Repository) |
 |------|--------------------------------------------|---------------------------------|
 | **실행 위치** | Firebase 서버(이벤트/스케줄 시) | 클라이언트(React Native 앱) |
 | **역할** | 이벤트 반응 + 스케줄 작업 + 부가 효과 | 앱의 Firestore/Storage 직접 접근 추상화 |
@@ -17,7 +17,7 @@
 
 ---
 
-### 1.1 `functions/src/index.ts` (Cloud Functions)의 책임
+### 1.1 `firebase-cloud-functions/src/index.ts` (Cloud Functions)의 책임
 
 **서버에서만 돌아가는, “이벤트에 반응하는 로직”과 “주기 작업”**입니다.
 

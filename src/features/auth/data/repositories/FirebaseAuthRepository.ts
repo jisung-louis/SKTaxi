@@ -1,7 +1,11 @@
 import {
+  deleteUser,
   getAuth,
+  getIdToken,
   GoogleAuthProvider,
   onAuthStateChanged,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
   signInWithCredential,
   signOut as firebaseSignOut,
 } from '@react-native-firebase/auth';
@@ -130,7 +134,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
 
       await GoogleSignin.revokeAccess().catch(() => {});
       await GoogleSignin.signOut().catch(() => {});
-      await user.delete();
+      await deleteUser(user);
     } catch (error: any) {
       throw RepositoryError.fromFirebaseError(error);
     }
@@ -143,7 +147,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
         return null;
       }
 
-      return await user.getIdToken(forceRefresh);
+      return await getIdToken(user, forceRefresh);
     } catch (error: any) {
       throw RepositoryError.fromFirebaseError(error);
     }
@@ -163,7 +167,7 @@ export class FirebaseAuthRepository implements IAuthRepository {
         );
       }
 
-      await user.sendEmailVerification();
+      await sendEmailVerification(user);
     } catch (error: any) {
       throw RepositoryError.fromFirebaseError(error);
     }
@@ -174,7 +178,8 @@ export class FirebaseAuthRepository implements IAuthRepository {
     password: string,
   ): Promise<AuthUser> {
     try {
-      const credential = await this.authInstance.signInWithEmailAndPassword(
+      const credential = await signInWithEmailAndPassword(
+        this.authInstance,
         email,
         password,
       );

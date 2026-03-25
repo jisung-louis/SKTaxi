@@ -17,12 +17,16 @@ import firestore, {
   where,
   limit,
 } from '@react-native-firebase/firestore';
-import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
+import type {FirebaseFirestoreTypes} from '@react-native-firebase/firestore';
+import {getApp} from '@react-native-firebase/app';
 import type {
   SubscriptionCallbacks,
   Unsubscribe,
 } from '@/shared/types/subscription';
+import {
+  RepositoryError,
+  RepositoryErrorCode,
+} from '@/shared/lib/errors';
 
 import type {
   AccountMessageData,
@@ -34,7 +38,7 @@ import type {
   PendingJoinRequest,
   SettlementData,
 } from '../../model/types';
-import { IPartyRepository } from './IPartyRepository';
+import {IPartyRepository} from './IPartyRepository';
 
 /**
  * Firebase 기반 Party Repository 구현체
@@ -50,7 +54,7 @@ export class FirebasePartyRepository implements IPartyRepository {
   subscribeToParties(callbacks: SubscriptionCallbacks<Party[]>): Unsubscribe {
     const q = query(
       collection(this.db, this.collectionName),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
     );
 
     const unsubscribe = onSnapshot(
@@ -61,12 +65,12 @@ export class FirebasePartyRepository implements IPartyRepository {
             id: docSnap.id,
             ...(docSnap.data() as Omit<Party, 'id'>),
           }))
-          .filter((party) => party.status !== 'ended');
+          .filter(party => party.status !== 'ended');
         callbacks.onData(parties);
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
 
     return unsubscribe;
@@ -74,7 +78,7 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToParty(
     partyId: string,
-    callbacks: SubscriptionCallbacks<Party | null>
+    callbacks: SubscriptionCallbacks<Party | null>,
   ): Unsubscribe {
     const docRef = doc(this.db, this.collectionName, partyId);
 
@@ -90,9 +94,9 @@ export class FirebasePartyRepository implements IPartyRepository {
           callbacks.onData(null);
         }
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
 
     return unsubscribe;
@@ -100,12 +104,12 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToMyParty(
     userId: string,
-    callbacks: SubscriptionCallbacks<Party | null>
+    callbacks: SubscriptionCallbacks<Party | null>,
   ): Unsubscribe {
     // members 배열에 userId가 포함된 파티 중 ended가 아닌 것을 찾음
     const q = query(
       collection(this.db, this.collectionName),
-      where('members', 'array-contains', userId)
+      where('members', 'array-contains', userId),
     );
 
     const unsubscribe = onSnapshot(
@@ -117,13 +121,13 @@ export class FirebasePartyRepository implements IPartyRepository {
             id: docSnap.id,
             ...(docSnap.data() as Omit<Party, 'id'>),
           }))
-          .find((party) => party.status !== 'ended');
+          .find(party => party.status !== 'ended');
 
         callbacks.onData(activeParty || null);
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
 
     return unsubscribe;
@@ -146,12 +150,41 @@ export class FirebasePartyRepository implements IPartyRepository {
     });
   }
 
-  async deleteParty(partyId: string, reason: Party['endReason']): Promise<void> {
+  async deleteParty(
+    partyId: string,
+    reason: Party['endReason'],
+  ): Promise<void> {
     const docRef = doc(this.db, this.collectionName, partyId);
     await updateDoc(docRef, {
       status: 'ended',
       endReason: reason,
       endedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async closeParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      status: 'closed',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async reopenParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      status: 'open',
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async endParty(partyId: string): Promise<void> {
+    const docRef = doc(this.db, this.collectionName, partyId);
+    await updateDoc(docRef, {
+      endedAt: serverTimestamp(),
+      endReason: 'arrived',
+      status: 'ended',
       updatedAt: serverTimestamp(),
     });
   }
@@ -172,6 +205,18 @@ export class FirebasePartyRepository implements IPartyRepository {
     });
   }
 
+  async leaveParty(partyId: string): Promise<void> {
+    throw new RepositoryError(
+      RepositoryErrorCode.INVALID_ARGUMENT,
+      'Firestore 파티 저장소의 direct leave는 현재 사용자 문맥 없이 지원하지 않습니다.',
+      {
+        context: {
+          partyId,
+        },
+      },
+    );
+  }
+
   async getParty(partyId: string): Promise<Party | null> {
     const docRef = doc(this.db, this.collectionName, partyId);
     const snapshot = await getDoc(docRef);
@@ -188,12 +233,12 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToJoinRequestCount(
     leaderId: string,
-    callbacks: SubscriptionCallbacks<number>
+    callbacks: SubscriptionCallbacks<number>,
   ): Unsubscribe {
     // 먼저 리더의 파티 목록을 구독
     const partiesQuery = query(
       collection(this.db, this.collectionName),
-      where('leaderId', '==', leaderId)
+      where('leaderId', '==', leaderId),
     );
 
     let unsubscribeJoinRequests: (() => void) | undefined;
@@ -213,7 +258,7 @@ export class FirebasePartyRepository implements IPartyRepository {
         }
 
         const partyIds = partiesSnapshot.docs.map(
-          (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.id
+          (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => docSnap.id,
         );
 
         if (partyIds.length === 0) {
@@ -225,7 +270,7 @@ export class FirebasePartyRepository implements IPartyRepository {
         const joinRequestsQuery = query(
           collection(this.db, 'joinRequests'),
           where('partyId', 'in', partyIds),
-          where('status', '==', 'pending')
+          where('status', '==', 'pending'),
         );
 
         unsubscribeJoinRequests = onSnapshot(
@@ -233,14 +278,14 @@ export class FirebasePartyRepository implements IPartyRepository {
           (joinRequestsSnapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
             callbacks.onData(joinRequestsSnapshot.size);
           },
-          (error) => {
+          error => {
             callbacks.onError(error as Error);
-          }
+          },
         );
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
 
     // 두 구독 모두 해제하는 함수 반환
@@ -254,13 +299,13 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToMyPendingJoinRequest(
     requesterId: string,
-    callbacks: SubscriptionCallbacks<PendingJoinRequest | null>
+    callbacks: SubscriptionCallbacks<PendingJoinRequest | null>,
   ): Unsubscribe {
     const q = query(
       collection(this.db, 'joinRequests'),
       where('requesterId', '==', requesterId),
       where('status', '==', 'pending'),
-      limit(1)
+      limit(1),
     );
 
     return onSnapshot(
@@ -277,15 +322,15 @@ export class FirebasePartyRepository implements IPartyRepository {
           });
         }
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
   }
 
   subscribeToJoinRequest(
     requestId: string,
-    callbacks: SubscriptionCallbacks<JoinRequestStatus | null>
+    callbacks: SubscriptionCallbacks<JoinRequestStatus | null>,
   ): Unsubscribe {
     const requestRef = doc(this.db, 'joinRequests', requestId);
 
@@ -303,21 +348,21 @@ export class FirebasePartyRepository implements IPartyRepository {
           });
         }
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
   }
 
   async cancelJoinRequest(requestId: string): Promise<void> {
     const requestRef = doc(this.db, 'joinRequests', requestId);
-    await updateDoc(requestRef, { status: 'canceled' });
+    await updateDoc(requestRef, {status: 'canceled'});
   }
 
   async createJoinRequest(
     partyId: string,
     leaderId: string,
-    requesterId: string
+    requesterId: string,
   ): Promise<string> {
     const docRef = await addDoc(collection(this.db, 'joinRequests'), {
       partyId,
@@ -333,7 +378,7 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToPartyMessages(
     partyId: string,
-    callbacks: SubscriptionCallbacks<PartyMessage[]>
+    callbacks: SubscriptionCallbacks<PartyMessage[]>,
   ): Unsubscribe {
     const messagesRef = collection(this.db, 'chats', partyId, 'messages');
     const q = query(messagesRef, orderBy('createdAt', 'asc'));
@@ -345,20 +390,20 @@ export class FirebasePartyRepository implements IPartyRepository {
           (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
             id: docSnap.id,
             ...(docSnap.data() as Omit<PartyMessage, 'id'>),
-          })
+          }),
         );
         callbacks.onData(messages);
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
   }
 
   async sendPartyMessage(
     partyId: string,
     senderId: string,
-    text: string
+    text: string,
   ): Promise<void> {
     // 사용자 정보 조회
     const userDoc = await getDoc(doc(this.db, 'users', senderId));
@@ -409,7 +454,7 @@ export class FirebasePartyRepository implements IPartyRepository {
   async sendAccountMessage(
     partyId: string,
     senderId: string,
-    accountData: AccountMessageData
+    accountData: AccountMessageData,
   ): Promise<void> {
     const userDoc = await getDoc(doc(this.db, 'users', senderId));
     const userData = userDoc.data();
@@ -431,7 +476,7 @@ export class FirebasePartyRepository implements IPartyRepository {
   async sendArrivedMessage(
     partyId: string,
     senderId: string,
-    arrivalData: ArrivalMessageData
+    arrivalData: ArrivalMessageData,
   ): Promise<void> {
     const userDoc = await getDoc(doc(this.db, 'users', senderId));
     const userData = userDoc.data();
@@ -453,7 +498,7 @@ export class FirebasePartyRepository implements IPartyRepository {
   async sendEndMessage(
     partyId: string,
     senderId: string,
-    partyArrived: boolean
+    partyArrived: boolean,
   ): Promise<void> {
     const userDoc = await getDoc(doc(this.db, 'users', senderId));
     const userData = userDoc.data();
@@ -475,13 +520,13 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   subscribeToJoinRequests(
     partyId: string,
-    callbacks: SubscriptionCallbacks<JoinRequest[]>
+    callbacks: SubscriptionCallbacks<JoinRequest[]>,
   ): Unsubscribe {
     const q = query(
       collection(this.db, 'joinRequests'),
       where('partyId', '==', partyId),
       where('status', '==', 'pending'),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
     );
 
     return onSnapshot(
@@ -491,32 +536,40 @@ export class FirebasePartyRepository implements IPartyRepository {
           (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) => ({
             id: docSnap.id,
             ...(docSnap.data() as Omit<JoinRequest, 'id'>),
-          })
+          }),
         );
         callbacks.onData(requests);
       },
-      (error) => {
+      error => {
         callbacks.onError(error as Error);
-      }
+      },
     );
   }
 
   async acceptJoinRequest(
     requestId: string,
     partyId: string,
-    requesterId: string
+    requesterId?: string,
   ): Promise<void> {
     // 동승 요청 상태 업데이트
     const requestRef = doc(this.db, 'joinRequests', requestId);
-    await updateDoc(requestRef, { status: 'accepted' });
+    const requestDoc = await getDoc(requestRef);
+    const requestData = requestDoc.data() as {requesterId?: string} | undefined;
+    const targetRequesterId = requesterId ?? requestData?.requesterId;
+
+    await updateDoc(requestRef, {status: 'accepted'});
 
     // 파티에 멤버 추가
-    await this.addMember(partyId, requesterId);
+    if (!targetRequesterId) {
+      throw new Error('동승 요청자 정보를 찾을 수 없습니다.');
+    }
+
+    await this.addMember(partyId, targetRequesterId);
   }
 
   async declineJoinRequest(requestId: string): Promise<void> {
     const requestRef = doc(this.db, 'joinRequests', requestId);
-    await updateDoc(requestRef, { status: 'declined' });
+    await updateDoc(requestRef, {status: 'declined'});
   }
 
   // === 파티 채팅 알림 설정 ===
@@ -527,12 +580,12 @@ export class FirebasePartyRepository implements IPartyRepository {
       'chats',
       partyId,
       'notificationSettings',
-      userId
+      userId,
     );
     const snapshot = await getDoc(settingsRef);
 
     if (snapshot.exists()) {
-      const data = snapshot.data() as { muted?: boolean } | undefined;
+      const data = snapshot.data() as {muted?: boolean} | undefined;
       return !!data?.muted;
     }
 
@@ -542,14 +595,14 @@ export class FirebasePartyRepository implements IPartyRepository {
   async setPartyChatMuted(
     partyId: string,
     userId: string,
-    muted: boolean
+    muted: boolean,
   ): Promise<void> {
     const settingsRef = doc(
       this.db,
       'chats',
       partyId,
       'notificationSettings',
-      userId
+      userId,
     );
     await setDoc(
       settingsRef,
@@ -558,7 +611,7 @@ export class FirebasePartyRepository implements IPartyRepository {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      {merge: true},
     );
   }
 
@@ -566,7 +619,7 @@ export class FirebasePartyRepository implements IPartyRepository {
 
   async startSettlement(
     partyId: string,
-    settlementData: SettlementData
+    settlementData: SettlementData,
   ): Promise<void> {
     const partyRef = doc(this.db, this.collectionName, partyId);
     await setDoc(
@@ -574,13 +627,17 @@ export class FirebasePartyRepository implements IPartyRepository {
       {
         status: 'arrived',
         settlement: {
+          account: settlementData.account,
+          splitMemberCount: settlementData.splitMemberCount,
+          settlementTargetMemberIds: settlementData.settlementTargetMemberIds,
           status: 'pending',
           perPersonAmount: settlementData.perPersonAmount,
           members: settlementData.members,
+          taxiFare: settlementData.taxiFare,
         },
         updatedAt: serverTimestamp(),
       },
-      { merge: true }
+      {merge: true},
     );
   }
 
@@ -605,4 +662,4 @@ export class FirebasePartyRepository implements IPartyRepository {
   }
 }
 
-export { FirebasePartyRepository as FirestorePartyRepository };
+export {FirebasePartyRepository as FirestorePartyRepository};

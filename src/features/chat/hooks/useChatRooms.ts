@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 import { useAuth } from '@/features/auth';
 
@@ -14,18 +14,17 @@ export const useChatRooms = (category: ChatRoomCategory) => {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const refresh = useCallback(async () => {
+    setReloadToken(currentValue => currentValue + 1);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
 
-    if (category === 'custom' && !user?.uid) {
-      setChatRooms([]);
-      setLoading(false);
-      return;
-    }
-
-    if (category === 'department' && !user?.department) {
+    if (!user?.uid) {
       setChatRooms([]);
       setLoading(false);
       return;
@@ -52,7 +51,7 @@ export const useChatRooms = (category: ChatRoomCategory) => {
     );
 
     return () => unsubscribe();
-  }, [category, chatRepository, user?.department, user?.uid]);
+  }, [category, chatRepository, reloadToken, user?.department, user?.uid]);
 
-  return { chatRooms, loading, error } as const;
+  return { chatRooms, loading, error, refresh } as const;
 };

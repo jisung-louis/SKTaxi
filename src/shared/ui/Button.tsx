@@ -7,7 +7,11 @@ import {
   TextStyle,
   ActivityIndicator,
 } from 'react-native';
-import { COLORS } from '@/shared/constants/colors';
+import {
+  COLORS,
+  RADIUS,
+  TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'small' | 'medium' | 'large';
@@ -59,7 +63,11 @@ const Button = ({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? COLORS.background.primary : COLORS.accent.green}
+          color={
+            variant === 'primary'
+              ? COLORS.text.inverse
+              : COLORS.brand.primary
+          }
           size="small"
         />
       ) : (
@@ -71,21 +79,23 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
+    borderRadius: RADIUS.sm,
     justifyContent: 'center',
     alignItems: 'center',
   },
   // Variants
   primary: {
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: COLORS.brand.primary,
   },
   secondary: {
-    backgroundColor: COLORS.background.card,
+    backgroundColor: COLORS.background.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border.default,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: COLORS.accent.green,
+    borderColor: COLORS.brand.primary,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -105,19 +115,20 @@ const styles = StyleSheet.create({
   },
   // Text styles
   text: {
+    ...TYPOGRAPHY.body1,
     fontWeight: '600',
   },
   primaryText: {
-    color: COLORS.background.primary,
+    color: COLORS.text.inverse,
   },
   secondaryText: {
-    color: COLORS.accent.green,
+    color: COLORS.brand.primary,
   },
   outlineText: {
-    color: COLORS.accent.green,
+    color: COLORS.brand.primary,
   },
   ghostText: {
-    color: COLORS.accent.green,
+    color: COLORS.brand.primary,
   },
   smallText: {
     fontSize: 14,
@@ -137,4 +148,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Button; 
+export default Button;

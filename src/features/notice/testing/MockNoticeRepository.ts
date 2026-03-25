@@ -3,6 +3,8 @@ import type {
   Unsubscribe,
 } from '@/shared/types/subscription';
 
+import {NOTICE_DETAIL_MOCK} from '../mocks/noticeDetail.mock';
+import {NOTICE_HOME_ITEMS_MOCK} from '../mocks/noticeHome.mock';
 import type {
   Comment,
   CommentFormData,
@@ -13,6 +15,82 @@ import type {
   ReadStatusMap,
 } from '../data/repositories/INoticeRepository';
 
+type NoticeDetailParagraphBlock = Extract<
+  (typeof NOTICE_DETAIL_MOCK)[number]['bodyBlocks'][number],
+  {type: 'paragraph'}
+>;
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+const buildContentDetail = (
+  noticeId: string,
+  bodyBlocks: typeof NOTICE_DETAIL_MOCK[number]['bodyBlocks'],
+) =>
+  bodyBlocks
+    .map((block, index) => {
+      if (block.type === 'image') {
+        return `<img src="${escapeHtml(block.imageUrl)}" alt="${escapeHtml(
+          block.alt ?? `${noticeId}-image-${index + 1}`,
+        )}" />`;
+      }
+
+      return `<p>${escapeHtml(block.text).replace(/\n/g, '<br />')}</p>`;
+    })
+    .join('');
+
+const buildSeedNotices = (): Notice[] =>
+  NOTICE_DETAIL_MOCK.map(detail => {
+    const firstParagraph = detail.bodyBlocks.find(
+      (block): block is NoticeDetailParagraphBlock => block.type === 'paragraph',
+    );
+
+    return {
+      id: detail.id,
+      title: detail.title,
+      content: firstParagraph?.text ?? detail.title,
+      link: '',
+      postedAt: new Date(detail.postedAt),
+      category: detail.category,
+      createdAt: detail.postedAt,
+      author: '성결대학교',
+      department: '성결대학교',
+      source: 'notice',
+      contentDetail: buildContentDetail(detail.id, detail.bodyBlocks),
+      contentAttachments: detail.attachments.map(attachment => ({
+        name: attachment.fileName,
+        downloadUrl: '',
+        previewUrl: '',
+      })),
+      likeCount: detail.likeCount,
+      commentCount: detail.comments.length,
+      viewCount: 0,
+    } satisfies Notice;
+  });
+
+const buildSeedComments = (): Map<string, Comment[]> =>
+  new Map<string, Comment[]>(
+    NOTICE_DETAIL_MOCK.filter(detail => detail.comments.length > 0).map(detail => [
+      detail.id,
+      detail.comments.map<Comment>(comment => ({
+        id: comment.id,
+        noticeId: detail.id,
+        userId: `mock-${comment.authorName}`,
+        userDisplayName: comment.authorName,
+        content: comment.content,
+        createdAt: new Date(comment.postedAt),
+        updatedAt: new Date(comment.postedAt),
+        isDeleted: false,
+        parentId: null,
+        replies: [],
+      })),
+    ]),
+  );
+
 export class MockNoticeRepository implements INoticeRepository {
   private notices = new Map<string, Notice>();
 
@@ -20,26 +98,15 @@ export class MockNoticeRepository implements INoticeRepository {
 
   private likes = new Map<string, Set<string>>();
 
-  private comments = new Map<string, Comment[]>();
+  private comments = buildSeedComments();
+
+  private readonly defaultReadNoticeIds = new Set(
+    NOTICE_HOME_ITEMS_MOCK.filter(item => item.isRead).map(item => item.id),
+  );
 
   constructor() {
-    const now = new Date();
-    this.notices.set('notice1', {
-      id: 'notice1',
-      title: '서비스 오픈 안내',
-      content: 'SKURI Taxi 서비스가 오픈되었습니다.',
-      link: '',
-      postedAt: now,
-      category: '일반',
-      createdAt: now.toISOString(),
-      author: '관리자',
-      department: '운영팀',
-      source: 'notice',
-      contentDetail: '자세한 내용입니다.',
-      contentAttachments: [],
-      likeCount: 5,
-      commentCount: 2,
-      viewCount: 100,
+    buildSeedNotices().forEach(notice => {
+      this.notices.set(notice.id, notice);
     });
   }
 
@@ -81,7 +148,10 @@ export class MockNoticeRepository implements INoticeRepository {
   async getReadStatus(userId: string, noticeIds: string[]): Promise<ReadStatusMap> {
     const result: ReadStatusMap = {};
     noticeIds.forEach((noticeId) => {
-      result[noticeId] = this.readStatus.get(noticeId)?.has(userId) || false;
+      result[noticeId] =
+        this.readStatus.get(noticeId)?.has(userId) ||
+        this.defaultReadNoticeIds.has(noticeId) ||
+        false;
     });
     return result;
   }

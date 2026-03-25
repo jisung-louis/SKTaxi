@@ -3,8 +3,11 @@ import { Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  COLORS,
+  RADIUS,
+  TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 import { openAppStore } from '@/shared/lib/device/openAppStore';
 import type { VersionModalConfig } from '@/shared/types/version';
 
@@ -71,7 +74,7 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({ visible, con
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background.primary,
+    backgroundColor: COLORS.background.page,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -101,14 +104,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.accent.blue,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    borderRadius: 12,
+    borderRadius: RADIUS.md,
     width: '100%',
     alignItems: 'center',
     marginBottom: 16,
   },
   updateButtonText: {
     ...TYPOGRAPHY.body1,
-    color: COLORS.text.buttonText,
+    color: COLORS.text.inverse,
     fontWeight: '600',
   },
   note: {

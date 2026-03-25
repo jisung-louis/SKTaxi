@@ -1,6 +1,6 @@
 # Spring 백엔드 ERD (Entity Relationship Diagram)
 
-> 최종 수정일: 2026-03-09
+> 최종 수정일: 2026-03-25
 > 관련 문서: [도메인 분석](./domain-analysis.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
@@ -85,7 +85,12 @@ erDiagram
         enum end_reason "ARRIVED,FORCE_ENDED,CANCELLED,TIMEOUT,WITHDRAWED"
         datetime ended_at
         enum settlement_status "PENDING,COMPLETED"
+        int taxi_fare
         int per_person_amount
+        varchar(20) settlement_bank_name
+        varchar(30) settlement_account_number
+        varchar(50) settlement_account_holder
+        boolean settlement_hide_name
         bigint version "Optimistic Lock"
         datetime created_at
         datetime updated_at
@@ -177,7 +182,7 @@ erDiagram
     members ||--o{ chat_messages : "sends"
 ```
 
-### 1.2 Supporting 도메인 (Board, Notice)
+### 1.2 Supporting 도메인 (Board, Notice, Campus)
 
 ```mermaid
 erDiagram
@@ -307,6 +312,26 @@ erDiagram
         json image_urls "string[]"
         varchar(500) action_url
         datetime published_at
+        datetime created_at
+        datetime updated_at
+    }
+
+    campus_banners {
+        varchar(36) id PK "UUID"
+        varchar(50) badge_label "NOT NULL"
+        varchar(100) title_label "NOT NULL"
+        varchar(200) description_label "NOT NULL"
+        varchar(50) button_label "NOT NULL"
+        enum palette_key "GREEN,BLUE,PURPLE,RED,YELLOW"
+        varchar(500) image_url "NOT NULL"
+        enum action_type "IN_APP,EXTERNAL_URL"
+        enum action_target "TAXI_MAIN,NOTICE_MAIN,TIMETABLE_DETAIL,CAFETERIA_DETAIL,ACADEMIC_CALENDAR_DETAIL"
+        json action_params "nullable, object only"
+        varchar(500) action_url
+        boolean is_active "NOT NULL"
+        datetime display_start_at
+        datetime display_end_at
+        int display_order "1부터 시작하는 연속값"
         datetime created_at
         datetime updated_at
     }
@@ -462,7 +487,7 @@ erDiagram
 
     admin_audit_logs {
         varchar(36) id PK "UUID"
-        varchar(36) actor_id FK "관리자 ID"
+        varchar(36) actor_id "관리자 UID(논리적 참조)"
         varchar(50) action "NOT NULL"
         varchar(36) target_id
         varchar(50) target_type
@@ -564,7 +589,12 @@ erDiagram
 | end_reason | ENUM | | ARRIVED, FORCE_ENDED, CANCELLED, TIMEOUT, WITHDRAWED |
 | ended_at | DATETIME | | 종료 시간 |
 | settlement_status | ENUM | | PENDING, COMPLETED |
+| taxi_fare | INT | | 총 택시비 snapshot |
 | per_person_amount | INT | | 1인당 요금 |
+| settlement_bank_name | VARCHAR(20) | | 정산 계좌 은행명 snapshot |
+| settlement_account_number | VARCHAR(30) | | 정산 계좌번호 snapshot |
+| settlement_account_holder | VARCHAR(50) | | 정산 예금주 snapshot |
+| settlement_hide_name | BOOLEAN | | 정산 예금주 마스킹 여부 |
 | version | BIGINT | NOT NULL | Optimistic Lock 버전 |
 | created_at | DATETIME | NOT NULL | 생성일 |
 | updated_at | DATETIME | NOT NULL | 수정일 |
@@ -625,7 +655,35 @@ erDiagram
 | `notice_likes` | 공지 좋아요 | ~200,000 |
 | `app_notices` | 앱 공지 | ~100 |
 
-### 2.6 Academic 도메인
+### 2.6 Campus 도메인
+
+| 테이블 | 설명 | 예상 레코드 수 |
+|--------|------|---------------|
+| `campus_banners` | 캠퍼스 홈 배너 | ~20 |
+
+**campus_banners 주요 컬럼**
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | VARCHAR(36) | PK | 배너 ID |
+| badge_label | VARCHAR(50) | NOT NULL | 상단 배지 라벨 |
+| title_label | VARCHAR(100) | NOT NULL | 배너 제목 |
+| description_label | VARCHAR(200) | NOT NULL | 배너 설명 |
+| button_label | VARCHAR(50) | NOT NULL | CTA 버튼 라벨 |
+| palette_key | VARCHAR(20) | NOT NULL | 프론트 팔레트 키 (`GREEN`, `BLUE`, `PURPLE`, `RED`, `YELLOW`) |
+| image_url | VARCHAR(500) | NOT NULL | 캠퍼스 배너 이미지 URL |
+| action_type | VARCHAR(20) | NOT NULL | 액션 타입 (`IN_APP`, `EXTERNAL_URL`) |
+| action_target | VARCHAR(40) | | 인앱 이동 대상 (`TAXI_MAIN`, `NOTICE_MAIN`, `TIMETABLE_DETAIL`, `CAFETERIA_DETAIL`, `ACADEMIC_CALENDAR_DETAIL`) |
+| action_params | JSON | | 인앱 이동용 추가 파라미터. JSON object만 허용 |
+| action_url | VARCHAR(500) | | 외부 이동 URL |
+| is_active | BOOLEAN | NOT NULL | 운영 활성 여부 |
+| display_start_at | DATETIME | | 노출 시작 시각 |
+| display_end_at | DATETIME | | 노출 종료 시각 (`display_end_at < display_start_at` 금지) |
+| display_order | INT | NOT NULL | 1부터 시작하는 연속 표시 순서 |
+| created_at | DATETIME | NOT NULL | 생성 시각 |
+| updated_at | DATETIME | NOT NULL | 수정 시각 |
+
+### 2.7 Academic 도메인
 
 | 테이블 | 설명 | 예상 레코드 수 |
 |--------|------|---------------|
@@ -635,7 +693,7 @@ erDiagram
 | `user_timetable_courses` | 시간표-강의 매핑 | ~25,000/학기 |
 | `academic_schedules` | 학사 일정 | ~100/년 |
 
-### 2.7 Support 도메인
+### 2.8 Support 도메인
 
 | 테이블 | 설명 | 예상 레코드 수 |
 |--------|------|---------------|
@@ -644,7 +702,7 @@ erDiagram
 | `app_versions` | 앱 버전 | 2 (ios, android) |
 | `cafeteria_menus` | 학식 메뉴 | ~52/년 |
 
-### 2.8 Notification 인프라
+### 2.9 Notification 인프라
 
 | 테이블 | 설명 | 예상 레코드 수 |
 |--------|------|---------------|
@@ -677,6 +735,22 @@ erDiagram
 | created_at | DATETIME | NOT NULL | 최초 등록 시각 |
 | last_used_at | DATETIME | | 마지막 성공 사용 시각 |
 
+**admin_audit_logs 주요 컬럼**
+
+| 컬럼 | 타입 | 제약조건 | 설명 |
+|------|------|---------|------|
+| id | VARCHAR(36) | PK | 감사 로그 ID |
+| actor_id | VARCHAR(36) | NOT NULL | 호출 관리자 UID (members.id에 대한 논리적 참조, 물리 FK 미적용) |
+| action | VARCHAR(50) | NOT NULL | 감사 액션 코드 (`INQUIRY_STATUS_UPDATED`, `ACADEMIC_SCHEDULE_CREATED` 등) |
+| target_id | VARCHAR(36) | | 대상 엔티티 ID 또는 canonical 운영 키(semester/platform/weekId) |
+| target_type | VARCHAR(50) | | 대상 타입 (`INQUIRY`, `REPORT`, `APP_VERSION` 등) |
+| diff_before | JSON | | 변경 전 스냅샷 |
+| diff_after | JSON | | 변경 후 스냅샷 |
+| timestamp | DATETIME | NOT NULL | 감사 로그 기록 시각 |
+
+- Phase 11 기준 `admin_audit_logs`는 상태 변경 Admin API(`POST`, `PUT`, `PATCH`, `DELETE`)만 저장하고 `GET` 조회는 저장하지 않는다.
+- `target_id`는 raw 입력이 아니라 서비스와 동일한 canonical 키를 저장한다. 예: `semester=2026-1`, `platform=ios`
+
 ---
 
 ## 3. 테이블 관계 요약
@@ -699,6 +773,7 @@ erDiagram
 | 공지-읽음 | notices | notice_read_status | 1:N | 공지별 읽음 상태 |
 | 공지-댓글 | notices | notice_comments | 1:N | 공지에 여러 댓글 |
 | 공지-좋아요 | notices | notice_likes | 1:N | 공지별 좋아요 |
+| 캠퍼스 배너 | campus_banners | (없음) | 독립 테이블 | 홈 배너 콘텐츠/노출 기간/정렬 관리 |
 | 강의-시간 | courses | course_schedules | 1:N | 강의에 여러 시간 슬롯 |
 | 시간표-강의 | user_timetables | user_timetable_courses | 1:N | 시간표에 여러 강의 |
 | 회원-알림 | members | user_notifications | 1:N | 회원에게 여러 알림 |
@@ -853,7 +928,16 @@ CREATE INDEX idx_notice_comments_parent ON notice_comments(parent_id);
 CREATE INDEX idx_notice_likes_user ON notice_likes(user_id);
 ```
 
-### 4.6 Academic 도메인
+### 4.6 Campus 도메인
+
+```sql
+-- campus_banners
+CREATE INDEX idx_campus_banners_display_order ON campus_banners(display_order);
+CREATE INDEX idx_campus_banners_active_display ON campus_banners(is_active, display_order);
+CREATE INDEX idx_campus_banners_display_window ON campus_banners(display_start_at, display_end_at);
+```
+
+### 4.7 Academic 도메인
 
 ```sql
 -- courses
@@ -873,14 +957,14 @@ CREATE INDEX idx_academic_schedules_date ON academic_schedules(start_date, end_d
 CREATE INDEX idx_academic_schedules_primary ON academic_schedules(is_primary);
 ```
 
-### 4.7 Support 도메인
+### 4.8 Support 도메인
 
 ```sql
 -- reports
 CREATE UNIQUE INDEX uk_reports_reporter_target ON reports(reporter_id, target_type, target_id);
 ```
 
-### 4.8 Notification 인프라
+### 4.9 Notification 인프라
 
 ```sql
 -- user_notifications
@@ -912,3 +996,5 @@ CREATE INDEX idx_audit_logs_timestamp ON admin_audit_logs(timestamp DESC);
 > - 2026-03-05: Board 댓글 정책 동기화 — `comments.parent_id` 관계를 부모 보존 정책(B)에 맞게 정정(`ON DELETE SET NULL`), depth 1 제약/placeholder soft delete 설명 반영
 > - 2026-03-07: Board/Notice 댓글 정책 구현 반영 — 무제한 self-reference, 댓글 알림 설정 컬럼(`comment_notifications`, `bookmarked_post_comment_notifications`) 반영
 > - 2026-03-08: Phase 8 Notification 인프라 반영 — members 학사 일정 알림 컬럼, `user_notifications`/`fcm_tokens` 상세, notification type canonical enum 동기화
+> - 2026-03-25: Campus Banner 테이블 추가 — `campus_banners` 컬럼/인덱스/독립 도메인 분류 반영
+> - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `admin_audit_logs` 상세 컬럼(`diff_before`, `diff_after`, `timestamp`)과 운영 식별자/저장 범위 정책을 문서화

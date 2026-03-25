@@ -1,14 +1,8 @@
 import type { IChatRepository } from '../data/repositories/IChatRepository';
 import type {
-  ChatMessage,
   ChatRoom,
   ChatRoomNotificationPayload,
 } from '../model/types';
-
-import { COLORS } from '@/shared/constants/colors';
-import type { IUserRepository } from '@/features/user';
-
-import { sendMinecraftChatMessage } from '../data/minecraftChatBridge';
 
 export const formatTimeAgo = (timestamp: unknown) => {
   if (!timestamp) {
@@ -56,20 +50,6 @@ export const getChatRoomIcon = (type: ChatRoom['type']) => {
       return 'chatbubbles-outline';
     default:
       return 'chatbubble-outline';
-  }
-};
-
-export const getChatRoomColor = (type: ChatRoom['type']) => {
-  switch (type) {
-    case 'university':
-      return COLORS.accent.blue;
-    case 'department':
-      return COLORS.accent.green;
-    case 'game':
-      return COLORS.accent.orange;
-    case 'custom':
-    default:
-      return COLORS.accent.red;
   }
 };
 
@@ -125,59 +105,14 @@ export const resolveChatRoomForegroundNotification = async ({
   };
 };
 
-export const getCurrentChatRoomIdFromNavigationState = (state: any): string | undefined => {
-  if (!state) {
-    return undefined;
-  }
-
-  const mainTabRoute = state.routes?.find((route: any) => route.name === 'Main');
-  if (!mainTabRoute) {
-    return undefined;
-  }
-
-  const mainTabState = mainTabRoute.state;
-  const tabRoute = mainTabState?.routes?.[mainTabState.index];
-
-  if (!tabRoute || tabRoute.name !== 'ChatTab') {
-    return undefined;
-  }
-
-  const stackState = tabRoute.state;
-  const stackRoute = stackState?.routes?.[stackState.index];
-
-  if (stackRoute?.name !== 'ChatDetail') {
-    return undefined;
-  }
-
-  return stackRoute.params?.chatRoomId;
-};
-
-export const navigateToChatRoom = (navigation: any, chatRoomId: string) => {
-  navigation.navigate('Main', {
-    screen: 'ChatTab',
-    params: {
-      screen: 'ChatDetail',
-      params: { chatRoomId },
-    },
-  });
-};
-
 export const sendChatTextMessage = async ({
   chatRepository,
-  chatRoom,
   chatRoomId,
   text,
-  userEmail,
-  userId,
-  userRepository,
 }: {
   chatRepository: IChatRepository;
-  chatRoom?: ChatRoom | null;
   chatRoomId: string;
   text: string;
-  userEmail?: string | null;
-  userId: string;
-  userRepository: IUserRepository;
 }) => {
   const trimmedText = text.trim();
 
@@ -185,37 +120,8 @@ export const sendChatTextMessage = async ({
     throw new Error('메시지를 입력해주세요.');
   }
 
-  if (chatRoom?.type === 'game') {
-    await sendMinecraftChatMessage(chatRoomId, trimmedText);
-    return;
-  }
-
-  const profile = await userRepository.getUserProfile(userId);
-  const senderName = profile?.displayName || userEmail || '익명';
-  const message: Omit<ChatMessage, 'id' | 'createdAt'> = {
-    text: trimmedText,
-    senderId: userId,
-    senderName,
-    type: 'text',
-    clientCreatedAt: new Date(),
-  };
-
-  await chatRepository.sendMessage(chatRoomId, message);
-};
-
-export const sendChatSystemMessage = async ({
-  chatRepository,
-  chatRoomId,
-  text,
-}: {
-  chatRepository: IChatRepository;
-  chatRoomId: string;
-  text: string;
-}) => {
   await chatRepository.sendMessage(chatRoomId, {
-    senderId: 'system',
-    senderName: '시스템',
-    text,
-    type: 'system',
+    text: trimmedText,
+    type: 'text',
   });
 };

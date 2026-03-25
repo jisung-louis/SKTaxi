@@ -1,7 +1,7 @@
-import { FirestoreModerationRepository } from '@/shared/lib/firebase';
 import { createModerationService } from '@/shared/lib/moderation';
+import { MockModerationRepository } from '@/shared/lib/mock/MockModerationRepository';
 
-const moderationRepository = new FirestoreModerationRepository();
+const moderationRepository = new MockModerationRepository();
 
 export const boardModerationRuntime = createModerationService(
   moderationRepository,

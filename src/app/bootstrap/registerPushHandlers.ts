@@ -1,17 +1,17 @@
 import { useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
 
+import { useMemberRepository } from '@/di';
+import {
+  saveMemberFcmToken,
+  subscribeMemberFcmTokenRefresh,
+} from '@/features/member';
 import {
   checkInitialNotification,
   initBackgroundMessageHandler,
   initForegroundMessageHandler,
   initNotificationOpenedAppHandler,
 } from './pushNotificationRuntime';
-import {
-  saveUserFcmToken,
-  subscribeUserFcmTokenRefresh,
-  useUserRepository,
-} from '@/features/user';
 
 export interface RegisterPushHandlersParams {
   userId: string | undefined;
@@ -84,7 +84,7 @@ export function useRegisterPushHandlers({
   getCurrentChatRoomId,
 }: RegisterPushHandlersParams): void {
   const navigation = useNavigation();
-  const userRepository = useUserRepository();
+  const memberRepository = useMemberRepository();
 
   useEffect(() => {
     let unsubscribeForeground: (() => void) | undefined;
@@ -117,13 +117,11 @@ export function useRegisterPushHandlers({
       );
       checkInitialNotification(navigation, setJoinData);
 
-      saveUserFcmToken({
-        userId,
-        userRepository,
+      saveMemberFcmToken({
+        memberRepository,
       }).catch(() => {});
-      unsubscribeTokenRefresh = subscribeUserFcmTokenRefresh({
-        userId,
-        userRepository,
+      unsubscribeTokenRefresh = subscribeMemberFcmTokenRefresh({
+        memberRepository,
       });
     }
 
@@ -154,6 +152,6 @@ export function useRegisterPushHandlers({
     handleNoticeNotificationReceived,
     handleChatRoomMessageReceived,
     getCurrentChatRoomId,
-    userRepository,
+    memberRepository,
   ]);
 }

@@ -1,5 +1,4 @@
 import { getAuth } from '@react-native-firebase/auth';
-import { doc, getDoc, getFirestore } from '@react-native-firebase/firestore';
 
 import type { MinecraftServerInfo } from '../model/types';
 import { minecraftRepository } from './composition/minecraftRuntime';
@@ -30,13 +29,10 @@ export const sendMinecraftChatMessage = async (chatRoomId: string, text: string)
     throw new Error('메시지를 입력해주세요.');
   }
 
-  const profileSnapshot = await getDoc(doc(getFirestore(), 'users', user.uid));
-  const profileData = profileSnapshot.data();
-  const fallbackDisplayName = '스쿠리 유저';
   const senderName =
-    typeof profileData?.displayName === 'string' && profileData.displayName.trim().length > 0
-      ? profileData.displayName.trim()
-      : fallbackDisplayName;
+    user.displayName?.trim() ||
+    user.email?.split('@')[0] ||
+    '스쿠리 유저';
 
   await minecraftRepository.sendMessage({
     chatRoomId,

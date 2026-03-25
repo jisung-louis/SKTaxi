@@ -1,9 +1,5 @@
 export {
   JoinRequestModal,
-  PartyList,
-  TaxiHomeSection,
-  TaxiPermissionPrompt,
-  TaxiTimeRemaining,
 } from './components';
 
 export { FirebasePartyRepository } from './data/repositories/FirebasePartyRepository';
@@ -19,6 +15,7 @@ export type {
   INotificationActionRepository,
   JoinRequestStatusValue,
 } from './data/repositories/INotificationActionRepository';
+export type { ITaxiChatRepository } from './data/repositories/ITaxiChatRepository';
 
 export { useJoinRequest } from './hooks/useJoinRequest';
 export type { UseJoinRequestResult } from './hooks/useJoinRequest';
@@ -49,8 +46,6 @@ export type {
   UsePendingJoinRequestResult,
 } from './hooks/usePendingJoinRequest';
 export { useTaxiLocation } from './hooks/useTaxiLocation';
-export { useTaxiScreenPresenter } from './hooks/useTaxiScreenPresenter';
-export { useChatScreenPresenter } from './hooks/useChatScreenPresenter';
 export {
   useJoinRequestCount,
   JoinRequestProvider,
@@ -58,9 +53,9 @@ export {
 
 export { AcceptancePendingScreen } from './screens/AcceptancePendingScreen';
 export { ChatScreen } from './screens/ChatScreen';
-export { MapSearchScreen } from './screens/MapSearchScreen';
 export { RecruitScreen } from './screens/RecruitScreen';
 export { TaxiScreen } from './screens/TaxiScreen';
+export { TaxiLocationPickerScreen } from './screens/TaxiLocationPickerScreen';
 
 export {
   DEPARTURE_LOCATION,
@@ -87,9 +82,6 @@ export {
   declineJoinRequest,
 } from './services/joinRequestService';
 export {
-  sendAccountMessage,
-  sendArrivedMessage,
-  sendEndMessage,
   sendMessage,
-  sendSystemMessage,
+  sendAccountMessage,
 } from './services/partyMessageService';

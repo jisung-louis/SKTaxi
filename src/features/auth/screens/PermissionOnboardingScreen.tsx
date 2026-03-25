@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
-  Image,
   Platform,
+  ScrollView,
   StyleSheet,
-  TouchableOpacity,
+  Text,
   View,
 } from 'react-native';
 import Animated, {
@@ -13,681 +13,388 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { Text } from '@/shared/ui/Text';
-import { requestATTPermission } from '@/shared/lib/permissions/att';
-import { COLORS } from '@/shared/constants/colors';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
-import { useScreenView } from '@/shared/hooks';
+import {useScreenView} from '@/shared/hooks';
+import {
+  COLORS,
+  SPACING,
+} from '@/shared/design-system/tokens';
 
-import { PermissionOnboardingStep } from '../model/types';
-import { usePermissionOnboarding } from '../hooks/usePermissionOnboarding';
-import { usePermissionOnboardingStatus } from '../hooks/usePermissionOnboardingStatus';
+import {AuthActionButton} from '../components/AuthActionButton';
+import {OnboardingFeatureCard} from '../components/OnboardingFeatureCard';
+import {OnboardingProgressDots} from '../components/OnboardingProgressDots';
+import {usePermissionOnboarding} from '../hooks/usePermissionOnboarding';
+import {usePermissionOnboardingStatus} from '../hooks/usePermissionOnboardingStatus';
+import {PermissionOnboardingStep} from '../model/types';
+import {ONBOARDING_STEP_VIEW_DATA} from '../model/onboardingViewData';
+
+const IOS_STEP_SEQUENCE: PermissionOnboardingStep[] = [
+  'intro',
+  'notification',
+  'att',
+  'location',
+  'complete',
+];
+
+const ANDROID_STEP_SEQUENCE: PermissionOnboardingStep[] = [
+  'intro',
+  'notification',
+  'location',
+  'complete',
+];
+
+const COMPLETE_DECORATIONS = [
+  {backgroundColor: '#FACC15', left: 222, size: 24, top: 10},
+  {backgroundColor: '#60A5FA', left: 100, size: 12, top: 26},
+  {backgroundColor: '#F472B6', left: 104, size: 16, top: 134},
+] as const;
 
 export const PermissionOnboardingScreen = () => {
   useScreenView();
 
+  const insets = useSafeAreaInsets();
+  const stepSequence =
+    Platform.OS === 'ios' ? IOS_STEP_SEQUENCE : ANDROID_STEP_SEQUENCE;
   const [currentStep, setCurrentStep] =
-    useState<PermissionOnboardingStep>('intro');
-  const [isLoading, setIsLoading] = useState(false);
+    React.useState<PermissionOnboardingStep>('intro');
+  const [requesting, setRequesting] = React.useState(false);
   const {
+    completeOnboarding,
     requestLocationPermission,
     requestNotificationPermission,
-    completeOnboarding,
   } = usePermissionOnboardingStatus();
-
-  usePermissionOnboarding(currentStep, completeOnboarding);
-
+  const {completing, finalizeOnboarding} = usePermissionOnboarding();
   const transition = useSharedValue(1);
+
   const contentAnimatedStyle = useAnimatedStyle(() => ({
     opacity: transition.value,
-    transform: [{ translateY: (1 - transition.value) * 12 }],
+    transform: [{translateY: (1 - transition.value) * 18}],
   }));
 
-  const goToStep = (next: PermissionOnboardingStep) => {
-    transition.value = withTiming(
-      0,
-      {
-        duration: 300,
-        easing: Easing.out(Easing.cubic),
-      },
-      finished => {
-        if (finished) {
-          runOnJS(setCurrentStep)(next);
+  const goToStep = React.useCallback(
+    (nextStep: PermissionOnboardingStep) => {
+      transition.value = withTiming(
+        0,
+        {
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+        },
+        finished => {
+          if (!finished) {
+            return;
+          }
+
+          runOnJS(setCurrentStep)(nextStep);
           transition.value = 0;
           transition.value = withTiming(1, {
-            duration: 300,
+            duration: 260,
             easing: Easing.out(Easing.cubic),
           });
-        }
-      },
-    );
-  };
+        },
+      );
+    },
+    [transition],
+  );
 
-  const handleNotificationPermission = async () => {
-    setIsLoading(true);
-    try {
-      await requestNotificationPermission();
+  const activeStepIndex = Math.max(stepSequence.indexOf(currentStep), 0);
+  const currentViewData = ONBOARDING_STEP_VIEW_DATA[currentStep];
+
+  const handlePressPrimary = React.useCallback(async () => {
+    if (currentStep === 'intro') {
+      goToStep('notification');
+      return;
+    }
+
+    if (currentStep === 'notification') {
+      try {
+        setRequesting(true);
+        await requestNotificationPermission();
+      } catch (error) {
+        console.warn('알림 권한 요청 실패:', error);
+      } finally {
+        setRequesting(false);
+      }
+
       goToStep(Platform.OS === 'ios' ? 'att' : 'location');
-    } catch (error) {
-      console.warn('알림 권한 요청 실패:', error);
-      setCurrentStep(Platform.OS === 'ios' ? 'att' : 'location');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleATTPermission = async () => {
-    setIsLoading(true);
-    try {
-      await requestATTPermission();
+    if (currentStep === 'att') {
+      try {
+        setRequesting(true);
+        const {requestATTPermission} = await import('@/shared/lib/permissions/att');
+        await requestATTPermission();
+      } catch (error) {
+        console.warn('ATT 권한 요청 실패:', error);
+      } finally {
+        setRequesting(false);
+      }
+
       goToStep('location');
-    } catch (error) {
-      console.warn('ATT 권한 요청 실패:', error);
-      setCurrentStep('location');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const handleLocationPermission = async () => {
-    setIsLoading(true);
-    try {
-      await requestLocationPermission();
+    if (currentStep === 'location') {
+      try {
+        setRequesting(true);
+        await requestLocationPermission();
+      } catch (error) {
+        console.warn('위치 권한 요청 실패:', error);
+      } finally {
+        setRequesting(false);
+      }
+
       goToStep('complete');
-    } catch (error) {
-      console.warn('위치 권한 요청 실패:', error);
-      setCurrentStep('complete');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
 
-  const renderNotificationStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <Icon
-          name="notifications"
-          size={80}
-          color={COLORS.accent.green}
-        />
-      </View>
-
-      <Text style={styles.title}>
-        이 앱이 잘 작동하려면 ...
-      </Text>
-      <Text style={styles.subtitle}>알림 허용이 필요해요</Text>
-      <View style={styles.featureList}>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            동승 요청 승인/거절 알림
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>학교 공지사항 알림</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>학교 학사일정 알림</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            파티 채팅 메시지 알림
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.additionalInfo}>
-        세부 알림 설정은 앱 내에서 제어할 수 있어요
-      </Text>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            isLoading && styles.buttonDisabled,
-          ]}
-          onPress={handleNotificationPermission}
-          disabled={isLoading}
-        >
-          <Text style={styles.primaryButtonText}>
-            {isLoading ? '요청 중...' : '알림 허용하기'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderIntroStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <Image
-          source={require('../../../../assets/icons/skuri_icon.png')}
-          style={styles.introImage}
-        />
-      </View>
-      <Text style={styles.title}>스쿠리에 오신 걸 환영해요</Text>
-      <Text style={styles.subtitle}>
-        성결대 학생들의 스마트한 캠퍼스 라이프
-      </Text>
-
-      <View style={styles.featureList}>
-        <View style={styles.featureItem}>
-          <Icon
-            name="car"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            택시 동승 파티로 택시비 절약
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="notifications"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            학교 공지 알림을 실시간으로
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="calendar"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            학사일정과 시간표를 한 곳에서
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="restaurant"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            오늘의 학식도 확인하고
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="chatbox-ellipses"
-            size={20}
-            color={COLORS.accent.green}
-          />
-          <Text style={styles.featureText}>
-            커뮤니티에서 정보를 교류해요
-          </Text>
-        </View>
-      </View>
-      <Text style={styles.additionalInfo}> </Text>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() => goToStep('notification')}
-        >
-          <Text style={styles.primaryButtonText}>시작하기</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderATTStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <Icon
-          name="shield-checkmark"
-          size={80}
-          color={COLORS.accent.orange}
-        />
-      </View>
-
-      <Text style={styles.title}>개인정보 보호를 위해</Text>
-      <Text style={styles.subtitle}>
-        광고 추적 권한 설정이 필요해요
-      </Text>
-
-      <View style={styles.featureList}>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.orange}
-          />
-          <Text style={styles.featureText}>맞춤형 콘텐츠 제공</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.orange}
-          />
-          <Text style={styles.featureText}>
-            서비스 개선을 위한 분석
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.orange}
-          />
-          <Text style={styles.featureText}>
-            사용자 경험 최적화
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.additionalInfo}>
-        거부하셔도 앱의 모든 기능을 사용할 수 있어요
-        {'\n'}
-        설정에서 언제든지 변경할 수 있습니다.
-      </Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            isLoading && styles.buttonDisabled,
-          ]}
-          onPress={handleATTPermission}
-          disabled={isLoading}
-        >
-          <Text style={styles.primaryButtonText}>
-            {isLoading ? '요청 중...' : '계속하기'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderLocationStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <Icon
-          name="location"
-          size={80}
-          color={COLORS.accent.blue}
-        />
-      </View>
-
-      <Text style={styles.title}>정확한 위치 정보가 필요해요</Text>
-      <Text style={styles.subtitle}>
-        택시 동승을 위해 현재 위치를 확인해요
-      </Text>
-
-      <View style={styles.featureList}>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.blue}
-          />
-          <Text style={styles.featureText}>
-            현재 위치 기반 가까운 파티 찾기
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.blue}
-          />
-          <Text style={styles.featureText}>
-            파티 모임장소까지의 거리 계산
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.blue}
-          />
-          <Text style={styles.featureText}>
-            택시 동승 요청 시 출발지/도착지 설정
-          </Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Icon
-            name="checkmark-circle"
-            size={20}
-            color={COLORS.accent.blue}
-          />
-          <Text style={styles.featureText}>안전한 동승 파티</Text>
-        </View>
-      </View>
-
-      <Text style={styles.additionalInfo}>
-        내 위치 정보는 단말기 내에서만 활용되며 서버에 저장되지
-        않아요
-        {'\n'}
-        위치정보 권한 거절 시 택시 동승 파티 찾기 기능이
-        불가능해요
-      </Text>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            isLoading && styles.buttonDisabled,
-          ]}
-          onPress={handleLocationPermission}
-          disabled={isLoading}
-        >
-          <Text style={styles.primaryButtonText}>
-            {isLoading ? '요청 중...' : '위치 허용하기'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  const renderCompleteStep = () => (
-    <View style={styles.stepContainer}>
-      <View style={styles.iconContainer}>
-        <Icon
-          name="checkmark-circle"
-          size={80}
-          color={COLORS.accent.green}
-        />
-      </View>
-
-      <Text style={styles.title}>설정이 완료되었어요!</Text>
-      <Text style={styles.subtitle}>
-        이제 SKURI의 모든 기능을 사용할 수 있습니다
-      </Text>
-
-      <View style={styles.completeMessage}>
-        <Text style={styles.completeText}>
-          잠시 후 메인 화면으로 이동합니다...
-        </Text>
-      </View>
-    </View>
-  );
+    await finalizeOnboarding(completeOnboarding);
+  }, [
+    completeOnboarding,
+    currentStep,
+    finalizeOnboarding,
+    goToStep,
+    requestLocationPermission,
+    requestNotificationPermission,
+  ]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Animated.View
-        style={[styles.content, contentAnimatedStyle]}
-      >
-        <View
-          style={[
-            styles.stepLayer,
-            currentStep === 'intro'
-              ? styles.stepVisible
-              : styles.stepHidden,
-          ]}
-          pointerEvents={currentStep === 'intro' ? 'auto' : 'none'}
-        >
-          {renderIntroStep()}
-        </View>
-        <View
-          style={[
-            styles.stepLayer,
-            currentStep === 'notification'
-              ? styles.stepVisible
-              : styles.stepHidden,
-          ]}
-          pointerEvents={
-            currentStep === 'notification' ? 'auto' : 'none'
-          }
-        >
-          {renderNotificationStep()}
-        </View>
-        {Platform.OS === 'ios' && (
-          <View
-            style={[
-              styles.stepLayer,
-              currentStep === 'att'
-                ? styles.stepVisible
-                : styles.stepHidden,
-            ]}
-            pointerEvents={currentStep === 'att' ? 'auto' : 'none'}
-          >
-            {renderATTStep()}
-          </View>
-        )}
-        <View
-          style={[
-            styles.stepLayer,
-            currentStep === 'location'
-              ? styles.stepVisible
-              : styles.stepHidden,
-          ]}
-          pointerEvents={
-            currentStep === 'location' ? 'auto' : 'none'
-          }
-        >
-          {renderLocationStep()}
-        </View>
-        <View
-          style={[
-            styles.stepLayer,
-            currentStep === 'complete'
-              ? styles.stepVisible
-              : styles.stepHidden,
-          ]}
-          pointerEvents={
-            currentStep === 'complete' ? 'auto' : 'none'
-          }
-        >
-          {renderCompleteStep()}
-        </View>
-      </Animated.View>
-
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width:
-                  currentStep === 'intro'
-                    ? Platform.OS === 'ios'
-                      ? '20%'
-                      : '25%'
-                    : currentStep === 'notification'
-                      ? Platform.OS === 'ios'
-                        ? '40%'
-                        : '50%'
-                      : currentStep === 'att'
-                        ? '60%'
-                        : currentStep === 'location'
-                          ? Platform.OS === 'ios'
-                            ? '80%'
-                            : '75%'
-                          : '100%',
-              },
-            ]}
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <View style={styles.screen}>
+        <View style={[styles.progressWrap, {paddingTop: insets.top + 16}]}>
+          <OnboardingProgressDots
+            activeColor={currentViewData.heroColor}
+            activeIndex={activeStepIndex}
+            total={stepSequence.length}
           />
         </View>
-        <Text style={styles.progressText}>
-          {currentStep === 'intro'
-            ? Platform.OS === 'ios'
-              ? '1/5'
-              : '1/4'
-            : currentStep === 'notification'
-              ? Platform.OS === 'ios'
-                ? '2/5'
-                : '2/4'
-              : currentStep === 'att'
-                ? '3/5'
-                : currentStep === 'location'
-                  ? Platform.OS === 'ios'
-                    ? '4/5'
-                    : '3/4'
-                  : Platform.OS === 'ios'
-                    ? '5/5'
-                    : '4/4'}
-        </Text>
+
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {paddingBottom: 144 + insets.bottom, paddingTop: insets.top + 64},
+          ]}
+          showsVerticalScrollIndicator={false}>
+          <Animated.View style={contentAnimatedStyle}>
+            <View style={styles.heroSection}>
+              {currentStep === 'complete' ? (
+                <View style={styles.completeHeroWrap}>
+                  {COMPLETE_DECORATIONS.map(decoration => (
+                    <View
+                      key={`${decoration.left}-${decoration.top}`}
+                      style={[
+                        styles.completeDecoration,
+                        {
+                          backgroundColor: decoration.backgroundColor,
+                          height: decoration.size,
+                          left: decoration.left,
+                          top: decoration.top,
+                          width: decoration.size,
+                        },
+                      ]}
+                    />
+                  ))}
+                  <View
+                    style={[
+                      styles.completeHero,
+                      {backgroundColor: currentViewData.heroColor},
+                    ]}>
+                    <View style={styles.completeInnerCircle}>
+                      <Icon
+                        color={currentViewData.heroColor}
+                        name={currentViewData.heroIconName}
+                        size={32}
+                      />
+                    </View>
+                  </View>
+                </View>
+              ) : (
+                <View
+                  style={[
+                    styles.heroBox,
+                    {
+                      backgroundColor: currentViewData.heroColor,
+                      shadowColor: currentViewData.heroColor,
+                    },
+                  ]}>
+                  <Icon
+                    color={COLORS.text.inverse}
+                    name={currentViewData.heroIconName}
+                    size={36}
+                  />
+                </View>
+              )}
+            </View>
+
+            {currentViewData.kicker ? (
+              <Text style={styles.kicker}>{currentViewData.kicker}</Text>
+            ) : null}
+
+            <Text style={styles.title}>{currentViewData.title}</Text>
+            {currentViewData.subtitle ? (
+              <Text style={styles.subtitle}>{currentViewData.subtitle}</Text>
+            ) : (
+              <View style={styles.subtitleSpace}/>
+            )}
+
+            <View style={styles.featureList}>
+              {currentViewData.features.map(feature => (
+                <OnboardingFeatureCard
+                  iconColor={currentViewData.heroColor}
+                  iconName={feature.iconName}
+                  key={feature.label}
+                  label={feature.label}
+                />
+              ))}
+            </View>
+
+            {currentViewData.footerLines?.length ? (
+              <View style={styles.footerNoteWrap}>
+                {currentViewData.footerLines.map(line => (
+                  <Text key={line} style={styles.footerNote}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
+            ) : null}
+          </Animated.View>
+        </ScrollView>
+
+        <View
+          style={styles.bottomActionWrap}>
+          <AuthActionButton
+            colors={currentViewData.buttonColors}
+            disabled={false}
+            label={currentViewData.actionLabel}
+            loading={requesting || completing}
+            onPress={handlePressPrimary}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  additionalInfo: {
-    ...TYPOGRAPHY.caption1,
-    lineHeight: 18,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginBottom: 12,
-    marginTop: 36,
-  },
-  buttonContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  completeMessage: {
-    backgroundColor: COLORS.background.card,
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    marginTop: 48,
-  },
-  completeText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-  },
-  container: {
+  safeArea: {
+    backgroundColor: COLORS.background.surface,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
   },
-  content: {
+  screen: {
+    backgroundColor: COLORS.background.surface,
     flex: 1,
-    paddingHorizontal: 24,
-    position: 'relative',
   },
-  featureItem: {
-    flexDirection: 'row',
+  progressWrap: {
     alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  featureList: {
-    width: '100%',
-    marginTop: 30,
-    backgroundColor: COLORS.background.card,
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    gap: 16,
-  },
-  featureText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    marginLeft: 12,
-  },
-  iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: COLORS.background.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  introImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 24,
-  },
-  primaryButton: {
-    backgroundColor: COLORS.accent.green,
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-    width: '100%',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  primaryButtonText: {
-    color: COLORS.background.primary,
-    ...TYPOGRAPHY.body1,
-    fontWeight: '600',
-  },
-  progressBar: {
-    width: '100%',
-    height: 4,
-    backgroundColor: COLORS.border.default,
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressContainer: {
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    alignItems: 'center',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 2,
-  },
-  progressText: {
-    fontSize: 12,
-    color: COLORS.text.secondary,
-  },
-  stepContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepHidden: {
-    opacity: 0,
-  },
-  stepLayer: {
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    left: 0,
+    paddingBottom: 12,
     position: 'absolute',
+    right: 0,
     top: 0,
-    left: 24,
-    right: 24,
-    bottom: 0,
+    zIndex: 20,
   },
-  stepVisible: {
-    opacity: 1,
+  scrollContent: {
+    paddingHorizontal: SPACING.xxl,
   },
-  subtitle: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
+  heroSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  heroBox: {
+    alignItems: 'center',
+    borderRadius: 24,
+    height: 96,
+    justifyContent: 'center',
+    shadowOffset: {width: 0, height: 12},
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    width: 96,
+    elevation: 10,
+  },
+  completeHeroWrap: {
+    alignItems: 'center',
+    height: 152,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  completeDecoration: {
+    borderRadius: 9999,
+    opacity: 0.82,
+    position: 'absolute',
+  },
+  completeHero: {
+    alignItems: 'center',
+    borderRadius: 9999,
+    height: 112,
+    justifyContent: 'center',
+    shadowColor: '#4ADE80',
+    shadowOffset: {width: 0, height: 16},
+    shadowOpacity: 0.35,
+    shadowRadius: 32,
+    width: 112,
+    elevation: 12,
+  },
+  completeInnerCircle: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderRadius: 9999,
+    height: 48,
+    justifyContent: 'center',
+    width: 48,
+  },
+  kicker: {
+    color: COLORS.text.muted,
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: 4,
   },
   title: {
-    ...TYPOGRAPHY.title1,
-    fontWeight: 'bold',
     color: COLORS.text.primary,
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
     marginBottom: 8,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: COLORS.text.tertiary,
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 32,
+    minHeight: 22,
+    textAlign: 'center',
+    height: 22,
+  },
+  subtitleSpace: {
+    marginBottom: 32,
+  },
+  featureList: {
+    gap: 12,
+  },
+  footerNoteWrap: {
+    marginTop: 20,
+  },
+  footerNote: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  bottomActionWrap: {
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: SPACING.xxl,
+    paddingTop: 17,
+    position: 'absolute',
+    right: 0,
+    paddingBottom: 20,
   },
 });

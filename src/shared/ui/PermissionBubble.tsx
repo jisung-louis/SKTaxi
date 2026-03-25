@@ -9,9 +9,13 @@ import {
 import { WINDOW_WIDTH } from '@gorhom/bottom-sheet';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import { COLORS } from '@/shared/constants/colors';
 import { BOTTOM_TAB_BAR_HEIGHT } from '@/shared/constants/layout';
-import { TYPOGRAPHY } from '@/shared/constants/typography';
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  TYPOGRAPHY,
+} from '@/shared/design-system/tokens';
 
 type PermissionBubbleProps = {
   visible: boolean;
@@ -74,7 +78,7 @@ export const PermissionBubble = ({
           style={styles.closeBtn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Icon name="close" size={16} color={COLORS.background.primary} />
+          <Icon name="close" size={16} color={COLORS.text.inverse} />
         </TouchableOpacity>
         <Text style={styles.title}>알림 허용이 꺼져있어요</Text>
         <Text style={styles.desc}>
@@ -99,39 +103,36 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: WINDOW_WIDTH * 0.6,
-    backgroundColor: COLORS.accent.green,
-    borderRadius: 14,
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.md,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    ...SHADOWS.floating,
   },
   closeBtn: {
     position: 'absolute',
     top: 8,
     right: 8,
     padding: 4,
-    backgroundColor: COLORS.accent.green,
+    backgroundColor: COLORS.brand.primary,
   },
   title: {
     ...TYPOGRAPHY.body2,
-    color: COLORS.background.primary,
+    color: COLORS.text.inverse,
     fontWeight: 'bold',
     marginRight: 20,
     marginBottom: 6,
   },
   desc: {
     ...TYPOGRAPHY.caption1,
-    color: COLORS.background.primary,
+    color: COLORS.text.inverse,
     opacity: 0.95,
     marginBottom: 10,
   },
   cta: {
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.background.primary,
-    borderRadius: 8,
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.sm,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 8,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: COLORS.accent.green,
+    borderTopColor: COLORS.brand.primary,
   },
 });
 

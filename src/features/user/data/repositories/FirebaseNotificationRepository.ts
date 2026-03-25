@@ -44,6 +44,29 @@ export class FirebaseNotificationRepository implements INotificationRepository {
     this.db = firestore(getApp());
   }
 
+  async getNotifications(
+    userId: string,
+    notificationLimit: number,
+  ): Promise<Notification[]> {
+    const notificationsRef = collection(
+      this.db,
+      'userNotifications',
+      userId,
+      'notifications'
+    );
+    const q = query(
+      notificationsRef,
+      orderBy('createdAt', 'desc'),
+      limit(notificationLimit)
+    );
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(
+      (docSnap: FirebaseFirestoreTypes.QueryDocumentSnapshot) =>
+        this.mapDocToNotification(docSnap)
+    );
+  }
+
   subscribeToNotifications(
     userId: string,
     notificationLimit: number,

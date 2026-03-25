@@ -1,6 +1,6 @@
 # Spring 백엔드 도메인 분석
 
-> 최종 수정일: 2026-03-09
+> 최종 수정일: 2026-03-10
 > 분석 기준: Firestore 컬렉션, Cloud Functions 트리거, Context/Hook 구조
 
 본 문서는 현재 Firebase 기반 SKURI Taxi 앱을 Spring Boot + MySQL 백엔드로 마이그레이션하기 위한 **도메인 분석 결과**입니다.
@@ -165,7 +165,10 @@ Hooks:
     - status (PENDING → ACCEPTED | DECLINED | CANCELED)
   - Settlement (Embedded)
     - status (PENDING, COMPLETED)
+    - taxiFare
+    - splitMemberCount (정산 대상 non-leader 수 + leader)
     - perPersonAmount
+    - settlementAccount snapshot (bankName, accountNumber, accountHolder, hideName)
     - memberSettlements (Map<memberId, MemberSettlement>)
   - MemberSettlement (Embedded)
     - settled, settledAt
@@ -174,8 +177,11 @@ Hooks:
   - 앱 내 결제/송금 기능은 제공하지 않으며, 향후에도 제공하지 않음
   - 정산 상태(`memberSettlements`) 변경은 파티 리더만 가능
   - 일반 멤버는 자신의 정산 상태를 직접 변경할 수 없음
-  - `perPersonAmount`는 `taxiFare / 정산대상인원` 정수 나눗셈(버림)으로 계산
+  - 도착 처리 요청은 `taxiFare`, `settlementTargetMemberIds`, `account snapshot`을 함께 받는다
+  - `settlementTargetMemberIds`에는 현재 파티의 non-leader 멤버만 포함할 수 있다
+  - `perPersonAmount`는 `taxiFare / (정산대상인원 + 리더 1명)` 정수 나눗셈(버림)으로 계산
   - 정수 나눗셈으로 생기는 잔여 1원 단위 금액은 서버에서 분배하지 않음(리더 현장 정산 정책)
+  - 동승 요청 승인, 모집 마감/재개, 멤버 나가기, 도착 처리, 취소/종료는 서버가 파티 채팅방 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)를 생성한다
 
 상태 머신:
   Party:
@@ -341,6 +347,12 @@ Hooks:
   - 내 작성글: GET /v1/members/me/posts
   - 내 북마크글: GET /v1/members/me/bookmarks
 
+게시글 수정 정책:
+  - `PATCH /v1/posts/{postId}`는 `title`, `content`, `category`, `isAnonymous`를 부분 수정으로 지원
+  - `images`는 생성과 동일한 구조를 사용하며, 필드를 보내면 전체 이미지 목록 교체
+  - `images[]`의 각 원소는 `null` 불가
+  - `images: []`는 전체 제거, `images` 생략/null은 기존 유지
+
 카테고리:
   - GENERAL (일반)
   - QUESTION (질문)
@@ -428,6 +440,10 @@ Hooks:
   - 공지 본문은 회원과 독립적인 외부 데이터이므로 영향 없음
   - `NoticeComment`는 본문을 유지하고 `userId`, `userDisplayName`만 익명화
   - `NoticeLike`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
+
+댓글 수정 정책:
+  - `PATCH /v1/notice-comments/{commentId}`는 `content`만 수정 가능
+  - `isAnonymous`, `parentId`, `anonymousOrder`는 생성 시점 값을 유지
 
 향후 확장 준비:
   - AI 요약은 `summary` 컬럼에 저장하고, `contentHash`가 바뀌면 기존 AI 요약을 무효화한다.
@@ -528,9 +544,15 @@ Hooks:
     - weekId, weekStart, weekEnd
     - menus: Map<date, Map<restaurant, items[]>>
   - AdminAuditLog
-    - id, adminId, action, targetType, targetId
-    - detail (JSON), createdAt
-    (Spring AOP로 Admin API 호출 시 자동 기록)
+    - id, actorId, action, targetType, targetId
+    - diffBefore (JSON snapshot), diffAfter (JSON snapshot), timestamp
+    - 상태 변경 Admin API(`POST`, `PUT`, `PATCH`, `DELETE`)를 공통 interceptor/filter 계층에서 자동 기록
+    - `targetId`는 UUID 외에 semester/platform/weekId 같은 운영 식별자도 허용
+
+운영 공통 규약:
+  - `/v1/admin/**`는 공통 인가 어노테이션(`@AdminApiAccess`)과 `ADMIN_REQUIRED` 표준 응답으로 보호
+  - 문의/신고 목록은 `AdminPageRequestPolicy` 기준 `page=0`, `size=20`, `size<=100`, 정렬 `createdAt DESC`를 사용
+  - CSV export와 자유 검색은 Phase 11에서 문서 규약만 정리하고 런타임 API는 추가하지 않음
 
 회원 탈퇴 연계 정책:
   - inquiry/report record는 운영 추적 목적상 보존
@@ -620,8 +642,8 @@ Hooks:
 | **Auth** | Firebase Auth (Google Sign-In) | Spring Security + Firebase Admin SDK (ID Token 검증, SecurityContext 설정) |
 | **Push** | FCM + Cloud Functions | FCM (Firebase Admin SDK) |
 | **Notification** | userNotifications 컬렉션 + users.fcmTokens[] | `user_notifications` + `fcm_tokens` 테이블 + 이벤트 리스너 |
-| **Storage** | Firebase Storage | AWS S3 또는 GCS |
-| **Realtime** | Firestore onSnapshot | SSE + WebSocket (STOMP + SockJS) |
+| **Storage** | Firebase Storage | `StorageRepository` 추상화 + LOCAL 파일시스템 기본 구현, FIREBASE provider 포함 후속 S3/OCI/GCS provider 확장 |
+| **Realtime** | Firestore onSnapshot | SSE + WebSocket (STOMP over SockJS `/ws` + native `/ws-native`) |
 | **Scheduler** | Cloud Functions onSchedule | Spring Scheduler / Quartz |
 | **Audit** | adminAuditLogs 컬렉션 | Spring AOP + AuditLog 테이블 |
 
@@ -1254,96 +1276,14 @@ public enum MessageDirection {
 
 ### 7.4 TaxiParty ↔ Chat 협력 구조
 
-```java
-@Service
-@RequiredArgsConstructor
-public class PartyMessageService {
-    private final ChatService chatService;
-    private final PartyRepository partyRepository;
-    private final ApplicationEventPublisher eventPublisher;
-
-    /**
-     * 파티 채팅방 생성 (파티 생성 시 호출)
-     */
-    public void createPartyChatRoom(Party party) {
-        ChatRoom chatRoom = ChatRoom.forParty(party.getId(), party.getMembers());
-        chatService.createRoom(chatRoom);
-    }
-
-    /**
-     * 일반 메시지 전송 (Chat 엔진에 위임)
-     */
-    public void sendMessage(String partyId, String senderId, String text) {
-        validatePartyMember(partyId, senderId);
-        chatService.sendMessage("party:" + partyId, senderId, text, MessageType.TEXT);
-    }
-
-    /**
-     * 계좌 공유 메시지 (파티 도메인 규칙)
-     */
-    public void sendAccountMessage(String partyId, String senderId, BankAccount account) {
-        Party party = validatePartyMember(partyId, senderId);
-
-        ChatMessage message = ChatMessage.builder()
-            .chatRoomId("party:" + partyId)
-            .senderId(senderId)
-            .type(MessageType.ACCOUNT)
-            .accountData(AccountData.from(account))
-            .build();
-
-        chatService.sendMessage(message);
-    }
-
-    /**
-     * 도착 메시지 (파티 상태 변경 + 메시지)
-     */
-    @Transactional
-    public void sendArrivalMessage(String partyId, String leaderId, int taxiFare) {
-        Party party = partyRepository.findById(partyId)
-            .orElseThrow(PartyNotFoundException::new);
-
-        if (!party.isLeader(leaderId)) {
-            throw new NotPartyLeaderException();
-        }
-
-        // 1. 파티 상태 변경
-        party.arrive(taxiFare);
-
-        // 2. 도착 메시지 전송
-        int perPerson = taxiFare / party.getMembers().size();
-        ChatMessage message = ChatMessage.builder()
-            .chatRoomId("party:" + partyId)
-            .senderId(leaderId)
-            .type(MessageType.ARRIVED)
-            .arrivalData(ArrivalData.builder()
-                .taxiFare(taxiFare)
-                .perPerson(perPerson)
-                .memberCount(party.getMembers().size())
-                .build())
-            .build();
-
-        chatService.sendMessage(message);
-
-        // 3. 이벤트 발행 → 알림 전송
-        eventPublisher.publishEvent(new PartyArrivedEvent(
-            partyId,
-            party.getMembers(),
-            taxiFare,
-            perPerson
-        ));
-    }
-
-    private Party validatePartyMember(String partyId, String memberId) {
-        Party party = partyRepository.findById(partyId)
-            .orElseThrow(PartyNotFoundException::new);
-
-        if (!party.isMember(memberId)) {
-            throw new NotPartyMemberException();
-        }
-        return party;
-    }
-}
-```
+- 파티 생성 시 `ChatService.createPartyChatRoom`이 `party:{partyId}` 비공개 채팅방을 생성/동기화한다.
+- 클라이언트 직접 전송 가능 타입은 `TEXT`, `IMAGE`, `ACCOUNT`만 허용한다.
+- `ACCOUNT` 메시지는 클라이언트가 계좌 snapshot을 payload로 보내고, `remember=true`면 회원 프로필 계좌도 함께 갱신한다.
+- `SYSTEM`, `ARRIVED`, `END`는 서버 전용 메시지다.
+  - 동승 요청 승인, 모집 마감, 모집 재개, 멤버 나가기 → `SYSTEM` 메시지 생성
+  - 도착 처리 → 정산 snapshot이 포함된 `ARRIVED` 메시지 생성
+  - 리더 취소/종료/탈퇴 종료 → `END` 메시지 생성
+- 파티 상태 변경과 서버 생성 채팅 메시지는 같은 트랜잭션 안에서 저장하고, WebSocket 브로드캐스트는 커밋 후 수행한다.
 
 ---
 
@@ -1406,3 +1346,4 @@ public class PartyMessageService {
 > - 2026-03-07: Board/Notice 공통 Comment 정책 구현 반영 — 무제한 depth, flat list 응답, 댓글 알림 설정 분리
 > - 2026-03-08: Phase 8 Notification 인프라 반영 — RDB 저장 모델(`user_notifications`, `fcm_tokens`), after-commit 이벤트, 학사 일정 알림 설정, `PARTY_*` canonical enum 동기화
 > - 2026-03-09: Phase 10 Member 라이프사이클 반영 — soft delete tombstone, 동일 UID 재가입 차단, TaxiParty/Chat/Board/Notice/Support/Notification/Academic 탈퇴 정합성 정책 추가
+> - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `AdminAuditLog` 엔티티를 `actorId/action/targetType/targetId/diffBefore/diffAfter/timestamp` 구조로 구체화하고, Support 운영 목록/인가 공통 규약을 반영

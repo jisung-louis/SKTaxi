@@ -1,5 +1,3 @@
-export { TermsOfUseContent } from './components/TermsOfUseContent';
-
 export {
   FirebaseAppConfigRepository,
   FirestoreAppConfigRepository,
@@ -8,6 +6,7 @@ export {
   FirebaseAppNoticeRepository,
   FirestoreAppNoticeRepository,
 } from './data/repositories/FirebaseAppNoticeRepository';
+export {SpringAppNoticeRepository} from './data/repositories/SpringAppNoticeRepository';
 export {
   FirebaseInquiryRepository,
   FirestoreInquiryRepository,
@@ -21,6 +20,11 @@ export type {
   IAppConfigRepository,
   VersionModalConfig,
 } from './data/repositories/IAppConfigRepository';
+export type {ILegalDocumentRepository} from './data/repositories/ILegalDocumentRepository';
+export type {
+  IInquiryFormRepository,
+  SubmitInquiryFormPayload,
+} from './data/repositories/IInquiryFormRepository';
 export type {
   CreateInquiryData,
   Inquiry,
@@ -28,10 +32,10 @@ export type {
   IInquiryRepository,
 } from './data/repositories/IInquiryRepository';
 
-export { useAppNotice } from './hooks/useAppNotice';
-export type { UseAppNoticeResult } from './hooks/useAppNotice';
-export { useAppNotices } from './hooks/useAppNotices';
-export type { UseAppNoticesResult } from './hooks/useAppNotices';
+export {useAppSettingData} from './hooks/useAppSettingData';
+export {useAppNoticeFeedData} from './hooks/useAppNoticeFeedData';
+export {useLegalDocumentData} from './hooks/useLegalDocumentData';
+export {useInquiryFormData} from './hooks/useInquiryFormData';
 export { useSubmitInquiry } from './hooks/useSubmitInquiry';
 export type {
   InquiryData,
@@ -39,11 +43,37 @@ export type {
 } from './hooks/useSubmitInquiry';
 
 export { AppNoticeDetailScreen } from './screens/AppNoticeDetailScreen';
-export { AppNoticeScreen } from './screens/AppNoticeScreen';
 export { InquiriesScreen } from './screens/InquiriesScreen';
+export { LegalDocumentScreen } from './screens/LegalDocumentScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
+export { AppNoticeFeedList } from './components/AppNoticeFeedList';
+export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
+export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
+
+export type {
+  InquiryFormTypeKey,
+} from './model/inquiryFormSource';
+export type {
+  InquiryFormScreenViewData,
+  InquiryTypeOptionViewData,
+} from './model/inquiryFormViewData';
+export type {
+  LegalDocumentBannerIconKey,
+  LegalDocumentBannerLineSource,
+  LegalDocumentBannerLineTone,
+  LegalDocumentBannerTone,
+  LegalDocumentKey,
+  LegalDocumentSectionSource,
+  LegalDocumentSource,
+} from './model/legalDocumentSource';
+export type {
+  LegalDocumentBannerLineViewData,
+  LegalDocumentBannerViewData,
+  LegalDocumentScreenViewData,
+  LegalDocumentSectionViewData,
+} from './model/legalDocumentViewData';
 
 export {
   buildAppNoticeForegroundNotification,

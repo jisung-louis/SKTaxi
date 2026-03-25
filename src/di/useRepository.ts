@@ -13,11 +13,13 @@ import type {
   IChatRepository,
   ICourseRepository,
   IInquiryRepository,
+  IMemberRepository,
   INotificationActionRepository,
   INotificationRepository,
   INoticeRepository,
   IPartyRepository,
   IStorageRepository,
+  ITaxiChatRepository,
   ITimetableRepository,
   IUserRepository,
 } from './repositoryContracts';
@@ -147,11 +149,27 @@ export function useAuthRepository(): IAuthRepository {
 }
 
 /**
+ * Member Repository 접근 훅
+ */
+export function useMemberRepository(): IMemberRepository {
+  const { memberRepository } = useRepositories();
+  return memberRepository;
+}
+
+/**
  * Notification action Repository 접근 훅
  */
 export function useNotificationActionRepository(): INotificationActionRepository {
   const { notificationActionRepository } = useRepositories();
   return notificationActionRepository;
+}
+
+/**
+ * Taxi chat Repository 접근 훅
+ */
+export function useTaxiChatRepository(): ITaxiChatRepository {
+  const { taxiChatRepository } = useRepositories();
+  return taxiChatRepository;
 }
 
 /**

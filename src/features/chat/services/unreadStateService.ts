@@ -22,16 +22,9 @@ export const safeToMillis = (timestamp: unknown): number | null => {
 
 export const hasUnreadChatRoom = (
   room: ChatRoom,
-  roomState: ChatRoomState | undefined,
+  _roomState: ChatRoomState | undefined,
 ): boolean => {
-  const lastMessageMillis = safeToMillis(room.lastMessage?.timestamp);
-
-  if (!lastMessageMillis) {
-    return false;
-  }
-
-  const lastReadMillis = safeToMillis(roomState?.lastReadAt);
-  return lastReadMillis ? lastMessageMillis > lastReadMillis : true;
+  return room.isJoined === true && (room.unreadCount ?? 0) > 0;
 };
 
 export const getParticipatingChatRooms = (
@@ -41,7 +34,11 @@ export const getParticipatingChatRooms = (
   const roomMap = new Map<string, ChatRoom>();
 
   rooms.forEach(room => {
-    if (room.id && room.members?.includes(userId)) {
+    const joined =
+      room.isJoined ??
+      (userId ? room.members?.includes(userId) : false);
+
+    if (room.id && joined) {
       roomMap.set(room.id, room);
     }
   });

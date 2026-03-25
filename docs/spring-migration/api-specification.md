@@ -1,6 +1,6 @@
 # Spring 백엔드 API 명세
 
-> 최종 수정일: 2026-03-09
+> 최종 수정일: 2026-03-25
 > 관련 문서: [도메인 분석](./domain-analysis.md) | [ERD](./erd.md) | [Member 탈퇴 정책](./member-withdrawal-policy.md)
 
 ---
@@ -46,7 +46,7 @@ Authorization: Bearer <firebase_id_token>
 
 **Public API (인증 불필요):**
 
-비즈니스 API 기준으로는 아래 3개 API만 인증 없이 호출 가능합니다.  
+비즈니스 API 기준으로는 아래 4개 API만 인증 없이 호출 가능합니다.  
 추가로 API 문서 UI/스펙 조회 엔드포인트도 인증 없이 접근 가능합니다.
 
 | API | 이유 |
@@ -54,6 +54,7 @@ Authorization: Bearer <firebase_id_token>
 | `GET /v1/app-versions/{platform}` | 앱 실행 초기(로그인 전) 강제 업데이트 여부 확인 |
 | `GET /v1/app-notices` | 로그인 전 점검 공지 / 긴급 공지 표시 필요 |
 | `GET /v1/app-notices/{appNoticeId}` | 로그인 전 개별 점검/업데이트 공지 상세 표시 필요 |
+| `GET /v1/campus-banners` | 로그인 전 캠퍼스 홈 배너 노출 필요 |
 | `GET /v3/api-docs/**` | OpenAPI 스펙(JSON) 조회 |
 | `GET /swagger-ui/**`, `GET /swagger-ui.html` | Swagger UI 조회 |
 | `GET /scalar/**` | Scalar UI 조회 |
@@ -334,8 +335,11 @@ Spring 서버 처리:
 - 부분 업데이트 API입니다.
 - 요청 본문에 포함되지 않은 필드는 기존 값을 유지합니다.
 - `nickname`은 `members.nickname`을 수정합니다.
+- `department`는 서버가 지원하는 학과 카탈로그 기준으로만 허용합니다.
+  - legacy 표기(예: `소프트웨어학과`)는 canonical 값으로 정규화해 저장합니다.
+  - 지원하지 않는 값은 `422 VALIDATION_ERROR`를 반환합니다.
 - `realname`은 회원 생성 시 provider 이름으로 초기화되며, 이 API로 수정할 수 없습니다.
-- `photoUrl`은 현재 앱에서 미사용이며, 추후 프로필 이미지 기능에서 사용 예정입니다.
+- `photoUrl`은 `POST /v1/images`의 `PROFILE_IMAGE` 업로드 결과 URL을 그대로 재사용할 수 있습니다.
 
 **Request:**
 ```json
@@ -747,7 +751,16 @@ FCM 토큰 삭제
     "isLeader": true,
     "settlement": {
       "status": "PENDING",
+      "taxiFare": 14000,
+      "splitMemberCount": 4,
       "perPersonAmount": 3500,
+      "settlementTargetMemberIds": ["uuid", "uuid2", "uuid3"],
+      "account": {
+        "bankName": "카카오뱅크",
+        "accountNumber": "3333-01-1234567",
+        "accountHolder": "홍*동",
+        "hideName": true
+      },
       "memberSettlements": [
         {
           "memberId": "uuid",
@@ -847,6 +860,8 @@ FCM 토큰 삭제
 #### PATCH /v1/parties/{partyId}/close
 파티 모집 마감 (리더만)
 
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"모집이 마감되었어요."`가 추가됩니다.
+
 **Response:**
 ```json
 {
@@ -860,6 +875,8 @@ FCM 토큰 삭제
 
 #### PATCH /v1/parties/{partyId}/reopen
 파티 모집 재개 (리더만)
+
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"모집이 재개되었어요."`가 추가됩니다.
 
 **Response (200 OK):**
 ```json
@@ -876,14 +893,25 @@ FCM 토큰 삭제
 도착 및 정산 시작 (리더만)
 
 - OPEN 또는 CLOSED 상태에서만 호출 가능
-- 리더를 제외한 멤버가 1명 이상 있어야 함 (정산 대상이 없으면 호출 불가)
-- `perPersonAmount = taxiFare / 정산대상인원` 정수 나눗셈(버림)으로 계산
+- 요청 본문에는 `taxiFare`, `settlementTargetMemberIds`, `account` snapshot이 모두 포함되어야 함
+- `settlementTargetMemberIds`에는 현재 파티의 non-leader 멤버만 포함할 수 있음
+- 리더를 제외한 멤버가 1명 이상 선택되어야 함 (정산 대상이 없으면 호출 불가)
+- `splitMemberCount = settlementTargetMemberIds.size + 1` 이며 리더도 1/N 분모에 포함
+- `perPersonAmount = taxiFare / splitMemberCount` 정수 나눗셈(버림)으로 계산
 - 정수 나눗셈으로 생기는 잔여 1원 단위 금액은 서버에서 자동 분배하지 않음
+- 성공 시 파티 상태/정산 snapshot 저장과 함께 파티 채팅방에 서버 생성 `ARRIVED` 메시지가 남음
 
 **Request:**
 ```json
 {
-  "taxiFare": 14000
+  "taxiFare": 14000,
+  "settlementTargetMemberIds": ["member-2", "member-3"],
+  "account": {
+    "bankName": "카카오뱅크",
+    "accountNumber": "3333-01-1234567",
+    "accountHolder": "홍길동",
+    "hideName": true
+  }
 }
 ```
 
@@ -896,7 +924,16 @@ FCM 토큰 삭제
     "status": "ARRIVED",
     "settlement": {
       "status": "PENDING",
-      "perPersonAmount": 3500,
+      "taxiFare": 14000,
+      "splitMemberCount": 3,
+      "perPersonAmount": 4666,
+      "settlementTargetMemberIds": ["member-2", "member-3"],
+      "account": {
+        "bankName": "카카오뱅크",
+        "accountNumber": "3333-01-1234567",
+        "accountHolder": "홍*동",
+        "hideName": true
+      },
       "memberSettlements": [ ... ]
     }
   }
@@ -909,6 +946,7 @@ FCM 토큰 삭제
 |----------|------|------|
 | `PARTY_NOT_ARRIVABLE` | 409 | OPEN/CLOSED 상태가 아닌 파티 |
 | `NO_MEMBERS_TO_SETTLE` | 409 | 리더 외 멤버가 없어 정산 불가 |
+| `VALIDATION_ERROR` | 422 | `settlementTargetMemberIds`가 현재 non-leader 멤버 목록과 다르거나 `account` snapshot 검증 실패 |
 
 #### PATCH /v1/parties/{partyId}/settlement/members/{memberId}/confirm
 멤버 정산 완료 표시 (리더만)
@@ -986,6 +1024,7 @@ FCM 토큰 삭제
 - 리더는 나가기 불가 (취소 또는 위임 불가 정책)
 - ARRIVED 상태에서는 나가기 불가 (정산 진행/완료 여부와 무관)
 - 리더가 탈퇴(회원탈퇴)하면 파티 강제 종료 (`endReason: WITHDRAWED`)
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"홍길동님이 파티에서 나갔어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"멤버가 파티에서 나갔어요."`를 사용합니다.
 
 **Response:**
 ```json
@@ -1142,19 +1181,38 @@ FCM 토큰 삭제
 
 ## 4. Chat API
 
-### 4.1 채팅방 조회
+### 4.1 채팅방 조회 / 공개방 멤버십
+
+#### 공개방 기본 정책
+
+- 공식 공개방 seed:
+  - 학교 전체방 1개: `성결대학교 전체 채팅방`
+  - 마인크래프트방 1개: `마인크래프트 채팅방`
+  - 학과방: `{학과명} 채팅방`
+- 노출 규칙:
+  - `UNIVERSITY`, `GAME`, `CUSTOM` 공개방은 모든 사용자에게 보입니다.
+  - `DEPARTMENT` 공개방은 본인 `department`와 일치하는 방만 보이고, 다른 학과 방은 목록/상세에서 숨깁니다.
+  - `PARTY`는 공개방이 아니며 참여 중인 멤버에게만 보입니다.
+- 미참여 공개방 정책:
+  - 목록/상세에는 보입니다.
+  - `description`, `lastMessage`, `lastMessageAt`, `memberCount`는 보입니다.
+  - `joined=false`, `unreadCount=0`, `isMuted=false`로 내려갑니다.
+  - `GET /v1/chat-rooms/{id}/messages`는 `NOT_CHAT_ROOM_MEMBER`를 반환합니다.
+- 정렬 정책:
+  - 서버가 최종 UI 정렬을 강제하지는 않습니다.
+  - 프론트는 `type`, `joined`, `lastMessageAt` 메타데이터로 `학교 전체방 → 학과방 → 마인크래프트방 → joined custom → not joined custom` 정렬을 구성할 수 있습니다.
 
 #### GET /v1/chat-rooms
 접근 가능한 채팅방 목록
 
-- 기본 정책: `공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`만 반환합니다.
+- 기본 정책: `보이는 공개 채팅방 + 내가 참여 중인 비공개 채팅방(PARTY 포함)`을 반환합니다.
 
 **Query Parameters:**
 
 | 파라미터 | 타입 | 설명 |
 |---------|------|------|
 | `type` | string | 채팅방 타입 (UNIVERSITY, DEPARTMENT, GAME, CUSTOM, PARTY) |
-| `joined` | boolean | 참여 중인 채팅방만 |
+| `joined` | boolean | `true`면 참여 중인 채팅방만 |
 
 **Response:**
 ```json
@@ -1162,49 +1220,143 @@ FCM 토큰 삭제
   "success": true,
   "data": [
     {
-      "id": "room_id",
-      "name": "성결대 전체 채팅방",
+      "id": "public:university",
       "type": "UNIVERSITY",
+      "name": "성결대학교 전체 채팅방",
+      "description": "성결대학교 전체 채팅방입니다.",
+      "isPublic": true,
       "memberCount": 150,
+      "joined": false,
+      "unreadCount": 0,
       "lastMessage": {
         "type": "TEXT",
         "text": "안녕하세요!",
         "senderName": "홍길동",
         "createdAt": "2026-02-03T12:00:00Z"
       },
-      "unreadCount": 5,
-      "isJoined": true
+      "lastMessageAt": "2026-02-03T12:00:00Z",
+      "isMuted": false
+    },
+    {
+      "id": "room_uuid",
+      "type": "CUSTOM",
+      "name": "시험기간 밤샘 메이트",
+      "description": "기말고사 기간 같이 공부할 사람들 모여요.",
+      "isPublic": true,
+      "memberCount": 24,
+      "joined": true,
+      "unreadCount": 3,
+      "lastMessage": {
+        "type": "TEXT",
+        "text": "중앙도서관 4층 자리 남아요.",
+        "senderName": "김성결",
+        "createdAt": "2026-02-03T23:10:00Z"
+      },
+      "lastMessageAt": "2026-02-03T23:10:00Z",
+      "isMuted": false
     }
   ]
+}
+```
+
+#### POST /v1/chat-rooms
+커스텀 공개 채팅방 생성
+
+**Request:**
+```json
+{
+  "name": "시험기간 밤샘 메이트",
+  "description": "기말고사 기간 같이 공부할 사람들 모여요."
+}
+```
+
+**정책:**
+- 생성 가능한 타입은 `CUSTOM` 고정입니다.
+- 생성된 채팅방은 `isPublic=true` 공개 탐색 방입니다.
+- 생성자는 즉시 `joined=true` 상태가 되며, `memberCount`는 1로 시작합니다.
+- `members`에 가입 완료된 활성 회원만 생성할 수 있습니다. 미가입 UID는 `MEMBER_NOT_FOUND`를 반환합니다.
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "room_uuid",
+    "type": "CUSTOM",
+    "name": "시험기간 밤샘 메이트",
+    "description": "기말고사 기간 같이 공부할 사람들 모여요.",
+    "isPublic": true,
+    "memberCount": 1,
+    "joined": true,
+    "unreadCount": 0,
+    "lastMessage": null,
+    "lastMessageAt": null,
+    "isMuted": false,
+    "lastReadAt": null
+  }
 }
 ```
 
 #### GET /v1/chat-rooms/{chatRoomId}
 채팅방 상세
 
+- 공개 채팅방은 `joined=false`여도 상세 조회할 수 있습니다.
 - 비공개 채팅방은 멤버만 조회 가능합니다.
+- 다른 학과 공개방은 `CHAT_ROOM_NOT_FOUND`로 숨깁니다.
 
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "id": "room_id",
-    "name": "성결대 전체 채팅방",
+    "id": "public:university",
     "type": "UNIVERSITY",
-    "description": "성결대학교 학생들의 소통 공간",
-    "memberCount": 150,
+    "name": "성결대학교 전체 채팅방",
+    "description": "성결대학교 전체 채팅방입니다.",
     "isPublic": true,
-    "isJoined": true,
+    "memberCount": 150,
+    "joined": false,
+    "unreadCount": 0,
+    "lastMessage": {
+      "type": "TEXT",
+      "text": "안녕하세요!",
+      "senderName": "홍길동",
+      "createdAt": "2026-02-03T12:00:00Z"
+    },
+    "lastMessageAt": "2026-02-03T12:00:00Z",
     "isMuted": false,
-    "lastReadAt": "2026-02-03T11:00:00Z",
-    "unreadCount": 5
+    "lastReadAt": null
   }
 }
 ```
 
+#### POST /v1/chat-rooms/{chatRoomId}/join
+공개 채팅방 참여
+
+- 참여하기 버튼을 누르면 즉시 참여합니다.
+- 이미 참여 중이면 `409 ALREADY_CHAT_ROOM_MEMBER`
+- 정원이 있는 방에서 가득 찼으면 `409 CHAT_ROOM_FULL`
+- 참여 직후 `unreadCount`는 0으로 시작하도록 `lastReadAt`을 현재 방의 마지막 메시지 시각으로 초기화합니다.
+- `members`에 가입 완료된 활성 회원만 참여할 수 있습니다. 미가입 UID는 `MEMBER_NOT_FOUND`를 반환합니다.
+
+#### DELETE /v1/chat-rooms/{chatRoomId}/members/me
+공개 채팅방 나가기
+
+- 모든 공개 채팅방은 나갈 수 있습니다.
+- 나간 뒤에도 공개방 상세 조회는 계속 가능합니다.
+- 나간 뒤 `joined=false`, `unreadCount=0`, `isMuted=false` 상태가 됩니다.
+
+#### 학과 변경 정책
+
+- `PATCH /v1/members/me`에서 `department`가 바뀌면 기존 학과방 membership은 자동 제거합니다.
+- 새 학과방 membership은 자동 생성하지 않습니다.
+- 다음 refresh/재진입 시 기존 학과방은 목록에서 제거되고 접근할 수 없습니다.
+
 #### GET /v1/chat-rooms/{chatRoomId}/messages
 채팅 메시지 조회
+
+- `joined=true`인 경우에만 조회할 수 있습니다.
+- 공개 채팅방이라도 미참여 상태면 `403 NOT_CHAT_ROOM_MEMBER`
 
 **Query Parameters:**
 
@@ -1271,13 +1423,28 @@ FCM 토큰 삭제
 읽음 처리
 
 - 클라이언트는 채팅방 포커스 획득/이탈, 앱 백그라운드 전환 시점마다 `lastReadAt`을 갱신합니다.
+- 요청 `lastReadAt`은 JS/React Native의 `new Date().toISOString()` 형태와 같은 ISO 8601 UTC 문자열(`...Z`)을 사용합니다.
+- 서버는 요청 문자열을 절대 시각으로 해석한 뒤 `Asia/Seoul` 기준 `LocalDateTime`으로 정규화하여 비교/저장합니다.
 - 서버는 저장된 `lastReadAt`보다 과거 시각 요청을 무시해 단조 증가를 보장하고, 미래 시각 요청은 서버 현재 시각과 마지막 메시지 시각을 상한으로 clamp합니다.
 - 미읽음 계산 기준은 `message.createdAt > lastReadAt` 입니다. (`==` 는 읽음으로 간주)
+- `PATCH /read` 응답과 채팅방 detail의 `lastReadAt`도 ISO 8601 UTC 문자열로 반환합니다.
 
 **Request:**
 ```json
 {
   "lastReadAt": "2026-02-03T12:00:00Z"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "chatRoomId": "public:university",
+    "lastReadAt": "2026-02-03T12:00:00Z",
+    "updated": true
+  }
 }
 ```
 
@@ -1291,6 +1458,7 @@ FCM 토큰 삭제
 파티 채팅 비즈니스 규칙(멤버 검증, 계좌 정보 조회 등)은 서버 내부 STOMP 핸들러에서 처리합니다.
 - 파티 채팅 이력 조회는 `GET /v1/chat-rooms/{chatRoomId}/messages`를 사용합니다.
   - 예: `chatRoomId = party:{partyId}`
+- 서버 생성 안내 메시지(`SYSTEM`/`ARRIVED`/`END`)도 동일한 조회/구독 경로로 전달됩니다.
 
 ### 4.5 WebSocket (STOMP)
 
@@ -1298,9 +1466,12 @@ FCM 토큰 삭제
 채팅방 목록 화면은 방별 다중 구독이 아닌 **사용자 전용 요약 채널 1개**를 구독합니다.
 
 #### STOMP Endpoint
-```
-ws://api.skuri.app/ws
-```
+- SockJS endpoint: `/ws`
+- Native WebSocket endpoint: `/ws-native`
+- 권장 사용:
+  - 웹/SockJS 클라이언트: `/ws`
+  - React Native native WebSocket 클라이언트: `/ws-native`
+- React Native는 SockJS transport path인 `/ws/websocket` 우회 경로 대신 `/ws-native`를 사용합니다.
 
 #### 연결 인증
 연결 시 STOMP CONNECT 프레임 헤더에 Firebase ID Token을 포함합니다.
@@ -1346,6 +1517,8 @@ Authorization:Bearer <firebase_id_token>
 { "type": "IMAGE", "imageUrl": "https://..." }
 ```
 
+- `IMAGE` 메시지의 `imageUrl`은 `POST /v1/images`의 `CHAT_IMAGE` 업로드 결과 URL을 그대로 사용합니다.
+
 **채팅방 목록 요약 이벤트 포맷 (서버 → 클라이언트):**
 ```json
 {
@@ -1365,6 +1538,7 @@ Authorization:Bearer <firebase_id_token>
 ```
 
 > `eventType`은 `CHAT_ROOM_SNAPSHOT`, `CHAT_ROOM_UPSERT`, `CHAT_ROOM_REMOVED`를 사용합니다.
+> `/user/queue/chat-rooms`는 joined room summary 기준 채널이며, 미참여 공개방 탐색 목록은 `GET /v1/chat-rooms` refresh 기준으로 유지합니다.
 
 ---
 
@@ -1373,14 +1547,28 @@ Authorization:Bearer <firebase_id_token>
 - 파티 채팅도 동일 경로를 사용합니다.
   - 전송: `/app/chat/party:{partyId}`
   - 수신: `/topic/chat/party:{partyId}`
-- 특수 메시지 타입: `ACCOUNT`, `ARRIVED`, `END`
+- 클라이언트가 직접 보낼 수 있는 타입: `TEXT`, `IMAGE`, `ACCOUNT`
+- 서버가 생성하는 타입: `SYSTEM`, `ARRIVED`, `END`
+- 파티 채팅의 `SYSTEM`/`ARRIVED`/`END`는 도메인 이벤트(동승 승인, 멤버 나가기, 도착 처리, 취소/종료) 기준으로만 생성됨
+- `SYSTEM` 메시지 예: 동승 승인, 모집 마감, 모집 재개, 멤버 나가기
 
 **전송 포맷:**
 ```json
 { "type": "TEXT", "text": "곧 도착합니다!" }
-{ "type": "ACCOUNT" }
+{
+  "type": "ACCOUNT",
+  "account": {
+    "bankName": "카카오뱅크",
+    "accountNumber": "3333-01-1234567",
+    "accountHolder": "홍길동",
+    "hideName": true,
+    "remember": true
+  }
+}
 ```
-> `ACCOUNT` 타입: body 없이 서버가 발신자의 등록된 계좌 정보를 조회하여 메시지에 삽입
+> `ACCOUNT` 타입: 계좌 snapshot을 payload로 전달합니다.
+> `remember=true`이면 전송한 snapshot을 회원 프로필 계좌 정보에도 함께 저장합니다.
+> 클라이언트가 `SYSTEM`, `ARRIVED`, `END`를 직접 보내면 `INVALID_REQUEST`로 거부됩니다.
 
 **수신 포맷 (서버 → 클라이언트):**
 ```json
@@ -1390,12 +1578,38 @@ Authorization:Bearer <firebase_id_token>
   "senderId": "user_uuid",
   "senderName": "홍길동",
   "type": "ACCOUNT",
+  "text": "계좌 정보를 공유했어요. (카카오뱅크 3333-01-1234567)",
   "accountData": {
     "bankName": "카카오뱅크",
     "accountNumber": "3333-01-1234567",
-    "accountHolder": "홍길동"
+    "accountHolder": "홍*동",
+    "hideName": true
   },
   "createdAt": "2026-02-03T12:00:00Z"
+}
+```
+
+```json
+{
+  "id": "message_uuid_2",
+  "chatRoomId": "party:party_uuid",
+  "senderId": "leader_uuid",
+  "senderName": "홍길동",
+  "type": "ARRIVED",
+  "text": "택시가 목적지에 도착했어요. 총 14000원, 3명 정산, 1인당 4666원입니다.",
+  "arrivalData": {
+    "taxiFare": 14000,
+    "splitMemberCount": 3,
+    "perPersonAmount": 4666,
+    "settlementTargetMemberIds": ["member-2", "member-3"],
+    "accountData": {
+      "bankName": "카카오뱅크",
+      "accountNumber": "3333-01-1234567",
+      "accountHolder": "홍*동",
+      "hideName": true
+    }
+  },
+  "createdAt": "2026-02-03T12:05:00Z"
 }
 ```
 
@@ -1418,9 +1632,10 @@ Authorization:Bearer <firebase_id_token>
 |------|------------|
 | 메시지 전송 (STOMP 핸들러) | 메시지 DB 저장 + ChatRoom.messageCount 증가 → 커밋 후 구독자 브로드캐스트 |
 | 채팅방 목록 요약 이벤트 | 메시지 저장/멤버수 변경 커밋 후 `/user/queue/chat-rooms`로 요약 이벤트 전송 |
-| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
+| 읽음 처리 (`PATCH /v1/chat-rooms/{chatRoomId}/read`) | ISO 8601 UTC `lastReadAt` 단조 증가 갱신 + 미래 시각 clamp |
 | 설정 수정 (`PATCH /v1/chat-rooms/{chatRoomId}/settings`) | ChatRoomMember.muted 갱신 |
-| ACCOUNT 메시지 | 계좌 정보 DB 조회 + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
+| ACCOUNT 메시지 | payload snapshot 검증 + 선택적 회원 계좌 저장(`remember=true`) + 메시지 DB 저장 → 커밋 후 브로드캐스트 |
+| 파티 상태 기반 서버 메시지 | party 상태/정산 snapshot 저장 후 `SYSTEM`/`ARRIVED`/`END` 메시지 DB 저장 → 커밋 후 브로드캐스트 |
 
 > 브로드캐스트(WebSocket push)는 트랜잭션 커밋 성공 후 수행합니다. (트랜잭션 커밋 후 콜백)
 
@@ -1433,7 +1648,8 @@ Authorization:Bearer <firebase_id_token>
 | `CHAT_ROOM_FULL` | 채팅방 정원 초과 |
 | `ALREADY_CHAT_ROOM_MEMBER` | 이미 참여 중인 채팅방 |
 | `STOMP_AUTH_FAILED` | WebSocket STOMP 연결 인증 실패 (토큰 검증 오류) |
-| `BANK_ACCOUNT_REQUIRED` | ACCOUNT 메시지 전송 시 계좌 미등록 상태 |
+| `INVALID_REQUEST` | 클라이언트가 `SYSTEM`/`ARRIVED`/`END` 같은 서버 전용 메시지 타입을 전송한 경우 |
+| `VALIDATION_ERROR` | `ACCOUNT` payload 또는 cursor 쿼리 조합 검증 실패 |
 
 ---
 
@@ -1446,7 +1662,7 @@ Authorization:Bearer <firebase_id_token>
 | `POST` | `/v1/posts` | 게시글 작성 |
 | `GET` | `/v1/posts` | 게시글 목록 조회 |
 | `GET` | `/v1/posts/{postId}` | 게시글 상세 조회 (조회수 증가) |
-| `PATCH` | `/v1/posts/{postId}` | 게시글 수정 (작성자) |
+| `PATCH` | `/v1/posts/{postId}` | 게시글 수정 (작성자, `isAnonymous`/`images` 전체 교체 포함) |
 | `DELETE` | `/v1/posts/{postId}` | 게시글 삭제 (작성자, soft delete) |
 | `POST` | `/v1/posts/{postId}/like` | 좋아요 등록 |
 | `DELETE` | `/v1/posts/{postId}/like` | 좋아요 취소 |
@@ -1494,6 +1710,7 @@ Authorization:Bearer <firebase_id_token>
         "viewCount": 100,
         "likeCount": 10,
         "commentCount": 5,
+        "bookmarkCount": 3,
         "hasImage": true,
         "isPinned": false,
         "createdAt": "2026-02-03T12:00:00Z"
@@ -1508,6 +1725,8 @@ Authorization:Bearer <firebase_id_token>
   }
 }
 ```
+
+- 목록 summary의 `bookmarkCount`는 상세 응답의 `bookmarkCount`와 동일한 게시글 누적 북마크 수입니다.
 
 #### GET /v1/posts/{postId}
 
@@ -1536,15 +1755,37 @@ Authorization:Bearer <firebase_id_token>
 }
 ```
 
+- `images[]`의 `url`, `thumbUrl`, `width`, `height`, `size`, `mime`는 `POST /v1/images`의 `POST_IMAGE` 응답을 그대로 사용할 수 있습니다.
+- `images[]`의 각 원소는 `null`일 수 없습니다. `{"images":[null]}` 같은 payload는 `422 VALIDATION_ERROR`를 반환합니다.
+
 #### PATCH /v1/posts/{postId}
 
 ```json
 {
   "title": "수정된 제목",
   "content": "수정된 내용",
-  "category": "QUESTION"
+  "category": "QUESTION",
+  "isAnonymous": true,
+  "images": [
+    {
+      "url": "https://...",
+      "thumbUrl": "https://...",
+      "width": 800,
+      "height": 600,
+      "size": 245123,
+      "mime": "image/jpeg"
+    }
+  ]
 }
 ```
+
+- 수정 가능 필드: `title`, `content`, `category`, `isAnonymous`, `images`
+- `isAnonymous`를 전달하면 게시글 익명 상태를 변경하고, 생략하거나 `null`이면 기존 값을 유지한다.
+- `images[]`는 `POST /v1/posts`와 동일한 구조를 사용한다.
+- `images` 필드를 전달하면 전체 이미지 목록을 전달한 순서대로 교체한다.
+- `images: []`는 첨부 이미지를 모두 제거한다.
+- `images`를 생략하거나 `null`로 보내면 기존 이미지를 유지한다.
+- `images[]`의 각 원소는 `null`일 수 없다. `{"images":[null]}` 같은 payload는 `422 VALIDATION_ERROR`를 반환한다.
 
 #### DELETE /v1/posts/{postId}
 
@@ -1848,6 +2089,42 @@ Authorization:Bearer <firebase_id_token>
 - 각 댓글은 최소 `id`, `parentId`, `depth`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
 - 서버는 thread 순서를 보장한 flat list를 반환하고, 클라이언트가 트리 UI를 조립한다.
 
+#### PATCH /v1/notice-comments/{commentId}
+공지 댓글 수정
+
+**Request:**
+```json
+{
+  "content": "수정된 댓글 내용"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "notice_comment_uuid",
+    "parentId": null,
+    "depth": 0,
+    "content": "수정된 댓글 내용",
+    "authorId": "user_uuid",
+    "authorName": "홍길동",
+    "isAnonymous": false,
+    "anonymousOrder": null,
+    "isAuthor": true,
+    "isDeleted": false,
+    "createdAt": "2026-02-03T12:00:00",
+    "updatedAt": "2026-02-03T12:30:00"
+  }
+}
+```
+
+**수정 정책:**
+- 댓글 작성자만 본문을 수정할 수 있다.
+- `content`만 수정 가능하며 `parentId`, `isAnonymous`, `anonymousOrder`는 생성 시점 값을 유지한다.
+- 이미 삭제된 댓글은 `409 COMMENT_ALREADY_DELETED`를 반환한다.
+
 #### DELETE /v1/notice-comments/{commentId}
 공지 댓글 삭제
 
@@ -1912,8 +2189,8 @@ Authorization:Bearer <firebase_id_token>
 | `NOTICE_NOT_FOUND` | 404 | 존재하지 않는 학교 공지 |
 | `APP_NOTICE_NOT_FOUND` | 404 | 존재하지 않는 앱 공지 |
 | `NOTICE_COMMENT_NOT_FOUND` | 404 | 존재하지 않는 공지 댓글 |
-| `NOT_NOTICE_COMMENT_AUTHOR` | 403 | 댓글 작성자가 아닌데 삭제 시도 |
-| `COMMENT_ALREADY_DELETED` | 409 | 이미 삭제된 댓글 재삭제 시도 |
+| `NOT_NOTICE_COMMENT_AUTHOR` | 403 | 댓글 작성자가 아닌데 수정/삭제 시도 |
+| `COMMENT_ALREADY_DELETED` | 409 | 이미 삭제된 댓글 수정/재삭제 시도 |
 | `RESOURCE_CONCURRENT_MODIFICATION` | 409 | 공지 동기화가 이미 진행 중임 |
 
 ---
@@ -2281,7 +2558,83 @@ Authorization:Bearer <firebase_id_token>
 }
 ```
 
-### 8.5 에러 코드
+### 8.5 캠퍼스 홈 배너
+
+#### GET /v1/campus-banners
+캠퍼스 홈 배너 목록 **(Public API — 인증 불필요)**
+
+**노출 규칙:**
+- `isActive = true`
+- `displayStartAt <= now()` 또는 `displayStartAt is null`
+- `displayEndAt > now()` 또는 `displayEndAt is null`
+- 정렬: `displayOrder ASC`, 동률이면 `createdAt DESC`
+
+**액션 규칙:**
+- `actionType = IN_APP`
+  - `actionTarget` 필수
+  - `actionUrl`은 `null`
+  - `actionParams`는 nullable JSON object
+- `actionType = EXTERNAL_URL`
+  - `actionUrl` 필수
+  - `actionTarget`은 `null`
+  - `actionParams`는 `null`
+
+**Enum:**
+- `paletteKey`: `GREEN` | `BLUE` | `PURPLE` | `RED` | `YELLOW`
+- `actionType`: `IN_APP` | `EXTERNAL_URL`
+- `actionTarget`: `TAXI_MAIN` | `NOTICE_MAIN` | `TIMETABLE_DETAIL` | `CAFETERIA_DETAIL` | `ACADEMIC_CALENDAR_DETAIL`
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "campus_banner_uuid_1",
+      "badgeLabel": "택시 파티",
+      "titleLabel": "택시 동승 매칭",
+      "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+      "buttonLabel": "파티 찾기",
+      "paletteKey": "GREEN",
+      "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+      "actionType": "IN_APP",
+      "actionTarget": "TAXI_MAIN",
+      "actionParams": null,
+      "actionUrl": null
+    },
+    {
+      "id": "campus_banner_uuid_2",
+      "badgeLabel": "공지사항",
+      "titleLabel": "학교 공지사항",
+      "descriptionLabel": "중요한 학교 소식을 놓치지 말고 확인하세요",
+      "buttonLabel": "공지 보기",
+      "paletteKey": "BLUE",
+      "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-2.jpg",
+      "actionType": "IN_APP",
+      "actionTarget": "NOTICE_MAIN",
+      "actionParams": null,
+      "actionUrl": null
+    },
+    {
+      "id": "campus_banner_uuid_3",
+      "badgeLabel": "시간표",
+      "titleLabel": "나의 시간표",
+      "descriptionLabel": "오늘 수업 일정을 한눈에 확인하세요",
+      "buttonLabel": "시간표 보기",
+      "paletteKey": "PURPLE",
+      "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-3.jpg",
+      "actionType": "IN_APP",
+      "actionTarget": "TIMETABLE_DETAIL",
+      "actionParams": {
+        "initialView": "all"
+      },
+      "actionUrl": null
+    }
+  ]
+}
+```
+
+### 8.6 에러 코드
 
 | 에러 코드 | HTTP | 설명 |
 |----------|------|------|
@@ -3241,13 +3594,13 @@ data: {
 
 ## 11. Image API
 
-이미지 업로드는 **클라이언트 → Spring 서버(multipart) → Storage** 순으로 처리됩니다.
-스토리지 서비스 교체(Firebase Storage → AWS S3 등) 시 클라이언트 코드 변경 없이 **서버 구현체만 교체**하면 됩니다.
+이미지 업로드는 **클라이언트 → Spring 서버(multipart) → StorageRepository 구현체** 순으로 처리됩니다.
+현재 기본 runtime provider는 **LOCAL 파일시스템**이며, `FIREBASE` provider도 선택할 수 있습니다.
 
 ### 11.1 이미지 업로드
 
 #### POST /v1/images
-이미지 파일을 서버를 통해 Storage에 업로드합니다.
+이미지 파일을 서버를 통해 업로드하고, 원본/썸네일 URL과 메타데이터를 반환합니다.
 
 **인증:** Firebase ID Token 필수
 
@@ -3256,39 +3609,64 @@ data: {
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `file` | File | O | 이미지 파일 (JPEG, PNG, WebP) |
-| `context` | string | O | 업로드 맥락 (`POST_IMAGE` \| `PROFILE_IMAGE`) |
+| `context` | string | O | 업로드 컨텍스트 (`POST_IMAGE` \| `CHAT_IMAGE` \| `APP_NOTICE_IMAGE` \| `CAMPUS_BANNER_IMAGE` \| `PROFILE_IMAGE`) |
 
-**제약 조건:**
+**context 권한 정책**
+
+| context | 권한 | 주 사용처 |
+|---------|------|-----------|
+| `POST_IMAGE` | 인증 사용자 | Board `images[]` |
+| `CHAT_IMAGE` | 인증 사용자 | Chat `imageUrl` |
+| `PROFILE_IMAGE` | 인증 사용자 | Member profile `photoUrl` |
+| `APP_NOTICE_IMAGE` | 관리자만 허용 | AppNotice `imageUrls[]` |
+| `CAMPUS_BANNER_IMAGE` | 관리자만 허용 | CampusBanner `imageUrl` |
+
+**제약 조건**
 - 최대 파일 크기: 10MB
 - 허용 형식: JPEG, PNG, WebP
+- 최대 해상도: 가로 5000px, 세로 5000px, 총 픽셀 수 20,000,000 이하
+- 응답 필드: `url`, `thumbUrl`, `width`, `height`, `size`, `mime`
+- LOCAL provider에서는 업로드 결과 URL이 `GET {media.storage.url-prefix}/**`로 공개 제공되며, Authorization 헤더가 있어도 공개 조회를 우선한다.
+- FIREBASE provider에서는 Firebase Storage download URL을 그대로 반환한다.
 
-**썸네일(thumbUrl) 생성 규칙:**
-- 서버가 업로드 시점에 원본 이미지를 리사이징하여 썸네일을 함께 생성
-- 최대 너비 300px (높이는 비율 유지)
-- 압축 품질: 80%
-- 파일명: 원본 파일명에 `_thumb` 접미사 추가 (예: `image.jpg` → `image_thumb.jpg`)
-- `StorageRepository` 구현체 내부에서 처리 (Firebase Storage / AWS S3 공통)
+**썸네일 생성 규칙**
+- 서버가 업로드 시점에 원본 이미지를 리사이징해 썸네일을 함께 생성합니다.
+- 최대 너비는 300px이며, 높이는 원본 비율을 유지합니다.
+- 썸네일 파일명은 원본 파일명에 `_thumb` 접미사를 붙입니다.
+- alpha 채널이 없는 이미지는 JPEG 썸네일, alpha 채널이 있는 이미지는 PNG 썸네일을 기본으로 사용합니다.
+
+**저장 경로 규칙**
+- `POST_IMAGE` → `posts/YYYY/MM/DD/{uuid}.{ext}`
+- `CHAT_IMAGE` → `chat/YYYY/MM/DD/{uuid}.{ext}`
+- `PROFILE_IMAGE` → `profiles/YYYY/MM/DD/{uuid}.{ext}`
+- `APP_NOTICE_IMAGE` → `app-notices/YYYY/MM/DD/{uuid}.{ext}`
+- `CAMPUS_BANNER_IMAGE` → `campus-banners/YYYY/MM/DD/{uuid}.{ext}`
 
 **Response (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "url": "https://storage.googleapis.com/skuri-bucket/posts/uuid/image.jpg",
-    "thumbUrl": "https://storage.googleapis.com/skuri-bucket/posts/uuid/image_thumb.jpg",
+    "url": "https://api.skuri.example/uploads/posts/2026/03/10/4f3ec1a0.jpg",
+    "thumbUrl": "https://api.skuri.example/uploads/posts/2026/03/10/4f3ec1a0_thumb.jpg",
     "width": 800,
     "height": 600,
-    "size": 204800
+    "size": 245123,
+    "mime": "image/jpeg"
   }
 }
 ```
 
-**에러 코드:**
+**에러 코드**
 
 | 에러 코드 | HTTP | 설명 |
 |----------|------|------|
-| `IMAGE_TOO_LARGE` | 413 | 파일 크기 초과 (10MB 이상) |
+| `INVALID_REQUEST` | 400 | multipart 파라미터 누락, 빈 `file`, 또는 잘못된 `context` |
+| `ADMIN_REQUIRED` | 403 | `APP_NOTICE_IMAGE`를 일반 사용자가 업로드 |
+| `IMAGE_DIMENSIONS_EXCEEDED` | 422 | 허용 해상도 또는 총 픽셀 수 초과 |
+| `IMAGE_TOO_LARGE` | 413 | 파일 크기 초과 (10MB 초과) |
 | `IMAGE_INVALID_FORMAT` | 415 | 지원하지 않는 이미지 형식 |
+| `IMAGE_UPLOAD_FAILED` | 500 | 스토리지 저장 또는 썸네일 생성 실패 |
 
 ---
 
@@ -3300,15 +3678,50 @@ data: {
 클라이언트
     │
     ├─ 1. POST /v1/images (multipart, context=POST_IMAGE)
-    │      └─ Response: { url, thumbUrl, width, height }   ← 이 값을 보관
-    │         (이미지가 여러 장이면 반복 호출)
+    │      └─ Response: { url, thumbUrl, width, height, size, mime }
     │
     └─ 2. POST /v1/posts
            {
              "title": "...",
              "content": "...",
-             "images": [{ "url": "...", "thumbUrl": "...", "width": 800, "height": 600 }]
+             "images": [{ "url": "...", "thumbUrl": "...", "width": 800, "height": 600, "size": 245123, "mime": "image/jpeg" }]
            }
+```
+
+#### 채팅 이미지
+
+```
+클라이언트
+    │
+    ├─ 1. POST /v1/images (multipart, context=CHAT_IMAGE)
+    │      └─ Response: { url, ... }
+    │
+    └─ 2. SEND /app/chat/{chatRoomId}
+           { "type": "IMAGE", "imageUrl": "https://..." }
+```
+
+#### 앱 공지 이미지
+
+```
+클라이언트(관리자)
+    │
+    ├─ 1. POST /v1/images (multipart, context=APP_NOTICE_IMAGE)
+    │      └─ Response: { url, ... }
+    │
+    └─ 2. POST /v1/admin/app-notices
+           { "imageUrls": ["https://..."], ... }
+```
+
+#### 캠퍼스 홈 배너 이미지
+
+```
+클라이언트(관리자)
+    │
+    ├─ 1. POST /v1/images (multipart, context=CAMPUS_BANNER_IMAGE)
+    │      └─ Response: { url, ... }
+    │
+    └─ 2. POST /v1/admin/campus-banners
+           { "imageUrl": "https://...", ... }
 ```
 
 #### 프로필 이미지
@@ -3327,20 +3740,22 @@ data: {
 
 ### 11.3 Storage 추상화 설계
 
-Spring 서버는 `StorageRepository` 인터페이스로 스토리지 서비스를 추상화합니다.
+Spring 서버는 `StorageRepository` 인터페이스로 storage provider를 추상화합니다.
 
 ```java
 interface StorageRepository {
-    UploadResult upload(String path, byte[] data, String contentType);
-    void delete(String path);
+    StoredObject store(String relativePath, byte[] data, String contentType);
+    void delete(String relativePath);
+
+    record StoredObject(String relativePath, String publicUrl) {}
 }
 ```
 
-스토리지 서비스 교체 시 구현체만 교체하면 됩니다.
+현재 provider는 LOCAL 파일시스템과 FIREBASE를 지원한다. LOCAL은 공개 URL prefix/base URL을 설정값으로 관리하고, FIREBASE는 bucket 업로드 후 tokenized download URL을 반환한다.
 
-| 현재 | 교체 가능 대상 |
-|------|--------------|
-| Firebase Storage | AWS S3, Google Cloud Storage, MinIO 등 |
+| 현재 기본 provider | 후속 교체 대상 |
+|--------------------|----------------|
+| LOCAL 파일시스템, FIREBASE | AWS S3, OCI Object Storage, MinIO 등 |
 
 ---
 
@@ -3354,6 +3769,12 @@ interface StorageRepository {
 isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 ```
 
+**운영 공통 규약**
+- 공통 인가: Admin Controller는 공통 메타 어노테이션(`@AdminApiAccess`) 기준으로 보호하며, `/v1/admin/**` 접근 거부는 `403 ADMIN_REQUIRED`로 표준화한다.
+- 감사 로그: 상태 변경 Admin API(`POST`, `PUT`, `PATCH`, `DELETE`)는 `admin_audit_logs`에 `actor_id(uid)`, `action`, `target_type`, `target_id`, `diff_before`, `diff_after`, `timestamp`를 저장한다. `actor_id`는 `members.id`의 논리적 참조이며 물리 FK는 두지 않는다. `target_id`는 raw 입력이 아니라 서비스와 동일한 canonical 키(`semester=2026-1`, `platform=ios`)를 저장한다. `GET` 조회는 고빈도 운영 조회 로그와 개인정보 중복 적재를 피하기 위해 감사 로그 대상에서 제외한다.
+- 목록 조회 규약: 문의/신고 Admin 목록은 `PageResponse`를 사용하고 `page=0`, `size=20`, `size<=100`, 고정 정렬 `createdAt,DESC`를 따른다. 자유 검색/가변 정렬/CSV export는 현 Phase 런타임 API 범위에서 제외한다.
+- 운영 데이터 노출: Inquiry의 구조화 개인정보(`userEmail`, `userName`, `userRealname`, `userStudentId`)는 관리자 응답에서만 노출하며, 회원 탈퇴 후에는 탈퇴 마스킹 정책이 적용된 값만 조회된다. 자유서술 `content`는 별도 자동 마스킹하지 않는다.
+
 > **기존 방식과의 차이:**
 > 마이그레이션 전에는 `scripts/manage-app-notices.js` 등 Node.js 스크립트가
 > Firebase Admin SDK를 통해 Firestore에 직접 write했습니다.
@@ -3361,10 +3782,234 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.1 앱 공지 관리
+### 12.1 캠퍼스 홈 배너 관리
+
+#### GET /v1/admin/campus-banners
+캠퍼스 홈 배너 목록 조회
+
+- 정렬: `displayOrder ASC`, 동률이면 `createdAt DESC`
+- 비활성/예약/종료 배너도 모두 조회한다.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "campus_banner_uuid_1",
+      "badgeLabel": "택시 파티",
+      "titleLabel": "택시 동승 매칭",
+      "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+      "buttonLabel": "파티 찾기",
+      "paletteKey": "GREEN",
+      "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+      "actionType": "IN_APP",
+      "actionTarget": "TAXI_MAIN",
+      "actionParams": null,
+      "actionUrl": null,
+      "isActive": true,
+      "displayStartAt": "2026-03-25T00:00:00",
+      "displayEndAt": null,
+      "displayOrder": 1,
+      "createdAt": "2026-03-25T10:00:00",
+      "updatedAt": "2026-03-25T10:00:00"
+    }
+  ]
+}
+```
+
+#### GET /v1/admin/campus-banners/{bannerId}
+캠퍼스 홈 배너 상세 조회
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "campus_banner_uuid_1",
+    "badgeLabel": "택시 파티",
+    "titleLabel": "택시 동승 매칭",
+    "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+    "buttonLabel": "파티 찾기",
+    "paletteKey": "GREEN",
+    "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+    "actionType": "IN_APP",
+    "actionTarget": "TAXI_MAIN",
+    "actionParams": null,
+    "actionUrl": null,
+    "isActive": true,
+    "displayStartAt": "2026-03-25T00:00:00",
+    "displayEndAt": null,
+    "displayOrder": 1,
+    "createdAt": "2026-03-25T10:00:00",
+    "updatedAt": "2026-03-25T10:00:00"
+  }
+}
+```
+
+#### POST /v1/admin/campus-banners
+캠퍼스 홈 배너 생성
+
+- `imageUrl`에는 `POST /v1/images`의 `CAMPUS_BANNER_IMAGE` 업로드 결과 URL을 넣을 수 있습니다.
+- 생성 시 `displayOrder`는 항상 현재 마지막 순서 뒤로 append 합니다.
+
+**Request:**
+```json
+{
+  "badgeLabel": "택시 파티",
+  "titleLabel": "택시 동승 매칭",
+  "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+  "buttonLabel": "파티 찾기",
+  "paletteKey": "GREEN",
+  "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+  "actionType": "IN_APP",
+  "actionTarget": "TAXI_MAIN",
+  "actionParams": null,
+  "actionUrl": null,
+  "isActive": true,
+  "displayStartAt": "2026-03-25T00:00:00",
+  "displayEndAt": null
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "campus_banner_uuid_1",
+    "badgeLabel": "택시 파티",
+    "titleLabel": "택시 동승 매칭",
+    "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+    "buttonLabel": "파티 찾기",
+    "paletteKey": "GREEN",
+    "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+    "actionType": "IN_APP",
+    "actionTarget": "TAXI_MAIN",
+    "actionParams": null,
+    "actionUrl": null,
+    "isActive": true,
+    "displayStartAt": "2026-03-25T00:00:00",
+    "displayEndAt": null,
+    "displayOrder": 1,
+    "createdAt": "2026-03-25T10:00:00",
+    "updatedAt": "2026-03-25T10:00:00"
+  }
+}
+```
+
+#### PATCH /v1/admin/campus-banners/{bannerId}
+캠퍼스 홈 배너 부분 수정
+
+- 전달한 필드만 반영한다.
+- 캠퍼스 배너 PATCH는 `null`도 명시적 값으로 처리한다.
+- `actionType`을 변경할 때는 반대편 필드를 함께 정리해야 한다.
+  - `IN_APP`로 바꾸면 `actionUrl: null`
+  - `EXTERNAL_URL`로 바꾸면 `actionTarget: null`, `actionParams: null`
+
+**Request:**
+```json
+{
+  "buttonLabel": "공지 보기",
+  "paletteKey": "BLUE",
+  "actionType": "IN_APP",
+  "actionTarget": "NOTICE_MAIN",
+  "actionParams": null,
+  "actionUrl": null,
+  "isActive": true,
+  "displayEndAt": "2026-04-30T23:59:59"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "campus_banner_uuid_1",
+    "badgeLabel": "택시 파티",
+    "titleLabel": "택시 동승 매칭",
+    "descriptionLabel": "같은 방향 가는 학생과 택시비를 함께 나눠요",
+    "buttonLabel": "공지 보기",
+    "paletteKey": "BLUE",
+    "imageUrl": "https://cdn.skuri.app/uploads/campus-banners/2026/03/25/banner-1.jpg",
+    "actionType": "IN_APP",
+    "actionTarget": "NOTICE_MAIN",
+    "actionParams": null,
+    "actionUrl": null,
+    "isActive": true,
+    "displayStartAt": "2026-03-25T00:00:00",
+    "displayEndAt": "2026-04-30T23:59:59",
+    "displayOrder": 1,
+    "createdAt": "2026-03-25T10:00:00",
+    "updatedAt": "2026-03-25T10:30:00"
+  }
+}
+```
+
+#### DELETE /v1/admin/campus-banners/{bannerId}
+캠퍼스 홈 배너 삭제
+
+- 삭제 후에도 `displayOrder`는 1부터 시작하는 연속값으로 normalize 합니다.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+#### PUT /v1/admin/campus-banners/order
+캠퍼스 홈 배너 순서 변경
+
+- `bannerIds`에는 현재 존재하는 전체 캠퍼스 배너 ID를 중복 없이 모두 전달해야 한다.
+- 순서 변경 후 `displayOrder`는 1부터 시작하는 연속값으로 다시 부여한다.
+
+**Request:**
+```json
+{
+  "bannerIds": [
+    "campus_banner_uuid_2",
+    "campus_banner_uuid_1",
+    "campus_banner_uuid_3"
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "campus_banner_uuid_2",
+      "displayOrder": 1
+    },
+    {
+      "id": "campus_banner_uuid_1",
+      "displayOrder": 2
+    },
+    {
+      "id": "campus_banner_uuid_3",
+      "displayOrder": 3
+    }
+  ]
+}
+```
+
+**검증 규칙:**
+- 문자열 필드는 trim 후 저장하며, trim 결과가 비어 있으면 `422 VALIDATION_ERROR`
+- `imageUrl`, `actionUrl` 최대 길이는 500자
+- `displayEndAt < displayStartAt` 금지
+- `actionParams`는 JSON object만 허용
+
+### 12.2 앱 공지 관리
 
 #### POST /v1/admin/app-notices
 앱 공지 생성
+
+- `imageUrls[]`에는 `POST /v1/images`의 `APP_NOTICE_IMAGE` 업로드 결과 URL을 넣을 수 있습니다.
 
 **Request:**
 ```json
@@ -3442,7 +4087,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.2 앱 버전 관리
+### 12.3 앱 버전 관리
 
 #### PUT /v1/admin/app-versions/{platform}
 앱 버전 정보 업데이트
@@ -3477,7 +4122,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.3 공개 채팅방 관리
+### 12.4 공개 채팅방 관리
 
 공개 채팅방(UNIVERSITY, DEPARTMENT 등)은 사용자가 직접 생성할 수 없으며, 관리자만 생성/삭제합니다.
 파티 채팅방은 파티 생성 시 서버 내부에서 자동으로 생성됩니다.
@@ -3531,7 +4176,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.4 학교 공지 동기화
+### 12.5 학교 공지 동기화
 
 기존 `scripts/upload-notices.js`의 역할을 대체합니다.
 학교 공지 크롤링 후 DB에 동기화합니다.
@@ -3561,7 +4206,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.5 학식 메뉴 관리
+### 12.6 학식 메뉴 관리
 
 #### POST /v1/admin/cafeteria-menus
 학식 메뉴 등록
@@ -3619,7 +4264,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.6 학사 일정 관리
+### 12.7 학사 일정 관리
 
 #### POST /v1/admin/academic-schedules
 학사 일정 추가
@@ -3672,7 +4317,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.7 강의 관리
+### 12.8 강의 관리
 
 #### POST /v1/admin/courses/bulk
 학기 강의 일괄 등록 (매 학기 강의 데이터 업로드)
@@ -3742,7 +4387,13 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.8 운영 문의/신고 관리
+### 12.9 운영 문의/신고 관리
+
+**운영 목록 공통 규약**
+- 두 목록 API 모두 `PageResponse`(`content`, `page`, `size`, `totalElements`, `totalPages`, `hasNext`, `hasPrevious`)를 동일하게 반환한다.
+- 정렬은 서버 고정 `createdAt,DESC`이며 별도 `sort` 파라미터를 받지 않는다.
+- 문의 목록은 `status`만, 신고 목록은 `status`, `targetType`만 필터로 지원한다.
+- CSV export와 상세 전용 API는 현재 계약에 포함하지 않는다.
 
 #### GET /v1/admin/inquiries
 문의 전체 목록 조회 (관리자)
@@ -3904,15 +4555,20 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 
 ---
 
-### 12.9 에러 코드
+### 12.10 에러 코드
 
 | 에러 코드 | HTTP | 설명 |
 |----------|------|------|
 | `ADMIN_REQUIRED` | 403 | 관리자 권한 필요 |
+| `CAMPUS_BANNER_NOT_FOUND` | 404 | 존재하지 않는 캠퍼스 홈 배너 |
 
 ---
 
 > 변경 이력
+> - 2026-03-25: Campus Banner API 계약 추가
+>   - `GET /v1/campus-banners` 공개 조회 추가
+>   - `GET /v1/admin/campus-banners`, `GET /v1/admin/campus-banners/{bannerId}`, `POST/PATCH/DELETE /v1/admin/campus-banners/{bannerId}`, `PUT /v1/admin/campus-banners/order` 계약 추가
+>   - 이미지 업로드 컨텍스트 `CAMPUS_BANNER_IMAGE` 및 `campus-banners/YYYY/MM/DD` 저장 경로 추가
 > - 2026-03-07: Support API 계약 동기화
 >   - `Report.targetType`를 `POST | COMMENT | MEMBER`로 통일
 >   - `Report.status`를 `PENDING | REVIEWING | ACTIONED | REJECTED`로 통일
@@ -3945,3 +4601,5 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 > - 2026-03-05: Board 계약 동기화 — 댓글 depth 1 제한, 부모 삭제 정책(B: placeholder soft delete), `/v1/members/me/posts|bookmarks` 및 Board 에러코드(`COMMENT_DEPTH_EXCEEDED`, `COMMENT_ALREADY_DELETED`) 반영
 > - 2026-03-07: Board/Notice 공통 Comment 정책 구현 반영 — 무제한 depth, flat list 응답, `commentNotifications` / `bookmarkedPostCommentNotifications` 계약 반영
 > - 2026-03-08: Phase 8 Notification 계약 반영 — `PARTY_*` canonical enum 정렬, Notification API pagination/FCM token/SSE strict DTO(`ACADEMIC_SCHEDULE`, `academicScheduleId`) 동기화, 학사 일정 알림 설정 필드 추가
+> - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `@AdminApiAccess` 공통화, `admin_audit_logs` 저장 규약, Support Admin 목록 고정 정렬/페이지 정책, CSV 보류 및 운영 데이터 노출 정책 문서화
+> - 2026-03-10: Image 계약 구현 반영 — `/v1/images`를 런타임 계약으로 승격하고, context enum(`POST/CHAT/APP_NOTICE/PROFILE`), LOCAL storage 기본 전략, Board/Chat/AppNotice/Profile 재사용 플로우를 `/v3/api-docs` 기준으로 동기화

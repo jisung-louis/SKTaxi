@@ -1,5 +1,5 @@
 {
-  "name": "functions",
+  "name": "firebase-cloud-functions",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",

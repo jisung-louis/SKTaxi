@@ -1,0 +1,70 @@
+import React from 'react';
+
+import {useAppNoticeRepository} from '@/di/useRepository';
+
+import {assembleAppNoticeFeedViewData} from '../application/appNoticeViewAssembler';
+import type {
+  AppNoticeBadgeViewData,
+  AppNoticeFeedViewData,
+} from '../model/appNoticeViewData';
+
+interface UseAppNoticeFeedDataResult {
+  data: AppNoticeFeedViewData | null;
+  error: string | null;
+  loading: boolean;
+  reload: () => Promise<void>;
+}
+
+const buildBadges = (important: boolean): AppNoticeBadgeViewData[] => {
+  if (!important) {
+    return [];
+  }
+
+  return [
+    {
+      id: 'important',
+      label: '중요',
+      tone: 'danger',
+    },
+  ];
+};
+
+export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
+  const appNoticeRepository = useAppNoticeRepository();
+  const [data, setData] = React.useState<AppNoticeFeedViewData | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const notices = await appNoticeRepository.getAppNotices();
+      const nextData = assembleAppNoticeFeedViewData(notices);
+
+      setData({
+        items: nextData.items.map(item => ({
+          ...item,
+          badges: buildBadges(notices.find(notice => notice.id === item.id)?.priority === 'urgent'),
+        })),
+      });
+    } catch (loadError) {
+      console.error('앱 공지사항 목록을 불러오지 못했습니다.', loadError);
+      setError('앱 공지사항을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, [appNoticeRepository]);
+
+  React.useEffect(() => {
+    load();
+  }, [load]);
+
+  return {
+    data,
+    error,
+    loading,
+    reload: load,
+  };
+};

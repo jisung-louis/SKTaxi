@@ -4,8 +4,6 @@ export { useBoardBookmarks } from './useBoardBookmarks';
 export type { UseBoardBookmarksResult } from './useBoardBookmarks';
 export { useBoardCategoryCounts } from './useBoardCategoryCounts';
 export type { UseBoardCategoryCountsResult } from './useBoardCategoryCounts';
-export { useBoardComments } from './useBoardComments';
-export type { UseBoardCommentsResult } from './useBoardComments';
 export { useBoardEdit } from './useBoardEdit';
 export type { UseBoardEditResult } from './useBoardEdit';
 export { useBoardLikes } from './useBoardLikes';

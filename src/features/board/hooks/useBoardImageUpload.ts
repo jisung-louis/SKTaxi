@@ -10,7 +10,7 @@ import type {
 } from 'react-native-image-picker';
 
 import type { BoardSelectedImage } from '../model/types';
-import { useBoardStorageRepository } from './useBoardStorageRepository';
+import { useBoardRepository } from './useBoardRepository';
 
 interface UseBoardImageUploadProps {
   maxImages?: number;
@@ -21,7 +21,7 @@ export const useBoardImageUpload = ({
   maxImages = 10,
   maxFileSize = 10,
 }: UseBoardImageUploadProps = {}) => {
-  const storageRepository = useBoardStorageRepository();
+  const boardRepository = useBoardRepository();
   const [selectedImages, setSelectedImages] = useState<BoardSelectedImage[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -33,8 +33,8 @@ export const useBoardImageUpload = ({
         return;
       }
 
-      const nextImages = (response.assets || [])
-        .map((asset) => {
+      const nextImages: BoardSelectedImage[] = (response.assets ?? [])
+        .map<BoardSelectedImage | null>((asset) => {
           const fileSize = asset.fileSize || 0;
           const fileSizeMB = fileSize / (1024 * 1024);
 
@@ -54,7 +54,7 @@ export const useBoardImageUpload = ({
             progress: 0,
           };
         })
-        .filter((image): image is BoardSelectedImage => Boolean(image));
+        .filter((image): image is BoardSelectedImage => image !== null);
 
       setSelectedImages((prev) => [...prev, ...nextImages]);
     },
@@ -105,7 +105,7 @@ export const useBoardImageUpload = ({
   }, []);
 
   const uploadImages = useCallback(
-    async (postId: string): Promise<BoardSelectedImage[]> => {
+    async (postId?: string): Promise<BoardSelectedImage[]> => {
       if (selectedImages.length === 0) {
         return [];
       }
@@ -126,27 +126,14 @@ export const useBoardImageUpload = ({
             ),
           );
 
-          const result = await storageRepository.uploadImage(image.localUri, {
-            path: `boardPosts/${postId}/images/`,
-            filename: `${image.id}.jpg`,
-            onProgress: (progress) => {
-              setSelectedImages((prev) =>
-                prev.map((currentImage) =>
-                  currentImage.id === image.id
-                    ? { ...currentImage, progress }
-                    : currentImage,
-                ),
-              );
-            },
-            maxSize: maxFileSize * 1024 * 1024,
-          });
+          const result = await boardRepository.uploadImage(image.localUri, postId);
 
           const uploadedImage: BoardSelectedImage = {
             ...image,
             status: 'uploaded',
             progress: 100,
             remoteUrl: result.url,
-            thumbUrl: result.url,
+            thumbUrl: result.thumbUrl ?? result.url,
           };
 
           setSelectedImages((prev) =>
@@ -176,7 +163,7 @@ export const useBoardImageUpload = ({
         setUploading(false);
       }
     },
-    [maxFileSize, selectedImages, storageRepository],
+    [boardRepository, selectedImages],
   );
 
   const clearImages = useCallback(() => {

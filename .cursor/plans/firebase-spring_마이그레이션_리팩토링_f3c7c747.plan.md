@@ -127,7 +127,7 @@ src/
     └── endpoints.ts              # 엔드포인트 상수
 ```
 
-**[`src/api/ApiClient.ts`](src/api/ApiClient.ts) 생성**
+`**[src/api/ApiClient.ts](src/api/ApiClient.ts)` 생성**
 
 ```typescript
 // 추후 Spring API 연동을 위한 기반
@@ -387,35 +387,35 @@ interface IUserRepository {
 
 **Day 1: Repository 인터페이스 생성**
 
-- [x] IInquiryRepository 생성 + Firestore 구현체
-- [x] IStorageRepository 생성 + Firebase Storage 구현체
-- [x] ITimetableRepository 생성 + Firestore 구현체
-- [x] IAuthRepository 생성 + Firebase Auth 구현체
+- IInquiryRepository 생성 + Firestore 구현체
+- IStorageRepository 생성 + Firebase Storage 구현체
+- ITimetableRepository 생성 + Firestore 구현체
+- IAuthRepository 생성 + Firebase Auth 구현체
 
 **Day 2: 기존 Repository 확장**
 
-- [x] IPartyRepository 파티 채팅 메시지 메서드 추가 (subscribeToPartyMessages, sendPartyMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage)
-- [x] IChatRepository 메서드는 이미 존재 (sendMessage, joinChatRoom, getNotificationSetting, updateNotificationSetting)
-- [x] IUserRepository 북마크/알림설정 메서드 이미 존재
+- IPartyRepository 파티 채팅 메시지 메서드 추가 (subscribeToPartyMessages, sendPartyMessage, sendSystemMessage, sendAccountMessage, sendArrivedMessage, sendEndMessage)
+- IChatRepository 메서드는 이미 존재 (sendMessage, joinChatRoom, getNotificationSetting, updateNotificationSetting)
+- IUserRepository 북마크/알림설정 메서드 이미 존재
 
 **Day 3-4: 신규 훅 생성**
 
-- [x] hooks/auth/useAuth.ts - IAuthRepository + IUserRepository 사용
-- [x] hooks/timetable/useTimetable.ts - ITimetableRepository 사용
-- [x] hooks/storage/useImageUpload.ts - IStorageRepository 사용
-- [x] hooks/board/useUserBoardInteractions.ts - IBoardRepository + IUserRepository 사용
-- [x] hooks/user/useUserBookmarks.ts - IUserRepository 사용
-- [x] hooks/notice/useNoticeSettings.ts - IUserRepository 사용
-- [x] hooks/common/usePermissionStatus.ts - React Native 권한 API
-- [x] hooks/chat/partyMessages.ts - IPartyRepository 사용 (useMessages, sendMessage 등)
-- [x] hooks/chat/chatUtils.ts - IChatRepository 사용 (sendChatMessage, joinChatRoom 등)
+- hooks/auth/useAuth.ts - IAuthRepository + IUserRepository 사용
+- hooks/timetable/useTimetable.ts - ITimetableRepository 사용
+- hooks/storage/useImageUpload.ts - IStorageRepository 사용
+- hooks/board/useUserBoardInteractions.ts - IBoardRepository + IUserRepository 사용
+- hooks/user/useUserBookmarks.ts - IUserRepository 사용
+- hooks/notice/useNoticeSettings.ts - IUserRepository 사용
+- hooks/common/usePermissionStatus.ts - React Native 권한 API
+- hooks/chat/partyMessages.ts - IPartyRepository 사용 (useMessages, sendMessage 등)
+- hooks/chat/chatUtils.ts - IChatRepository 사용 (sendChatMessage, joinChatRoom 등)
 
 **Day 5: 정리 및 검증**
 
-- [x] DI Provider에 새 Repository 등록 (RepositoryContext.ts, RepositoryProvider.tsx)
-- [x] useRepository 별칭 추가 (di/useRepository.ts, di/index.ts)
-- [x] 레거시 훅은 `src/legacy/hooks-legacy/` 폴더에 보관 (참조용)
-- [x] TypeScript 컴파일 검증 통과
+- DI Provider에 새 Repository 등록 (RepositoryContext.ts, RepositoryProvider.tsx)
+- useRepository 별칭 추가 (di/useRepository.ts, di/index.ts)
+- 레거시 훅은 `src/legacy/hooks-legacy/` 폴더에 보관 (참조용)
+- TypeScript 컴파일 검증 통과
 
 **레거시 훅 이동 (hard-delete 대신)**
 
@@ -837,11 +837,11 @@ src/__tests__/
 
 ### 6.3 검증 체크리스트
 
-- [ ] `grep -r "firebase" src/hooks/` → 결과 없음
-- [ ] `grep -r "firebase" src/screens/` → 결과 없음 (Minecraft 제외)
-- [ ] `grep -r "firebase" src/components/` → 결과 없음
-- [ ] TypeScript 컴파일 에러 없음
-- [ ] 모든 화면 기능 정상 동작
+- `grep -r "firebase" src/hooks/` → 결과 없음
+- `grep -r "firebase" src/screens/` → 결과 없음 (Minecraft 제외)
+- `grep -r "firebase" src/components/` → 결과 없음
+- TypeScript 컴파일 에러 없음
+- 모든 화면 기능 정상 동작
 
 ---
 
@@ -869,33 +869,33 @@ src/__tests__/
 
 #### SRP (단일 책임 원칙)
 
-- [ ] 500줄 이상 파일 없음
-- [ ] 각 파일이 단일 도메인 책임만 담당
-- [ ] 훅, 화면, 컴포넌트 역할 분리 명확
+- 500줄 이상 파일 없음
+- 각 파일이 단일 도메인 책임만 담당
+- 훅, 화면, 컴포넌트 역할 분리 명확
 
 #### OCP (개방-폐쇄 원칙)
 
-- [ ] if-else 체인 5개 이상 없음
-- [ ] 새 기능 추가 시 기존 코드 수정 불필요
-- [ ] 전략 패턴/플러그인 구조 적용
+- if-else 체인 5개 이상 없음
+- 새 기능 추가 시 기존 코드 수정 불필요
+- 전략 패턴/플러그인 구조 적용
 
 #### LSP (리스코프 치환 원칙)
 
-- [ ] Repository 인터페이스 계약 준수
-- [ ] 타입별 조건 분기 최소화
+- Repository 인터페이스 계약 준수
+- 타입별 조건 분기 최소화
 
 #### ISP (인터페이스 분리 원칙)
 
-- [ ] 훅 반환값 8개 이하
-- [ ] 컴포넌트 props 10개 이하
-- [ ] 불필요한 의존성 제거
+- 훅 반환값 8개 이하
+- 컴포넌트 props 10개 이하
+- 불필요한 의존성 제거
 
 #### DIP (의존성 역전 원칙)
 
-- [ ] hooks/ 폴더 Firebase 직접 import 없음
-- [ ] screens/ 폴더 Firebase 직접 import 없음 (특수 케이스 제외)
-- [ ] components/ 폴더 Firebase 직접 import 없음
-- [ ] 모든 데이터 접근이 Repository를 통함
+- hooks/ 폴더 Firebase 직접 import 없음
+- screens/ 폴더 Firebase 직접 import 없음 (특수 케이스 제외)
+- components/ 폴더 Firebase 직접 import 없음
+- 모든 데이터 접근이 Repository를 통함
 
 ### 7.3 정량적 지표 측정
 
