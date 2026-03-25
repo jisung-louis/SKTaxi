@@ -38,6 +38,9 @@ const normalizePartyTags = (tags?: string[] | null) =>
 const mapPartySettlementMember = (
   dto: PartySettlementMemberResponseDto,
 ): PartySettlementMember => ({
+  displayName: dto.displayName?.trim() || undefined,
+  leftAt: normalizeDate(dto.leftAt),
+  leftParty: Boolean(dto.leftParty),
   settled: dto.settled,
   settledAt: normalizeDate(dto.settledAt),
 });
@@ -151,6 +154,7 @@ export const mapJoinRequestListItemDtoToJoinRequest = ({
   leaderId,
   partyId: dto.partyId,
   requesterId: dto.requesterId,
+  requesterName: dto.requesterName?.trim() || undefined,
   status: mapJoinRequestStatusDto(dto.status),
 });
 

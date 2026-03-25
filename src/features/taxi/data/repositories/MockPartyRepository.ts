@@ -612,6 +612,7 @@ export class MockPartyRepository implements IPartyRepository {
       id,
       partyId,
       requesterId,
+      requesterName: displayNameByUserId(requesterId),
       leaderId,
       status: 'pending',
       createdAt: nowIso(),

@@ -40,9 +40,7 @@ const buildManagement = (
   currentUserId: string,
 ): TaxiChatSummaryManagementViewData => {
   const isLeader = partyChat.leaderId === currentUserId;
-  const canLeave =
-    !isLeader &&
-    (partyChat.partyStatus === 'open' || partyChat.partyStatus === 'closed');
+  const canLeave = !isLeader && partyChat.partyStatus !== 'ended';
 
   return {
     canCancelParty: isLeader,
@@ -148,15 +146,28 @@ const buildSettlementNotice = (
       : partyChat.participants
           .filter(participant => !participant.isLeader)
           .map(participant => participant.id);
-  const members = partyChat.participants
-    .filter(participant => settlementTargetIds.includes(participant.id))
-    .map(participant => ({
-      id: participant.id,
-      isCurrentUser: participant.id === currentUserId,
-      isLeader: participant.isLeader,
-      label: participant.name,
-      settled: participant.settled,
-    }));
+  const members =
+    partyChat.settlement.members && partyChat.settlement.members.length > 0
+      ? partyChat.settlement.members
+          .filter(member => settlementTargetIds.includes(member.id))
+          .map(member => ({
+            id: member.id,
+            isCurrentUser: member.id === currentUserId,
+            isLeader: false,
+            label: member.label,
+            leftAt: member.leftAt,
+            leftParty: member.leftParty,
+            settled: member.settled,
+          }))
+      : partyChat.participants
+          .filter(participant => settlementTargetIds.includes(participant.id))
+          .map(participant => ({
+            id: participant.id,
+            isCurrentUser: participant.id === currentUserId,
+            isLeader: participant.isLeader,
+            label: participant.name,
+            settled: participant.settled,
+          }));
   const completedCount = members.filter(member => member.settled).length;
   const totalCount = members.length;
   const isCompleted =

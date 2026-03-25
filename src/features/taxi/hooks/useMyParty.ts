@@ -1,7 +1,7 @@
 // SKTaxi: useMyParty 훅 - Repository 패턴 적용 버전
 // 현재 사용자가 참여 중인 파티를 실시간 구독
 
-import { useCallback } from 'react';
+import React, {useCallback, type PropsWithChildren} from 'react';
 import {
   SubscriptionState,
   useFirestoreSubscription,
@@ -26,6 +26,10 @@ export interface UseMyPartyResult extends SubscriptionState<Party | null> {
   partyId: string | null;
 }
 
+const MyPartyContext = React.createContext<UseMyPartyResult | undefined>(
+  undefined,
+);
+
 /**
  * 현재 사용자가 참여 중인 파티를 실시간 구독하는 훅
  * 사용자가 로그인하지 않았거나 파티에 참여하지 않은 경우 null 반환
@@ -38,7 +42,7 @@ export interface UseMyPartyResult extends SubscriptionState<Party | null> {
  *
  * return <PartyDetail party={myParty} isLeader={isLeader} />;
  */
-export function useMyParty(): UseMyPartyResult {
+const useMyPartyState = (): UseMyPartyResult => {
   const partyRepository = usePartyRepository();
   const { user } = useAuth();
 
@@ -78,4 +82,20 @@ export function useMyParty(): UseMyPartyResult {
     hasParty: isInParty,
     partyId: data?.id ?? null,
   };
+};
+
+export const MyPartyProvider = ({children}: PropsWithChildren) => {
+  const value = useMyPartyState();
+
+  return React.createElement(MyPartyContext.Provider, {value}, children);
+};
+
+export function useMyParty(): UseMyPartyResult {
+  const context = React.useContext(MyPartyContext);
+
+  if (!context) {
+    throw new Error('useMyParty must be used within a MyPartyProvider');
+  }
+
+  return context;
 }

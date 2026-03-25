@@ -5,6 +5,9 @@ export interface PartyLocation {
 }
 
 export interface PartySettlementMember {
+  displayName?: string;
+  leftAt?: unknown;
+  leftParty?: boolean;
   settled: boolean;
   settledAt?: unknown;
 }
@@ -58,6 +61,7 @@ export interface JoinRequest {
   id: string;
   partyId: string;
   requesterId: string;
+  requesterName?: string;
   leaderId: string;
   status: 'pending' | 'accepted' | 'declined' | 'canceled';
   createdAt: unknown;

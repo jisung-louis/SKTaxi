@@ -42,6 +42,8 @@ export interface TaxiChatSettlementMemberViewData {
   isCurrentUser: boolean;
   isLeader: boolean;
   label: string;
+  leftAt?: string;
+  leftParty?: boolean;
   settled: boolean;
 }
 
@@ -85,11 +87,21 @@ export interface TaxiChatSourceParticipant {
 
 export interface TaxiChatSourceSettlement {
   accountData?: TaxiChatSourceAccountData;
+  members?: TaxiChatSourceSettlementMember[];
   splitMemberCount?: number;
   settlementTargetMemberIds: string[];
   perPersonAmount: number;
   status: 'pending' | 'completed';
   taxiFare?: number;
+}
+
+export interface TaxiChatSourceSettlementMember {
+  id: string;
+  label: string;
+  leftAt?: string;
+  leftParty?: boolean;
+  settled: boolean;
+  settledAt?: string;
 }
 
 export interface TaxiChatSourceAccountData {
@@ -101,6 +113,7 @@ export interface TaxiChatSourceAccountData {
 
 export interface TaxiChatSourceArrivalData {
   accountData?: TaxiChatSourceAccountData;
+  members?: TaxiChatSourceSettlementMember[];
   perPersonAmount?: number;
   settlementTargetMemberIds: string[];
   splitMemberCount?: number;

@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 
 import { useAuthEntryGuard } from '@/app/guards';
-import { JoinRequestModal, useJoinRequestModal } from '@/features/taxi';
+import { JoinRequestModal, useJoinRequestModal, useMyParty } from '@/features/taxi';
 import { ForegroundNotification } from '@/shared/ui/ForegroundNotification';
 
 import { useRegisterPushHandlers } from './registerPushHandlers';
@@ -31,6 +31,7 @@ export const AppRuntimeHost = () => {
     getCurrentScreen,
     getCurrentChatRoomId,
   } = useForegroundNotificationRuntime();
+  const {isLeader, myParty} = useMyParty();
 
   const {
     joinData,
@@ -41,7 +42,11 @@ export const AppRuntimeHost = () => {
     handleRequestClose,
     handleJoinRequestAccepted,
     handleJoinRequestRejected,
-  } = useJoinRequestModal(user?.uid);
+  } = useJoinRequestModal({
+    activeLeaderPartyId: isLeader ? myParty?.id ?? null : null,
+    enabled: !needsProfile && permissionsComplete,
+    userId: user?.uid,
+  });
 
   const handlePartyDeleted = React.useCallback(() => {
     handlePartyDeletedBase();

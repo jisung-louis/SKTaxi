@@ -48,10 +48,20 @@ export interface ChatAccountDataResponseDto {
 
 export interface ChatArrivalDataResponseDto {
   accountData?: ChatAccountDataResponseDto | null;
+  memberSettlements?: ChatArrivalSettlementMemberResponseDto[] | null;
   perPersonAmount?: number | null;
   settlementTargetMemberIds?: string[] | null;
   splitMemberCount?: number | null;
   taxiFare?: number | null;
+}
+
+export interface ChatArrivalSettlementMemberResponseDto {
+  displayName?: string | null;
+  leftAt?: string | null;
+  leftParty?: boolean | null;
+  memberId: string;
+  settled: boolean;
+  settledAt?: string | null;
 }
 
 export interface ChatMessageCursorResponseDto {

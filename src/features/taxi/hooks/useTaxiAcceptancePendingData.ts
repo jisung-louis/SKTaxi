@@ -15,6 +15,7 @@ import type {
   TaxiAcceptancePendingSourceData,
   TaxiAcceptancePendingViewData,
 } from '../model/taxiAcceptancePendingViewData';
+import {usePartyRepository} from './usePartyRepository';
 
 interface UseTaxiAcceptancePendingDataResult {
   cancelRequest: () => Promise<void>;
@@ -155,6 +156,7 @@ const buildViewData = (
 export const useTaxiAcceptancePendingData = (
   params: TaxiAcceptancePendingNavigationParams,
 ): UseTaxiAcceptancePendingDataResult => {
+  const partyRepository = usePartyRepository();
   const seed = React.useMemo(
     () => buildSeedFromLegacyParams(params),
     [params],
@@ -189,6 +191,23 @@ export const useTaxiAcceptancePendingData = (
   React.useEffect(() => {
     load();
   }, [load]);
+
+  React.useEffect(() => {
+    if (!seed?.requestId) {
+      return;
+    }
+
+    const unsubscribe = partyRepository.subscribeToJoinRequest(seed.requestId, {
+      onData: () => {
+        load().catch(() => undefined);
+      },
+      onError: subscribeError => {
+        console.error('동승 요청 상태 구독 실패:', subscribeError);
+      },
+    });
+
+    return unsubscribe;
+  }, [load, partyRepository, seed?.requestId]);
 
   const cancelRequest = React.useCallback(async () => {
     if (!seed?.requestId) {

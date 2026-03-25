@@ -31,6 +31,21 @@ import type {IPartyRepository} from './IPartyRepository';
 
 const DEFAULT_SSE_RECONNECT_DELAY_MS = 3000;
 
+type SseSignalQuery = Record<string, string>;
+
+interface SharedSseSignalStream {
+  connection: SseStreamConnection | null;
+  connectionPromise: Promise<void> | null;
+  key: string;
+  label: string;
+  lastEventId?: string;
+  listeners: Set<() => void>;
+  path: string;
+  query?: SseSignalQuery;
+  reconnectDelayMs: number;
+  reconnectTimerId: ReturnType<typeof setTimeout> | null;
+}
+
 const formatLocalDateTime = (value: string) => {
   const parsedDate = new Date(value);
 
@@ -57,6 +72,8 @@ const toError = (error: unknown) => {
 
 export class SpringPartyRepository implements IPartyRepository {
   private readonly refreshers = new Set<() => Promise<void>>();
+
+  private readonly signalStreams = new Map<string, SharedSseSignalStream>();
 
   private subscribeWithSignals<T>({
     callbacks,
@@ -230,6 +247,189 @@ export class SpringPartyRepository implements IPartyRepository {
     };
   }
 
+  private normalizeSignalQuery(
+    query?: Record<string, string | undefined>,
+  ): SseSignalQuery | undefined {
+    if (!query) {
+      return undefined;
+    }
+
+    const normalizedEntries: Array<[string, string]> = Object.entries(query)
+      .filter(
+        (entry): entry is [string, string] =>
+          typeof entry[1] === 'string' && entry[1].length > 0,
+      )
+      .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey));
+
+    if (normalizedEntries.length === 0) {
+      return undefined;
+    }
+
+    return Object.fromEntries(normalizedEntries);
+  }
+
+  private createSignalStreamKey(path: string, query?: SseSignalQuery) {
+    if (!query) {
+      return path;
+    }
+
+    const serializedQuery = Object.entries(query)
+      .map(([key, value]) => `${key}=${value}`)
+      .join('&');
+
+    return serializedQuery.length > 0 ? `${path}?${serializedQuery}` : path;
+  }
+
+  private getOrCreateSignalStream({
+    label,
+    path,
+    query,
+  }: {
+    label: string;
+    path: string;
+    query?: Record<string, string | undefined>;
+  }): SharedSseSignalStream {
+    const normalizedQuery = this.normalizeSignalQuery(query);
+    const key = this.createSignalStreamKey(path, normalizedQuery);
+    const existingStream = this.signalStreams.get(key);
+
+    if (existingStream) {
+      return existingStream;
+    }
+
+    const nextStream: SharedSseSignalStream = {
+      connection: null,
+      connectionPromise: null,
+      key,
+      label,
+      listeners: new Set(),
+      path,
+      query: normalizedQuery,
+      reconnectDelayMs: DEFAULT_SSE_RECONNECT_DELAY_MS,
+      reconnectTimerId: null,
+    };
+
+    this.signalStreams.set(key, nextStream);
+    return nextStream;
+  }
+
+  private clearSignalStreamReconnectTimer(stream: SharedSseSignalStream) {
+    if (!stream.reconnectTimerId) {
+      return;
+    }
+
+    clearTimeout(stream.reconnectTimerId);
+    stream.reconnectTimerId = null;
+  }
+
+  private notifySignalStreamListeners(stream: SharedSseSignalStream) {
+    Array.from(stream.listeners).forEach(listener => {
+      listener();
+    });
+  }
+
+  private disposeSignalStreamIfIdle(stream: SharedSseSignalStream) {
+    if (stream.listeners.size > 0) {
+      return;
+    }
+
+    this.clearSignalStreamReconnectTimer(stream);
+
+    const currentConnection = stream.connection;
+    stream.connection = null;
+    currentConnection?.close();
+
+    if (!stream.connectionPromise) {
+      this.signalStreams.delete(stream.key);
+    }
+  }
+
+  private scheduleSignalStreamReconnect(stream: SharedSseSignalStream) {
+    if (stream.listeners.size === 0 || stream.reconnectTimerId) {
+      return;
+    }
+
+    stream.reconnectTimerId = setTimeout(() => {
+      stream.reconnectTimerId = null;
+      this.connectSignalStream(stream).catch(() => undefined);
+    }, stream.reconnectDelayMs);
+  }
+
+  private async connectSignalStream(stream: SharedSseSignalStream) {
+    if (
+      stream.listeners.size === 0 ||
+      stream.connection ||
+      stream.connectionPromise
+    ) {
+      return stream.connectionPromise ?? undefined;
+    }
+
+    stream.connectionPromise = sseClient
+      .connect(
+        {
+          lastEventId: stream.lastEventId,
+          path: stream.path,
+          query: stream.query,
+        },
+        {
+          connect: options => {
+            stream.reconnectDelayMs = options.reconnectDelayMs;
+
+            let nextConnection: SseStreamConnection | null = null;
+            nextConnection = createXhrSseStream(options, {
+              onClosed: () => {
+                if (stream.connection === nextConnection) {
+                  stream.connection = null;
+                }
+
+                this.scheduleSignalStreamReconnect(stream);
+                this.disposeSignalStreamIfIdle(stream);
+              },
+              onError: error => {
+                if (stream.listeners.size === 0) {
+                  return;
+                }
+
+                console.warn(`[TaxiParty] ${stream.label} SSE 연결 오류`, error);
+              },
+              onEvent: event => {
+                if (event.id) {
+                  stream.lastEventId = event.id;
+                }
+
+                if (event.event === 'HEARTBEAT') {
+                  return;
+                }
+
+                this.notifySignalStreamListeners(stream);
+              },
+              onOpen: () => {
+                this.notifySignalStreamListeners(stream);
+              },
+            });
+
+            stream.connection = nextConnection;
+            return nextConnection;
+          },
+        },
+      )
+      .then(() => undefined)
+      .catch(error => {
+        if (stream.listeners.size === 0) {
+          return;
+        }
+
+        console.warn(`[TaxiParty] ${stream.label} SSE 연결 실패`, error);
+        this.scheduleSignalStreamReconnect(stream);
+      })
+      .finally(() => {
+        stream.connectionPromise = null;
+        this.disposeSignalStreamIfIdle(stream);
+      });
+
+    await stream.connectionPromise;
+  }
+
   private async openSseSignalStream({
     label,
     path,
@@ -241,114 +441,18 @@ export class SpringPartyRepository implements IPartyRepository {
     path: string;
     query?: Record<string, string | undefined>;
   }): Promise<Unsubscribe> {
-    let active = true;
-    let connection: SseStreamConnection | null = null;
-    let connectionPromise: Promise<void> | null = null;
-    let lastEventId: string | undefined;
-    let reconnectDelayMs = DEFAULT_SSE_RECONNECT_DELAY_MS;
-    let reconnectTimerId: ReturnType<typeof setTimeout> | null = null;
+    const stream = this.getOrCreateSignalStream({
+      label,
+      path,
+      query,
+    });
 
-    const normalizedQuery = query
-      ? Object.fromEntries(
-          Object.entries(query).filter(
-            ([, value]) => typeof value === 'string' && value.length > 0,
-          ),
-        )
-      : undefined;
-
-    const clearReconnectTimer = () => {
-      if (!reconnectTimerId) {
-        return;
-      }
-
-      clearTimeout(reconnectTimerId);
-      reconnectTimerId = null;
-    };
-
-    const scheduleReconnect = () => {
-      if (!active || reconnectTimerId) {
-        return;
-      }
-
-      reconnectTimerId = setTimeout(() => {
-        reconnectTimerId = null;
-        connect().catch(() => undefined);
-      }, reconnectDelayMs);
-    };
-
-    const connect = async () => {
-      if (!active || connection || connectionPromise) {
-        return;
-      }
-
-      connectionPromise = sseClient
-        .connect(
-          {
-            lastEventId,
-            path,
-            query: normalizedQuery,
-          },
-          {
-            connect: options => {
-              reconnectDelayMs = options.reconnectDelayMs;
-
-              connection = createXhrSseStream(options, {
-                onClosed: () => {
-                  connection = null;
-                  scheduleReconnect();
-                },
-                onError: error => {
-                  if (!active) {
-                    return;
-                  }
-
-                  console.warn(`[TaxiParty] ${label} SSE 연결 오류`, error);
-                },
-                onEvent: event => {
-                  if (event.id) {
-                    lastEventId = event.id;
-                  }
-
-                  if (event.event === 'HEARTBEAT') {
-                    return;
-                  }
-
-                  onSignal();
-                },
-                onOpen: () => {
-                  onSignal();
-                },
-              });
-
-              return connection;
-            },
-          },
-        )
-        .then(() => undefined)
-        .catch(error => {
-          if (!active) {
-            return;
-          }
-
-          console.warn(`[TaxiParty] ${label} SSE 연결 실패`, error);
-          scheduleReconnect();
-        })
-        .finally(() => {
-          connectionPromise = null;
-        });
-
-      await connectionPromise;
-    };
-
-    await connect();
+    stream.listeners.add(onSignal);
+    await this.connectSignalStream(stream);
 
     return () => {
-      active = false;
-      clearReconnectTimer();
-
-      const currentConnection = connection;
-      connection = null;
-      currentConnection?.close();
+      stream.listeners.delete(onSignal);
+      this.disposeSignalStreamIfIdle(stream);
     };
   }
 

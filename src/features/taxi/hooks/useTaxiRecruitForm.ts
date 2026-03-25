@@ -9,6 +9,11 @@ import {
   DESTINATION_LOCATION,
   DESTINATION_OPTIONS,
 } from '../model/constants';
+import {
+  buildTaxiInitialPickerDate,
+  buildTaxiSelectedDepartureDate,
+  formatTaxiDepartureSummary,
+} from '../model/taxiDepartureTime';
 import type {
   TaxiRecruitDraft,
   TaxiRecruitLocationKind,
@@ -30,8 +35,6 @@ const PRESET_TAG_OPTIONS = [
 ] as const;
 
 const MAX_MEMBER_OPTIONS = [2, 3, 4, 5, 6, 7] as const;
-const DAY_OFFSET_TODAY = 0 as const;
-const DAY_OFFSET_TOMORROW = 1 as const;
 
 const buildPresetLocationMap = ({
   coordinates,
@@ -77,47 +80,6 @@ const formatTagValue = (value: string) => {
   }
 
   return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
-};
-
-const buildInitialPickerDate = () => {
-  const initialDate = new Date();
-  initialDate.setSeconds(0, 0);
-  initialDate.setMinutes(initialDate.getMinutes() + 1);
-
-  return initialDate;
-};
-
-const buildSelectedDate = (hour: number, minute: number, now: Date) => {
-  const selectedDate = new Date(now);
-  selectedDate.setHours(hour, minute, 0, 0);
-
-  const selectedMinutes = hour * 60 + minute;
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const isTomorrow = selectedMinutes <= currentMinutes;
-
-  if (isTomorrow) {
-    selectedDate.setDate(selectedDate.getDate() + 1);
-  }
-
-  return {
-    date: selectedDate,
-    dayOffset: isTomorrow ? DAY_OFFSET_TOMORROW : DAY_OFFSET_TODAY,
-    isTomorrow,
-  };
-};
-
-const formatDepartureSummary = (date: Date, isTomorrow: boolean) => {
-  const meridiem = date.getHours() >= 12 ? '오후' : '오전';
-  const hour12 = date.getHours() % 12 || 12;
-  const minute = `${date.getMinutes()}`.padStart(2, '0');
-  const dayLabel = isTomorrow ? '내일' : '오늘';
-
-  return `${dayLabel} ${
-    date.getMonth() + 1
-  }월 ${date.getDate()}일 ${meridiem} ${`${hour12}`.padStart(
-    2,
-    '0',
-  )}:${minute} 출발`;
 };
 
 const normalizePartyTags = (tags: string[]) =>
@@ -280,7 +242,7 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [maxMembers, setMaxMembers] = React.useState(4);
 
-  const initialDate = React.useMemo(() => buildInitialPickerDate(), []);
+  const initialDate = React.useMemo(() => buildTaxiInitialPickerDate(), []);
   const [selectedHour, setSelectedHour] = React.useState(
     initialDate.getHours(),
   );
@@ -314,16 +276,21 @@ export const useTaxiRecruitForm = (): UseTaxiRecruitFormResult => {
   );
 
   const selectedDepartureDate = React.useMemo(
-    () => buildSelectedDate(selectedHour, selectedMinute, now),
+    () =>
+      buildTaxiSelectedDepartureDate({
+        hour: selectedHour,
+        minute: selectedMinute,
+        now,
+      }),
     [now, selectedHour, selectedMinute],
   );
 
   const summaryLabel = React.useMemo(
     () =>
-      formatDepartureSummary(
-        selectedDepartureDate.date,
-        selectedDepartureDate.isTomorrow,
-      ),
+      formatTaxiDepartureSummary({
+        date: selectedDepartureDate.date,
+        isTomorrow: selectedDepartureDate.isTomorrow,
+      }),
     [selectedDepartureDate.date, selectedDepartureDate.isTomorrow],
   );
 

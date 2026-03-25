@@ -14,6 +14,11 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 
+import {
+  buildTaxiInitialPickerDate,
+  buildTaxiSelectedDepartureDate,
+  formatTaxiDepartureSummary,
+} from '../model/taxiDepartureTime';
 import {useBottomSheetInputVisibility} from '../hooks/useBottomSheetInputVisibility';
 import {TaxiChatBottomSheet} from './TaxiChatBottomSheet';
 import {TaxiCreateTimePicker} from './TaxiCreateTimePicker';
@@ -27,25 +32,9 @@ interface TaxiPartyEditSheetProps {
   visible: boolean;
 }
 
-const buildSummary = (date: Date) => {
-  const now = new Date();
-  const selectedMinutes = date.getHours() * 60 + date.getMinutes();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const isTomorrow = selectedMinutes < currentMinutes;
-  const meridiem = date.getHours() >= 12 ? '오후' : '오전';
-  const hour12 = date.getHours() % 12 || 12;
-  const minute = `${date.getMinutes()}`.padStart(2, '0');
-  const dayLabel = isTomorrow ? '내일' : '오늘';
-
-  return {
-    label: `${dayLabel} ${
-      date.getMonth() + 1
-    }월 ${date.getDate()}일 ${meridiem} ${`${hour12}`.padStart(
-      2,
-      '0',
-    )}:${minute} 출발`,
-    tone: isTomorrow ? ('tomorrow' as const) : ('today' as const),
-  };
+const resolveInitialDeparturePickerDate = (initialDepartureTimeISO: string) => {
+  const parsed = new Date(initialDepartureTimeISO);
+  return Number.isNaN(parsed.getTime()) ? buildTaxiInitialPickerDate() : parsed;
 };
 
 export const TaxiPartyEditSheet = ({
@@ -58,29 +47,62 @@ export const TaxiPartyEditSheet = ({
 }: TaxiPartyEditSheetProps) => {
   const detailDraftRef = React.useRef(initialDetail ?? '');
   const [detailInputKey, setDetailInputKey] = React.useState(0);
-  const [selectedDate, setSelectedDate] = React.useState(() => {
-    const parsed = new Date(initialDepartureTimeISO);
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const [selectedHour, setSelectedHour] = React.useState(() => {
+    return resolveInitialDeparturePickerDate(initialDepartureTimeISO).getHours();
   });
+  const [selectedMinute, setSelectedMinute] = React.useState(() => {
+    return resolveInitialDeparturePickerDate(initialDepartureTimeISO).getMinutes();
+  });
+  const [now, setNow] = React.useState(() => new Date());
   const detailInputRef = React.useRef<TextInput>(null);
   const {createFocusHandler, handleBlur, handleScroll, scrollRef} =
     useBottomSheetInputVisibility(visible);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(new Date());
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   React.useEffect(() => {
     if (!visible) {
       return;
     }
 
-    const parsed = new Date(initialDepartureTimeISO);
-    setSelectedDate(Number.isNaN(parsed.getTime()) ? new Date() : parsed);
+    const nextDate = resolveInitialDeparturePickerDate(initialDepartureTimeISO);
+    setSelectedHour(nextDate.getHours());
+    setSelectedMinute(nextDate.getMinutes());
+    setNow(new Date());
     detailDraftRef.current = initialDetail ?? '';
     setDetailInputKey(current => current + 1);
   }, [initialDepartureTimeISO, initialDetail, visible]);
 
-  const summary = React.useMemo(() => buildSummary(selectedDate), [selectedDate]);
+  const selectedDepartureDate = React.useMemo(
+    () =>
+      buildTaxiSelectedDepartureDate({
+        hour: selectedHour,
+        minute: selectedMinute,
+        now,
+      }),
+    [now, selectedHour, selectedMinute],
+  );
+
+  const summary = React.useMemo(
+    () => ({
+      label: formatTaxiDepartureSummary({
+        date: selectedDepartureDate.date,
+        isTomorrow: selectedDepartureDate.isTomorrow,
+      }),
+      tone: selectedDepartureDate.isTomorrow ? ('tomorrow' as const) : ('today' as const),
+    }),
+    [selectedDepartureDate.date, selectedDepartureDate.isTomorrow],
+  );
 
   return (
     <TaxiChatBottomSheet
+      enableContentPanningGesture={false}
       onClose={onClose}
       onScroll={handleScroll}
       scrollRef={scrollRef}
@@ -94,23 +116,15 @@ export const TaxiPartyEditSheet = ({
 
       <View style={styles.timePickerWrap}>
         <TaxiCreateTimePicker
-          hour={selectedDate.getHours()}
-          minute={selectedDate.getMinutes()}
+          hour={selectedHour}
+          minute={selectedMinute}
           summaryLabel={summary.label}
           summaryTone={summary.tone}
           onChangeHour={hour => {
-            setSelectedDate(current => {
-              const nextDate = new Date(current);
-              nextDate.setHours(hour);
-              return nextDate;
-            });
+            setSelectedHour(hour);
           }}
           onChangeMinute={minute => {
-            setSelectedDate(current => {
-              const nextDate = new Date(current);
-              nextDate.setMinutes(minute);
-              return nextDate;
-            });
+            setSelectedMinute(minute);
           }}
         />
       </View>
@@ -152,7 +166,7 @@ export const TaxiPartyEditSheet = ({
           disabled={loading}
           onPress={() => {
             onSubmit({
-              departureTime: selectedDate.toISOString(),
+              departureTime: selectedDepartureDate.date.toISOString(),
               detail: detailDraftRef.current.trim(),
             });
           }}

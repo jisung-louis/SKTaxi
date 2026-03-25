@@ -6,6 +6,7 @@ import {mapPartyStatusDto} from './taxiPartyMapper';
 import type {
   ChatAccountDataResponseDto,
   ChatArrivalDataResponseDto,
+  ChatArrivalSettlementMemberResponseDto,
   ChatMessageResponseDto,
   ChatRoomDetailResponseDto,
 } from '../dto/taxiChatDto';
@@ -15,6 +16,7 @@ import type {
   TaxiChatSourceParticipant,
   TaxiChatSourceData,
   TaxiChatSourceMessageItem,
+  TaxiChatSourceSettlementMember,
 } from '../../model/taxiChatViewData';
 
 const formatPartyTitle = (departureLabel: string, destinationLabel: string) =>
@@ -54,12 +56,26 @@ const mapArrivalData = (
 
   return {
     accountData: mapAccountData(arrivalData.accountData),
+    members: arrivalData.memberSettlements?.map(
+      mapArrivalSettlementMemberResponseDto,
+    ),
     perPersonAmount: arrivalData.perPersonAmount ?? undefined,
     settlementTargetMemberIds: arrivalData.settlementTargetMemberIds ?? [],
     splitMemberCount: arrivalData.splitMemberCount ?? undefined,
     taxiFare: arrivalData.taxiFare ?? undefined,
   };
 };
+
+const mapArrivalSettlementMemberResponseDto = (
+  member: ChatArrivalSettlementMemberResponseDto,
+): TaxiChatSourceSettlementMember => ({
+  id: member.memberId,
+  label: member.displayName?.trim() || '동승 멤버',
+  leftAt: member.leftAt ?? undefined,
+  leftParty: Boolean(member.leftParty),
+  settled: member.settled,
+  settledAt: member.settledAt ?? undefined,
+});
 
 const resolveMessageType = (
   message: ChatMessageResponseDto,
@@ -117,6 +133,28 @@ const resolveParticipantName = (
   return '동승 멤버';
 };
 
+const resolveSettlementMemberName = ({
+  dtoName,
+  fallbackParticipant,
+  party,
+}: {
+  dtoName?: string | null;
+  fallbackParticipant?: PartyDetailResponseDto['members'][number];
+  party: PartyDetailResponseDto;
+}) => {
+  const trimmedName = dtoName?.trim();
+
+  if (trimmedName) {
+    return trimmedName;
+  }
+
+  if (fallbackParticipant) {
+    return resolveParticipantName(party, fallbackParticipant);
+  }
+
+  return '동승 멤버';
+};
+
 export const resolveTaxiChatRoomId = (partyId: string) => `party:${partyId}`;
 
 export const mapTaxiChatMessageDto = (
@@ -147,6 +185,9 @@ export const buildTaxiChatSourceData = ({
       memberSettlement,
     ]),
   );
+  const participantById = new Map(
+    party.members.map(member => [member.id, member] as const),
+  );
   const participants: TaxiChatSourceParticipant[] = party.members.map(member => {
     const settlement = settlementByMemberId.get(member.id);
 
@@ -158,6 +199,19 @@ export const buildTaxiChatSourceData = ({
       settledAt: settlement?.settledAt ?? undefined,
     };
   });
+  const settlementMembers: TaxiChatSourceSettlementMember[] =
+    (party.settlement?.memberSettlements ?? []).map(memberSettlement => ({
+      id: memberSettlement.memberId,
+      label: resolveSettlementMemberName({
+        dtoName: memberSettlement.displayName,
+        fallbackParticipant: participantById.get(memberSettlement.memberId),
+        party,
+      }),
+      leftAt: memberSettlement.leftAt ?? undefined,
+      leftParty: Boolean(memberSettlement.leftParty),
+      settled: memberSettlement.settled,
+      settledAt: memberSettlement.settledAt ?? undefined,
+    }));
   const memberCount = participants.length;
   const mappedMessages = [...messages].reverse().map(mapTaxiChatMessageDto);
   const latestAccountData =
@@ -189,8 +243,9 @@ export const buildTaxiChatSourceData = ({
     participants,
     partyStatus: mapPartyStatusDto(party.status),
     settlement: party.settlement
-      ? {
+        ? {
           accountData: mapAccountData(party.settlement.account),
+          members: settlementMembers,
           perPersonAmount: party.settlement.perPersonAmount ?? 0,
           settlementTargetMemberIds:
             party.settlement.settlementTargetMemberIds ?? [],

@@ -47,6 +47,16 @@ const buildSettlementSubtitle = (
   return segments.join(' · ') || settlementNotice.description;
 };
 
+const buildSettlementMemberStatusLabel = (
+  member: TaxiChatSettlementNoticeViewData['members'][number],
+) => {
+  if (member.leftParty) {
+    return member.settled ? '파티 나감' : '파티 나감 · 미정산';
+  }
+
+  return member.settled ? '정산 완료' : '정산 중';
+};
+
 const SETTLEMENT_NOTICE_DURATION = 160;
 
 export const TaxiChatHeaderNotice = ({
@@ -173,13 +183,27 @@ export const TaxiChatHeaderNotice = ({
                 <View key={member.id} style={styles.settlementMemberRow}>
                   <View style={styles.settlementMemberLeft}>
                     <ToneBadge
-                      label={member.settled ? '정산 완료' : '정산 중'}
+                      label={buildSettlementMemberStatusLabel(member)}
                       style={styles.settlementMemberBadge}
-                      tone={member.settled ? 'green' : 'orange'}
+                      tone={
+                        member.leftParty
+                          ? 'pink'
+                          : member.settled
+                            ? 'green'
+                            : 'orange'
+                      }
                     />
 
                     <View style={styles.settlementMemberLabelRow}>
-                      <Text style={styles.settlementMemberLabel}>{member.label}</Text>
+                      <Text
+                        style={[
+                          styles.settlementMemberLabel,
+                          member.leftParty
+                            ? styles.settlementMemberLabelLeft
+                            : undefined,
+                        ]}>
+                        {member.label}
+                      </Text>
                       {member.isCurrentUser ? (
                         <Text style={styles.settlementMemberCurrentUser}>
                           {'(나)'}
@@ -272,6 +296,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
+  },
+  settlementMemberLabelLeft: {
+    color: COLORS.status.danger,
+    textDecorationLine: 'line-through',
   },
   settlementMemberLabelRow: {
     alignItems: 'center',

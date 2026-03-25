@@ -43,8 +43,10 @@ export interface PartyPageResponseDto {
 }
 
 export interface PartySettlementMemberResponseDto {
+  displayName?: string | null;
+  leftAt?: string | null;
+  leftParty?: boolean | null;
   memberId: string;
-  memberName?: string | null;
   settled: boolean;
   settledAt?: string | null;
 }

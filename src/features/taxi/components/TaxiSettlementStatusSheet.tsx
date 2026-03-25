@@ -34,6 +34,17 @@ export const TaxiSettlementStatusSheet = ({
   onConfirmMember,
   visible,
 }: TaxiSettlementStatusSheetProps) => {
+  const renderMemberMeta = React.useCallback(
+    (member: NonNullable<TaxiChatSettlementNoticeViewData['members']>[number]) => {
+      if (member.leftParty) {
+        return member.settled ? '파티 나감 · 정산 완료' : '파티 나감 · 정산 대기';
+      }
+
+      return member.settled ? '정산 완료' : '정산 대기';
+    },
+    [],
+  );
+
   return (
     <TaxiChatBottomSheet onClose={onClose} visible={visible}>
       <View style={styles.headerRow}>
@@ -88,22 +99,34 @@ export const TaxiSettlementStatusSheet = ({
               key={member.id}
               style={[
                 styles.memberRow,
-                member.settled ? styles.memberRowDone : styles.memberRowPending,
+                member.leftParty
+                  ? styles.memberRowLeft
+                  : member.settled
+                    ? styles.memberRowDone
+                    : styles.memberRowPending,
               ]}>
               <View style={styles.memberLeft}>
                 <View
                   style={[
                     styles.memberIconWrap,
-                    member.settled
+                    member.leftParty
+                      ? styles.memberIconWrapLeft
+                      : member.settled
                       ? styles.memberIconWrapDone
                       : styles.memberIconWrapPending,
                   ]}>
                   <Icon
                     color={
-                      member.settled ? COLORS.status.success : COLORS.text.muted
+                      member.leftParty
+                        ? COLORS.status.danger
+                        : member.settled
+                          ? COLORS.status.success
+                          : COLORS.text.muted
                     }
                     name={
-                      member.settled
+                      member.leftParty
+                        ? 'remove-circle-outline'
+                        : member.settled
                         ? 'checkmark-outline'
                         : 'ellipse-outline'
                     }
@@ -111,19 +134,32 @@ export const TaxiSettlementStatusSheet = ({
                   />
                 </View>
 
-                <View>
-                  <Text style={styles.memberLabel}>
+                <View style={member.leftParty ? styles.memberCopyLeft : undefined}>
+                  <View style={styles.memberLabelRow}>
+                    <Text
+                      style={[
+                        styles.memberLabel,
+                        member.leftParty ? styles.memberLabelLeft : undefined,
+                      ]}>
                     {member.label}
                     {member.isCurrentUser ? ' (나)' : ''}
-                  </Text>
+                    </Text>
+                    {member.leftParty ? (
+                      <View style={styles.leftBadge}>
+                        <Text style={styles.leftBadgeLabel}>나감</Text>
+                      </View>
+                    ) : null}
+                  </View>
                   <Text
                     style={[
                       styles.memberMeta,
-                      member.settled
+                      member.leftParty
+                        ? styles.memberMetaLeft
+                        : member.settled
                         ? styles.memberMetaDone
                         : styles.memberMetaPending,
                     ]}>
-                    {member.settled ? '정산 완료' : '정산 대기'}
+                    {renderMemberMeta(member)}
                   </Text>
                 </View>
               </View>
@@ -226,6 +262,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
   },
+  leftBadge: {
+    alignItems: 'center',
+    backgroundColor: COLORS.accent.pinkSoft,
+    borderRadius: RADIUS.pill,
+    justifyContent: 'center',
+    minHeight: 22,
+    paddingHorizontal: 8,
+  },
+  leftBadgeLabel: {
+    color: COLORS.status.danger,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  memberCopyLeft: {
+    opacity: 0.92,
+  },
   memberIconWrap: {
     alignItems: 'center',
     borderRadius: RADIUS.pill,
@@ -236,6 +289,9 @@ const styles = StyleSheet.create({
   memberIconWrapDone: {
     backgroundColor: COLORS.brand.primarySoft,
   },
+  memberIconWrapLeft: {
+    backgroundColor: COLORS.accent.pinkSoft,
+  },
   memberIconWrapPending: {
     backgroundColor: COLORS.background.subtle,
   },
@@ -244,6 +300,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 18,
+  },
+  memberLabelLeft: {
+    color: COLORS.status.danger,
+    textDecorationLine: 'line-through',
+  },
+  memberLabelRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.xs,
   },
   memberLeft: {
     alignItems: 'center',
@@ -261,6 +326,9 @@ const styles = StyleSheet.create({
   memberMetaDone: {
     color: COLORS.status.success,
   },
+  memberMetaLeft: {
+    color: COLORS.status.danger,
+  },
   memberMetaPending: {
     color: COLORS.text.muted,
   },
@@ -276,6 +344,10 @@ const styles = StyleSheet.create({
   memberRowDone: {
     backgroundColor: COLORS.brand.primaryTint,
     borderColor: COLORS.border.accent,
+  },
+  memberRowLeft: {
+    backgroundColor: COLORS.accent.pinkSoft,
+    borderColor: '#FBCFE8',
   },
   memberRowPending: {
     backgroundColor: COLORS.background.surface,

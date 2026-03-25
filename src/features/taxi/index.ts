@@ -28,7 +28,7 @@ export { useJoinRequestStatus } from './hooks/useJoinRequestStatus';
 export type {
   UseJoinRequestStatusResult,
 } from './hooks/useJoinRequestStatus';
-export { useMyParty } from './hooks/useMyParty';
+export { MyPartyProvider, useMyParty } from './hooks/useMyParty';
 export type { UseMyPartyResult } from './hooks/useMyParty';
 export { useParties } from './hooks/useParties';
 export type { UsePartiesResult } from './hooks/useParties';

@@ -27,6 +27,7 @@ import {useKeyboardInset} from '@/shared/hooks';
 interface TaxiChatBottomSheetProps {
   children: React.ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  enableContentPanningGesture?: boolean;
   onClose: () => void;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
   scrollRef?: React.RefObject<BottomSheetScrollViewMethods | null>;
@@ -36,6 +37,7 @@ interface TaxiChatBottomSheetProps {
 export const TaxiChatBottomSheet = ({
   children,
   contentStyle,
+  enableContentPanningGesture = true,
   onClose,
   onScroll,
   scrollRef,
@@ -85,6 +87,7 @@ export const TaxiChatBottomSheet = ({
       android_keyboardInputMode="adjustResize"
       backdropComponent={renderBackdrop}
       backgroundStyle={styles.background}
+      enableContentPanningGesture={enableContentPanningGesture}
       enableDynamicSizing
       enableOverDrag={false}
       enablePanDownToClose

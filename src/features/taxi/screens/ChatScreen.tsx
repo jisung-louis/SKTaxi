@@ -112,7 +112,7 @@ export const ChatScreen = () => {
   const route =
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
   const insets = useSafeAreaInsets();
-  const {isVisible: keyboardVisible} = useKeyboardInset();
+  const {height: keyboardHeight, isVisible: keyboardVisible} = useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {user} = useAuth();
   const {
@@ -178,10 +178,6 @@ export const ChatScreen = () => {
     }
 
     navigation.navigate('TaxiMain');
-  }, [navigation]);
-
-  const handleGoBackOnly = React.useCallback(() => {
-    navigation.goBack();
   }, [navigation]);
 
   const runAction = React.useCallback(
@@ -478,7 +474,10 @@ export const ChatScreen = () => {
 
   const settlementMembers = data?.summary.members ?? [];
   const threadBottomPadding =
-    TAXI_CHAT_COMPOSER_BAR_HEIGHT + insets.bottom + SPACING.md;
+    TAXI_CHAT_COMPOSER_BAR_HEIGHT +
+    insets.bottom +
+    SPACING.md +
+    keyboardHeight;
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -523,6 +522,7 @@ export const ChatScreen = () => {
 
             <View style={styles.threadWrap}>
               <TaxiChatMessageList
+                autoScrollKey={keyboardHeight}
                 contentContainerStyle={[
                   styles.threadContent,
                   {
@@ -531,7 +531,7 @@ export const ChatScreen = () => {
                 ]}
                 headerContent={<TaxiChatSummaryCard summary={data.summary} />}
                 items={data.items}
-                onPressEndPartyExit={handleGoBackOnly}
+                onPressEndPartyExit={handlePressBack}
               />
             </View>
 
@@ -583,7 +583,7 @@ export const ChatScreen = () => {
             }}
             onPressDestructiveAction={() => {
               if (data.summary.partyStatus === 'ended') {
-                handleGoBackOnly();
+                handlePressBack();
                 return;
               }
 

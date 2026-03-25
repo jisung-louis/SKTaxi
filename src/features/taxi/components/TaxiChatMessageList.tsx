@@ -29,6 +29,7 @@ import type {
 } from '../model/taxiChatViewData';
 
 interface TaxiChatMessageListProps {
+  autoScrollKey?: number | string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   headerContent?: React.ReactNode;
   items: TaxiChatThreadItemViewData[];
@@ -120,6 +121,7 @@ const formatMaskedAccountHolder = (accountHolder: string, hideName: boolean) => 
 };
 
 export const TaxiChatMessageList = ({
+  autoScrollKey,
   contentContainerStyle,
   headerContent,
   items,
@@ -133,7 +135,7 @@ export const TaxiChatMessageList = ({
     }, 40);
 
     return () => clearTimeout(timeoutId);
-  }, [items.length]);
+  }, [autoScrollKey, items.length]);
 
   return (
     <ScrollView
@@ -488,7 +490,7 @@ export const TaxiChatMessageList = ({
                 styles.messageWrap,
                 wrapperStyle,
                 !isGroupEnd ? styles.messageWrapCompact : null,
-                { marginTop: isGroupStart ? SPACING.sm : 0 },
+                isGroupStart ? null : styles.messageWrapGrouped,
               ]}>
               <View style={styles.outgoingRow}>
                 {isGroupEnd ? (
@@ -513,7 +515,7 @@ export const TaxiChatMessageList = ({
               styles.messageWrap,
               wrapperStyle,
               !isGroupEnd ? styles.messageWrapCompact : null,
-              { marginTop: isGroupStart ? SPACING.sm : 0 },
+              isGroupStart ? null : styles.messageWrapGrouped,
             ]}>
             <View style={styles.incomingRow}>
               <View style={styles.avatarWrap}>
@@ -919,6 +921,9 @@ const styles = StyleSheet.create({
   messageWrap: {
     marginBottom: SPACING.xs,
     marginTop: SPACING.sm,
+  },
+  messageWrapGrouped: {
+    marginTop: 0,
   },
   messageWrapCompact: {
     marginBottom: SPACING.xs,
