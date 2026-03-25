@@ -24,6 +24,11 @@ export type ContentDetailBodyBlockViewData =
       id: string;
       imageUrl: string;
       type: 'image';
+    }
+  | {
+      html: string;
+      id: string;
+      type: 'table';
     };
 
 export interface ContentDetailReactionViewData {

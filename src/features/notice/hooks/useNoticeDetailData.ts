@@ -60,6 +60,9 @@ const decodeHtmlEntities = (value: string) =>
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"');
 
+const TABLE_TOKEN_PATTERN = /\[\[TABLE:(\d+)\]\]/;
+const IMAGE_TOKEN_PATTERN = /\[\[IMG:([^\]]+)\]\]/;
+
 const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
   const html = normalizeNoticeHtml(
     notice.contentDetail || notice.content || '',
@@ -75,7 +78,13 @@ const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
     ];
   }
 
+  const tables: string[] = [];
+
   const tokenized = html
+    .replace(/<table[\s\S]*?<\/table>/gi, match => {
+      const tableIndex = tables.push(match) - 1;
+      return `\n[[TABLE:${tableIndex}]]\n`;
+    })
     .replace(
       /<img[^>]*src=["']([^"']+)["'][^>]*>/gi,
       (_match, imageUrl) => `\n[[IMG:${imageUrl}]]\n`,
@@ -87,9 +96,25 @@ const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
     .replace(/<[^>]+>/g, '');
 
   const blocks = tokenized
-    .split(/(\[\[IMG:[^\]]+\]\])/g)
+    .split(/(\[\[TABLE:\d+\]\]|\[\[IMG:[^\]]+\]\])/g)
     .reduce<ContentDetailBodyBlockViewData[]>((accumulator, segment, index) => {
-      const imageMatch = segment.match(/^\[\[IMG:(.+)\]\]$/);
+      const tableMatch = segment.match(TABLE_TOKEN_PATTERN);
+
+      if (tableMatch) {
+        const tableHtml = tables[Number(tableMatch[1])];
+
+        if (tableHtml) {
+          accumulator.push({
+            html: tableHtml,
+            id: `${notice.id}-table-${index + 1}`,
+            type: 'table',
+          });
+        }
+
+        return accumulator;
+      }
+
+      const imageMatch = segment.match(IMAGE_TOKEN_PATTERN);
 
       if (imageMatch) {
         accumulator.push({

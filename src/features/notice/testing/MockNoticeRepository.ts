@@ -39,6 +39,10 @@ const buildContentDetail = (
         )}" />`;
       }
 
+      if (block.type === 'table') {
+        return block.html;
+      }
+
       return `<p>${escapeHtml(block.text).replace(/\n/g, '<br />')}</p>`;
     })
     .join('');

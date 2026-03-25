@@ -1,5 +1,7 @@
 import React from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
+import type {WebViewMessageEvent} from 'react-native-webview';
+import {WebView} from 'react-native-webview';
 
 import type {ContentDetailBodyBlockViewData} from '@/shared/types/contentDetailViewData';
 
@@ -8,6 +10,189 @@ import {COLORS, RADIUS, SPACING} from '../tokens';
 interface DetailBodyBlocksProps {
   blocks: ContentDetailBodyBlockViewData[];
 }
+
+const DETAIL_TABLE_HTML = (tableHtml: string) => `
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }
+
+      body {
+        color: #374151;
+        font-size: 12px;
+        line-height: 1.4;
+        font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .table-fit-shell {
+        display: inline-block;
+        vertical-align: top;
+      }
+
+      .table-fit-content {
+        transform-origin: top left;
+      }
+
+      table {
+        width: max-content;
+        border-collapse: collapse;
+        background: #ffffff;
+      }
+
+      th, td {
+        min-width: 56px;
+        padding: 5px 6px;
+        border: 1px solid #e5e7eb;
+        font-size: 10px;
+        line-height: 1.35;
+        vertical-align: top;
+        text-align: left;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+      }
+
+      th {
+        background: #f9fafb;
+        font-weight: 700;
+        color: #111827;
+      }
+
+      td {
+        color: #374151;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="table-wrap">
+      <div class="table-fit-shell">
+        <div class="table-fit-content">
+          ${tableHtml}
+        </div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        const wrap = document.querySelector('.table-wrap');
+        const shell = document.querySelector('.table-fit-shell');
+        const content = document.querySelector('.table-fit-content');
+
+        const applyFit = () => {
+          const table = content && content.querySelector('table');
+
+          if (!wrap || !shell || !content || !table) {
+            return;
+          }
+
+          const availableWidth = wrap.clientWidth || window.innerWidth || 0;
+          const naturalWidth = table.scrollWidth || 0;
+          const naturalHeight = table.scrollHeight || 0;
+
+          if (!availableWidth || !naturalWidth || !naturalHeight) {
+            return;
+          }
+
+          const fitScale = availableWidth / naturalWidth;
+          const scale =
+            fitScale >= 1 ? 1 : fitScale >= 0.78 ? fitScale : 0.88;
+
+          content.style.width = naturalWidth + 'px';
+          content.style.height = naturalHeight + 'px';
+          content.style.transform = 'scale(' + scale + ')';
+
+          shell.style.width = naturalWidth * scale + 'px';
+          shell.style.height = naturalHeight * scale + 'px';
+          wrap.style.overflowX =
+            naturalWidth * scale > availableWidth + 1 ? 'auto' : 'hidden';
+        };
+
+        const postHeight = () => {
+          const height = Math.max(
+            document.documentElement.scrollHeight || 0,
+            document.body.scrollHeight || 0,
+          );
+
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(String(height));
+          }
+        };
+
+        const refreshLayout = () => {
+          applyFit();
+          postHeight();
+        };
+
+        window.addEventListener('load', function () {
+          refreshLayout();
+          setTimeout(refreshLayout, 120);
+          setTimeout(refreshLayout, 320);
+        });
+
+        window.addEventListener('resize', refreshLayout);
+
+        if (window.ResizeObserver) {
+          const observer = new ResizeObserver(refreshLayout);
+          observer.observe(document.body);
+          if (wrap) {
+            observer.observe(wrap);
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>
+`;
+
+const DetailTableBlock = ({html}: {html: string}) => {
+  const [height, setHeight] = React.useState(0);
+
+  const handleMessage = React.useCallback((event: WebViewMessageEvent) => {
+    const nextHeight = Number(event.nativeEvent.data);
+
+    if (Number.isFinite(nextHeight) && nextHeight > 0) {
+      setHeight(previousHeight =>
+        Math.abs(previousHeight - nextHeight) > 1 ? nextHeight : previousHeight,
+      );
+    }
+  }, []);
+
+  return (
+    <View style={styles.tableFrame}>
+      <WebView
+        automaticallyAdjustContentInsets={false}
+        originWhitelist={['*']}
+        onMessage={handleMessage}
+        scrollEnabled
+        source={{html: DETAIL_TABLE_HTML(html)}}
+        style={[styles.tableWebView, {height}]}
+      />
+    </View>
+  );
+};
 
 export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
   return (
@@ -33,6 +218,14 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
           );
         }
 
+        if (block.type === 'table') {
+          return (
+            <View key={block.id} style={!isLast ? styles.blockSpacing : null}>
+              <DetailTableBlock html={block.html} />
+            </View>
+          );
+        }
+
         return (
           <Text
             key={block.id}
@@ -54,6 +247,17 @@ const styles = StyleSheet.create({
   image: {
     backgroundColor: COLORS.background.subtle,
     borderRadius: RADIUS.lg,
+    width: '100%',
+  },
+  tableFrame: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  tableWebView: {
+    backgroundColor: COLORS.background.surface,
     width: '100%',
   },
   blockSpacing: {
