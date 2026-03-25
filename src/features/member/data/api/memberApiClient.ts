@@ -5,6 +5,7 @@ import type {
   RegisterMemberFcmTokenRequestDto,
 } from '../dto/fcmTokenDto';
 import type {MemberResponseDto} from '../dto/memberDto';
+import type {UpdateMemberBankAccountRequestDto} from '../dto/updateMemberBankAccountDto';
 import type {UpdateMemberProfileRequestDto} from '../dto/updateMemberProfileDto';
 
 export class MemberApiClient {
@@ -25,6 +26,13 @@ export class MemberApiClient {
       ApiSuccessResponse<MemberResponseDto>,
       UpdateMemberProfileRequestDto
     >('/v1/members/me', data);
+  }
+
+  updateMyBankAccount(data: UpdateMemberBankAccountRequestDto) {
+    return httpClient.put<
+      ApiSuccessResponse<MemberResponseDto>,
+      UpdateMemberBankAccountRequestDto
+    >('/v1/members/me/bank-account', data);
   }
 
   registerFcmToken(data: RegisterMemberFcmTokenRequestDto) {

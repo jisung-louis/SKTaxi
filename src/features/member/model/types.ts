@@ -9,6 +9,13 @@ export interface UpdateMemberProfileInput {
   photoUrl?: string | null;
 }
 
+export interface UpdateMemberBankAccountInput {
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  hideName: boolean;
+}
+
 export interface MemberNotificationSetting {
   allNotifications: boolean;
   partyNotifications: boolean;

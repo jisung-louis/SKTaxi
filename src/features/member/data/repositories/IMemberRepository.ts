@@ -1,6 +1,7 @@
 import type {
   MemberFcmTokenPlatform,
   MemberProfile,
+  UpdateMemberBankAccountInput,
   UpdateMemberProfileInput,
 } from '../../model/types';
 
@@ -10,6 +11,10 @@ export interface IMemberRepository {
   getMyMemberProfile(): Promise<MemberProfile>;
 
   updateMyProfile(profile: UpdateMemberProfileInput): Promise<MemberProfile>;
+
+  updateMyBankAccount(
+    account: UpdateMemberBankAccountInput,
+  ): Promise<MemberProfile>;
 
   registerFcmToken(
     token: string,

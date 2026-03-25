@@ -9,5 +9,6 @@ export type {
   MemberFcmTokenPlatform,
   MemberNotificationSetting,
   MemberProfile,
+  UpdateMemberBankAccountInput,
   UpdateMemberProfileInput,
 } from './model/types';

@@ -1,6 +1,9 @@
 import {MemberApiClient, memberApiClient} from '../api/memberApiClient';
 import {mapMemberResponseDto} from '../mappers/memberMapper';
-import type {UpdateMemberProfileInput} from '../../model/types';
+import type {
+  UpdateMemberBankAccountInput,
+  UpdateMemberProfileInput,
+} from '../../model/types';
 import {IMemberRepository} from './IMemberRepository';
 
 export class SpringMemberRepository implements IMemberRepository {
@@ -18,6 +21,11 @@ export class SpringMemberRepository implements IMemberRepository {
 
   async updateMyProfile(profile: UpdateMemberProfileInput) {
     const response = await this.apiClient.updateMyProfile(profile);
+    return mapMemberResponseDto(response.data);
+  }
+
+  async updateMyBankAccount(account: UpdateMemberBankAccountInput) {
+    const response = await this.apiClient.updateMyBankAccount(account);
     return mapMemberResponseDto(response.data);
   }
 
