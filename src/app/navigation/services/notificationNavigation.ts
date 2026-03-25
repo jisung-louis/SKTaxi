@@ -70,6 +70,15 @@ const getStringRecordValue = (
   return typeof value === 'string' ? value : null;
 };
 
+const getPartyIdFromChatRoomId = (chatRoomId: string | null) => {
+  if (!chatRoomId || !chatRoomId.startsWith('party:')) {
+    return null;
+  }
+
+  const partyId = chatRoomId.slice('party:'.length);
+  return partyId.length > 0 ? partyId : null;
+};
+
 export const handlePushNotificationNavigation = ({
   navigation,
   data,
@@ -116,8 +125,21 @@ export const handlePushNotificationNavigation = ({
       navigateToTaxiMain(navigation);
       break;
     case 'chat_message':
+      if (chatRoomId) {
+        const taxiPartyId = getPartyIdFromChatRoomId(chatRoomId);
+
+        if (taxiPartyId) {
+          navigateToTaxiChat(navigation, taxiPartyId);
+        } else {
+          navigateToChatRoom(navigation, chatRoomId);
+        }
+      } else if (partyId) {
+        navigateToTaxiChat(navigation, partyId);
+      }
+      break;
     case 'party_closed':
     case 'party_arrived':
+    case 'party_reopened':
       if (partyId) {
         navigateToTaxiChat(navigation, partyId);
       }
@@ -208,6 +230,7 @@ export const handleStoredNotificationNavigation = ({
   const noticeId = getStringRecordValue(notification.data, 'noticeId');
   const appNoticeId = getStringRecordValue(notification.data, 'appNoticeId');
   const postId = getStringRecordValue(notification.data, 'postId');
+  const chatRoomId = getStringRecordValue(notification.data, 'chatRoomId');
 
   switch (notification.type) {
     case 'party_created':
@@ -219,9 +242,24 @@ export const handleStoredNotificationNavigation = ({
     case 'party_deleted':
     case 'party_closed':
     case 'party_arrived':
-    case 'chat_message':
+    case 'party_reopened':
     case 'settlement_completed':
       if (partyId) {
+        navigateToTaxiChat(navigation, partyId);
+      } else {
+        navigateToTaxiMain(navigation);
+      }
+      break;
+    case 'chat_message':
+      if (chatRoomId) {
+        const taxiPartyId = getPartyIdFromChatRoomId(chatRoomId);
+
+        if (taxiPartyId) {
+          navigateToTaxiChat(navigation, taxiPartyId);
+        } else {
+          navigateToChatRoom(navigation, chatRoomId);
+        }
+      } else if (partyId) {
         navigateToTaxiChat(navigation, partyId);
       } else {
         navigateToTaxiMain(navigation);

@@ -67,6 +67,8 @@ const mapNotificationType = (
       return 'party_created';
     case 'PARTY_ENDED':
       return 'party_ended';
+    case 'PARTY_REOPENED':
+      return 'party_reopened';
     case 'PARTY_JOIN_ACCEPTED':
       return 'party_join_accepted';
     case 'PARTY_JOIN_DECLINED':

@@ -31,9 +31,9 @@ export interface RegisterPushHandlersParams {
   handleJoinRequestAccepted: (partyId: string) => void;
   handleJoinRequestRejected: () => void;
   handleChatMessageReceived: (data: {
-    senderName: string;
-    messageText: string;
+    body: string;
     partyId: string;
+    title: string;
   }) => void;
   getCurrentScreen: () => string | undefined;
   handleSettlementCompleted: (partyId: string) => void;

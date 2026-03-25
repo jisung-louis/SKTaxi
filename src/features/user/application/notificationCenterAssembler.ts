@@ -35,6 +35,7 @@ const buildIconMeta = (
     case 'party_arrived':
     case 'party_created':
     case 'party_ended':
+    case 'party_reopened':
     case 'settlement_completed':
       return {
         contextLabel: '택시 파티',

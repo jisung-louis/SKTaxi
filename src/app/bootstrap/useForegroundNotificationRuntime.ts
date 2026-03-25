@@ -57,9 +57,9 @@ export interface UseForegroundNotificationRuntimeResult {
     title: string;
   }) => void;
   handleChatMessageReceived: (data: {
-    senderName: string;
-    messageText: string;
+    body: string;
     partyId: string;
+    title: string;
   }) => void;
   handleSettlementCompleted: (partyId: string) => void;
   handleMemberKicked: () => void;
@@ -192,11 +192,11 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
   );
 
   const handleChatMessageReceived = useCallback(
-    (data: { senderName: string; messageText: string; partyId: string }) => {
+    (data: { body: string; partyId: string; title: string }) => {
       setForegroundNotification({
         visible: true,
-        title: `${data.senderName}님의 메시지`,
-        body: data.messageText,
+        title: data.title,
+        body: data.body,
         partyId: data.partyId,
         type: 'chat',
       });

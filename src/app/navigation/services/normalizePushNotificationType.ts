@@ -33,6 +33,9 @@ export const normalizePushNotificationType = (
     case 'PARTY_ENDED':
     case 'party_ended':
       return 'party_ended';
+    case 'PARTY_REOPENED':
+    case 'party_reopened':
+      return 'party_reopened';
     case 'MEMBER_KICKED':
     case 'member_kicked':
       return 'member_kicked';

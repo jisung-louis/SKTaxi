@@ -23,9 +23,9 @@ export interface ForegroundMessageCallbacks {
   onJoinRequestAccepted?: (partyId: string) => void;
   onJoinRequestRejected?: () => void;
   onChatMessageReceived?: (data: {
-    senderName: string;
-    messageText: string;
+    body: string;
     partyId: string;
+    title: string;
   }) => void;
   getCurrentScreen?: () => string | undefined;
   onSettlementCompleted?: (partyId: string) => void;
@@ -54,6 +54,15 @@ export interface ForegroundMessageCallbacks {
   }) => void;
   getCurrentChatRoomId?: () => string | undefined;
 }
+
+const getPartyIdFromChatRoomId = (chatRoomId: unknown) => {
+  if (typeof chatRoomId !== 'string' || !chatRoomId.startsWith('party:')) {
+    return null;
+  }
+
+  const partyId = chatRoomId.slice('party:'.length);
+  return partyId.length > 0 ? partyId : null;
+};
 
 function handleJoinRequest(data: any, callbacks: ForegroundMessageCallbacks) {
   console.log('🔔 동승 요청 메시지 처리');
@@ -117,34 +126,41 @@ function handleChatMessage(
   remoteMessage: FirebaseMessagingTypes.RemoteMessage,
   callbacks: ForegroundMessageCallbacks,
 ) {
-  console.log('🔔 채팅 메시지 처리:', data.partyId);
+  const chatRoomId =
+    typeof data.chatRoomId === 'string' ? data.chatRoomId : undefined;
+  const partyId =
+    (typeof data.partyId === 'string' ? data.partyId : null) ??
+    getPartyIdFromChatRoomId(chatRoomId);
+
+  console.log('🔔 채팅 메시지 처리:', chatRoomId ?? partyId ?? 'unknown');
 
   const currentScreen = callbacks.getCurrentScreen?.();
-  if (currentScreen === 'Chat') {
+  if (partyId && currentScreen === 'Chat') {
     console.log('🔔 현재 Chat 화면이므로 알림 숨김');
     return;
   }
 
-  if (
-    callbacks.onChatMessageReceived &&
-    data.partyId &&
-    data.senderId &&
-    typeof data.partyId === 'string'
-  ) {
+  if (partyId && callbacks.onChatMessageReceived) {
     const title =
       typeof remoteMessage.notification?.title === 'string'
         ? remoteMessage.notification.title
-        : '';
-    const senderName = title.replace('님의 메시지', '') || '익명';
-    const messageText =
+        : '택시 채팅';
+    const body =
       typeof remoteMessage.notification?.body === 'string'
         ? remoteMessage.notification.body
-        : '';
+        : '새 채팅 메시지가 도착했습니다.';
+
     callbacks.onChatMessageReceived({
-      senderName,
-      messageText,
-      partyId: data.partyId,
+      body,
+      partyId,
+      title,
     });
+
+    return;
+  }
+
+  if (chatRoomId) {
+    handleChatRoomMessage(data, remoteMessage, callbacks);
   }
 }
 
@@ -293,9 +309,9 @@ export function initForegroundMessageHandler(
   onJoinRequestAccepted?: (partyId: string) => void,
   onJoinRequestRejected?: () => void,
   onChatMessageReceived?: (data: {
-    senderName: string;
-    messageText: string;
+    body: string;
     partyId: string;
+    title: string;
   }) => void,
   getCurrentScreen?: () => string | undefined,
   onSettlementCompleted?: (partyId: string) => void,

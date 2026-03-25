@@ -9,6 +9,7 @@ export type NotificationTypeDto =
   | 'PARTY_CLOSED'
   | 'PARTY_CREATED'
   | 'PARTY_ENDED'
+  | 'PARTY_REOPENED'
   | 'PARTY_JOIN_ACCEPTED'
   | 'PARTY_JOIN_DECLINED'
   | 'PARTY_JOIN_REQUEST'
