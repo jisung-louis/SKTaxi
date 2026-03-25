@@ -21,7 +21,6 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
     courseRepository,
     noticeRepository,
     timetableRepository,
-    userRepository,
   } = useRepository();
   const {user} = useAuth();
   const effectiveUserId = user?.uid ?? 'current-user';
@@ -41,9 +40,9 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
         cafeteriaRepository,
         courseRepository,
         currentUserId: effectiveUserId,
+        currentUserJoinedAt: user?.joinedAt,
         noticeRepository,
         timetableRepository,
-        userRepository,
       });
       setData(result);
     } catch (err) {
@@ -60,7 +59,7 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
     effectiveUserId,
     noticeRepository,
     timetableRepository,
-    userRepository,
+    user?.joinedAt,
   ]);
 
   useEffect(() => {

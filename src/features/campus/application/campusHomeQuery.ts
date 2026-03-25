@@ -19,7 +19,6 @@ import {
   getCurrentSemester,
   getPeriodTimeInfo,
 } from '@/features/timetable/services/timetableUtils';
-import type {IUserRepository} from '@/features/user/data/repositories/IUserRepository';
 import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
 import type {IAcademicRepository} from '../data/repositories/IAcademicRepository';
@@ -235,30 +234,21 @@ const formatTimetableDateLabel = (currentDate: Date) =>
 
 const loadNoticePreviewItems = async ({
   noticeRepository,
-  userRepository,
   currentUserId,
+  currentUserJoinedAt,
 }: {
   currentUserId?: string;
+  currentUserJoinedAt?: unknown;
   noticeRepository: INoticeRepository;
-  userRepository: IUserRepository;
 }): Promise<CampusNoticeItemViewData[]> => {
   const notices = await noticeRepository.getRecentNotices(
     NOTICE_PREVIEW_LIMIT * 3,
   );
 
   let readStatus: ReadStatusMap = {};
-  let userJoinedAt: unknown = null;
+  const userJoinedAt = currentUserJoinedAt ?? null;
 
   if (currentUserId) {
-    if (currentUserId !== 'current-user') {
-      try {
-        const profile = await userRepository.getUserProfile(currentUserId);
-        userJoinedAt = profile?.joinedAt ?? null;
-      } catch (error) {
-        console.warn('Campus 공지 사용자 정보를 불러오지 못했습니다.', error);
-      }
-    }
-
     try {
       readStatus = await resolveNoticeReadStatus({
         notices,
@@ -469,17 +459,17 @@ export const loadCampusHomeQueryResult = async ({
   courseRepository,
   noticeRepository,
   timetableRepository,
-  userRepository,
   currentUserId,
+  currentUserJoinedAt,
 }: {
   academicRepository: IAcademicRepository;
   campusBannerRepository: ICampusBannerRepository;
   cafeteriaRepository: ICafeteriaRepository;
   courseRepository: ICourseRepository;
   currentUserId?: string;
+  currentUserJoinedAt?: unknown;
   noticeRepository: INoticeRepository;
   timetableRepository: ITimetableRepository;
-  userRepository: IUserRepository;
 }): Promise<CampusHomeViewData> => {
   const currentDate = new Date();
   const currentDateKey = formatLocalDateKey(currentDate);
@@ -495,8 +485,8 @@ export const loadCampusHomeQueryResult = async ({
     }),
     loadNoticePreviewItems({
       currentUserId,
+      currentUserJoinedAt,
       noticeRepository,
-      userRepository,
     }),
     loadTimetablePreview({
       courseRepository,
