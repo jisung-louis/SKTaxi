@@ -26,9 +26,7 @@ function toSafeDate(value?: unknown): Date | null {
   }
 
   const date =
-    value instanceof Date
-      ? value
-      : new Date(value as string | number | Date);
+    value instanceof Date ? value : new Date(value as string | number | Date);
 
   if (isNaN(date.getTime())) {
     return null;
@@ -67,4 +65,29 @@ export function formatKoreanRelativeTime(value?: unknown): string {
   }
 
   return '방금 전';
+}
+
+export function formatKoreanAbsoluteDate(value?: unknown): string {
+  const date = toSafeDate(value);
+
+  if (!date) {
+    return '';
+  }
+
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+export function formatKoreanAbsoluteWithRelativeTime(value?: unknown): string {
+  const absoluteDate = formatKoreanAbsoluteDate(value);
+  const relativeDate = formatKoreanRelativeTime(value);
+
+  if (absoluteDate && relativeDate) {
+    return `${absoluteDate} · ${relativeDate}`;
+  }
+
+  return absoluteDate || relativeDate;
 }
