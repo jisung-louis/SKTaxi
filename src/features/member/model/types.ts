@@ -44,6 +44,13 @@ export interface MemberNotificationSetting {
   noticeNotificationsDetail: Record<string, boolean>;
 }
 
+export interface MemberPublicProfile {
+  id: string;
+  nickname: string | null;
+  department: string | null;
+  photoUrl: string | null;
+}
+
 export interface MemberProfile {
   id: string;
   email: string;

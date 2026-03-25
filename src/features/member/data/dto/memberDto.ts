@@ -19,6 +19,13 @@ export interface MemberNotificationSettingDto {
   noticeNotificationsDetail?: Record<string, boolean>;
 }
 
+export interface MemberPublicProfileDto {
+  id: string;
+  nickname: string | null;
+  department: string | null;
+  photoUrl: string | null;
+}
+
 export interface MemberResponseDto {
   id: string;
   email: string;

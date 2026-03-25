@@ -1,9 +1,10 @@
-import type { UserAccountInfo } from '@/shared/types/user';
+import type {UserAccountInfo} from '@/shared/types/user';
 
-import type { MemberProfile } from '../../model/types';
+import type {MemberProfile} from '../../model/types';
 import type {
   MemberBankAccountDto,
   MemberNotificationSettingDto,
+  MemberPublicProfileDto,
   MemberResponseDto,
 } from '../dto/memberDto';
 
@@ -67,10 +68,15 @@ export const mapMemberResponseDto = (
     photoUrl: member.photoUrl,
     isAdmin: Boolean(member.isAdmin),
     bankAccount: mapBankAccountDto(member.bankAccount),
-    notificationSetting: mapNotificationSettingDto(
-      member.notificationSetting,
-    ),
+    notificationSetting: mapNotificationSettingDto(member.notificationSetting),
     joinedAt: member.joinedAt,
     lastLogin: member.lastLogin ?? null,
   };
 };
+
+export const mapMemberPublicProfileDto = (member: MemberPublicProfileDto) => ({
+  department: member.department,
+  id: member.id,
+  nickname: member.nickname,
+  photoUrl: member.photoUrl,
+});

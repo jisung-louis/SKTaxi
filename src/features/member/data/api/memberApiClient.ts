@@ -4,7 +4,7 @@ import type {
   DeleteMemberFcmTokenRequestDto,
   RegisterMemberFcmTokenRequestDto,
 } from '../dto/fcmTokenDto';
-import type {MemberResponseDto} from '../dto/memberDto';
+import type {MemberPublicProfileDto, MemberResponseDto} from '../dto/memberDto';
 import type {UpdateMemberBankAccountRequestDto} from '../dto/updateMemberBankAccountDto';
 import type {UpdateMemberNotificationSettingsRequestDto} from '../dto/updateMemberNotificationSettingsDto';
 import type {UpdateMemberProfileRequestDto} from '../dto/updateMemberProfileDto';
@@ -19,6 +19,12 @@ export class MemberApiClient {
   getMyMemberProfile() {
     return httpClient.get<ApiSuccessResponse<MemberResponseDto>>(
       '/v1/members/me',
+    );
+  }
+
+  getMemberPublicProfile(memberId: string) {
+    return httpClient.get<ApiSuccessResponse<MemberPublicProfileDto>>(
+      `/v1/members/${memberId}`,
     );
   }
 
