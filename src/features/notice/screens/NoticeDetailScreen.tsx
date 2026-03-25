@@ -71,7 +71,9 @@ export const NoticeDetailScreen = () => {
     startEditingComment,
     submitComment,
     submittingComment,
+    toggleBookmark,
     toggleLike,
+    togglingBookmark,
     togglingLike,
   } = useNoticeDetailData(route.params?.noticeId);
 
@@ -104,6 +106,17 @@ export const NoticeDetailScreen = () => {
     });
   }, [toggleLike]);
 
+  const handleToggleBookmark = React.useCallback(() => {
+    toggleBookmark().catch(toggleError => {
+      Alert.alert(
+        '오류',
+        toggleError instanceof Error
+          ? toggleError.message
+          : '북마크 처리에 실패했습니다.',
+      );
+    });
+  }, [toggleBookmark]);
+
   const handleSubmitComment = React.useCallback(() => {
     submitComment().catch(submitError => {
       Alert.alert(
@@ -111,8 +124,8 @@ export const NoticeDetailScreen = () => {
         submitError instanceof Error
           ? submitError.message
           : isEditingComment
-            ? '댓글 수정에 실패했습니다.'
-            : '댓글 작성에 실패했습니다.',
+          ? '댓글 수정에 실패했습니다.'
+          : '댓글 작성에 실패했습니다.',
       );
     });
   }, [isEditingComment, submitComment]);
@@ -174,7 +187,9 @@ export const NoticeDetailScreen = () => {
                   paddingTop: headerOffset,
                 },
               ]}
-              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+              keyboardDismissMode={
+                Platform.OS === 'ios' ? 'interactive' : 'on-drag'
+              }
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}>
               <View style={styles.metaRow}>
@@ -214,10 +229,22 @@ export const NoticeDetailScreen = () => {
                   iconName={notice?.isLiked ? 'heart' : 'heart-outline'}
                   onPress={handleToggleLike}
                 />
+                <DetailReactionChip
+                  accessibilityLabel="공지사항 북마크"
+                  active={Boolean(notice?.isBookmarked)}
+                  count={notice?.bookmarkCount ?? 0}
+                  disabled={togglingBookmark}
+                  iconName={
+                    notice?.isBookmarked ? 'bookmark' : 'bookmark-outline'
+                  }
+                  onPress={handleToggleBookmark}
+                />
               </View>
 
               <View style={[styles.divider, styles.commentsDivider]} />
-              <Text style={styles.commentsTitle}>댓글 {commentItems.length}</Text>
+              <Text style={styles.commentsTitle}>
+                댓글 {commentItems.length}
+              </Text>
 
               {commentItems.length === 0 ? (
                 <View style={styles.emptyCommentsWrap}>
@@ -267,7 +294,9 @@ export const NoticeDetailScreen = () => {
                     ? '댓글을 수정하세요...'
                     : data.commentInputPlaceholder
                 }
-                sendEnabled={!submittingComment && commentDraft.trim().length > 0}
+                sendEnabled={
+                  !submittingComment && commentDraft.trim().length > 0
+                }
                 value={commentDraft}
               />
             </KeyboardAvoidingView>

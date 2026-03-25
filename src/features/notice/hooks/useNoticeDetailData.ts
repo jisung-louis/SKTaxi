@@ -71,7 +71,9 @@ const decodeHtmlEntities = (value: string) =>
     .replace(/&quot;/g, '"');
 
 const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
-  const html = normalizeNoticeHtml(notice.contentDetail || notice.content || '');
+  const html = normalizeNoticeHtml(
+    notice.contentDetail || notice.content || '',
+  );
 
   if (!html.trim()) {
     return [
@@ -137,7 +139,9 @@ const buildBodyBlocks = (notice: Notice): ContentDetailBodyBlockViewData[] => {
 const isRecentNotice = (postedAt: unknown) => {
   const millis = new Date(String(postedAt)).getTime();
 
-  return Number.isFinite(millis) && Date.now() - millis <= RECENT_NOTICE_WINDOW_MS;
+  return (
+    Number.isFinite(millis) && Date.now() - millis <= RECENT_NOTICE_WINDOW_MS
+  );
 };
 
 const getCommentAuthorLabel = (comment: NoticeCommentTreeNode) => {
@@ -226,13 +230,17 @@ export const useNoticeDetailData = (noticeId?: string) => {
   const [error, setError] = React.useState<string | null>(null);
   const [notFound, setNotFound] = React.useState(false);
   const [togglingLike, setTogglingLike] = React.useState(false);
+  const [togglingBookmark, setTogglingBookmark] = React.useState(false);
   const [submittingComment, setSubmittingComment] = React.useState(false);
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(
     null,
   );
   const requestIdRef = React.useRef(0);
 
-  const commentItems = React.useMemo(() => toCommentItems(comments), [comments]);
+  const commentItems = React.useMemo(
+    () => toCommentItems(comments),
+    [comments],
+  );
 
   const refreshComments = React.useCallback(async () => {
     if (!noticeId) {
@@ -365,6 +373,45 @@ export const useNoticeDetailData = (noticeId?: string) => {
     }
   }, [noticeId, noticeRepository, togglingLike, user?.uid]);
 
+  const toggleBookmark = React.useCallback(async () => {
+    if (!noticeId || !user?.uid || togglingBookmark) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    setTogglingBookmark(true);
+
+    try {
+      const nextIsBookmarked = await noticeRepository.toggleBookmark(
+        noticeId,
+        user.uid,
+      );
+      setNotice(currentNotice => {
+        if (!currentNotice) {
+          return currentNotice;
+        }
+
+        const previousIsBookmarked = Boolean(currentNotice.isBookmarked);
+        const bookmarkDelta =
+          previousIsBookmarked === nextIsBookmarked
+            ? 0
+            : nextIsBookmarked
+            ? 1
+            : -1;
+
+        return {
+          ...currentNotice,
+          bookmarkCount: Math.max(
+            0,
+            (currentNotice.bookmarkCount ?? 0) + bookmarkDelta,
+          ),
+          isBookmarked: nextIsBookmarked,
+        };
+      });
+    } finally {
+      setTogglingBookmark(false);
+    }
+  }, [noticeId, noticeRepository, togglingBookmark, user?.uid]);
+
   const submitComment = React.useCallback(async () => {
     if (!noticeId || !user?.uid) {
       throw new Error('로그인이 필요합니다.');
@@ -400,7 +447,14 @@ export const useNoticeDetailData = (noticeId?: string) => {
     } finally {
       setSubmittingComment(false);
     }
-  }, [commentDraft, editingCommentId, noticeId, noticeRepository, refreshComments, user]);
+  }, [
+    commentDraft,
+    editingCommentId,
+    noticeId,
+    noticeRepository,
+    refreshComments,
+    user,
+  ]);
 
   const startEditingComment = React.useCallback(
     (commentId: string) => {
@@ -444,7 +498,9 @@ export const useNoticeDetailData = (noticeId?: string) => {
     startEditingComment,
     submitComment,
     submittingComment,
+    toggleBookmark,
     toggleLike,
+    togglingBookmark,
     togglingLike,
   };
 };
