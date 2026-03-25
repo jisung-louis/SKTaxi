@@ -487,7 +487,8 @@ export const TaxiChatMessageList = ({
               style={[
                 styles.messageWrap,
                 wrapperStyle,
-                !isGroupStart ? styles.messageWrapCompact : null,
+                !isGroupEnd ? styles.messageWrapCompact : null,
+                { marginTop: isGroupStart ? SPACING.sm : 0 },
               ]}>
               <View style={styles.outgoingRow}>
                 {isGroupEnd ? (
@@ -511,7 +512,8 @@ export const TaxiChatMessageList = ({
             style={[
               styles.messageWrap,
               wrapperStyle,
-              !isGroupStart ? styles.messageWrapCompact : null,
+              !isGroupEnd ? styles.messageWrapCompact : null,
+              { marginTop: isGroupStart ? SPACING.sm : 0 },
             ]}>
             <View style={styles.incomingRow}>
               <View style={styles.avatarWrap}>
@@ -916,7 +918,8 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   messageWrap: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.sm,
   },
   messageWrapCompact: {
     marginBottom: SPACING.xs,
@@ -976,6 +979,7 @@ const styles = StyleSheet.create({
   specialWrap: {
     alignSelf: 'stretch',
     marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
   },
   systemMessageLabel: {
     color: COLORS.text.muted,
@@ -989,6 +993,7 @@ const styles = StyleSheet.create({
   systemMessageWrap: {
     alignItems: 'center',
     marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
   },
   timeLabel: {
     color: COLORS.text.muted,
