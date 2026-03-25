@@ -1,15 +1,10 @@
-import type {UserNotificationSettings} from './types';
-
 export type NotificationSettingKey =
-  keyof Pick<
-    UserNotificationSettings,
-    | 'partyNotifications'
-    | 'noticeNotifications'
-    | 'boardLikeNotifications'
-    | 'boardCommentNotifications'
-    | 'systemNotifications'
-    | 'marketingNotifications'
-  >;
+  | 'partyNotifications'
+  | 'noticeNotifications'
+  | 'boardLikeNotifications'
+  | 'commentNotifications'
+  | 'bookmarkedPostCommentNotifications'
+  | 'systemNotifications';
 
 export interface NotificationSettingItemSource {
   enabled: boolean;

@@ -17,15 +17,15 @@ export const notificationSettingsMockData: NotificationSettingsScreenSource = {
     },
     {
       enabled: true,
-      key: 'boardCommentNotifications',
+      key: 'commentNotifications',
+    },
+    {
+      enabled: true,
+      key: 'bookmarkedPostCommentNotifications',
     },
     {
       enabled: true,
       key: 'systemNotifications',
-    },
-    {
-      enabled: false,
-      key: 'marketingNotifications',
     },
   ],
 };

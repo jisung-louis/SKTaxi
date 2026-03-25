@@ -18,9 +18,9 @@ type NotificationSettingIconKey =
   | 'partyNotifications'
   | 'noticeNotifications'
   | 'boardLikeNotifications'
-  | 'boardCommentNotifications'
-  | 'systemNotifications'
-  | 'marketingNotifications';
+  | 'commentNotifications'
+  | 'bookmarkedPostCommentNotifications'
+  | 'systemNotifications';
 
 interface NotificationSettingMeta {
   iconKey: NotificationSettingIconKey;
@@ -53,20 +53,20 @@ const NOTIFICATION_SETTINGS_ITEM_META: Record<
     subtitle: '내 게시물에 좋아요 눌렸을 때 알림',
     title: '게시물 좋아요 알림',
   },
-  boardCommentNotifications: {
-    iconKey: 'boardCommentNotifications',
+  commentNotifications: {
+    iconKey: 'commentNotifications',
     subtitle: '내 게시물이나 내 댓글에 댓글/답글이 달렸을 때 알림',
     title: '댓글/답글 알림',
+  },
+  bookmarkedPostCommentNotifications: {
+    iconKey: 'bookmarkedPostCommentNotifications',
+    subtitle: '북마크한 게시물에 새 댓글이 달렸을 때 알림',
+    title: '북마크한 게시물의 댓글 알림',
   },
   systemNotifications: {
     iconKey: 'systemNotifications',
     subtitle: '앱 업데이트, 서비스 점검, 보안 관련 알림',
     title: '시스템 알림',
-  },
-  marketingNotifications: {
-    iconKey: 'marketingNotifications',
-    subtitle: '이벤트, 프로모션, 추천 서비스 알림',
-    title: '마케팅 알림',
   },
 };
 
@@ -96,11 +96,17 @@ const resolveIcon = (iconKey: NotificationSettingIconKey) => {
         iconColor: COLORS.status.danger,
         iconName: 'heart-outline',
       };
-    case 'boardCommentNotifications':
+    case 'commentNotifications':
       return {
         iconBackgroundColor: COLORS.brand.primaryTint,
         iconColor: COLORS.brand.primary,
         iconName: 'chatbubble-outline',
+      };
+    case 'bookmarkedPostCommentNotifications':
+      return {
+        iconBackgroundColor: COLORS.brand.primaryTint,
+        iconColor: COLORS.brand.primary,
+        iconName: 'bookmark-outline',
       };
     case 'systemNotifications':
       return {
@@ -108,7 +114,6 @@ const resolveIcon = (iconKey: NotificationSettingIconKey) => {
         iconColor: COLORS.accent.purple,
         iconName: 'shield-checkmark-outline',
       };
-    case 'marketingNotifications':
     default:
       return {
         iconBackgroundColor: COLORS.accent.pinkSoft,
@@ -154,9 +159,8 @@ const mapScreen = (
 };
 
 export const useNotificationSettingsScreenData = () => {
-  const [data, setData] = React.useState<NotificationSettingsScreenViewData | null>(
-    null,
-  );
+  const [data, setData] =
+    React.useState<NotificationSettingsScreenViewData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -183,7 +187,9 @@ export const useNotificationSettingsScreenData = () => {
   const toggleAll = React.useCallback(async (enabled: boolean) => {
     try {
       const source =
-        await notificationSettingsScreenRepository.updateAllNotifications(enabled);
+        await notificationSettingsScreenRepository.updateAllNotifications(
+          enabled,
+        );
       setData(mapScreen(source));
     } catch (caughtError) {
       console.error('전체 알림 설정을 변경하지 못했습니다.', caughtError);

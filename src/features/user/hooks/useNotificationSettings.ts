@@ -1,16 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
-import { useAuth } from '@/features/auth';
+import {useAuth} from '@/features/auth';
+import type {MemberNotificationSetting} from '@/features/member';
+import {useMemberRepository} from '@/di';
 
-import { UserNotificationSettings } from '../model/types';
+import type {NotificationSettingKey} from '../model/notificationSettingsSource';
 import {
-  DEFAULT_NOTIFICATION_SETTINGS,
-  resolveNotificationSettings,
-  updateUserNotificationSettings,
-} from '../services/userProfileService';
-import { useUserRepository } from './useUserRepository';
+  buildToggleAllNotificationsPatch,
+  buildToggleNotificationSettingPatch,
+  resolveMemberNotificationSettings,
+} from '../services/notificationSettingsService';
 
-export type NotificationSettings = UserNotificationSettings;
+export type NotificationSettings = Pick<
+  MemberNotificationSetting,
+  'allNotifications' | NotificationSettingKey | 'noticeNotificationsDetail'
+>;
 
 export interface UseNotificationSettingsResult {
   settings: NotificationSettings;
@@ -23,18 +27,19 @@ export interface UseNotificationSettingsResult {
 }
 
 export function useNotificationSettings(): UseNotificationSettingsResult {
-  const { user } = useAuth();
-  const userRepository = useUserRepository();
+  const {user} = useAuth();
+  const memberRepository = useMemberRepository();
 
   const [settings, setSettings] = useState<NotificationSettings>(
-    DEFAULT_NOTIFICATION_SETTINGS,
+    resolveMemberNotificationSettings(),
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.uid) {
-      setSettings(DEFAULT_NOTIFICATION_SETTINGS);
+      setSettings(resolveMemberNotificationSettings());
+      setError(null);
       setLoading(false);
       return;
     }
@@ -42,20 +47,36 @@ export function useNotificationSettings(): UseNotificationSettingsResult {
     setLoading(true);
     setError(null);
 
-    const unsubscribe = userRepository.subscribeToUserProfile(user.uid, {
-      onData: profile => {
-        setSettings(resolveNotificationSettings(profile));
+    let cancelled = false;
+
+    const loadNotificationSettings = async () => {
+      try {
+        const memberProfile = await memberRepository.getMyMemberProfile();
+        if (cancelled) {
+          return;
+        }
+
+        setSettings(
+          resolveMemberNotificationSettings(memberProfile.notificationSetting),
+        );
         setLoading(false);
-      },
-      onError: err => {
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
         console.error('알림 설정 로드 실패:', err);
         setError('알림 설정을 불러오는데 실패했습니다.');
         setLoading(false);
-      },
-    });
+      }
+    };
 
-    return () => unsubscribe();
-  }, [user?.uid, userRepository]);
+    loadNotificationSettings().catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [memberRepository, user?.uid]);
 
   const updateSetting = useCallback(
     async (
@@ -71,12 +92,19 @@ export function useNotificationSettings(): UseNotificationSettingsResult {
       try {
         setError(null);
 
-        const nextSettings = await updateUserNotificationSettings({
-          currentSettings: settings,
-          patch: { [key]: value },
-          userId: user.uid,
-          userRepository,
-        });
+        const memberProfile =
+          await memberRepository.updateMyNotificationSettings(
+            key === 'allNotifications'
+              ? buildToggleAllNotificationsPatch(value)
+              : buildToggleNotificationSettingPatch({
+                  currentSettings: settings,
+                  enabled: value,
+                  key,
+                }),
+          );
+        const nextSettings = resolveMemberNotificationSettings(
+          memberProfile.notificationSetting,
+        );
 
         setSettings(nextSettings);
       } catch (err: any) {
@@ -90,7 +118,7 @@ export function useNotificationSettings(): UseNotificationSettingsResult {
         throw err;
       }
     },
-    [settings, user?.uid, userRepository],
+    [memberRepository, settings, user?.uid],
   );
 
   return {

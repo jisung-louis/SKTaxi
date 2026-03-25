@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+
+import {useAuth} from '@/features/auth';
+import {useMemberRepository} from '@/di';
 import {
-  DEFAULT_NOTIFICATION_SETTINGS,
-  resolveNotificationSettings,
-  updateUserNotificationSettings,
-  useUserRepository,
-} from '@/features/user';
-import { useAuth } from '@/features/auth';
+  buildToggleNotificationSettingPatch,
+  resolveMemberNotificationSettings,
+} from '@/features/user/services/notificationSettingsService';
+import type {MemberNotificationSetting} from '@/features/member';
 
 export interface NoticeSettingsDetail {
   [category: string]: boolean;
@@ -22,16 +23,21 @@ const DEFAULT_SETTINGS: NoticeSettingsState = {
 };
 
 export function useNoticeSettings() {
-  const { user } = useAuth();
-  const userRepository = useUserRepository();
+  const {user} = useAuth();
+  const memberRepository = useMemberRepository();
 
-  const [settings, setSettings] = useState<NoticeSettingsState>(DEFAULT_SETTINGS);
+  const [memberSettings, setMemberSettings] =
+    useState<MemberNotificationSetting>(resolveMemberNotificationSettings());
+  const [settings, setSettings] =
+    useState<NoticeSettingsState>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.uid) {
+      setMemberSettings(resolveMemberNotificationSettings());
       setSettings(DEFAULT_SETTINGS);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -39,72 +45,110 @@ export function useNoticeSettings() {
     setLoading(true);
     setError(null);
 
-    const unsubscribe = userRepository.subscribeToUserProfile(user.uid, {
-      onData: (profile) => {
-        const ns = resolveNotificationSettings(profile);
-        const next: NoticeSettingsState = {
-          noticeNotifications: ns.noticeNotifications !== false,
-          noticeNotificationsDetail: (ns.noticeNotificationsDetail || {}) as NoticeSettingsDetail,
-        };
-        setSettings(next);
+    let cancelled = false;
+
+    const loadNoticeSettings = async () => {
+      try {
+        const memberProfile = await memberRepository.getMyMemberProfile();
+        if (cancelled) {
+          return;
+        }
+
+        const nextMemberSettings = resolveMemberNotificationSettings(
+          memberProfile.notificationSetting,
+        );
+        setMemberSettings(nextMemberSettings);
+        setSettings({
+          noticeNotifications: nextMemberSettings.noticeNotifications,
+          noticeNotificationsDetail:
+            nextMemberSettings.noticeNotificationsDetail as NoticeSettingsDetail,
+        });
         setLoading(false);
-      },
-      onError: (err) => {
+      } catch (err: any) {
+        if (cancelled) {
+          return;
+        }
+
         setError(err?.message || '알림 설정을 불러오지 못했습니다.');
         setLoading(false);
-      },
-    });
+      }
+    };
 
-    return () => unsubscribe();
-  }, [user?.uid, userRepository]);
+    loadNoticeSettings().catch(() => undefined);
 
-  const updateMaster = useCallback(async (enabled: boolean) => {
-    if (!user?.uid) {
-      return;
-    }
+    return () => {
+      cancelled = true;
+    };
+  }, [memberRepository, user?.uid]);
 
-    try {
-      await updateUserNotificationSettings({
-        currentSettings: {
-          ...DEFAULT_NOTIFICATION_SETTINGS,
-          ...settings,
-          noticeNotificationsDetail: settings.noticeNotificationsDetail,
-        },
-        patch: { noticeNotifications: enabled },
-        userId: user.uid,
-        userRepository,
-      });
-    } catch (e) {
-      setError('설정 저장에 실패했습니다.');
-      throw e;
-    }
-  }, [settings, user?.uid, userRepository]);
+  const updateMaster = useCallback(
+    async (enabled: boolean) => {
+      if (!user?.uid) {
+        return;
+      }
 
-  const updateDetail = useCallback(async (categoryKey: string, enabled: boolean) => {
-    if (!user?.uid) {
-      return;
-    }
+      try {
+        setError(null);
+        const memberProfile =
+          await memberRepository.updateMyNotificationSettings(
+            buildToggleNotificationSettingPatch({
+              currentSettings: memberSettings,
+              enabled,
+              key: 'noticeNotifications',
+            }),
+          );
+        const nextMemberSettings = resolveMemberNotificationSettings(
+          memberProfile.notificationSetting,
+        );
+        setMemberSettings(nextMemberSettings);
+        setSettings({
+          noticeNotifications: nextMemberSettings.noticeNotifications,
+          noticeNotificationsDetail:
+            nextMemberSettings.noticeNotificationsDetail as NoticeSettingsDetail,
+        });
+      } catch (e) {
+        setError('설정 저장에 실패했습니다.');
+        throw e;
+      }
+    },
+    [memberRepository, memberSettings, user?.uid],
+  );
 
-    try {
-      const currentDetail = { ...settings.noticeNotificationsDetail, [categoryKey]: enabled };
-      await updateUserNotificationSettings({
-        currentSettings: {
-          ...DEFAULT_NOTIFICATION_SETTINGS,
-          ...settings,
-          noticeNotificationsDetail: settings.noticeNotificationsDetail,
-        },
-        patch: { noticeNotificationsDetail: currentDetail },
-        userId: user.uid,
-        userRepository,
-      });
-    } catch (e) {
-      setError('설정 저장에 실패했습니다.');
-      throw e;
-    }
-  }, [settings, user?.uid, userRepository]);
+  const updateDetail = useCallback(
+    async (categoryKey: string, enabled: boolean) => {
+      if (!user?.uid) {
+        return;
+      }
+
+      try {
+        setError(null);
+        const currentDetail = {
+          ...memberSettings.noticeNotificationsDetail,
+          [categoryKey]: enabled,
+        };
+        const memberProfile =
+          await memberRepository.updateMyNotificationSettings({
+            noticeNotificationsDetail: currentDetail,
+          });
+        const nextMemberSettings = resolveMemberNotificationSettings(
+          memberProfile.notificationSetting,
+        );
+        setMemberSettings(nextMemberSettings);
+        setSettings({
+          noticeNotifications: nextMemberSettings.noticeNotifications,
+          noticeNotificationsDetail:
+            nextMemberSettings.noticeNotificationsDetail as NoticeSettingsDetail,
+        });
+      } catch (e) {
+        setError('설정 저장에 실패했습니다.');
+        throw e;
+      }
+    },
+    [memberRepository, memberSettings, user?.uid],
+  );
 
   return useMemo(
-    () => ({ settings, loading, error, updateMaster, updateDetail }),
-    [settings, loading, error, updateMaster, updateDetail]
+    () => ({settings, loading, error, updateMaster, updateDetail}),
+    [settings, loading, error, updateMaster, updateDetail],
   );
 }
