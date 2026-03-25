@@ -44,6 +44,7 @@ export interface TaxiHomePartyCardViewData {
   id: string;
   departureAt: string;
   createdAt: string;
+  detail?: string;
   departureTimeLabel: string;
   departureLabel: string;
   destinationLabel: string;
@@ -59,6 +60,7 @@ export interface TaxiHomePartyCardViewData {
   filterIds: TaxiHomeFilterId[];
   joinAction: TaxiHomePartyJoinActionViewData;
   searchKeywords: string[];
+  tags: string[];
   action: TaxiHomePartyAction;
 }
 

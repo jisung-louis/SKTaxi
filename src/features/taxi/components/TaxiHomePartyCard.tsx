@@ -18,6 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import {ToneBadge} from '@/shared/design-system/components';
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomePartyCardViewData,
@@ -70,6 +71,16 @@ const getJoinActionIconName = (
 const isActiveStatusTone = (
   statusTone: TaxiHomePartyCardViewData['statusTone'],
 ) => statusTone === 'active';
+
+const formatTagLabel = (tag: string) => {
+  const trimmed = tag.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+};
 
 export const TaxiHomePartyCard = ({
   expanded,
@@ -207,6 +218,43 @@ export const TaxiHomePartyCard = ({
             </View>
           </View>
         </View>
+
+        {party.tags.length > 0 || party.detail ? (
+          <View style={styles.infoSection}>
+            {party.tags.length > 0 ? (
+              <View style={styles.tagRow}>
+                {party.tags.map(tag => {
+                  const label = formatTagLabel(tag);
+
+                  if (!label) {
+                    return null;
+                  }
+
+                  return (
+                    <ToneBadge
+                      key={`${party.id}-${label}`}
+                      label={label}
+                      tone="green"
+                    />
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {party.detail ? (
+              <View style={styles.detailPanel}>
+                <Icon
+                  color={COLORS.brand.primaryStrong}
+                  name="chatbox-ellipses-outline"
+                  size={16}
+                />
+                <Text numberOfLines={2} style={styles.detailText}>
+                  {party.detail}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
@@ -411,6 +459,30 @@ const styles = StyleSheet.create({
     height: 24,
     justifyContent: 'center',
     width: 24,
+  },
+  infoSection: {
+    gap: SPACING.sm,
+    marginTop: SPACING.md,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+  },
+  detailPanel: {
+    alignItems: 'flex-start',
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  detailText: {
+    color: COLORS.text.secondary,
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 18,
   },
   footer: {
     alignItems: 'center',

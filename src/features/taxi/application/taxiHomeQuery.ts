@@ -192,6 +192,9 @@ const buildParticipantAvatars = (
   );
 };
 
+const normalizePartyTags = (tags?: string[] | null) =>
+  tags?.map(tag => tag.trim()).filter(Boolean) ?? [];
+
 const buildAcceptancePendingSeedFromPartyCard = (
   party: Pick<
     TaxiHomePartyCardViewData,
@@ -308,6 +311,16 @@ const buildBasePartyCard = (
   const statusMeta = buildStatusMeta(party.status);
   const departureTimeLabel = formatDepartureTimeLabel(party.departureTime);
   const leaderName = party.leaderName?.trim() || '파티장';
+  const detail = party.detail?.trim() || undefined;
+  const tags = normalizePartyTags(party.tags);
+  const searchKeywords = [
+    party.departure.name,
+    party.destination.name,
+    leaderName,
+    departureTimeLabel,
+    ...tags,
+    detail,
+  ].filter((keyword): keyword is string => Boolean(keyword));
 
   return {
     action: {
@@ -315,6 +328,7 @@ const buildBasePartyCard = (
     },
     createdAt: party.createdAt,
     currentMemberCount: party.currentMembers,
+    detail,
     departureAt: party.departureTime,
     departureLabel: party.departure.name,
     departureTimeLabel,
@@ -328,15 +342,10 @@ const buildBasePartyCard = (
     maxMemberCount: party.maxMembers,
     memberSummaryLabel: `${party.currentMembers}/${party.maxMembers}명`,
     participantAvatars: buildParticipantAvatars(party),
-    searchKeywords: [
-      party.departure.name,
-      party.destination.name,
-      leaderName,
-      departureTimeLabel,
-      ...(party.tags ?? []),
-    ].filter(Boolean),
+    searchKeywords,
     statusLabel: statusMeta.label,
     statusTone: statusMeta.tone,
+    tags,
     joinAction: {
       label: '동승 요청하기',
       state: 'request',
