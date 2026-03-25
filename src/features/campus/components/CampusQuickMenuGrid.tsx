@@ -17,7 +17,6 @@ export const CampusQuickMenuGrid = ({
 }: CampusQuickMenuGridProps) => {
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>빠른 메뉴</Text>
       <View style={styles.grid}>
         {items.map(item => (
           <TouchableOpacity
@@ -41,13 +40,6 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.xxl,
     paddingHorizontal: SPACING.lg,
-  },
-  title: {
-    color: COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 24,
-    marginBottom: SPACING.md,
   },
   grid: {
     flexDirection: 'row',

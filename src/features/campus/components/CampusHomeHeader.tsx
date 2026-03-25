@@ -8,6 +8,7 @@ import {
   RADIUS,
   SHADOWS,
   SPACING,
+  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 type CampusHomeHeaderProps = {
@@ -60,10 +61,10 @@ const styles = StyleSheet.create({
   wordmark: {
     color: COLORS.text.primary,
     fontFamily: FONT_FAMILIES.brand.wordmark,
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: '800',
-    letterSpacing: -0.5,
-    lineHeight: 32,
+    letterSpacing: -1,
+    lineHeight: 36,
   },
   rightButtonContainer: {
     flexDirection: 'row',
