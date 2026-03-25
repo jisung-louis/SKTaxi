@@ -2,6 +2,10 @@ import {
   memberApiClient,
   MemberApiClient,
 } from '@/features/member/data/api/memberApiClient';
+import {
+  noticeApiClient,
+  NoticeApiClient,
+} from '@/features/notice/data/api/noticeApiClient';
 
 import {
   memberBoardApiClient,
@@ -31,19 +35,32 @@ export class SpringMyPageRepository implements IMyPageRepository {
     private readonly activityRepository: IUserActivityRepository,
     private readonly boardApiClient: MemberBoardApiClient = memberBoardApiClient,
     private readonly memberClient: MemberApiClient = memberApiClient,
+    private readonly noticeClient: NoticeApiClient = noticeApiClient,
   ) {}
 
   async getMyPage(): Promise<MyPageSource> {
-    const [memberResponse, myPostsResponse, bookmarks, taxiHistory] =
-      await Promise.all([
-        this.memberClient.getMyMemberProfile(),
-        this.boardApiClient.getMyPosts({
-          page: 0,
-          size: 1,
-        }),
-        this.activityRepository.getBookmarks(),
-        this.activityRepository.getTaxiHistory(),
-      ]);
+    const [
+      memberResponse,
+      myPostsResponse,
+      communityBookmarksResponse,
+      noticeBookmarksResponse,
+      taxiHistory,
+    ] = await Promise.all([
+      this.memberClient.getMyMemberProfile(),
+      this.boardApiClient.getMyPosts({
+        page: 0,
+        size: 1,
+      }),
+      this.boardApiClient.getMyBookmarks({
+        page: 0,
+        size: 1,
+      }),
+      this.noticeClient.getMyNoticeBookmarks({
+        page: 0,
+        size: 1,
+      }),
+      this.activityRepository.getTaxiHistory(),
+    ]);
 
     const member = memberResponse.data;
 
@@ -57,7 +74,8 @@ export class SpringMyPageRepository implements IMyPageRepository {
       },
       stats: {
         bookmarks:
-          bookmarks.communityItems.length + bookmarks.noticeItems.length,
+          communityBookmarksResponse.data.totalElements +
+          noticeBookmarksResponse.data.totalElements,
         myPosts: myPostsResponse.data.totalElements,
         taxiHistory: taxiHistory.entries.length,
       },
