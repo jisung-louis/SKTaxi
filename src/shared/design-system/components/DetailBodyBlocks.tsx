@@ -12,6 +12,9 @@ interface DetailBodyBlocksProps {
   blocks: ContentDetailBodyBlockViewData[];
 }
 
+const IMAGE_ASPECT_RATIO_FALLBACK = 16 / 9;
+const imageAspectRatioCache = new Map<string, number>();
+
 const DETAIL_TABLE_HTML = (tableHtml: string) => `
 <!doctype html>
 <html lang="ko">
@@ -198,6 +201,85 @@ const DetailTableBlock = ({html}: {html: string}) => {
 export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
   const [viewerIndex, setViewerIndex] = React.useState(0);
   const [viewerVisible, setViewerVisible] = React.useState(false);
+  const [resolvedAspectRatios, setResolvedAspectRatios] = React.useState<
+    Record<string, number>
+  >({});
+
+  React.useEffect(() => {
+    let isCancelled = false;
+    const cachedRatios = blocks.reduce<Record<string, number>>(
+      (accumulator, block) => {
+        if (block.type !== 'image' || block.aspectRatio) {
+          return accumulator;
+        }
+
+        const cachedAspectRatio = imageAspectRatioCache.get(block.imageUrl);
+        if (cachedAspectRatio) {
+          accumulator[block.id] = cachedAspectRatio;
+        }
+
+        return accumulator;
+      },
+      {},
+    );
+
+    if (Object.keys(cachedRatios).length > 0) {
+      setResolvedAspectRatios(previousRatios => {
+        const hasChange = Object.entries(cachedRatios).some(
+          ([blockId, aspectRatio]) => previousRatios[blockId] !== aspectRatio,
+        );
+
+        if (!hasChange) {
+          return previousRatios;
+        }
+
+        return {
+          ...previousRatios,
+          ...cachedRatios,
+        };
+      });
+    }
+
+    blocks.forEach(block => {
+      if (block.type !== 'image' || block.aspectRatio) {
+        return;
+      }
+
+      if (
+        resolvedAspectRatios[block.id] ||
+        imageAspectRatioCache.has(block.imageUrl)
+      ) {
+        return;
+      }
+
+      Image.getSize(
+        block.imageUrl,
+        (width, height) => {
+          if (isCancelled || !width || !height) {
+            return;
+          }
+
+          const nextAspectRatio = width / height;
+          imageAspectRatioCache.set(block.imageUrl, nextAspectRatio);
+          setResolvedAspectRatios(previousRatios => {
+            if (previousRatios[block.id] === nextAspectRatio) {
+              return previousRatios;
+            }
+
+            return {
+              ...previousRatios,
+              [block.id]: nextAspectRatio,
+            };
+          });
+        },
+        () => undefined,
+      );
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [blocks, resolvedAspectRatios]);
 
   const imageItems = React.useMemo<ImageLightboxItem[]>(
     () =>
@@ -206,14 +288,17 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
           ? [
               {
                 alt: block.alt,
-                aspectRatio: block.aspectRatio,
+                aspectRatio:
+                  block.aspectRatio ??
+                  resolvedAspectRatios[block.id] ??
+                  IMAGE_ASPECT_RATIO_FALLBACK,
                 id: block.id,
                 source: {uri: block.imageUrl},
               },
             ]
           : [],
       ),
-    [blocks],
+    [blocks, resolvedAspectRatios],
   );
 
   const imageIndexById = React.useMemo(() => {
@@ -246,6 +331,11 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
         const isLast = index === blocks.length - 1;
 
         if (block.type === 'image') {
+          const aspectRatio =
+            block.aspectRatio ??
+            resolvedAspectRatios[block.id] ??
+            IMAGE_ASPECT_RATIO_FALLBACK;
+
           return (
             <TouchableOpacity
               key={block.id}
@@ -263,7 +353,7 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
                 style={[
                   styles.image,
                   {
-                    aspectRatio: block.aspectRatio ?? 16 / 9,
+                    aspectRatio,
                   },
                 ]}
               />
