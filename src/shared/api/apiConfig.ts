@@ -1,3 +1,5 @@
+import { BASE_URL } from './baseUrl';
+
 export interface ApiRuntimeConfig {
   restBaseUrl: string;
   wsEndpointPath: string;
@@ -19,7 +21,7 @@ export type ApiQueryParams = Record<string, ApiQueryValue>;
 
 const DEFAULT_API_RUNTIME_CONFIG: ApiRuntimeConfig = {
   // restBaseUrl: 'https://api.skuri.kr',
-  restBaseUrl: 'https://fe34-39-117-66-29.ngrok-free.app',
+  restBaseUrl: BASE_URL,
   wsEndpointPath: '/ws',
   httpTimeoutMs: 15000,
   sseReconnectDelayMs: 3000,
