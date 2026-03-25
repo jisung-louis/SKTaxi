@@ -1,11 +1,12 @@
 import React from 'react';
-import {Image, StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import type {WebViewMessageEvent} from 'react-native-webview';
 import {WebView} from 'react-native-webview';
 
 import type {ContentDetailBodyBlockViewData} from '@/shared/types/contentDetailViewData';
 
 import {COLORS, RADIUS, SPACING} from '../tokens';
+import {ImageLightboxModal, type ImageLightboxItem} from './ImageLightboxModal';
 
 interface DetailBodyBlocksProps {
   blocks: ContentDetailBodyBlockViewData[];
@@ -195,6 +196,50 @@ const DetailTableBlock = ({html}: {html: string}) => {
 };
 
 export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
+  const [viewerIndex, setViewerIndex] = React.useState(0);
+  const [viewerVisible, setViewerVisible] = React.useState(false);
+
+  const imageItems = React.useMemo<ImageLightboxItem[]>(
+    () =>
+      blocks.flatMap(block =>
+        block.type === 'image'
+          ? [
+              {
+                alt: block.alt,
+                aspectRatio: block.aspectRatio,
+                id: block.id,
+                source: {uri: block.imageUrl},
+              },
+            ]
+          : [],
+      ),
+    [blocks],
+  );
+
+  const imageIndexById = React.useMemo(() => {
+    const nextMap = new Map<string, number>();
+
+    imageItems.forEach((image, index) => {
+      nextMap.set(image.id, index);
+    });
+
+    return nextMap;
+  }, [imageItems]);
+
+  const handlePressImage = React.useCallback(
+    (blockId: string) => {
+      const nextIndex = imageIndexById.get(blockId);
+
+      if (nextIndex === undefined) {
+        return;
+      }
+
+      setViewerIndex(nextIndex);
+      setViewerVisible(true);
+    },
+    [imageIndexById],
+  );
+
   return (
     <View>
       {blocks.map((block, index) => {
@@ -202,19 +247,27 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
 
         if (block.type === 'image') {
           return (
-            <Image
+            <TouchableOpacity
               key={block.id}
-              accessibilityLabel={block.alt}
-              resizeMode="cover"
-              source={{uri: block.imageUrl}}
-              style={[
-                styles.image,
-                {
-                  aspectRatio: block.aspectRatio ?? 16 / 9,
-                },
-                !isLast ? styles.blockSpacing : null,
-              ]}
-            />
+              accessibilityLabel={block.alt ?? '이미지 크게 보기'}
+              accessibilityRole="button"
+              activeOpacity={0.92}
+              onPress={() => {
+                handlePressImage(block.id);
+              }}
+              style={!isLast ? styles.blockSpacing : null}>
+              <Image
+                accessibilityLabel={block.alt}
+                resizeMode="cover"
+                source={{uri: block.imageUrl}}
+                style={[
+                  styles.image,
+                  {
+                    aspectRatio: block.aspectRatio ?? 16 / 9,
+                  },
+                ]}
+              />
+            </TouchableOpacity>
           );
         }
 
@@ -234,6 +287,15 @@ export const DetailBodyBlocks = ({blocks}: DetailBodyBlocksProps) => {
           </Text>
         );
       })}
+
+      <ImageLightboxModal
+        images={imageItems}
+        initialIndex={viewerIndex}
+        onRequestClose={() => {
+          setViewerVisible(false);
+        }}
+        visible={viewerVisible}
+      />
     </View>
   );
 };

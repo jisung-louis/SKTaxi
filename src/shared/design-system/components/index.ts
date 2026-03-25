@@ -10,6 +10,8 @@ export {FilterChips} from './FilterChips';
 export type {FilterChipItem} from './FilterChips';
 export {FormField} from './FormField';
 export {InfoBanner} from './InfoBanner';
+export {ImageLightboxModal} from './ImageLightboxModal';
+export type {ImageLightboxItem} from './ImageLightboxModal';
 export {PageHeader} from './PageHeader';
 export {SelectionDropdown} from './SelectionDropdown';
 export {SettingsRow} from './SettingsRow';

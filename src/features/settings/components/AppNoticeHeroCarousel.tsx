@@ -14,11 +14,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
-  COLORS,
-  RADIUS,
-  SHADOWS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+  ImageLightboxModal,
+  type ImageLightboxItem,
+} from '@/shared/design-system/components';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 type AppNoticeHeroCarouselProps = {
   images: ImageSourcePropType[];
@@ -26,12 +25,21 @@ type AppNoticeHeroCarouselProps = {
 
 const HERO_HEIGHT = 208;
 
-export const AppNoticeHeroCarousel = ({
-  images,
-}: AppNoticeHeroCarouselProps) => {
+export const AppNoticeHeroCarousel = ({images}: AppNoticeHeroCarouselProps) => {
   const {width} = useWindowDimensions();
   const listRef = React.useRef<FlatList<ImageSourcePropType>>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
+  const [viewerIndex, setViewerIndex] = React.useState(0);
+  const [viewerVisible, setViewerVisible] = React.useState(false);
+
+  const viewerImages = React.useMemo<ImageLightboxItem[]>(
+    () =>
+      images.map((source, index) => ({
+        id: `app-notice-image-${index + 1}`,
+        source,
+      })),
+    [images],
+  );
 
   const handleMomentumScrollEnd = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -55,8 +63,17 @@ export const AppNoticeHeroCarousel = ({
         keyExtractor={(_, index) => `hero-${index}`}
         onMomentumScrollEnd={handleMomentumScrollEnd}
         pagingEnabled
-        renderItem={({item}) => (
-          <Image source={item} style={[styles.image, {width}]} />
+        renderItem={({item, index}) => (
+          <TouchableOpacity
+            accessibilityLabel="앱 공지 이미지 크게 보기"
+            accessibilityRole="button"
+            activeOpacity={0.95}
+            onPress={() => {
+              setViewerIndex(index);
+              setViewerVisible(true);
+            }}>
+            <Image source={item} style={[styles.image, {width}]} />
+          </TouchableOpacity>
         )}
         showsHorizontalScrollIndicator={false}
       />
@@ -102,6 +119,15 @@ export const AppNoticeHeroCarousel = ({
           </View>
         </>
       ) : null}
+
+      <ImageLightboxModal
+        images={viewerImages}
+        initialIndex={viewerIndex}
+        onRequestClose={() => {
+          setViewerVisible(false);
+        }}
+        visible={viewerVisible}
+      />
     </View>
   );
 };
