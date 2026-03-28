@@ -6,7 +6,6 @@ export {
   CHAT_COMPOSER_ROW_BASE_HEIGHT,
   ChatComposerBar,
 } from './ChatComposerBar';
-export {ChatContextMenu} from './ChatContextMenu';
 export {ChatThreadCore} from './ChatThreadCore';
 export type {
   ChatAvatarViewData,

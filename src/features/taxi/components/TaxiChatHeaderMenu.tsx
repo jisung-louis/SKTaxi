@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {ChatContextMenu} from '@/shared/ui/chat';
+import {PopupMenu} from '@/shared/ui/PopupMenu';
 
 interface TaxiChatHeaderMenuProps {
   canCancelParty: boolean;
@@ -78,5 +78,5 @@ export const TaxiChatHeaderMenu = ({
       : []),
   ];
 
-  return <ChatContextMenu items={items} onClose={onClose} visible={visible} />;
+  return <PopupMenu items={items} onClose={onClose} visible={visible} />;
 };

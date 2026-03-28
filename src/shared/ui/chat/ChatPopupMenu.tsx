@@ -1,20 +1,20 @@
 import React from 'react';
 
-import {ChatContextMenu} from './ChatContextMenu';
+import {PopupMenu} from '@/shared/ui/PopupMenu';
 
 interface ChatPopupMenuProps {
-  canReport?: boolean
-  canToggleNotification?: boolean
-  leaveLabel: string
-  notificationDisabled?: boolean
-  notificationEnabled: boolean
-  onClose: () => void
-  onLeave?: () => void
-  onReport?: () => void
-  onToggleNotification: () => void
-  right?: number
-  top?: number
-  visible: boolean
+  canReport?: boolean;
+  canToggleNotification?: boolean;
+  leaveLabel: string;
+  notificationDisabled?: boolean;
+  notificationEnabled: boolean;
+  onClose: () => void;
+  onLeave?: () => void;
+  onReport?: () => void;
+  onToggleNotification: () => void;
+  right?: number;
+  top?: number;
+  visible: boolean;
 }
 
 export const ChatPopupMenu = ({
@@ -71,7 +71,7 @@ export const ChatPopupMenu = ({
   ];
 
   return (
-    <ChatContextMenu
+    <PopupMenu
       items={items}
       onClose={onClose}
       right={right}

@@ -16,56 +16,49 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {ToggleSwitch} from '@/shared/design-system/components';
-import {
-  COLORS,
-  RADIUS,
-  SHADOWS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
-export interface ChatContextMenuToggleItem {
-  disabled?: boolean
-  iconName: string
-  id: string
-  label: string
-  onPress: () => void
-  type: 'toggle'
-  value: boolean
+export interface PopupMenuToggleItem {
+  disabled?: boolean;
+  iconName: string;
+  id: string;
+  label: string;
+  onPress: () => void;
+  type: 'toggle';
+  value: boolean;
 }
 
-export interface ChatContextMenuActionItem {
-  iconName: string
-  id: string
-  label: string
-  onPress: () => void
-  tone?: 'default' | 'danger'
-  type: 'action'
+export interface PopupMenuActionItem {
+  iconName: string;
+  id: string;
+  label: string;
+  onPress: () => void;
+  tone?: 'default' | 'danger';
+  type: 'action';
 }
 
-export type ChatContextMenuItem =
-  | ChatContextMenuToggleItem
-  | ChatContextMenuActionItem;
+export type PopupMenuItem = PopupMenuToggleItem | PopupMenuActionItem;
 
-interface ChatContextMenuProps {
-  items: ChatContextMenuItem[]
-  onClose: () => void
-  right?: number
-  top?: number
-  visible: boolean
-  width?: number
+interface PopupMenuProps {
+  items: PopupMenuItem[];
+  onClose: () => void;
+  right?: number;
+  top?: number;
+  visible: boolean;
+  width?: number;
 }
 
 const MENU_ANIMATION_IN_DURATION = 180;
 const MENU_ANIMATION_OUT_DURATION = 140;
 
-export const ChatContextMenu = ({
+export const PopupMenu = ({
   items,
   onClose,
   right = 12,
   top = 64,
   visible,
   width = 184,
-}: ChatContextMenuProps) => {
+}: PopupMenuProps) => {
   const [shouldRender, setShouldRender] = React.useState(visible);
   const progress = useSharedValue(visible ? 1 : 0);
 
@@ -105,10 +98,14 @@ export const ChatContextMenu = ({
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <Animated.View pointerEvents="none" style={[styles.overlay, overlayAnimatedStyle]} />
+      <Animated.View
+        pointerEvents="none"
+        style={[styles.overlay, overlayAnimatedStyle]}
+      />
       <Pressable onPress={onClose} style={StyleSheet.absoluteFill} />
 
-      <Animated.View style={[styles.card, {right, top, width}, cardAnimatedStyle]}>
+      <Animated.View
+        style={[styles.card, {right, top, width}, cardAnimatedStyle]}>
         {items.map((item, index) => {
           const showDivider = index < items.length - 1;
 
