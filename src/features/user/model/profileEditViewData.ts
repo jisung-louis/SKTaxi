@@ -4,5 +4,6 @@ export interface ProfileEditScreenViewData {
   departmentOptions: string[];
   displayName: string;
   gradeLabel: string;
+  photoUrl: string | null;
   studentId: string;
 }

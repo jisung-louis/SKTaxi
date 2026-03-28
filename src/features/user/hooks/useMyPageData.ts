@@ -155,7 +155,9 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
   profile: {
     avatarLabel: source.profile.displayName.slice(0, 1) || '?',
     displayName: source.profile.displayName,
+    email: source.profile.email,
     editLabel: MY_PAGE_PROFILE_EDIT_LABEL,
+    photoUrl: source.profile.photoUrl,
     subtitle: source.profile.subtitle,
   },
   sections: MY_PAGE_MENU_SECTIONS.map(section => ({

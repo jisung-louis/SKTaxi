@@ -17,12 +17,6 @@ export const getUserLoginProvider = (
   return 'unknown';
 };
 
-export const withdrawCurrentUser = async ({
-  password,
-  userId,
-}: {
-  password?: string;
-  userId: string;
-}) => {
-  await withdrawUser(userId, password);
+export const withdrawCurrentUser = async () => {
+  await withdrawUser();
 };

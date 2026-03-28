@@ -1,4 +1,5 @@
 export {ContentStatsRow} from './ContentStatsRow';
+export {DefaultProfileAvatar} from './DefaultProfileAvatar';
 export {DetailBackHeader} from './DetailBackHeader';
 export {DetailBodyBlocks} from './DetailBodyBlocks';
 export {DetailCommentCard} from './DetailCommentCard';

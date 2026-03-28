@@ -40,3 +40,7 @@ export interface MemberResponseDto {
   joinedAt: string;
   lastLogin?: string | null;
 }
+
+export interface MemberWithdrawResponseDto {
+  message: string;
+}

@@ -3,7 +3,9 @@ import type {MyPageMenuActionKey} from './myPageSource';
 export interface MyPageProfileViewData {
   avatarLabel: string;
   displayName: string;
+  email: string;
   editLabel: string;
+  photoUrl: string | null;
   subtitle: string;
 }
 

@@ -15,6 +15,8 @@ export type MyPageStatKey = Extract<
 
 export interface MyPageProfileSource {
   displayName: string;
+  email: string;
+  photoUrl: string | null;
   subtitle: string;
 }
 

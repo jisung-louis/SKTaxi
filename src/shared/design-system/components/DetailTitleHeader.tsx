@@ -1,10 +1,10 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
 import type {ContentDetailBadgeViewData} from '@/shared/types/contentDetailViewData';
-import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
+import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
+import {DefaultProfileAvatar} from './DefaultProfileAvatar';
 import {ToneBadge} from './ToneBadge';
 
 interface DetailTitleHeaderProps {
@@ -45,13 +45,7 @@ export const DetailTitleHeader = ({
           <View style={styles.authorMetaGroup}>
             {authorLabel ? (
               <>
-                <View style={styles.avatarCircle}>
-                  <Icon
-                    color={COLORS.text.muted}
-                    name="person-outline"
-                    size={14}
-                  />
-                </View>
+                <DefaultProfileAvatar />
                 <Text style={styles.authorLabel}>{authorLabel}</Text>
               </>
             ) : null}
@@ -88,14 +82,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
     minWidth: 0,
-  },
-  avatarCircle: {
-    alignItems: 'center',
-    backgroundColor: COLORS.border.default,
-    borderRadius: RADIUS.pill,
-    height: 28,
-    justifyContent: 'center',
-    width: 28,
   },
   container: {
     gap: SPACING.md,

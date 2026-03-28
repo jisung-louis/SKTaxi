@@ -4,7 +4,11 @@ import type {
   DeleteMemberFcmTokenRequestDto,
   RegisterMemberFcmTokenRequestDto,
 } from '../dto/fcmTokenDto';
-import type {MemberPublicProfileDto, MemberResponseDto} from '../dto/memberDto';
+import type {
+  MemberPublicProfileDto,
+  MemberResponseDto,
+  MemberWithdrawResponseDto,
+} from '../dto/memberDto';
 import type {UpdateMemberBankAccountRequestDto} from '../dto/updateMemberBankAccountDto';
 import type {UpdateMemberNotificationSettingsRequestDto} from '../dto/updateMemberNotificationSettingsDto';
 import type {UpdateMemberProfileRequestDto} from '../dto/updateMemberProfileDto';
@@ -67,6 +71,12 @@ export class MemberApiClient {
       url: '/v1/members/me/fcm-tokens',
       data,
     });
+  }
+
+  deleteMyAccount() {
+    return httpClient.delete<ApiSuccessResponse<MemberWithdrawResponseDto>>(
+      '/v1/members/me',
+    );
   }
 }
 

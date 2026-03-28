@@ -11,6 +11,7 @@ let profileEditProfileState: ProfileEditSource = {
   departmentOptions: DEPARTMENT_OPTIONS,
   displayName: '김성결',
   gradeLabel: '3학년',
+  photoUrl: null,
   studentId: '20210001',
 };
 

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Keyboard,
   ScrollView,
   StyleSheet,
@@ -12,30 +13,45 @@ import {
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
+  DefaultProfileAvatar,
   SelectionDropdown,
   StackHeader,
   StateCard,
 } from '@/shared/design-system/components';
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
+import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 
 import {useProfileEditScreenData} from '../hooks/useProfileEditScreenData';
 
 const PROFILE_EDIT_SCREEN_TITLE = '프로필 수정';
 const PROFILE_EDIT_SAVE_LABEL = '저장하기';
+const ALLOWED_PROFILE_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 
 export const ProfileEditScreen = () => {
   useScreenView();
 
   const navigation =
     useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
-  const {data, error, loading, reload, saveChanges, saving} =
+  const {
+    data,
+    error,
+    loading,
+    reload,
+    removePhoto,
+    saveChanges,
+    saving,
+    uploadPhoto,
+  } =
     useProfileEditScreenData();
 
   const [displayName, setDisplayName] = React.useState('');
@@ -56,6 +72,53 @@ export const ProfileEditScreen = () => {
   const closeDropdown = React.useCallback(() => {
     setDropdownOpen(false);
   }, []);
+
+  const handlePressPhoto = React.useCallback(async () => {
+    try {
+      const image = await pickImageAsset({
+        allowedMimeTypes: ALLOWED_PROFILE_IMAGE_MIME_TYPES,
+      });
+
+      if (!image) {
+        return;
+      }
+
+      await uploadPhoto({
+        fileName: image.fileName,
+        mimeType: image.mimeType,
+        uri: image.uri,
+      });
+    } catch (caughtError) {
+      console.error('프로필 사진 업로드 실패', caughtError);
+      const message =
+        caughtError instanceof Error && caughtError.message.trim()
+          ? caughtError.message
+          : '프로필 사진을 변경하지 못했습니다.';
+      Alert.alert('오류', message);
+    }
+  }, [uploadPhoto]);
+
+  const handleRemovePhoto = React.useCallback(() => {
+    Alert.alert('프로필 사진 삭제', '현재 프로필 사진을 삭제하시겠습니까?', [
+      {text: '취소', style: 'cancel'},
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removePhoto();
+          } catch (caughtError) {
+            console.error('프로필 사진 삭제 실패', caughtError);
+            const message =
+              caughtError instanceof Error && caughtError.message.trim()
+                ? caughtError.message
+                : '프로필 사진을 삭제하지 못했습니다.';
+            Alert.alert('오류', message);
+          }
+        },
+      },
+    ]);
+  }, [removePhoto]);
 
   const handleSave = React.useCallback(async () => {
     const trimmedDisplayName = displayName.trim();
@@ -144,30 +207,43 @@ export const ProfileEditScreen = () => {
         {data ? (
           <>
             <View style={styles.avatarSection}>
-              <LinearGradient
-                colors={['#4ADE80', '#22C55E']}
-                end={{x: 1, y: 1}}
-                start={{x: 0, y: 0}}
-                style={styles.avatar}>
-                <Text style={styles.avatarLabel}>{data.avatarLabel}</Text>
-              </LinearGradient>
+              <View style={styles.avatarFrame}>
+                {data.photoUrl ? (
+                  <Image source={{uri: data.photoUrl}} style={styles.avatarImage} />
+                ) : (
+                  <DefaultProfileAvatar
+                    iconSize={42}
+                    size={96}
+                    style={styles.avatarFallback}
+                  />
+                )}
 
-              <TouchableOpacity
-                accessibilityRole="button"
-                activeOpacity={0.86}
-                onPress={() =>
-                  Alert.alert(
-                    '준비 중',
-                    '프로필 사진 변경은 추후 연결 예정입니다.',
-                  )
-                }
-                style={styles.cameraButton}>
-                <Icon
-                  color={COLORS.text.inverse}
-                  name="camera-outline"
-                  size={14}
-                />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.86}
+                  disabled={saving}
+                  onPress={() => {
+                    handlePressPhoto().catch(() => undefined);
+                  }}
+                  style={styles.cameraButton}>
+                  <Icon
+                    color={COLORS.text.inverse}
+                    name="camera-outline"
+                    size={14}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {data.photoUrl ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.82}
+                  disabled={saving}
+                  onPress={handleRemovePhoto}
+                  style={styles.removePhotoButton}>
+                  <Text style={styles.removePhotoLabel}>사진 삭제</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
 
             <View style={styles.formSection}>
@@ -258,18 +334,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  avatar: {
-    alignItems: 'center',
+  avatarFrame: {
+    position: 'relative',
+  },
+  avatarImage: {
     borderRadius: 9999,
     height: 96,
-    justifyContent: 'center',
     width: 96,
   },
-  avatarLabel: {
-    color: COLORS.text.inverse,
-    fontSize: 30,
-    fontWeight: '700',
-    lineHeight: 36,
+  avatarFallback: {
+    flexShrink: 0,
   },
   cameraButton: {
     alignItems: 'center',
@@ -278,9 +352,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     height: 32,
     justifyContent: 'center',
-    left: '54%',
+    right: 0,
     position: 'absolute',
     width: 32,
+  },
+  removePhotoButton: {
+    marginTop: 14,
+  },
+  removePhotoLabel: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    textDecorationLine: 'underline',
   },
   formSection: {
   },

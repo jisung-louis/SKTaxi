@@ -70,6 +70,8 @@ export class SpringMyPageRepository implements IMyPageRepository {
     return {
       profile: {
         displayName: member.nickname || DEFAULT_DISPLAY_NAME,
+        email: member.email,
+        photoUrl: member.photoUrl ?? null,
         subtitle: buildProfileSubtitle({
           department: member.department,
           studentId: member.studentId,

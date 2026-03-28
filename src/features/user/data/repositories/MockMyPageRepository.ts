@@ -16,6 +16,8 @@ export class MockMyPageRepository implements IMyPageRepository {
       profile: {
         ...myPageMockData.profile,
         displayName: profile.displayName,
+        email: myPageMockData.profile.email,
+        photoUrl: profile.photoUrl,
         subtitle: `${profile.department} ${profile.gradeLabel}`,
       },
     };

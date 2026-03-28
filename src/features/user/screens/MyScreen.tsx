@@ -2,23 +2,24 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-import Modal from 'react-native-modal';
-import LinearGradient from 'react-native-linear-gradient';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {type CampusStackParamList} from '@/app/navigation/types';
-import {useAuth, useAuthLoginProvider} from '@/features/auth';
-import {StateCard} from '@/shared/design-system/components';
+import {useAuth} from '@/features/auth';
+import {
+  DefaultProfileAvatar,
+  StateCard,
+} from '@/shared/design-system/components';
 import {
   COLORS,
   RADIUS,
@@ -33,19 +34,25 @@ import {useMyPageData} from '../hooks/useMyPageData';
 import type {MyPageMenuItemViewData} from '../model/myPageViewData';
 import {withdrawCurrentUser} from '../services/userProfileService';
 
+const AVATAR_SIZE = 100;
+
 export const MyScreen = () => {
   useScreenView();
 
   const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
   const insets = useSafeAreaInsets();
-  const {loading: authLoading, signOut, user} = useAuth();
-  const loginProvider = useAuthLoginProvider();
+  const {loading: authLoading, signOut} = useAuth();
   const {data, error, loading, reload} = useMyPageData();
 
-  const [password, setPassword] = React.useState('');
-  const [passwordModalVisible, setPasswordModalVisible] = React.useState(false);
   const [withdrawing, setWithdrawing] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
+
+
+  useFocusEffect(
+    React.useCallback(() => {
+      reload().catch(() => undefined);
+    }, [reload]),
+  );
 
   const openAction = React.useCallback(
     (actionKey: MyPageMenuItemViewData['actionKey']) => {
@@ -88,46 +95,28 @@ export const MyScreen = () => {
     [openAction],
   );
 
-  const handleConfirmWithdraw = React.useCallback(
-    async (confirmPassword?: string) => {
-      if (!user?.uid) {
-        Alert.alert('오류', '로그인이 필요합니다.');
-        return;
-      }
+  const handleConfirmWithdraw = React.useCallback(async () => {
+    try {
+      setWithdrawing(true);
+
+      await withdrawCurrentUser();
 
       try {
-        setWithdrawing(true);
-
-        await withdrawCurrentUser({
-          password: confirmPassword,
-          userId: user.uid,
-        });
-
-        try {
-          await signOut();
-        } catch {
-          // 계정 삭제 후 signOut 실패는 무시
-        }
-      } catch (caughtError: any) {
-        const message =
-          caughtError?.message ||
-          '회원탈퇴 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
-        Alert.alert('오류', message);
-      } finally {
-        setWithdrawing(false);
-        setPasswordModalVisible(false);
-        setPassword('');
+        await signOut();
+      } catch {
+        // 계정 삭제 후 signOut 실패는 무시
       }
-    },
-    [signOut, user?.uid],
-  );
+    } catch (caughtError: any) {
+      const message =
+        caughtError?.message ||
+        '회원탈퇴 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+      Alert.alert('오류', message);
+    } finally {
+      setWithdrawing(false);
+    }
+  }, [signOut]);
 
   const handleWithdraw = React.useCallback(() => {
-    if (loginProvider === 'email') {
-      setPasswordModalVisible(true);
-      return;
-    }
-
     Alert.alert(
       '회원탈퇴',
       '정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
@@ -142,34 +131,7 @@ export const MyScreen = () => {
         },
       ],
     );
-  }, [handleConfirmWithdraw, loginProvider]);
-
-  const handleConfirmPasswordModal = React.useCallback(() => {
-    if (!password.trim()) {
-      Alert.alert('입력 필요', '비밀번호를 입력해주세요.');
-      return;
-    }
-
-    setPasswordModalVisible(false);
-    Alert.alert(
-      '회원탈퇴',
-      '정말 탈퇴하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
-      [
-        {
-          text: '취소',
-          style: 'cancel',
-          onPress: () => setPasswordModalVisible(true),
-        },
-        {
-          text: '탈퇴하기',
-          style: 'destructive',
-          onPress: () => {
-            handleConfirmWithdraw(password).catch(() => undefined);
-          },
-        },
-      ],
-    );
-  }, [handleConfirmWithdraw, password]);
+  }, [handleConfirmWithdraw]);
 
   const handleSignOut = React.useCallback(() => {
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
@@ -243,17 +205,23 @@ export const MyScreen = () => {
           {data ? (
             <>
               <View style={styles.profileSection}>
-                <LinearGradient
-                  colors={['#4ADE80', '#22C55E']}
-                  end={{x: 1, y: 1}}
-                  start={{x: 0, y: 0}}
-                  style={styles.avatar}>
-                  <Text style={styles.avatarLabel}>{data.profile.avatarLabel}</Text>
-                </LinearGradient>
+                {data.profile.photoUrl ? (
+                  <Image
+                    source={{uri: data.profile.photoUrl}}
+                    style={styles.avatarImage}
+                  />
+                ) : (
+                  <DefaultProfileAvatar
+                    iconSize={AVATAR_SIZE / 2}
+                    size={AVATAR_SIZE}
+                    style={styles.avatarFallback}
+                  />
+                )}
 
                 <View style={styles.profileBody}>
                   <Text style={styles.displayName}>{data.profile.displayName}</Text>
                   <Text style={styles.subtitle}>{data.profile.subtitle}</Text>
+                  <Text style={styles.email}>{data.profile.email}</Text>
 
                   <TouchableOpacity
                     accessibilityRole="button"
@@ -327,65 +295,6 @@ export const MyScreen = () => {
           ) : null}
         </ScrollView>
       </View>
-
-      <Modal
-        animationIn="zoomIn"
-        animationOut="zoomOut"
-        backdropTransitionInTiming={220}
-        backdropTransitionOutTiming={220}
-        hideModalContentWhileAnimating
-        isVisible={passwordModalVisible}
-        onBackButtonPress={() =>
-          !withdrawing ? setPasswordModalVisible(false) : null
-        }
-        onBackdropPress={() =>
-          !withdrawing ? setPasswordModalVisible(false) : null
-        }
-        useNativeDriver
-        useNativeDriverForBackdrop>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>재인증 필요</Text>
-          <Text style={styles.modalDescription}>
-            회원탈퇴를 위해 비밀번호를 입력해주세요.
-          </Text>
-
-          <TextInput
-            autoFocus
-            editable={!withdrawing}
-            onChangeText={setPassword}
-            placeholder="비밀번호"
-            placeholderTextColor={COLORS.text.muted}
-            secureTextEntry
-            style={styles.passwordInput}
-            value={password}
-          />
-
-          <View style={styles.modalButtonRow}>
-            <TouchableOpacity
-              activeOpacity={0.82}
-              disabled={withdrawing}
-              onPress={() => setPasswordModalVisible(false)}
-              style={styles.modalCancelButton}>
-              <Text style={styles.modalCancelLabel}>취소</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.82}
-              disabled={withdrawing}
-              onPress={handleConfirmPasswordModal}
-              style={[
-                styles.modalConfirmButton,
-                withdrawing ? styles.disabledButton : undefined,
-              ]}>
-              {withdrawing ? (
-                <ActivityIndicator color={COLORS.text.inverse} size="small" />
-              ) : (
-                <Text style={styles.modalConfirmLabel}>확인</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -418,18 +327,13 @@ const styles = StyleSheet.create({
     gap: SPACING.lg,
     marginBottom: SPACING.xxl,
   },
-  avatar: {
-    alignItems: 'center',
+  avatarImage: {
     borderRadius: RADIUS.pill,
-    height: 80,
-    justifyContent: 'center',
-    width: 80,
+    height: AVATAR_SIZE,
+    width: AVATAR_SIZE,
   },
-  avatarLabel: {
-    color: COLORS.text.inverse,
-    fontSize: 24,
-    fontWeight: '700',
-    lineHeight: 32,
+  avatarFallback: {
+    flexShrink: 0,
   },
   profileBody: {
     flex: 1,
@@ -445,6 +349,12 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
     fontSize: 14,
     lineHeight: 20,
+    marginBottom: 2,
+  },
+  email: {
+    color: COLORS.text.muted,
+    fontSize: 13,
+    lineHeight: 18,
     marginBottom: SPACING.sm,
   },
   editButton: {
@@ -501,70 +411,5 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.6,
-  },
-  modalCard: {
-    backgroundColor: COLORS.background.surface,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.xl,
-  },
-  modalTitle: {
-    color: COLORS.text.primary,
-    fontSize: 18,
-    fontWeight: '700',
-    lineHeight: 28,
-    marginBottom: SPACING.xs,
-  },
-  modalDescription: {
-    color: COLORS.text.secondary,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: SPACING.lg,
-  },
-  passwordInput: {
-    backgroundColor: COLORS.background.subtle,
-    borderColor: COLORS.border.default,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    color: COLORS.text.primary,
-    fontSize: 14,
-    height: 48,
-    lineHeight: 18,
-    paddingHorizontal: SPACING.md,
-  },
-  modalButtonRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    justifyContent: 'flex-end',
-    marginTop: SPACING.lg,
-  },
-  modalCancelButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.background.subtle,
-    borderRadius: RADIUS.md,
-    height: 40,
-    justifyContent: 'center',
-    minWidth: 72,
-    paddingHorizontal: SPACING.md,
-  },
-  modalCancelLabel: {
-    color: COLORS.text.secondary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 20,
-  },
-  modalConfirmButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.brand.primary,
-    borderRadius: RADIUS.md,
-    height: 40,
-    justifyContent: 'center',
-    minWidth: 72,
-    paddingHorizontal: SPACING.md,
-  },
-  modalConfirmLabel: {
-    color: COLORS.text.inverse,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
   },
 });
