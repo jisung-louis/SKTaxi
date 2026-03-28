@@ -21,6 +21,7 @@ interface DetailCommentCardProps {
   likeDisabled?: boolean;
   onPressEdit?: () => void;
   onPressLike?: () => void;
+  onPressReport?: () => void;
   onPressReply?: () => void;
   replyDisabled?: boolean;
 }
@@ -30,6 +31,7 @@ export const DetailCommentCard = ({
   likeDisabled = false,
   onPressEdit,
   onPressLike,
+  onPressReport,
   onPressReply,
   replyDisabled = false,
 }: DetailCommentCardProps) => {
@@ -104,6 +106,16 @@ export const DetailCommentCard = ({
               <Text style={styles.actionButtonLabel}>답글</Text>
             </TouchableOpacity>
           </View>
+
+          {onPressReport ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={0.8}
+              onPress={onPressReport}
+              style={styles.reportButton}>
+              <Text style={styles.reportButtonLabel}>신고</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -205,5 +217,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: SPACING.sm,
+  },
+  reportButton: {
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+  },
+  reportButtonLabel: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
   },
 });

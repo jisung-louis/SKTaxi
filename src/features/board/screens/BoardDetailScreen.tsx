@@ -37,10 +37,17 @@ import {
   useScreenEnterAnimation,
   useScreenView,
 } from '@/shared/hooks';
+import type {ReportCategory} from '@/shared/lib/moderation';
 
 import {BoardDetailPopupMenu} from '../components/BoardDetailPopupMenu';
+import {BoardReportModal} from '../components/BoardReportModal';
 import {useBoardDetailData} from '../hooks/useBoardDetailData';
 import type {BoardStackParamList} from '../model/navigation';
+import {
+  BOARD_REPORT_CATEGORIES,
+  submitBoardCommentReport,
+  submitBoardPostReport,
+} from '../services/boardModerationService';
 
 type BoardDetailNavigationProp = NativeStackNavigationProp<
   BoardStackParamList,
@@ -60,6 +67,16 @@ export const BoardDetailScreen = () => {
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const [isMenuVisible, setIsMenuVisible] = React.useState(false);
+  const [isReportSubmitting, setIsReportSubmitting] = React.useState(false);
+  const [isReportVisible, setIsReportVisible] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState('');
+  const [selectedReportCategory, setSelectedReportCategory] =
+    React.useState<ReportCategory | null>(null);
+  const [reportTarget, setReportTarget] = React.useState<
+    | {id: string; type: 'comment'}
+    | {id: string; type: 'post'}
+    | null
+  >(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const {
     cancelCommentEdit,
@@ -114,9 +131,89 @@ export const BoardDetailScreen = () => {
     navigation.navigate('BoardMain');
   }, [navigation]);
 
-  const handlePressReport = React.useCallback(() => {
-    Alert.alert('게시글 신고', '신고 기능은 다음 단계에서 연결할 예정입니다.');
+  const handleCloseReportModal = React.useCallback(() => {
+    if (isReportSubmitting) {
+      return;
+    }
+
+    setIsReportVisible(false);
+    setReportTarget(null);
+    setSelectedReportCategory(null);
+    setReportReason('');
+  }, [isReportSubmitting]);
+
+  const handleOpenPostReport = React.useCallback(() => {
+    if (!post) {
+      return;
+    }
+
+    setIsMenuVisible(false);
+    setReportTarget({id: post.id, type: 'post'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
+  }, [post]);
+
+  const handleOpenCommentReport = React.useCallback((commentId: string) => {
+    setReportTarget({id: commentId, type: 'comment'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
   }, []);
+
+  const handleSubmitReport = React.useCallback(async () => {
+    if (!reportTarget) {
+      return;
+    }
+
+    if (!selectedReportCategory) {
+      Alert.alert('신고 유형 선택', '신고 유형을 선택해주세요.');
+      return;
+    }
+
+    if (!reportReason.trim()) {
+      Alert.alert('신고 사유 입력', '신고 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsReportSubmitting(true);
+
+      if (reportTarget.type === 'post') {
+        await submitBoardPostReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      } else {
+        await submitBoardCommentReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      }
+
+      handleCloseReportModal();
+      Alert.alert(
+        '신고 접수 완료',
+        '신고가 접수되었습니다. 운영팀이 확인 후 처리할 예정입니다.',
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        '오류',
+        caughtError instanceof Error
+          ? caughtError.message
+          : '신고 접수에 실패했습니다.',
+      );
+    } finally {
+      setIsReportSubmitting(false);
+    }
+  }, [
+    handleCloseReportModal,
+    reportReason,
+    reportTarget,
+    selectedReportCategory,
+  ]);
 
   const handlePressEdit = React.useCallback(() => {
     if (route.params?.postId) {
@@ -432,6 +529,11 @@ export const BoardDetailScreen = () => {
                             ? undefined
                             : () => handleStartReplyingComment(comment.id)
                         }
+                        onPressReport={
+                          comment.isDeleted
+                            ? undefined
+                            : () => handleOpenCommentReport(comment.id)
+                        }
                       />
                     </View>
                   ))}
@@ -501,11 +603,25 @@ export const BoardDetailScreen = () => {
           }}
           onPressDelete={handlePressDelete}
           onPressEdit={handlePressEdit}
-          onPressReport={handlePressReport}
+          onPressReport={handleOpenPostReport}
           right={12}
           showManageActions={canManageActions}
           top={insets.top + 44}
           visible={isMenuVisible && !deletingPost}
+        />
+        <BoardReportModal
+          categories={BOARD_REPORT_CATEGORIES}
+          onChangeReason={setReportReason}
+          onClose={handleCloseReportModal}
+          onSelectCategory={setSelectedReportCategory}
+          onSubmit={() => {
+            handleSubmitReport().catch(() => undefined);
+          }}
+          reason={reportReason}
+          selectedCategory={selectedReportCategory}
+          submitting={isReportSubmitting}
+          title={reportTarget?.type === 'comment' ? '댓글 신고' : '게시글 신고'}
+          visible={isReportVisible}
         />
       </Animated.View>
     </SafeAreaView>

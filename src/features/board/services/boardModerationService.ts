@@ -1,6 +1,7 @@
 import {
   type ReportCategory,
 } from '@/shared/lib/moderation';
+import {reportApiClient} from '@/shared/api/reportApiClient';
 import { authInstance } from '@/shared/lib/firebase';
 
 import type { BoardPost } from '../model/types';
@@ -59,34 +60,32 @@ export async function filterVisibleBoardPosts(posts: BoardPost[]): Promise<Board
 
 export function submitBoardPostReport(
   postId: string,
-  authorId: string,
   category: ReportCategory,
+  reason: string,
 ): Promise<string> {
-  return boardModerationRuntime.createReport(
-    {
-      targetType: 'post',
-      targetId: postId,
-      targetAuthorId: authorId,
+  return reportApiClient
+    .createReport({
       category,
-    },
-    getCurrentUserId(),
-  );
+      reason: reason.trim(),
+      targetId: postId,
+      targetType: 'POST',
+    })
+    .then(response => response.data.id);
 }
 
 export function submitBoardCommentReport(
   commentId: string,
-  authorId: string,
   category: ReportCategory,
+  reason: string,
 ): Promise<string> {
-  return boardModerationRuntime.createReport(
-    {
-      targetType: 'comment',
-      targetId: commentId,
-      targetAuthorId: authorId,
+  return reportApiClient
+    .createReport({
       category,
-    },
-    getCurrentUserId(),
-  );
+      reason: reason.trim(),
+      targetId: commentId,
+      targetType: 'COMMENT',
+    })
+    .then(response => response.data.id);
 }
 
 export function blockBoardAuthor(authorId: string): Promise<void> {
