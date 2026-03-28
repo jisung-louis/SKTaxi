@@ -23,6 +23,7 @@ describe('SpringInquiryFormRepository', () => {
           status: 'PENDING',
         },
       }),
+      getMyInquiries: jest.fn(),
     };
 
     mockedUploadImage.mockResolvedValue({
