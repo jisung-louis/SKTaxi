@@ -6,6 +6,7 @@ import type {
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import type {
   TaxiChatAccountMessageDraft,
+  TaxiChatImageUploadInput,
   TaxiChatSessionSnapshot,
   TaxiChatSourceData,
 } from '../../model/taxiChatViewData';
@@ -23,6 +24,10 @@ export interface ITaxiChatRepository {
     partyId: string,
     messageText: string,
   ): Promise<TaxiChatSourceData | null>
+  sendImageMessage(
+    partyId: string,
+    imageUrl: string,
+  ): Promise<TaxiChatSourceData | null>
   setCurrentParty(partyId: string): Promise<void>
   subscribeToPartyChat(
     partyId: string,
@@ -33,4 +38,5 @@ export interface ITaxiChatRepository {
     partyId: string,
     enabled: boolean,
   ): Promise<TaxiChatSourceData | null>
+  uploadImage(image: TaxiChatImageUploadInput): Promise<string>
 }

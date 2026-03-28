@@ -8,6 +8,7 @@ import {useAuth} from '@/features/auth';
 import {
   TAXI_CHAT_CURRENT_USER_ID,
   type TaxiChatAccountMessageDraft,
+  type TaxiChatImageUploadInput,
   type TaxiChatSourceData,
   type TaxiChatViewData,
 } from '../model/taxiChatViewData';
@@ -376,6 +377,18 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     [partyId, taxiChatRepository],
   );
 
+  const sendImageMessage = React.useCallback(
+    async (image: TaxiChatImageUploadInput) => {
+      if (!partyId) {
+        return;
+      }
+
+      const imageUrl = await taxiChatRepository.uploadImage(image);
+      await taxiChatRepository.sendImageMessage(partyId, imageUrl);
+    },
+    [partyId, taxiChatRepository],
+  );
+
   const sendAccountMessage = React.useCallback(
     async (payload: TaxiChatAccountMessageDraft) => {
       if (!partyId) {
@@ -450,6 +463,7 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     reload,
     reopenParty,
     sendAccountMessage,
+    sendImageMessage,
     sendMessage,
     startSettlement,
     toggleNotification,

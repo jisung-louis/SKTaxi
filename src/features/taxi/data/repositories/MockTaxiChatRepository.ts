@@ -8,6 +8,7 @@ import {
   TAXI_CHAT_CURRENT_USER_ID,
   TAXI_CHAT_CURRENT_USER_NAME,
   type TaxiChatAccountMessageDraft,
+  type TaxiChatImageUploadInput,
   type TaxiChatSessionSnapshot,
   type TaxiChatSourceData,
 } from '../../model/taxiChatViewData';
@@ -208,6 +209,23 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     });
   }
 
+  async sendImageMessage(
+    partyId: string,
+    imageUrl: string,
+  ): Promise<TaxiChatSourceData | null> {
+    await wait();
+
+    return this.appendMessage(partyId, {
+      createdAt: new Date().toISOString(),
+      id: `${partyId}-image-${Date.now()}`,
+      imageUrl,
+      senderId: TAXI_CHAT_CURRENT_USER_ID,
+      senderName: TAXI_CHAT_CURRENT_USER_NAME,
+      text: imageUrl,
+      type: 'image',
+    });
+  }
+
   async sendAccountMessage(
     partyId: string,
     payload: TaxiChatAccountMessageDraft,
@@ -286,5 +304,10 @@ export class MockTaxiChatRepository implements ITaxiChatRepository {
     party.notificationEnabled = enabled;
     emitPartyChange(partyId);
     return clonePartySource(party);
+  }
+
+  async uploadImage({uri}: TaxiChatImageUploadInput): Promise<string> {
+    await wait();
+    return uri;
   }
 }

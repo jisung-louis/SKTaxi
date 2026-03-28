@@ -87,9 +87,10 @@ const resolveMessageType = (
       return 'arrived';
     case 'END':
       return 'end';
+    case 'IMAGE':
+      return 'image';
     case 'SYSTEM':
       return 'system';
-    case 'IMAGE':
     case 'TEXT':
     default:
       return 'text';
@@ -164,6 +165,7 @@ export const mapTaxiChatMessageDto = (
   arrivalData: mapArrivalData(message.arrivalData),
   createdAt: message.createdAt,
   id: message.id,
+  imageUrl: message.imageUrl ?? undefined,
   senderId: message.senderId ?? 'system',
   senderName: message.senderName ?? '안내',
   text: resolveMessageText(message),

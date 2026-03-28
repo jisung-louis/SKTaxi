@@ -23,6 +23,7 @@ import {
   useScreenEnterAnimation,
   useScreenView,
 } from '@/shared/hooks';
+import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 import type {UserAccountInfo as AccountInfo} from '@/shared/types/user';
 import {ChatHeader} from '@/shared/ui/chat';
 
@@ -128,6 +129,7 @@ export const ChatScreen = () => {
     reload,
     reopenParty,
     sendAccountMessage,
+    sendImageMessage,
     sendMessage,
     startSettlement,
     toggleNotification,
@@ -145,6 +147,7 @@ export const ChatScreen = () => {
   const [sessionAccountInfo, setSessionAccountInfo] =
     React.useState<AccountInfo | null>(null);
   const [sendingAccount, setSendingAccount] = React.useState(false);
+  const [sendingImage, setSendingImage] = React.useState(false);
   const accountInfo = user?.accountInfo ?? user?.account ?? null;
 
   const snapshotAccountInfo = React.useMemo<AccountInfo | null>(() => {
@@ -369,6 +372,34 @@ export const ChatScreen = () => {
     [sendMessage],
   );
 
+  const handlePickImage = React.useCallback(async () => {
+    if (sendingImage) {
+      return;
+    }
+
+    const image = await pickImageAsset();
+
+    if (!image) {
+      return;
+    }
+
+    try {
+      setSendingImage(true);
+      await sendImageMessage({
+        fileName: image.fileName,
+        mimeType: image.mimeType,
+        uri: image.uri,
+      });
+    } catch (sendError) {
+      Alert.alert(
+        '이미지 전송 실패',
+        getErrorMessage(sendError, '이미지를 전송하지 못했습니다.'),
+      );
+    } finally {
+      setSendingImage(false);
+    }
+  }, [sendImageMessage, sendingImage]);
+
   const handleSelectTaxiCallProvider = React.useCallback(
     async (provider: TaxiCallProvider) => {
       if (!data) {
@@ -543,9 +574,13 @@ export const ChatScreen = () => {
               <TaxiChatComposer
                 actionTrayActions={data.actionTrayActions}
                 actionTrayVisible={actionTrayVisible}
+                imageButtonDisabled={sendingImage}
                 keyboardVisible={keyboardVisible}
                 onChangeText={setComposerValue}
                 onPressAction={handleActionTrayAction}
+                onPressImage={() => {
+                  handlePickImage().catch(() => undefined);
+                }}
                 onPressToggleTray={() => {
                   setActionTrayVisible(current => !current);
                 }}

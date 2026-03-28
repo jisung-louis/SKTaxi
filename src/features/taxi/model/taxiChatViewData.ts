@@ -128,10 +128,11 @@ export interface TaxiChatSourceMessageItem {
   avatar?: ChatAvatarViewData;
   createdAt: string;
   id: string;
+  imageUrl?: string;
   senderId: string;
   senderName: string;
   text: string;
-  type: 'text' | 'system' | 'account' | 'arrived' | 'end';
+  type: 'text' | 'image' | 'system' | 'account' | 'arrived' | 'end';
 }
 
 export interface TaxiChatSourceData {
@@ -164,6 +165,8 @@ export interface TaxiChatTextMessageViewData {
   avatar?: ChatAvatarViewData;
   direction: 'incoming' | 'outgoing';
   id: string;
+  imageUrl?: string;
+  messageKind: 'text' | 'image';
   minuteKey: string;
   senderId: string;
   senderName: string;
@@ -229,6 +232,12 @@ export interface TaxiChatViewData {
   };
   roomId: string;
   summary: TaxiChatSummaryViewData;
+}
+
+export interface TaxiChatImageUploadInput {
+  fileName?: string;
+  mimeType?: string;
+  uri: string;
 }
 
 export interface CreateTaxiChatRoomParams {

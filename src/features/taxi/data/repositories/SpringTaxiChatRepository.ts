@@ -6,6 +6,7 @@ import {
   RepositoryError,
   RepositoryErrorCode,
 } from '@/shared/lib/errors';
+import {uploadImage as uploadSharedImage} from '@/shared/api/imageUploadClient';
 import {
   chatSocketClient,
   createNativeStompSocket,
@@ -17,6 +18,7 @@ import {
 import type {TaxiRecruitDraft} from '../../model/taxiRecruitData';
 import type {
   TaxiChatAccountMessageDraft,
+  TaxiChatImageUploadInput,
   TaxiChatSessionSnapshot,
   TaxiChatSourceData,
 } from '../../model/taxiChatViewData';
@@ -190,6 +192,33 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     return state?.source ? clonePartySource(state.source) : null;
   }
 
+  async sendImageMessage(
+    partyId: string,
+    imageUrl: string,
+  ): Promise<TaxiChatSourceData | null> {
+    const trimmedImageUrl = imageUrl.trim();
+
+    if (!trimmedImageUrl) {
+      const state = this.partyStates.get(partyId);
+
+      return state?.source ? clonePartySource(state.source) : null;
+    }
+
+    const client = await this.ensureStompClient();
+
+    client.publish({
+      body: JSON.stringify({
+        imageUrl: trimmedImageUrl,
+        type: 'IMAGE',
+      } satisfies SendChatMessageRequestDto),
+      destination: `/app/chat/${resolveTaxiChatRoomId(partyId)}`,
+    });
+
+    const state = this.partyStates.get(partyId);
+
+    return state?.source ? clonePartySource(state.source) : null;
+  }
+
   async sendAccountMessage(
     partyId: string,
     payload: TaxiChatAccountMessageDraft,
@@ -291,6 +320,21 @@ export class SpringTaxiChatRepository implements ITaxiChatRepository {
     const source = await this.loadPartyChat(partyId, true);
 
     return source ? clonePartySource(source) : null;
+  }
+
+  async uploadImage({
+    fileName,
+    mimeType,
+    uri,
+  }: TaxiChatImageUploadInput): Promise<string> {
+    const response = await uploadSharedImage({
+      context: 'CHAT_IMAGE',
+      fileName,
+      mimeType,
+      uri,
+    });
+
+    return response.url;
   }
 
   private buildSpecialMessageKey(

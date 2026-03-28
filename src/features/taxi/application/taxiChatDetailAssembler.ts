@@ -287,6 +287,8 @@ const buildItems = (
       direction:
         message.senderId === currentUserId ? 'outgoing' : 'incoming',
       id: message.id,
+      imageUrl: message.type === 'image' ? message.imageUrl : undefined,
+      messageKind: message.type === 'image' ? 'image' : 'text',
       minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),
       senderId: message.senderId,
       senderName: message.senderName,

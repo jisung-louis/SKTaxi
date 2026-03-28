@@ -30,9 +30,11 @@ import type {
 interface TaxiChatComposerProps {
   actionTrayActions: TaxiChatActionTrayActionViewData[];
   actionTrayVisible: boolean;
+  imageButtonDisabled?: boolean;
   keyboardVisible: boolean;
   onChangeText: (value: string) => void;
   onPressAction: (actionId: TaxiChatActionTrayActionId) => void;
+  onPressImage: () => void;
   onPressToggleTray: () => void;
   onSend: (value: string) => void;
   placeholder: string;
@@ -123,9 +125,11 @@ const getActionToneStyle = (
 export const TaxiChatComposer = ({
   actionTrayActions,
   actionTrayVisible,
+  imageButtonDisabled = false,
   keyboardVisible,
   onChangeText,
   onPressAction,
+  onPressImage,
   onPressToggleTray,
   onSend,
   placeholder,
@@ -224,9 +228,15 @@ export const TaxiChatComposer = ({
           </AnimatedTouchableOpacity>
         ) : null}
 
-        <View style={styles.attachmentButton}>
+        <TouchableOpacity
+          accessibilityLabel="이미지 보내기"
+          accessibilityRole="button"
+          activeOpacity={imageButtonDisabled ? 1 : 0.82}
+          disabled={imageButtonDisabled}
+          onPress={onPressImage}
+          style={styles.attachmentButton}>
           <Icon color={COLORS.text.muted} name="image-outline" size={18} />
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.inputSurface}>
           <TextInput
@@ -283,7 +293,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 18,
     padding: 0,
   },
   inputSurface: {

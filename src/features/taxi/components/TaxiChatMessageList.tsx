@@ -22,6 +22,7 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 import Button from '@/shared/ui/Button';
+import {MessageImageBubble} from '@/shared/ui/chat/MessageImageBubble';
 
 import type {
   TaxiChatTextMessageViewData,
@@ -498,10 +499,19 @@ export const TaxiChatMessageList = ({
                     {item.timeLabel}
                   </Text>
                 ) : null}
-                <View style={[styles.bubble, styles.outgoingBubble]}>
-                  <Text style={[styles.messageText, styles.outgoingMessageText]}>
-                    {item.text}
-                  </Text>
+                <View
+                  style={[
+                    styles.bubble,
+                    styles.outgoingBubble,
+                    item.messageKind === 'image' ? styles.imageBubble : null,
+                  ]}>
+                  {item.imageUrl ? (
+                    <MessageImageBubble uri={item.imageUrl} />
+                  ) : (
+                    <Text style={[styles.messageText, styles.outgoingMessageText]}>
+                      {item.text}
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -527,8 +537,17 @@ export const TaxiChatMessageList = ({
                   <Text style={styles.senderName}>{item.senderName}</Text>
                 ) : null}
                 <View style={styles.incomingBubbleRow}>
-                  <View style={[styles.bubble, styles.incomingBubble]}>
-                    <Text style={styles.messageText}>{item.text}</Text>
+                  <View
+                    style={[
+                      styles.bubble,
+                      styles.incomingBubble,
+                      item.messageKind === 'image' ? styles.imageBubble : null,
+                    ]}>
+                    {item.imageUrl ? (
+                      <MessageImageBubble uri={item.imageUrl} />
+                    ) : (
+                      <Text style={styles.messageText}>{item.text}</Text>
+                    )}
                   </View>
                   {isGroupEnd ? (
                     <Text style={styles.timeLabel}>{item.timeLabel}</Text>
@@ -838,6 +857,11 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
     paddingHorizontal: 15,
     paddingVertical: 10,
+  },
+  imageBubble: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   contentContainer: {
     flexGrow: 1,
