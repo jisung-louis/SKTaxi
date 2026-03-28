@@ -79,6 +79,7 @@ export interface ChatMessageResponseDto {
   imageUrl?: string | null;
   senderId?: string | null;
   senderName?: string | null;
+  senderPhotoUrl?: string | null;
   text?: string | null;
   type: ChatMessageTypeDto;
 }

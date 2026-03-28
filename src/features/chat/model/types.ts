@@ -43,6 +43,7 @@ export interface ChatMessage {
   text: string;
   senderId: string;
   senderName: string;
+  senderPhotoUrl?: string;
   type?: ChatMessageType;
   createdAt?: unknown;
   clientCreatedAt?: unknown;

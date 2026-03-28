@@ -1,5 +1,6 @@
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
+import {COLORS} from '@/shared/design-system/tokens';
 
 import type {PartyDetailResponseDto} from '../dto/taxiHomeDto';
 import {mapPartyStatusDto} from './taxiPartyMapper';
@@ -163,6 +164,13 @@ export const mapTaxiChatMessageDto = (
 ): TaxiChatSourceMessageItem => ({
   accountData: mapAccountData(message.accountData),
   arrivalData: mapArrivalData(message.arrivalData),
+  avatar: message.senderPhotoUrl
+    ? {
+        backgroundColor: COLORS.border.default,
+        kind: 'image',
+        uri: message.senderPhotoUrl,
+      }
+    : undefined,
   createdAt: message.createdAt,
   id: message.id,
   imageUrl: message.imageUrl ?? undefined,

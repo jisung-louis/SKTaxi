@@ -141,6 +141,7 @@ export const mapChatMessageDto = (
   imageUrl: message.imageUrl ?? undefined,
   senderId: message.senderId ?? 'system',
   senderName: message.senderName ?? '안내',
+  senderPhotoUrl: message.senderPhotoUrl ?? undefined,
   text: resolveMessageText(message),
   type: resolveMessageType(message.type),
 });
