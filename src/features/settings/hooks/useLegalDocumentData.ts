@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {COLORS} from '@/shared/design-system/tokens';
+import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {legalDocumentRepository} from '../data/repositories/legalDocumentRepository';
 import type {
@@ -23,21 +24,15 @@ const resolveBannerIcon = (iconKey: LegalDocumentBannerIconKey) => {
 };
 
 const resolveBannerBackground = (tone: LegalDocumentBannerTone) => {
-  return tone === 'blue'
-    ? COLORS.accent.blueSoft
-    : COLORS.brand.primaryTint;
+  return tone === 'blue' ? COLORS.accent.blueSoft : COLORS.brand.primaryTint;
 };
 
 const resolveBannerTitleColor = (tone: LegalDocumentBannerTone) => {
-  return tone === 'blue'
-    ? '#1E40AF'
-    : COLORS.brand.primaryStrong;
+  return tone === 'blue' ? '#1E40AF' : COLORS.brand.primaryStrong;
 };
 
 const resolveBannerIconColor = (tone: LegalDocumentBannerTone) => {
-  return tone === 'blue'
-    ? COLORS.accent.blue
-    : COLORS.brand.primaryStrong;
+  return tone === 'blue' ? COLORS.accent.blue : COLORS.brand.primaryStrong;
 };
 
 const resolveBannerLineColor = (
@@ -51,7 +46,9 @@ const resolveBannerLineColor = (
   return COLORS.status.success;
 };
 
-const mapScreen = (source: LegalDocumentSource): LegalDocumentScreenViewData => {
+const mapScreen = (
+  source: LegalDocumentSource,
+): LegalDocumentScreenViewData => {
   return {
     id: source.id,
     title: source.title,
@@ -91,7 +88,14 @@ export const useLegalDocumentData = (documentKey: LegalDocumentKey) => {
       setData(mapScreen(source));
     } catch (caughtError) {
       console.error('법적 문서 데이터를 불러오지 못했습니다.', caughtError);
-      setError('문서 정보를 불러오지 못했습니다.');
+      if (
+        caughtError instanceof RepositoryError &&
+        caughtError.code === RepositoryErrorCode.NOT_FOUND
+      ) {
+        setError('문서를 찾을 수 없습니다.');
+      } else {
+        setError('문서 정보를 불러오지 못했습니다.');
+      }
     } finally {
       setLoading(false);
     }

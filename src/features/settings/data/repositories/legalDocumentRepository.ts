@@ -1,3 +1,3 @@
-import {MockLegalDocumentRepository} from './MockLegalDocumentRepository';
+import {SpringLegalDocumentRepository} from './SpringLegalDocumentRepository';
 
-export const legalDocumentRepository = new MockLegalDocumentRepository();
+export const legalDocumentRepository = new SpringLegalDocumentRepository();
