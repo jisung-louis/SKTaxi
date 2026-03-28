@@ -200,11 +200,7 @@ export const ProfileEditScreen = () => {
                 />
               </View>
 
-              <View
-                style={[
-                  styles.fieldBlock,
-                  isDropdownOpen ? styles.dropdownFieldRaised : undefined,
-                ]}>
+              <View style={styles.fieldBlock}>
                 <Text style={styles.fieldLabel}>학과</Text>
                 <SelectionDropdown
                   isOpen={isDropdownOpen}
@@ -213,6 +209,7 @@ export const ProfileEditScreen = () => {
                     setDepartment(value);
                     setDropdownOpen(false);
                   }}
+                  onRequestClose={closeDropdown}
                   onPressTrigger={() => {
                     Keyboard.dismiss();
                     setDropdownOpen(current => !current);
@@ -286,13 +283,9 @@ const styles = StyleSheet.create({
     width: 32,
   },
   formSection: {
-    zIndex: 1,
   },
   fieldBlock: {
     marginBottom: 20,
-  },
-  dropdownFieldRaised: {
-    zIndex: 20,
   },
   fieldLabel: {
     color: COLORS.text.tertiary,

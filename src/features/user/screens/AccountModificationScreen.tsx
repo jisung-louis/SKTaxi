@@ -142,14 +142,12 @@ export const AccountModificationScreen = () => {
             <View style={styles.formSection}>
               <FormField
                 label="은행명"
-                style={[
-                  styles.fieldBlock,
-                  data.isBankDropdownOpen ? styles.bankFieldRaised : undefined,
-                ]}>
+                style={styles.fieldBlock}>
                 <AccountBankDropdown
                   bankNames={ACCOUNT_MANAGEMENT_BANK_NAMES}
                   isOpen={data.isBankDropdownOpen}
                   onPressSelect={selectBank}
+                  onRequestClose={() => setBankDropdownOpen(false)}
                   onPressTrigger={() =>
                     setBankDropdownOpen(!data.isBankDropdownOpen)
                   }
@@ -245,13 +243,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   formSection: {
-    zIndex: 1,
   },
   fieldBlock: {
     marginBottom: 20,
-  },
-  bankFieldRaised: {
-    zIndex: 20,
   },
   input: {
     backgroundColor: COLORS.background.surface,

@@ -7,6 +7,7 @@ interface AccountBankDropdownProps {
   bankNames: string[];
   isOpen: boolean;
   onPressSelect: (bankName: string) => void;
+  onRequestClose: () => void;
   onPressTrigger: () => void;
   selectedBankName: string;
 }
@@ -15,6 +16,7 @@ export const AccountBankDropdown = ({
   bankNames,
   isOpen,
   onPressSelect,
+  onRequestClose,
   onPressTrigger,
   selectedBankName,
 }: AccountBankDropdownProps) => {
@@ -23,6 +25,7 @@ export const AccountBankDropdown = ({
       <SelectionDropdown
         isOpen={isOpen}
         onPressSelect={onPressSelect}
+        onRequestClose={onRequestClose}
         onPressTrigger={onPressTrigger}
         options={bankNames}
         selectedValue={selectedBankName}

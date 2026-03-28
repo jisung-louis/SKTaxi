@@ -233,6 +233,7 @@ export const CompleteProfileScreen = () => {
                   setDepartment(value);
                   setDropdownOpen(false);
                 }}
+                onRequestClose={closeDropdown}
                 onPressTrigger={() => {
                   Keyboard.dismiss();
                   setDropdownOpen(current => !current);
