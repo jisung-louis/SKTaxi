@@ -47,7 +47,6 @@ export const saveCompleteProfile = async ({
     nickname: displayName,
     studentId,
     department,
-    photoUrl: user.photoURL ?? undefined,
   });
 
   await setUserProperties({

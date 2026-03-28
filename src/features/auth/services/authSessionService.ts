@@ -32,7 +32,7 @@ export const buildFallbackUser = (
   displayName: DEFAULT_USER_DISPLAY_NAME,
   studentId: null,
   department: null,
-  photoURL: authUser.photoURL,
+  photoURL: null,
   linkedAccounts: [],
   onboarding: {
     permissionsComplete: localAdjunct.permissionsComplete,
@@ -54,7 +54,7 @@ export const buildAuthenticatedUser = ({
   displayName: memberProfile.nickname || DEFAULT_USER_DISPLAY_NAME,
   studentId: memberProfile.studentId ?? null,
   department: memberProfile.department ?? null,
-  photoURL: memberProfile.photoUrl ?? authUser.photoURL ?? null,
+  photoURL: memberProfile.photoUrl ?? null,
   linkedAccounts: [],
   account: memberProfile.bankAccount,
   accountInfo: memberProfile.bankAccount,

@@ -144,14 +144,14 @@ export const useAuthSession = (): AuthContextValue => {
 
         setState(previous => {
           if (previous.user?.uid === authUser.uid) {
-            return {
-              user: {
-                ...previous.user,
-                email: authUser.email,
-                photoURL: previous.user.photoURL ?? authUser.photoURL ?? null,
-                onboarding: {
-                  permissionsComplete: localAdjunct.permissionsComplete,
-                },
+          return {
+            user: {
+              ...previous.user,
+              email: authUser.email,
+              photoURL: previous.user.photoURL ?? null,
+              onboarding: {
+                permissionsComplete: localAdjunct.permissionsComplete,
+              },
               },
               loading: false,
             };
