@@ -1,3 +1,3 @@
-import { MockAppConfigRepository } from '../repositories/MockAppConfigRepository';
+import {SpringAppConfigRepository} from '../repositories/SpringAppConfigRepository';
 
-export const appConfigRepository = new MockAppConfigRepository();
+export const appConfigRepository = new SpringAppConfigRepository();

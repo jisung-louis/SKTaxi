@@ -7,6 +7,7 @@ export {
   FirestoreAppNoticeRepository,
 } from './data/repositories/FirebaseAppNoticeRepository';
 export {SpringAppNoticeRepository} from './data/repositories/SpringAppNoticeRepository';
+export {SpringAppConfigRepository} from './data/repositories/SpringAppConfigRepository';
 export {
   FirebaseInquiryRepository,
   FirestoreInquiryRepository,
@@ -37,12 +38,6 @@ export {useAppNoticeFeedData} from './hooks/useAppNoticeFeedData';
 export {useLegalDocumentData} from './hooks/useLegalDocumentData';
 export {useInquiryFormData} from './hooks/useInquiryFormData';
 export {useInquiryHistoryData} from './hooks/useInquiryHistoryData';
-export { useSubmitInquiry } from './hooks/useSubmitInquiry';
-export type {
-  InquiryData,
-  UseSubmitInquiryResult,
-} from './hooks/useSubmitInquiry';
-
 export { AppNoticeDetailScreen } from './screens/AppNoticeDetailScreen';
 export { InquiryHistoryScreen } from './screens/InquiryHistoryScreen';
 export { InquiriesScreen } from './screens/InquiriesScreen';
