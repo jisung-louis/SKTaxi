@@ -185,6 +185,7 @@ export const useNoticeHomeData = () => {
   const {
     error: noticeSettingsError,
     loading: noticeSettingsLoading,
+    saving: noticeSettingsSaving,
     settings: noticeSettings,
     updateDetail,
     updateMaster,
@@ -228,6 +229,7 @@ export const useNoticeHomeData = () => {
     noticeSettings,
     noticeSettingsError,
     noticeSettingsLoading,
+    noticeSettingsSaving,
     refresh,
     selectCategory: setSelectedCategoryId,
     updateDetail,

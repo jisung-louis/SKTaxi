@@ -43,6 +43,7 @@ export const NoticeScreen = () => {
     loadingMore,
     markAsRead,
     noticeSettings,
+    noticeSettingsSaving,
     refresh,
     selectCategory,
     updateDetail,
@@ -165,6 +166,7 @@ export const NoticeScreen = () => {
         onClose={() => setPanelVisible(false)}
         onUpdateDetail={updateDetail}
         onUpdateMaster={updateMaster}
+        saving={noticeSettingsSaving}
         visible={panelVisible}
       />
     </SafeAreaView>

@@ -126,6 +126,7 @@ export const ChatScreen = () => {
     error,
     leaveParty,
     loading,
+    notificationTogglePending,
     reload,
     reopenParty,
     sendAccountMessage,
@@ -603,6 +604,7 @@ export const ChatScreen = () => {
                 ? '파티 없애기'
                 : '파티 종료'
             }
+            notificationDisabled={notificationTogglePending}
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}
             onEditParty={() => {

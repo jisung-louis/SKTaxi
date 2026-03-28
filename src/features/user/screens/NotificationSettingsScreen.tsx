@@ -26,7 +26,7 @@ export const NotificationSettingsScreen = () => {
   useScreenView();
 
   const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
-  const {data, error, loading, reload, toggleAll, toggleItem} =
+  const {data, error, loading, reload, saving, toggleAll, toggleItem} =
     useNotificationSettingsScreenData();
 
   return (
@@ -69,6 +69,7 @@ export const NotificationSettingsScreen = () => {
             <SettingsSection style={styles.masterSection}>
               <SettingsRow
                 accessoryType="toggle"
+                disabled={data.master.disabled}
                 iconBackgroundColor={data.master.iconBackgroundColor}
                 iconColor={data.master.iconColor}
                 iconName={data.master.iconName}
@@ -77,6 +78,7 @@ export const NotificationSettingsScreen = () => {
                 subtitle={data.master.subtitle}
                 title={data.master.title}
                 titleWeight="700"
+                toggleDisabled={saving || data.master.disabled}
                 toggleValue={data.master.value}
               />
             </SettingsSection>
@@ -97,6 +99,7 @@ export const NotificationSettingsScreen = () => {
                   subtitleNumberOfLines={2}
                   title={item.title}
                   titleWeight="700"
+                  toggleDisabled={saving || item.disabled}
                   toggleValue={item.value}
                 />
               ))}

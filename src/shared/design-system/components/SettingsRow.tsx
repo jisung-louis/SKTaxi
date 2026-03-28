@@ -30,6 +30,7 @@ interface SettingsRowProps {
   subtitleNumberOfLines?: number;
   title: string;
   titleWeight?: '500' | '700';
+  toggleDisabled?: boolean;
   toggleValue?: boolean;
   valueLabel?: string;
 }
@@ -50,6 +51,7 @@ export const SettingsRow = ({
   subtitleNumberOfLines = 1,
   title,
   titleWeight = '500',
+  toggleDisabled,
   toggleValue = false,
   valueLabel,
 }: SettingsRowProps) => {
@@ -110,7 +112,7 @@ export const SettingsRow = ({
       {accessoryType === 'toggle' ? (
         <ToggleSwitch
           accessibilityLabel={accessibilityLabel ?? title}
-          disabled={disabled}
+          disabled={toggleDisabled ?? disabled}
           onValueChange={onToggle}
           value={toggleValue}
         />

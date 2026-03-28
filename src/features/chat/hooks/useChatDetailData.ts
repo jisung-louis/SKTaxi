@@ -39,18 +39,50 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     hasJoined,
   );
   const [membershipLoading, setMembershipLoading] = React.useState(false);
+  const [notificationTogglePending, setNotificationTogglePending] =
+    React.useState(false);
+  const [optimisticNotificationEnabled, setOptimisticNotificationEnabled] =
+    React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    setNotificationTogglePending(false);
+    setOptimisticNotificationEnabled(null);
+  }, [chatRoomId]);
+
+  React.useEffect(() => {
+    if (optimisticNotificationEnabled === null || !chatRoom) {
+      return;
+    }
+
+    const actualNotificationEnabled = chatRoom.isMuted !== true;
+
+    if (actualNotificationEnabled === optimisticNotificationEnabled) {
+      setOptimisticNotificationEnabled(null);
+    }
+  }, [chatRoom, optimisticNotificationEnabled]);
+
+  const effectiveChatRoom = React.useMemo(() => {
+    if (!chatRoom || optimisticNotificationEnabled === null) {
+      return chatRoom;
+    }
+
+    return {
+      ...chatRoom,
+      isMuted: !optimisticNotificationEnabled,
+    };
+  }, [chatRoom, optimisticNotificationEnabled]);
 
   const data = React.useMemo(() => {
-    if (!chatRoom) {
+    if (!effectiveChatRoom) {
       return null;
     }
 
     return buildChatDetailViewData({
       currentUserId: user?.uid ?? 'current-user',
       messages,
-      room: chatRoom,
+      room: effectiveChatRoom,
     });
-  }, [chatRoom, messages, user?.uid]);
+  }, [effectiveChatRoom, messages, user?.uid]);
 
   const loading = roomLoading || Boolean(chatRoom?.isJoined && messagesLoading);
   const notFound = Boolean(chatRoomId && !loading && !roomError && !chatRoom);
@@ -103,11 +135,32 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
       throw new Error('참여 중인 채팅방만 알림 설정을 변경할 수 있습니다.');
     }
 
-    await updateNotificationSetting(
-      chatRoomId,
-      chatRoom.isMuted === true,
-    );
-  }, [chatRoom, chatRoomId, updateNotificationSetting]);
+    if (notificationTogglePending) {
+      return;
+    }
+
+    const currentNotificationEnabled =
+      optimisticNotificationEnabled ?? chatRoom.isMuted !== true;
+    const nextNotificationEnabled = !currentNotificationEnabled;
+
+    setNotificationTogglePending(true);
+    setOptimisticNotificationEnabled(nextNotificationEnabled);
+
+    try {
+      await updateNotificationSetting(chatRoomId, nextNotificationEnabled);
+    } catch (toggleError) {
+      setOptimisticNotificationEnabled(null);
+      throw toggleError;
+    } finally {
+      setNotificationTogglePending(false);
+    }
+  }, [
+    chatRoom,
+    chatRoomId,
+    notificationTogglePending,
+    optimisticNotificationEnabled,
+    updateNotificationSetting,
+  ]);
 
   const joinRoom = React.useCallback(async () => {
     if (!chatRoomId || !chatRoom || chatRoom.isJoined) {
@@ -144,6 +197,7 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     leaveRoom,
     loading,
     membershipLoading,
+    notificationTogglePending,
     notFound,
     reload,
     sendMessage,

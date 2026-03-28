@@ -35,6 +35,7 @@ interface NoticeSettingsPanelProps {
   };
   onUpdateMaster: (enabled: boolean) => void;
   onUpdateDetail: (key: string, enabled: boolean) => void;
+  saving?: boolean;
 }
 
 export function NoticeSettingsPanel({
@@ -43,6 +44,7 @@ export function NoticeSettingsPanel({
   noticeSettings,
   onUpdateMaster,
   onUpdateDetail,
+  saving = false,
 }: NoticeSettingsPanelProps) {
   const insets = useSafeAreaInsets();
 
@@ -81,6 +83,7 @@ export function NoticeSettingsPanel({
                 <Text style={styles.itemLabel}>전체 공지 알림</Text>
                 <ToggleSwitch
                   accessibilityLabel="전체 공지 알림"
+                  disabled={saving}
                   onValueChange={onUpdateMaster}
                   size="large"
                   value={noticeSettings.noticeNotifications}
@@ -108,7 +111,7 @@ export function NoticeSettingsPanel({
                       </Text>
                       <ToggleSwitch
                         accessibilityLabel={category}
-                        disabled={disabled}
+                        disabled={saving || disabled}
                         onValueChange={nextValue => onUpdateDetail(key, nextValue)}
                         size="large"
                         value={enabled}

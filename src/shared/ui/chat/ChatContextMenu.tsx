@@ -24,6 +24,7 @@ import {
 } from '@/shared/design-system/tokens';
 
 export interface ChatContextMenuToggleItem {
+  disabled?: boolean
   iconName: string
   id: string
   label: string
@@ -116,9 +117,14 @@ export const ChatContextMenu = ({
               {item.type === 'toggle' ? (
                 <TouchableOpacity
                   accessibilityRole="button"
-                  activeOpacity={0.82}
+                  accessibilityState={{disabled: item.disabled}}
+                  activeOpacity={item.disabled ? 1 : 0.82}
+                  disabled={item.disabled}
                   onPress={item.onPress}
-                  style={styles.toggleRow}>
+                  style={[
+                    styles.toggleRow,
+                    item.disabled ? styles.disabledRow : null,
+                  ]}>
                   <View style={styles.rowLabelGroup}>
                     <Icon
                       color={COLORS.text.secondary}
@@ -128,6 +134,7 @@ export const ChatContextMenu = ({
                     <Text style={styles.rowLabel}>{item.label}</Text>
                   </View>
                   <ToggleSwitch
+                    disabled={item.disabled}
                     pressable={false}
                     size="compact"
                     value={item.value}
@@ -190,6 +197,9 @@ const styles = StyleSheet.create({
   },
   dangerLabel: {
     color: COLORS.status.danger,
+  },
+  disabledRow: {
+    opacity: 0.56,
   },
   divider: {
     backgroundColor: COLORS.border.subtle,

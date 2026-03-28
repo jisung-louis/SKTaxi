@@ -7,6 +7,7 @@ interface TaxiChatHeaderMenuProps {
   canEditParty: boolean;
   canLeave: boolean;
   destructiveActionLabel: string;
+  notificationDisabled?: boolean;
   notificationEnabled: boolean;
   onPressDestructiveAction: () => void;
   onClose: () => void;
@@ -21,6 +22,7 @@ export const TaxiChatHeaderMenu = ({
   canEditParty,
   canLeave,
   destructiveActionLabel,
+  notificationDisabled = false,
   notificationEnabled,
   onPressDestructiveAction,
   onClose,
@@ -31,6 +33,7 @@ export const TaxiChatHeaderMenu = ({
 }: TaxiChatHeaderMenuProps) => {
   const items = [
     {
+      disabled: notificationDisabled,
       iconName: 'notifications-outline',
       id: 'notification',
       label: '알림',

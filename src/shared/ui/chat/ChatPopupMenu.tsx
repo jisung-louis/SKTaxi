@@ -6,6 +6,7 @@ interface ChatPopupMenuProps {
   canReport?: boolean
   canToggleNotification?: boolean
   leaveLabel: string
+  notificationDisabled?: boolean
   notificationEnabled: boolean
   onClose: () => void
   onLeave?: () => void
@@ -20,6 +21,7 @@ export const ChatPopupMenu = ({
   canReport = false,
   canToggleNotification = true,
   leaveLabel,
+  notificationDisabled = false,
   notificationEnabled,
   onClose,
   onLeave,
@@ -36,6 +38,7 @@ export const ChatPopupMenu = ({
             iconName: 'notifications-outline',
             id: 'notification',
             label: '알림',
+            disabled: notificationDisabled,
             onPress: onToggleNotification,
             type: 'toggle' as const,
             value: notificationEnabled,

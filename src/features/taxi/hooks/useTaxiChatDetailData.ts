@@ -80,23 +80,50 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
   const [actionInFlightId, setActionInFlightId] = React.useState<string | null>(
     null,
   );
+  const [notificationTogglePending, setNotificationTogglePending] =
+    React.useState(false);
+  const [optimisticNotificationEnabled, setOptimisticNotificationEnabled] =
+    React.useState<boolean | null>(null);
   const hasDataRef = React.useRef(false);
   const isLeavingRef = React.useRef(false);
 
   React.useEffect(() => {
     isLeavingRef.current = false;
+    setNotificationTogglePending(false);
+    setOptimisticNotificationEnabled(null);
   }, [partyId]);
 
+  React.useEffect(() => {
+    if (optimisticNotificationEnabled === null || !sourceData) {
+      return;
+    }
+
+    if (sourceData.notificationEnabled === optimisticNotificationEnabled) {
+      setOptimisticNotificationEnabled(null);
+    }
+  }, [optimisticNotificationEnabled, sourceData]);
+
+  const effectiveSourceData = React.useMemo(() => {
+    if (!sourceData || optimisticNotificationEnabled === null) {
+      return sourceData;
+    }
+
+    return {
+      ...sourceData,
+      notificationEnabled: optimisticNotificationEnabled,
+    };
+  }, [optimisticNotificationEnabled, sourceData]);
+
   const data = React.useMemo<TaxiChatViewData | null>(() => {
-    if (!sourceData) {
+    if (!effectiveSourceData) {
       return null;
     }
 
     return buildTaxiChatViewData({
       currentUserId,
-      partyChat: sourceData,
+      partyChat: effectiveSourceData,
     });
-  }, [currentUserId, sourceData]);
+  }, [currentUserId, effectiveSourceData]);
 
   React.useEffect(() => {
     hasDataRef.current = sourceData !== null;
@@ -437,17 +464,43 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
       return;
     }
 
-    const nextPartyChat = await taxiChatRepository.updateNotificationSetting(
-      partyId,
-      !sourceData.notificationEnabled,
-    );
-
-    if (!nextPartyChat) {
+    if (notificationTogglePending) {
       return;
     }
 
-    applyPartyChat(nextPartyChat);
-  }, [applyPartyChat, partyId, sourceData, taxiChatRepository]);
+    const currentNotificationEnabled =
+      optimisticNotificationEnabled ?? sourceData.notificationEnabled;
+    const nextNotificationEnabled = !currentNotificationEnabled;
+
+    setNotificationTogglePending(true);
+    setOptimisticNotificationEnabled(nextNotificationEnabled);
+
+    try {
+      const nextPartyChat = await taxiChatRepository.updateNotificationSetting(
+        partyId,
+        nextNotificationEnabled,
+      );
+
+      if (nextPartyChat) {
+        applyPartyChat(nextPartyChat);
+      } else {
+        await refreshPartySnapshot();
+      }
+    } catch (toggleError) {
+      setOptimisticNotificationEnabled(null);
+      throw toggleError;
+    } finally {
+      setNotificationTogglePending(false);
+    }
+  }, [
+    applyPartyChat,
+    notificationTogglePending,
+    optimisticNotificationEnabled,
+    partyId,
+    refreshPartySnapshot,
+    sourceData,
+    taxiChatRepository,
+  ]);
 
   return {
     actionInFlightId,
@@ -460,6 +513,7 @@ export const useTaxiChatDetailData = (partyId: string | undefined) => {
     kickMember,
     leaveParty,
     loading,
+    notificationTogglePending,
     reload,
     reopenParty,
     sendAccountMessage,

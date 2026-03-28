@@ -158,11 +158,62 @@ const mapScreen = (
   };
 };
 
+const applyToggleAllOptimistically = (
+  previous: NotificationSettingsScreenViewData,
+  enabled: boolean,
+): NotificationSettingsScreenViewData => ({
+  items: previous.items.map(item => ({
+    ...item,
+    disabled: !enabled,
+    value: enabled,
+  })),
+  master: {
+    ...previous.master,
+    value: enabled,
+  },
+});
+
+const applyToggleItemOptimistically = (
+  previous: NotificationSettingsScreenViewData,
+  key: NotificationSettingKey,
+  enabled: boolean,
+): NotificationSettingsScreenViewData => {
+  const nextItems = previous.items.map(item =>
+    item.key === key
+      ? {
+          ...item,
+          value: enabled,
+        }
+      : item,
+  );
+  const nextMasterValue = nextItems.some(item => item.value);
+
+  return {
+    items: nextItems.map(item => ({
+      ...item,
+      disabled: !nextMasterValue,
+    })),
+    master: {
+      ...previous.master,
+      value: nextMasterValue,
+    },
+  };
+};
+
 export const useNotificationSettingsScreenData = () => {
   const [data, setData] =
     React.useState<NotificationSettingsScreenViewData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [saving, setSaving] = React.useState(false);
+  const dataRef = React.useRef<NotificationSettingsScreenViewData | null>(null);
+  const stableDataRef =
+    React.useRef<NotificationSettingsScreenViewData | null>(null);
+  const savingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -171,7 +222,9 @@ export const useNotificationSettingsScreenData = () => {
     try {
       const source =
         await notificationSettingsScreenRepository.getNotificationSettings();
-      setData(mapScreen(source));
+      const nextData = mapScreen(source);
+      stableDataRef.current = nextData;
+      setData(nextData);
     } catch (caughtError) {
       console.error('알림 설정 데이터를 불러오지 못했습니다.', caughtError);
       setError('알림 설정을 불러오지 못했습니다.');
@@ -185,30 +238,70 @@ export const useNotificationSettingsScreenData = () => {
   }, [load]);
 
   const toggleAll = React.useCallback(async (enabled: boolean) => {
+    if (savingRef.current || !dataRef.current) {
+      return;
+    }
+
+    const previousData = stableDataRef.current ?? dataRef.current;
+    const optimisticData = applyToggleAllOptimistically(previousData, enabled);
+
+    savingRef.current = true;
+    setSaving(true);
+    setError(null);
+    setData(optimisticData);
+
     try {
       const source =
         await notificationSettingsScreenRepository.updateAllNotifications(
           enabled,
         );
-      setData(mapScreen(source));
+      const nextData = mapScreen(source);
+      stableDataRef.current = nextData;
+      setData(nextData);
     } catch (caughtError) {
       console.error('전체 알림 설정을 변경하지 못했습니다.', caughtError);
       setError('전체 알림 설정 변경에 실패했습니다.');
+      setData(previousData);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
   }, []);
 
   const toggleItem = React.useCallback(
     async (key: NotificationSettingKey, enabled: boolean) => {
+      if (savingRef.current || !dataRef.current) {
+        return;
+      }
+
+      const previousData = stableDataRef.current ?? dataRef.current;
+      const optimisticData = applyToggleItemOptimistically(
+        previousData,
+        key,
+        enabled,
+      );
+
+      savingRef.current = true;
+      setSaving(true);
+      setError(null);
+      setData(optimisticData);
+
       try {
         const source =
           await notificationSettingsScreenRepository.updateNotificationSetting(
             key,
             enabled,
           );
-        setData(mapScreen(source));
+        const nextData = mapScreen(source);
+        stableDataRef.current = nextData;
+        setData(nextData);
       } catch (caughtError) {
         console.error('개별 알림 설정을 변경하지 못했습니다.', caughtError);
         setError('개별 알림 설정 변경에 실패했습니다.');
+        setData(previousData);
+      } finally {
+        savingRef.current = false;
+        setSaving(false);
       }
     },
     [],
@@ -219,6 +312,7 @@ export const useNotificationSettingsScreenData = () => {
     error,
     loading,
     reload: load,
+    saving,
     toggleAll,
     toggleItem,
   };

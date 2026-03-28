@@ -56,6 +56,7 @@ export const ChatDetailScreen = () => {
     leaveRoom,
     loading,
     membershipLoading,
+    notificationTogglePending,
     notFound,
     reload,
     sendMessage,
@@ -304,6 +305,7 @@ export const ChatDetailScreen = () => {
             canReport={data.menu.canReport}
             canToggleNotification={data.menu.canToggleNotification}
             leaveLabel={data.menu.leaveLabel}
+            notificationDisabled={notificationTogglePending}
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}
             onLeave={data.menu.canLeave ? handleLeave : undefined}
