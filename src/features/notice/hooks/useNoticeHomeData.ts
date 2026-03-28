@@ -2,10 +2,10 @@ import React from 'react';
 
 import {formatKoreanRelativeTime} from '@/shared/lib/date';
 
+import {NOTICE_CATEGORIES} from '../model/constants';
 import type {Notice} from '../model/types';
 import {isNoticeRead} from '../model/selectors';
 import type {
-  NoticeHomeCategoryDefinition,
   NoticeHomeCategoryId,
   NoticeHomeNoticeItemViewData,
   NoticeHomeViewData,
@@ -16,45 +16,6 @@ import {
   getNoticeCategoryDisplayLabel,
   getNoticeCategoryTone,
 } from '../utils/noticePresentation';
-
-const NOTICE_HOME_CATEGORIES: NoticeHomeCategoryDefinition[] = [
-  {
-    id: 'all',
-    label: '전체',
-    repositoryCategory: '전체',
-    sourceCategories: [],
-  },
-  {
-    id: 'academic',
-    label: '학사',
-    repositoryCategory: '학사',
-    sourceCategories: ['학사'],
-  },
-  {
-    id: 'scholarship',
-    label: '장학',
-    repositoryCategory: '장학/등록/학자금',
-    sourceCategories: ['장학/등록/학자금'],
-  },
-  {
-    id: 'career',
-    label: '취업',
-    repositoryCategory: '취업/진로개발/창업',
-    sourceCategories: ['취업/진로개발/창업'],
-  },
-  {
-    id: 'event',
-    label: '행사',
-    repositoryCategory: '공모/행사',
-    sourceCategories: ['공모/행사'],
-  },
-  {
-    id: 'facility',
-    label: '시설',
-    repositoryCategory: '전체',
-    sourceCategories: ['일반', '생활관', '입찰구매정보'],
-  },
-];
 
 const mapNoticeToViewData = (
   notice: Notice,
@@ -96,11 +57,6 @@ const buildNoticeHomeViewData = ({
   unreadCount: number;
   userJoinedAt: unknown;
 }): NoticeHomeViewData => {
-  const selectedCategory =
-    NOTICE_HOME_CATEGORIES.find(
-      category => category.id === selectedCategoryId,
-    ) ?? NOTICE_HOME_CATEGORIES[0];
-
   return {
     banner: {
       actionLabel: unreadCount > 0 ? '보기' : undefined,
@@ -111,13 +67,13 @@ const buildNoticeHomeViewData = ({
       hasUnread: unreadCount > 0,
       title: '읽지 않은 공지',
     },
-    categoryChips: NOTICE_HOME_CATEGORIES.map(category => ({
-      id: category.id,
-      label: category.label,
-      selected: category.id === selectedCategoryId,
+    categoryChips: NOTICE_CATEGORIES.map(category => ({
+      id: category,
+      label: category,
+      selected: category === selectedCategoryId,
     })),
     emptyState: {
-      description: `${selectedCategory.label} 카테고리의 공지가 아직 없습니다.`,
+      description: `${selectedCategoryId} 카테고리의 공지가 아직 없습니다.`,
       title: '공지사항이 없습니다',
     },
     firstUnreadNoticeId,
@@ -132,19 +88,9 @@ const buildNoticeHomeViewData = ({
   };
 };
 
-const getSelectedCategoryDefinition = (
-  selectedCategoryId: NoticeHomeCategoryId,
-) =>
-  NOTICE_HOME_CATEGORIES.find(category => category.id === selectedCategoryId) ??
-  NOTICE_HOME_CATEGORIES[0];
-
 export const useNoticeHomeData = () => {
   const [selectedCategoryId, setSelectedCategoryId] =
-    React.useState<NoticeHomeCategoryId>('all');
-  const selectedCategory = React.useMemo(
-    () => getSelectedCategoryDefinition(selectedCategoryId),
-    [selectedCategoryId],
-  );
+    React.useState<NoticeHomeCategoryId>('전체');
 
   const {
     error,
@@ -159,7 +105,7 @@ export const useNoticeHomeData = () => {
     unreadCount,
     userJoinedAt,
     userJoinedAtLoaded,
-  } = useNotices(selectedCategory.repositoryCategory);
+  } = useNotices(selectedCategoryId);
   const {
     error: noticeSettingsError,
     loading: noticeSettingsLoading,

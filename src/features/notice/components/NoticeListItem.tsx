@@ -16,6 +16,11 @@ const getToneStyles = (tone: NoticeHomeNoticeItemViewData['categoryTone']) => {
         backgroundColor: COLORS.accent.blueSoft,
         textColor: COLORS.accent.blue,
       };
+    case 'green':
+      return {
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
+      };
     case 'purple':
       return {
         backgroundColor: COLORS.accent.purpleSoft,

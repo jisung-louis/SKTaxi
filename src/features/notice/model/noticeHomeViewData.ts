@@ -1,19 +1,10 @@
-export type NoticeHomeCategoryId =
-  | 'all'
-  | 'academic'
-  | 'scholarship'
-  | 'career'
-  | 'event'
-  | 'facility';
+import type {ContentDetailBadgeTone} from '@/shared/types/contentDetailViewData';
 
-export type NoticeHomeTone = 'blue' | 'purple' | 'orange' | 'pink' | 'gray';
+import type {NoticeCategory} from './constants';
 
-export interface NoticeHomeCategoryDefinition {
-  id: NoticeHomeCategoryId;
-  label: string;
-  repositoryCategory: string;
-  sourceCategories: string[];
-}
+export type NoticeHomeCategoryId = NoticeCategory;
+
+export type NoticeHomeTone = ContentDetailBadgeTone;
 
 export interface NoticeHomeCategoryChipViewData {
   id: NoticeHomeCategoryId;

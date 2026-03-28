@@ -18,6 +18,11 @@ const getToneStyles = (tone: ReturnType<typeof getNoticeCategoryTone>) => {
         backgroundColor: COLORS.accent.blueSoft,
         textColor: COLORS.accent.blue,
       };
+    case 'green':
+      return {
+        backgroundColor: COLORS.brand.primaryTint,
+        textColor: COLORS.brand.primaryStrong,
+      };
     case 'purple':
       return {
         backgroundColor: COLORS.accent.purpleSoft,

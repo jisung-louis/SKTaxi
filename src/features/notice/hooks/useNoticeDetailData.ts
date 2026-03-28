@@ -13,39 +13,13 @@ import type {
 
 import {normalizeNoticeHtml} from '../model/selectors';
 import type {Notice, NoticeCommentTreeNode} from '../model/types';
+import {
+  getNoticeCategoryDisplayLabel,
+  getNoticeCategoryTone,
+} from '../utils/noticePresentation';
 import {useNoticeRepository} from './useNoticeRepository';
 
-const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
-  '공모/행사': '행사',
-  '장학/등록/학자금': '장학',
-  '취업/진로개발/창업': '취업',
-  생활관: '시설',
-  시설: '시설',
-  일반: '시설',
-  입찰구매정보: '시설',
-  학사: '학사',
-};
-
-const CATEGORY_TONE_MAP: Record<
-  string,
-  ContentDetailViewData['metaBadges'][number]['tone']
-> = {
-  시설: 'gray',
-  장학: 'purple',
-  취업: 'orange',
-  행사: 'pink',
-  학사: 'blue',
-};
-
 const RECENT_NOTICE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-const toCategoryLabel = (category: string) =>
-  CATEGORY_DISPLAY_LABEL_MAP[category] ?? category;
-
-const getCategoryTone = (
-  categoryLabel: string,
-): ContentDetailViewData['metaBadges'][number]['tone'] =>
-  CATEGORY_TONE_MAP[categoryLabel] ?? 'gray';
 
 interface FlattenedNoticeCommentEntry {
   comment: NoticeCommentTreeNode;
@@ -199,8 +173,7 @@ const updateCommentTree = (
   updater: (comment: NoticeCommentTreeNode) => NoticeCommentTreeNode,
 ): NoticeCommentTreeNode[] =>
   comments.map(comment => {
-    const nextComment =
-      comment.id === commentId ? updater(comment) : comment;
+    const nextComment = comment.id === commentId ? updater(comment) : comment;
 
     return {
       ...nextComment,
@@ -232,7 +205,7 @@ const toViewData = (
   notice: Notice,
   comments: NoticeDetailCommentItem[],
 ): ContentDetailViewData => {
-  const categoryLabel = toCategoryLabel(notice.category);
+  const categoryLabel = getNoticeCategoryDisplayLabel(notice.category);
 
   return {
     authorLabel: notice.author,
@@ -250,7 +223,7 @@ const toViewData = (
       {
         id: `${notice.id}-category`,
         label: categoryLabel,
-        tone: getCategoryTone(categoryLabel),
+        tone: getNoticeCategoryTone(categoryLabel),
       },
       ...(isRecentNotice(notice.postedAt)
         ? [
@@ -690,7 +663,11 @@ export const useNoticeDetailData = (noticeId?: string) => {
         entry => entry.comment.id === commentId,
       )?.comment;
 
-      if (!targetComment || !targetComment.isAuthor || targetComment.isDeleted) {
+      if (
+        !targetComment ||
+        !targetComment.isAuthor ||
+        targetComment.isDeleted
+      ) {
         return;
       }
 
