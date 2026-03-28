@@ -132,6 +132,14 @@ const formatRoomActivityLabel = (timestamp: unknown) => {
   return format(new Date(millis), 'M월 d일 a h:mm', {locale: ko});
 };
 
+const formatPreviewLastMessageText = (room: ChatRoom) => {
+  if (room.lastMessage?.type === 'image') {
+    return '사진을 보냈어요.';
+  }
+
+  return room.lastMessage?.text?.trim() || '아직 메시지가 없어요.';
+};
+
 export const buildChatDetailViewData = ({
   currentUserId,
   messages,
@@ -159,8 +167,7 @@ export const buildChatDetailViewData = ({
         helperText:
           '참여하기를 누르면 지난 메시지 이력과 실시간 요약을 바로 받을 수 있어요.',
         joinLabel: '참여하기',
-        lastMessageText:
-          room.lastMessage?.text?.trim() || '아직 메시지가 없어요.',
+        lastMessageText: formatPreviewLastMessageText(room),
         memberCountLabel: `${room.memberCount.toLocaleString('ko-KR')}명 참여 중`,
         statusLabel: '미참여 공개 채팅방',
         timeLabel: formatRoomActivityLabel(
