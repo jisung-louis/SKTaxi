@@ -33,7 +33,7 @@ export const UserNoticeBookmarkListItem = ({
       </View>
 
       <Text style={styles.title}>{item.title}</Text>
-      <Text numberOfLines={1} style={styles.excerpt}>
+      <Text numberOfLines={3} style={styles.excerpt}>
         {item.excerpt}
       </Text>
     </TouchableOpacity>
