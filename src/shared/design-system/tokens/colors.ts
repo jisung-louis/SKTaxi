@@ -17,6 +17,7 @@ export const COLORS = {
     inverse: '#FFFFFF',
   },
   border: {
+    image: '#A0AEC0',
     subtle: '#F3F4F6',
     default: '#E5E7EB',
     accent: '#BBF7D0',

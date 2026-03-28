@@ -25,6 +25,14 @@ const getRoomGroup = (room: ChatRoom) => {
   }
 };
 
+const formatLastMessagePreview = (room: ChatRoom) => {
+  if (room.lastMessage?.type === 'image') {
+    return '사진을 보냈어요.';
+  }
+
+  return room.lastMessage?.text?.trim() || '';
+};
+
 const sortRooms = (left: ChatRoom, right: ChatRoom) => {
   const groupDiff = getRoomGroup(left) - getRoomGroup(right);
 
@@ -52,7 +60,7 @@ export const buildCommunityChatRoomSourceItems = (
       description: room.description?.trim() || '채팅방 소개가 아직 없어요.',
       id: room.id ?? room.name,
       isJoined: room.isJoined === true,
-      lastMessageText: room.lastMessage?.text?.trim() || '',
+      lastMessageText: formatLastMessagePreview(room),
       memberCount: room.memberCount,
       title: room.name,
       tone: room.type === 'party' ? 'custom' : room.type,

@@ -552,6 +552,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   viewerImage: {
+    borderRadius: RADIUS.lg,
     maxHeight: '100%',
     maxWidth: '100%',
   },

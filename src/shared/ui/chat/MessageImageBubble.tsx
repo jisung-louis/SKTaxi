@@ -1,11 +1,14 @@
 import React from 'react';
 import {
   Image,
-  Linking,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 
+import {
+  ImageLightboxModal,
+  type ImageLightboxItem,
+} from '@/shared/design-system/components';
 import {COLORS, RADIUS} from '@/shared/design-system/tokens';
 
 const MAX_LANDSCAPE_WIDTH = 220;
@@ -13,6 +16,7 @@ const MAX_PORTRAIT_WIDTH = 180;
 
 export const MessageImageBubble = ({uri}: {uri: string}) => {
   const [aspectRatio, setAspectRatio] = React.useState(1);
+  const [viewerVisible, setViewerVisible] = React.useState(false);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -40,35 +44,58 @@ export const MessageImageBubble = ({uri}: {uri: string}) => {
 
   const resolvedWidth =
     aspectRatio >= 1 ? MAX_LANDSCAPE_WIDTH : MAX_PORTRAIT_WIDTH;
+  const imageItems = React.useMemo<ImageLightboxItem[]>(
+    () => [
+      {
+        aspectRatio,
+        id: uri,
+        source: {uri},
+      },
+    ],
+    [aspectRatio, uri],
+  );
 
   return (
-    <TouchableOpacity
-      accessibilityLabel="이미지 메시지 열기"
-      accessibilityRole="button"
-      activeOpacity={0.92}
-      onPress={() => {
-        Linking.openURL(uri).catch(() => undefined);
-      }}>
-      <Image
-        resizeMode="cover"
-        source={{uri}}
-        style={[
-          styles.image,
-          {
-            aspectRatio,
-            width: resolvedWidth,
-          },
-        ]}
+    <>
+      <TouchableOpacity
+        accessibilityLabel="이미지 메시지 크게 보기"
+        accessibilityRole="button"
+        activeOpacity={0.92}
+        onPress={() => {
+          setViewerVisible(true);
+        }}>
+        <Image
+          resizeMode="cover"
+          source={{uri}}
+          style={[
+            styles.image,
+            {
+              aspectRatio,
+              width: resolvedWidth,
+            },
+          ]}
+        />
+      </TouchableOpacity>
+
+      <ImageLightboxModal
+        images={imageItems}
+        initialIndex={0}
+        onRequestClose={() => {
+          setViewerVisible(false);
+        }}
+        visible={viewerVisible}
       />
-    </TouchableOpacity>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   image: {
     backgroundColor: COLORS.background.subtle,
-    borderRadius: RADIUS.xl,
+    borderRadius: RADIUS.md,
     maxHeight: 260,
     minHeight: 140,
+    borderWidth: 1,
+    borderColor: COLORS.border.image,
   },
 });
