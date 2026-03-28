@@ -47,10 +47,25 @@ const getCategoryTone = (
 ): ContentDetailViewData['metaBadges'][number]['tone'] =>
   CATEGORY_TONE_MAP[categoryLabel] ?? 'gray';
 
-const flattenComments = (
+interface FlattenedNoticeCommentEntry {
+  comment: NoticeCommentTreeNode;
+  parent: NoticeCommentTreeNode | null;
+}
+
+const flattenCommentEntries = (
   comments: NoticeCommentTreeNode[],
-): NoticeCommentTreeNode[] =>
-  comments.flatMap(comment => [comment, ...flattenComments(comment.replies)]);
+  parent: NoticeCommentTreeNode | null = null,
+): FlattenedNoticeCommentEntry[] =>
+  comments.flatMap(comment => [
+    {
+      comment,
+      parent,
+    },
+    ...flattenCommentEntries(comment.replies, comment),
+  ]);
+
+const countComments = (comments: NoticeCommentTreeNode[]) =>
+  flattenCommentEntries(comments).length;
 
 const decodeHtmlEntities = (value: string) =>
   value
@@ -170,25 +185,52 @@ const getCommentAuthorLabel = (comment: NoticeCommentTreeNode) => {
   return `익명${comment.anonymousOrder ?? ''}`;
 };
 
+const getReplyTargetLabel = (comment: NoticeCommentTreeNode) => {
+  if (comment.isDeleted) {
+    return '삭제된 댓글/답글에 답글';
+  }
+
+  return `${getCommentAuthorLabel(comment)} 님에게 답글`;
+};
+
+const updateCommentTree = (
+  comments: NoticeCommentTreeNode[],
+  commentId: string,
+  updater: (comment: NoticeCommentTreeNode) => NoticeCommentTreeNode,
+): NoticeCommentTreeNode[] =>
+  comments.map(comment => {
+    const nextComment =
+      comment.id === commentId ? updater(comment) : comment;
+
+    return {
+      ...nextComment,
+      replies: updateCommentTree(nextComment.replies, commentId, updater),
+    };
+  });
+
 export interface NoticeDetailCommentItem extends ContentDetailCommentViewData {
   isEditable: boolean;
 }
 
 const toCommentItems = (
-  comments: NoticeCommentTreeNode[],
+  comments: FlattenedNoticeCommentEntry[],
 ): NoticeDetailCommentItem[] =>
-  flattenComments(comments).map(comment => ({
+  comments.map(({comment, parent}) => ({
     authorLabel: getCommentAuthorLabel(comment),
     body: comment.content,
     dateLabel: formatKoreanAbsoluteDate(comment.createdAt),
     id: comment.id,
-    isEditable: Boolean(comment.isAuthor),
-    likeCount: 0,
+    isDeleted: Boolean(comment.isDeleted),
+    isEditable: Boolean(comment.isAuthor && !comment.isDeleted),
+    isLiked: Boolean(comment.isLiked),
+    isReply: Boolean(comment.parentId),
+    likeCount: comment.likeCount ?? 0,
+    replyTargetLabel: parent ? getReplyTargetLabel(parent) : undefined,
   }));
 
 const toViewData = (
   notice: Notice,
-  comments: NoticeCommentTreeNode[],
+  comments: NoticeDetailCommentItem[],
 ): ContentDetailViewData => {
   const categoryLabel = toCategoryLabel(notice.category);
 
@@ -201,7 +243,7 @@ const toViewData = (
     })),
     bodyBlocks: buildBodyBlocks(notice),
     commentInputPlaceholder: '댓글을 입력하세요...',
-    comments: toCommentItems(comments),
+    comments,
     dateLabel: formatKoreanAbsoluteWithRelativeTime(notice.postedAt),
     emptyCommentsLabel: '첫 댓글을 남겨보세요!',
     metaBadges: [
@@ -255,11 +297,32 @@ export const useNoticeDetailData = (noticeId?: string) => {
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(
     null,
   );
+  const [replyTargetCommentId, setReplyTargetCommentId] = React.useState<
+    string | null
+  >(null);
+  const [commentLikePendingIds, setCommentLikePendingIds] = React.useState<
+    string[]
+  >([]);
   const requestIdRef = React.useRef(0);
+  const flattenedCommentEntries = React.useMemo(
+    () => flattenCommentEntries(comments),
+    [comments],
+  );
 
   const commentItems = React.useMemo(
-    () => toCommentItems(comments),
-    [comments],
+    () => toCommentItems(flattenedCommentEntries),
+    [flattenedCommentEntries],
+  );
+  const replyTargetComment = React.useMemo(
+    () =>
+      flattenedCommentEntries.find(
+        entry => entry.comment.id === replyTargetCommentId,
+      )?.comment ?? null,
+    [flattenedCommentEntries, replyTargetCommentId],
+  );
+  const replyTargetLabel = React.useMemo(
+    () => (replyTargetComment ? getReplyTargetLabel(replyTargetComment) : null),
+    [replyTargetComment],
   );
 
   const refreshComments = React.useCallback(async () => {
@@ -274,7 +337,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
       currentNotice
         ? {
             ...currentNotice,
-            commentCount: flattenComments(nextComments).length,
+            commentCount: countComments(nextComments),
           }
         : currentNotice,
     );
@@ -323,8 +386,6 @@ export const useNoticeDetailData = (noticeId?: string) => {
       }
 
       setError(getErrorMessage(loadError));
-      setNotice(null);
-      setComments([]);
       setNotFound(false);
     } finally {
       if (currentRequestId === requestIdRef.current) {
@@ -340,6 +401,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
   React.useEffect(() => {
     setCommentDraft('');
     setEditingCommentId(null);
+    setReplyTargetCommentId(null);
   }, [noticeId]);
 
   React.useEffect(() => {
@@ -363,6 +425,43 @@ export const useNoticeDetailData = (noticeId?: string) => {
         console.error('공지사항 읽음 처리 실패:', markError);
       });
   }, [notice, noticeId, noticeRepository, user?.uid]);
+
+  const toggleCommentLike = React.useCallback(
+    async (commentId: string) => {
+      if (!noticeId || !user?.uid) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      if (commentLikePendingIds.includes(commentId)) {
+        return;
+      }
+
+      setCommentLikePendingIds(currentIds => [...currentIds, commentId]);
+
+      try {
+        const nextLikeState = await noticeRepository.toggleCommentLike(
+          noticeId,
+          commentId,
+          user.uid,
+        );
+
+        setComments(currentComments =>
+          updateCommentTree(currentComments, commentId, comment => ({
+            ...comment,
+            isLiked: nextLikeState.isLiked,
+            likeCount: nextLikeState.likeCount,
+          })),
+        );
+
+        return nextLikeState;
+      } finally {
+        setCommentLikePendingIds(currentIds =>
+          currentIds.filter(currentId => currentId !== commentId),
+        );
+      }
+    },
+    [commentLikePendingIds, noticeId, noticeRepository, user?.uid],
+  );
 
   const toggleLike = React.useCallback(async () => {
     if (!noticeId || !user?.uid || togglingLike) {
@@ -457,7 +556,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
         targetCommentId = await noticeRepository.createComment(noticeId, {
           content: trimmedComment,
           isAnonymous: false,
-          parentId: null,
+          parentId: replyTargetCommentId,
           userDisplayName: user.displayName ?? '익명',
           userId: user.uid,
         });
@@ -466,6 +565,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
       await refreshComments();
       setCommentDraft('');
       setEditingCommentId(null);
+      setReplyTargetCommentId(null);
 
       return {
         commentId: targetCommentId,
@@ -479,23 +579,42 @@ export const useNoticeDetailData = (noticeId?: string) => {
     noticeId,
     noticeRepository,
     refreshComments,
+    replyTargetCommentId,
     user,
   ]);
 
   const startEditingComment = React.useCallback(
     (commentId: string) => {
-      const targetComment = flattenComments(comments).find(
-        comment => comment.id === commentId,
-      );
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
 
-      if (!targetComment || !targetComment.isAuthor) {
+      if (!targetComment || !targetComment.isAuthor || targetComment.isDeleted) {
         return;
       }
 
       setEditingCommentId(commentId);
+      setReplyTargetCommentId(null);
       setCommentDraft(targetComment.content);
     },
-    [comments],
+    [flattenedCommentEntries],
+  );
+
+  const startReplyingComment = React.useCallback(
+    (commentId: string) => {
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
+
+      if (!targetComment || targetComment.isDeleted) {
+        return;
+      }
+
+      setEditingCommentId(null);
+      setReplyTargetCommentId(commentId);
+      setCommentDraft('');
+    },
+    [flattenedCommentEntries],
   );
 
   const cancelCommentEdit = React.useCallback(() => {
@@ -503,27 +622,38 @@ export const useNoticeDetailData = (noticeId?: string) => {
     setCommentDraft('');
   }, []);
 
+  const cancelCommentReply = React.useCallback(() => {
+    setReplyTargetCommentId(null);
+    setCommentDraft('');
+  }, []);
+
   const data = React.useMemo(
-    () => (notice ? toViewData(notice, comments) : null),
-    [comments, notice],
+    () => (notice ? toViewData(notice, commentItems) : null),
+    [commentItems, notice],
   );
 
   return {
     cancelCommentEdit,
+    cancelCommentReply,
+    commentLikePendingIds,
     commentDraft,
     commentItems,
     data,
     editingCommentId,
     error,
     isEditingComment: Boolean(editingCommentId),
+    isReplyingComment: Boolean(replyTargetCommentId),
     loading,
     notice,
     notFound,
     reload: loadDetail,
+    replyTargetLabel,
     setCommentDraft,
     startEditingComment,
+    startReplyingComment,
     submitComment,
     submittingComment,
+    toggleCommentLike,
     toggleBookmark,
     toggleLike,
     togglingBookmark,

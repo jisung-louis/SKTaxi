@@ -42,7 +42,11 @@ export interface ContentDetailCommentViewData {
   body: string;
   dateLabel: string;
   id: string;
+  isDeleted: boolean;
+  isLiked: boolean;
+  isReply: boolean;
   likeCount: number;
+  replyTargetLabel?: string;
 }
 
 export interface ContentDetailAttachmentViewData {

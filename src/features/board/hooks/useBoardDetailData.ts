@@ -38,10 +38,25 @@ const splitParagraphs = (content: string) =>
 
 const formatViewCountLabel = (value: number) => value.toLocaleString('ko-KR');
 
-const flattenComments = (
+interface FlattenedBoardCommentEntry {
+  comment: BoardCommentTreeNode;
+  parent: BoardCommentTreeNode | null;
+}
+
+const flattenCommentEntries = (
   comments: BoardCommentTreeNode[],
-): BoardCommentTreeNode[] =>
-  comments.flatMap(comment => [comment, ...flattenComments(comment.replies)]);
+  parent: BoardCommentTreeNode | null = null,
+): FlattenedBoardCommentEntry[] =>
+  comments.flatMap(comment => [
+    {
+      comment,
+      parent,
+    },
+    ...flattenCommentEntries(comment.replies, comment),
+  ]);
+
+const countComments = (comments: BoardCommentTreeNode[]) =>
+  flattenCommentEntries(comments).length;
 
 const getCommentAuthorLabel = (comment: BoardComment) => {
   if (!comment.isAnonymous) {
@@ -51,25 +66,52 @@ const getCommentAuthorLabel = (comment: BoardComment) => {
   return `익명${comment.anonymousOrder ?? ''}`;
 };
 
+const getReplyTargetLabel = (comment: BoardComment) => {
+  if (comment.isDeleted) {
+    return '삭제된 댓글/답글에 답글';
+  }
+
+  return `${getCommentAuthorLabel(comment)} 님에게 답글`;
+};
+
+const updateCommentTree = (
+  comments: BoardCommentTreeNode[],
+  commentId: string,
+  updater: (comment: BoardCommentTreeNode) => BoardCommentTreeNode,
+): BoardCommentTreeNode[] =>
+  comments.map(comment => {
+    const nextComment =
+      comment.id === commentId ? updater(comment) : comment;
+
+    return {
+      ...nextComment,
+      replies: updateCommentTree(nextComment.replies, commentId, updater),
+    };
+  });
+
 export interface BoardDetailCommentItem extends ContentDetailCommentViewData {
   isEditable: boolean;
 }
 
 const toCommentItems = (
-  comments: BoardCommentTreeNode[],
+  comments: FlattenedBoardCommentEntry[],
 ): BoardDetailCommentItem[] =>
-  flattenComments(comments).map(comment => ({
+  comments.map(({comment, parent}) => ({
     authorLabel: getCommentAuthorLabel(comment),
     body: comment.content,
     dateLabel: formatBoardCommentDateLabel(comment.createdAt.toISOString()),
     id: comment.id,
-    isEditable: Boolean(comment.isAuthor),
-    likeCount: 0,
+    isDeleted: Boolean(comment.isDeleted),
+    isEditable: Boolean(comment.isAuthor && !comment.isDeleted),
+    isLiked: Boolean(comment.isLiked),
+    isReply: Boolean(comment.parentId),
+    likeCount: comment.likeCount,
+    replyTargetLabel: parent ? getReplyTargetLabel(parent) : undefined,
   }));
 
 const toViewData = (
   post: BoardPost,
-  comments: BoardCommentTreeNode[],
+  comments: BoardDetailCommentItem[],
 ): ContentDetailViewData => ({
   authorLabel: post.isAnonymous ? '익명' : post.authorName,
   bodyBlocks: [
@@ -87,7 +129,7 @@ const toViewData = (
     })),
   ],
   commentInputPlaceholder: '댓글을 입력하세요...',
-  comments: toCommentItems(comments),
+  comments,
   dateLabel: formatKoreanAbsoluteWithRelativeTime(post.createdAt),
   emptyCommentsLabel: '첫 댓글을 남겨보세요!',
   metaBadges: [
@@ -137,8 +179,32 @@ export const useBoardDetailData = (postId?: string) => {
   const [editingCommentId, setEditingCommentId] = React.useState<string | null>(
     null,
   );
+  const [replyTargetCommentId, setReplyTargetCommentId] = React.useState<
+    string | null
+  >(null);
+  const [commentLikePendingIds, setCommentLikePendingIds] = React.useState<
+    string[]
+  >([]);
   const requestIdRef = React.useRef(0);
-  const commentItems = React.useMemo(() => toCommentItems(comments), [comments]);
+  const flattenedCommentEntries = React.useMemo(
+    () => flattenCommentEntries(comments),
+    [comments],
+  );
+  const commentItems = React.useMemo(
+    () => toCommentItems(flattenedCommentEntries),
+    [flattenedCommentEntries],
+  );
+  const replyTargetComment = React.useMemo(
+    () =>
+      flattenedCommentEntries.find(
+        entry => entry.comment.id === replyTargetCommentId,
+      )?.comment ?? null,
+    [flattenedCommentEntries, replyTargetCommentId],
+  );
+  const replyTargetLabel = React.useMemo(
+    () => (replyTargetComment ? getReplyTargetLabel(replyTargetComment) : null),
+    [replyTargetComment],
+  );
 
   const refreshComments = React.useCallback(async () => {
     if (!postId) {
@@ -152,7 +218,7 @@ export const useBoardDetailData = (postId?: string) => {
       currentPost
         ? {
             ...currentPost,
-            commentCount: flattenComments(nextComments).length,
+            commentCount: countComments(nextComments),
           }
         : currentPost,
     );
@@ -201,8 +267,6 @@ export const useBoardDetailData = (postId?: string) => {
       }
 
       setError(getErrorMessage(loadError));
-      setPost(null);
-      setComments([]);
       setNotFound(false);
     } finally {
       if (currentRequestId === requestIdRef.current) {
@@ -218,6 +282,7 @@ export const useBoardDetailData = (postId?: string) => {
   React.useEffect(() => {
     setCommentDraft('');
     setEditingCommentId(null);
+    setReplyTargetCommentId(null);
   }, [postId]);
 
   const canManageActions = React.useMemo(() => {
@@ -227,6 +292,43 @@ export const useBoardDetailData = (postId?: string) => {
 
     return Boolean(post.isAuthor ?? (user?.uid && post.authorId === user.uid));
   }, [post, user?.uid]);
+
+  const toggleCommentLike = React.useCallback(
+    async (commentId: string) => {
+      if (!postId || !user?.uid) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      if (commentLikePendingIds.includes(commentId)) {
+        return;
+      }
+
+      setCommentLikePendingIds(currentIds => [...currentIds, commentId]);
+
+      try {
+        const nextLikeState = await boardRepository.toggleCommentLike(
+          postId,
+          commentId,
+          user.uid,
+        );
+
+        setComments(currentComments =>
+          updateCommentTree(currentComments, commentId, comment => ({
+            ...comment,
+            isLiked: nextLikeState.isLiked,
+            likeCount: nextLikeState.likeCount,
+          })),
+        );
+
+        return nextLikeState;
+      } finally {
+        setCommentLikePendingIds(currentIds =>
+          currentIds.filter(currentId => currentId !== commentId),
+        );
+      }
+    },
+    [boardRepository, commentLikePendingIds, postId, user?.uid],
+  );
 
   const toggleLike = React.useCallback(async () => {
     if (!postId || !user?.uid || togglingLike) {
@@ -309,7 +411,11 @@ export const useBoardDetailData = (postId?: string) => {
       let targetCommentId = editingCommentId;
 
       if (editingCommentId) {
-        await boardRepository.updateComment(postId, editingCommentId, trimmedComment);
+        await boardRepository.updateComment(
+          postId,
+          editingCommentId,
+          trimmedComment,
+        );
       } else {
         targetCommentId = await boardRepository.createComment(postId, {
           anonId: null,
@@ -320,14 +426,17 @@ export const useBoardDetailData = (postId?: string) => {
           isAnonymous: false,
           isAuthor: true,
           isDeleted: false,
+          isLiked: false,
           isPostAuthor: false,
-          parentId: null,
+          likeCount: 0,
+          parentId: replyTargetCommentId,
         });
       }
 
       await refreshComments();
       setCommentDraft('');
       setEditingCommentId(null);
+      setReplyTargetCommentId(null);
 
       return {
         commentId: targetCommentId,
@@ -335,26 +444,57 @@ export const useBoardDetailData = (postId?: string) => {
     } finally {
       setSubmittingComment(false);
     }
-  }, [boardRepository, commentDraft, editingCommentId, postId, refreshComments, user]);
+  }, [
+    boardRepository,
+    commentDraft,
+    editingCommentId,
+    postId,
+    refreshComments,
+    replyTargetCommentId,
+    user,
+  ]);
 
   const startEditingComment = React.useCallback(
     (commentId: string) => {
-      const targetComment = flattenComments(comments).find(
-        comment => comment.id === commentId,
-      );
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
 
-      if (!targetComment || !targetComment.isAuthor) {
+      if (!targetComment || !targetComment.isAuthor || targetComment.isDeleted) {
         return;
       }
 
       setEditingCommentId(commentId);
+      setReplyTargetCommentId(null);
       setCommentDraft(targetComment.content);
     },
-    [comments],
+    [flattenedCommentEntries],
+  );
+
+  const startReplyingComment = React.useCallback(
+    (commentId: string) => {
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
+
+      if (!targetComment || targetComment.isDeleted) {
+        return;
+      }
+
+      setEditingCommentId(null);
+      setReplyTargetCommentId(commentId);
+      setCommentDraft('');
+    },
+    [flattenedCommentEntries],
   );
 
   const cancelCommentEdit = React.useCallback(() => {
     setEditingCommentId(null);
+    setCommentDraft('');
+  }, []);
+
+  const cancelCommentReply = React.useCallback(() => {
+    setReplyTargetCommentId(null);
     setCommentDraft('');
   }, []);
 
@@ -373,14 +513,16 @@ export const useBoardDetailData = (postId?: string) => {
   }, [boardRepository, postId]);
 
   const data = React.useMemo(
-    () => (post ? toViewData(post, comments) : null),
-    [comments, post],
+    () => (post ? toViewData(post, commentItems) : null),
+    [commentItems, post],
   );
 
   return {
     cancelCommentEdit,
+    cancelCommentReply,
     canManageActions,
     commentDraft,
+    commentLikePendingIds,
     commentItems,
     data,
     deletePost,
@@ -388,14 +530,18 @@ export const useBoardDetailData = (postId?: string) => {
     editingCommentId,
     error,
     isEditingComment: Boolean(editingCommentId),
+    isReplyingComment: Boolean(replyTargetCommentId),
     loading,
     notFound,
     post,
     reload: loadDetail,
+    replyTargetLabel,
     setCommentDraft,
     startEditingComment,
+    startReplyingComment,
     submitComment,
     submittingComment,
+    toggleCommentLike,
     toggleBookmark,
     toggleLike,
     togglingBookmark,

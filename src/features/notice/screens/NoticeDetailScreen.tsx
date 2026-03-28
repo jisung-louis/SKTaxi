@@ -7,6 +7,7 @@ import {
   LayoutChangeEvent,
   Linking,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -59,22 +60,29 @@ export const NoticeDetailScreen = () => {
   const {height: keyboardHeight, isVisible: isKeyboardVisible} =
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
+  const [refreshing, setRefreshing] = React.useState(false);
   const {
     cancelCommentEdit,
+    cancelCommentReply,
+    commentLikePendingIds,
     commentDraft,
     commentItems,
     data,
     editingCommentId,
     error,
     isEditingComment,
+    isReplyingComment,
     loading,
     notice,
     notFound,
     reload,
+    replyTargetLabel,
     setCommentDraft,
     startEditingComment,
+    startReplyingComment,
     submitComment,
     submittingComment,
+    toggleCommentLike,
     toggleBookmark,
     toggleLike,
     togglingBookmark,
@@ -125,6 +133,20 @@ export const NoticeDetailScreen = () => {
     });
   }, [toggleBookmark]);
 
+  const handleToggleCommentLike = React.useCallback(
+    (commentId: string) => {
+      toggleCommentLike(commentId).catch(toggleError => {
+        Alert.alert(
+          '오류',
+          toggleError instanceof Error
+            ? toggleError.message
+            : '댓글 좋아요 처리에 실패했습니다.',
+        );
+      });
+    },
+    [toggleCommentLike],
+  );
+
   const handleSubmitComment = React.useCallback(() => {
     submitComment()
       .then(result => {
@@ -160,10 +182,12 @@ export const NoticeDetailScreen = () => {
             ? submitError.message
             : isEditingComment
             ? '댓글 수정에 실패했습니다.'
+            : isReplyingComment
+            ? '답글 작성에 실패했습니다.'
             : '댓글 작성에 실패했습니다.',
         );
       });
-  }, [headerOffset, isEditingComment, submitComment]);
+  }, [headerOffset, isEditingComment, isReplyingComment, submitComment]);
 
   const handleStartEditingComment = React.useCallback(
     (commentId: string) => {
@@ -175,11 +199,35 @@ export const NoticeDetailScreen = () => {
     [startEditingComment],
   );
 
+  const handleStartReplyingComment = React.useCallback(
+    (commentId: string) => {
+      startReplyingComment(commentId);
+      setTimeout(() => {
+        composerRef.current?.focus();
+      }, 40);
+    },
+    [startReplyingComment],
+  );
+
   const handleCancelCommentEdit = React.useCallback(() => {
     cancelCommentEdit();
     composerRef.current?.blur();
     Keyboard.dismiss();
   }, [cancelCommentEdit]);
+
+  const handleCancelCommentReply = React.useCallback(() => {
+    cancelCommentReply();
+  }, [cancelCommentReply]);
+
+  const handleRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reload]);
 
   const handleCommentLayout = React.useCallback(
     (commentId: string, event: LayoutChangeEvent) => {
@@ -220,11 +268,11 @@ export const NoticeDetailScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
-        {loading ? (
+        {loading && !data ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
             <ActivityIndicator color={COLORS.brand.primary} size="large" />
           </View>
-        ) : notFound ? (
+        ) : notFound && !data ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
             <DetailNotFoundState
               actionLabel="목록으로 돌아가기"
@@ -232,7 +280,7 @@ export const NoticeDetailScreen = () => {
               title="공지사항을 찾을 수 없어요"
             />
           </View>
-        ) : error ? (
+        ) : error && !data ? (
           <View style={[styles.centeredState, {paddingTop: headerOffset}]}>
             <StateCard
               actionLabel="다시 시도"
@@ -265,6 +313,14 @@ export const NoticeDetailScreen = () => {
                 Platform.OS === 'ios' ? 'interactive' : 'on-drag'
               }
               keyboardShouldPersistTaps="handled"
+              refreshControl={
+                <RefreshControl
+                  onRefresh={handleRefresh}
+                  refreshing={refreshing}
+                  tintColor={COLORS.brand.primary}
+                  progressViewOffset={headerOffset}
+                />
+              }
               showsVerticalScrollIndicator={false}>
               <DetailTitleHeader
                 authorLabel={data.authorLabel}
@@ -343,12 +399,22 @@ export const NoticeDetailScreen = () => {
                       key={comment.id}
                       onLayout={event => handleCommentLayout(comment.id, event)}>
                       <DetailCommentCard
-                        actionLabel={comment.isEditable ? '수정' : undefined}
                         comment={comment}
-                        onPressAction={
+                        likeDisabled={commentLikePendingIds.includes(comment.id)}
+                        onPressEdit={
                           comment.isEditable
                             ? () => handleStartEditingComment(comment.id)
                             : undefined
+                        }
+                        onPressLike={
+                          comment.isDeleted
+                            ? undefined
+                            : () => handleToggleCommentLike(comment.id)
+                        }
+                        onPressReply={
+                          comment.isDeleted
+                            ? undefined
+                            : () => handleStartReplyingComment(comment.id)
                         }
                       />
                     </View>
@@ -372,6 +438,18 @@ export const NoticeDetailScreen = () => {
                     <Text style={styles.editingBannerAction}>취소</Text>
                   </TouchableOpacity>
                 </View>
+              ) : isReplyingComment ? (
+                <View style={styles.editingBanner}>
+                  <Text style={styles.editingBannerText}>
+                    {replyTargetLabel}
+                  </Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    onPress={handleCancelCommentReply}>
+                    <Text style={styles.editingBannerAction}>취소</Text>
+                  </TouchableOpacity>
+                </View>
               ) : null}
               <DetailComposer
                 ref={composerRef}
@@ -380,6 +458,8 @@ export const NoticeDetailScreen = () => {
                 placeholder={
                   editingCommentId
                     ? '댓글을 수정하세요...'
+                    : isReplyingComment
+                    ? '답글을 입력하세요...'
                     : data.commentInputPlaceholder
                 }
                 sendEnabled={

@@ -18,17 +18,23 @@ import {
 
 interface DetailCommentCardProps {
   comment: ContentDetailCommentViewData;
-  actionLabel?: string;
-  onPressAction?: () => void;
+  likeDisabled?: boolean;
+  onPressEdit?: () => void;
+  onPressLike?: () => void;
+  onPressReply?: () => void;
+  replyDisabled?: boolean;
 }
 
 export const DetailCommentCard = ({
-  actionLabel,
   comment,
-  onPressAction,
+  likeDisabled = false,
+  onPressEdit,
+  onPressLike,
+  onPressReply,
+  replyDisabled = false,
 }: DetailCommentCardProps) => {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, comment.isReply ? styles.replyCard : null]}>
       <View style={styles.headerRow}>
         <View style={styles.authorRow}>
           <View style={styles.avatarCircle}>
@@ -37,30 +43,69 @@ export const DetailCommentCard = ({
           <Text style={styles.authorLabel}>{comment.authorLabel}</Text>
         </View>
         <View style={styles.trailingRow}>
-          {actionLabel && onPressAction ? (
+          <Text style={styles.dateLabel}>{comment.dateLabel}</Text>
+          {onPressEdit ? (
             <TouchableOpacity
               accessibilityRole="button"
               activeOpacity={0.8}
-              onPress={onPressAction}>
-              <Text style={styles.actionLabel}>{actionLabel}</Text>
+              onPress={onPressEdit}>
+              <Text style={styles.actionLabel}>수정</Text>
             </TouchableOpacity>
           ) : null}
-          <Text style={styles.dateLabel}>{comment.dateLabel}</Text>
         </View>
       </View>
+
+      {comment.replyTargetLabel ? (
+        <View style={styles.replyTargetBadge}>
+          <Text style={styles.replyTargetText}>{comment.replyTargetLabel}</Text>
+        </View>
+      ) : null}
 
       <Text style={styles.bodyText}>{comment.body}</Text>
 
-      <View style={styles.footerRow}>
-        <View style={styles.likeRow}>
-          <Icon
-            color={COLORS.text.muted}
-            name="thumbs-up-outline"
-            size={12}
-          />
-          <Text style={styles.likeCount}>{comment.likeCount}</Text>
+      {!comment.isDeleted ? (
+        <View style={styles.footerRow}>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={likeDisabled ? 1 : 0.8}
+              disabled={likeDisabled || !onPressLike}
+              onPress={onPressLike}
+              style={styles.actionButton}>
+              <Icon
+                color={
+                  comment.isLiked
+                    ? COLORS.brand.primary
+                    : COLORS.text.secondary
+                }
+                name={comment.isLiked ? 'heart' : 'heart-outline'}
+                size={14}
+              />
+              <Text
+                style={[
+                  styles.actionButtonLabel,
+                  comment.isLiked ? styles.activeActionButtonLabel : null,
+                ]}>
+                좋아요 {comment.likeCount}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              activeOpacity={replyDisabled ? 1 : 0.8}
+              disabled={replyDisabled || !onPressReply}
+              onPress={onPressReply}
+              style={styles.actionButton}>
+              <Icon
+                color={COLORS.text.secondary}
+                name="chatbubble-ellipses-outline"
+                size={14}
+              />
+              <Text style={styles.actionButtonLabel}>답글</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 };
@@ -72,6 +117,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
     padding: SPACING.lg,
     ...SHADOWS.card,
+  },
+  replyCard: {
+    marginLeft: SPACING.xl,
   },
   headerRow: {
     alignItems: 'center',
@@ -116,19 +164,42 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   footerRow: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
   },
-  likeRow: {
+  actionsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.lg,
+  },
+  actionButton: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: SPACING.xs,
   },
-  likeCount: {
-    color: COLORS.text.muted,
+  actionButtonLabel: {
+    color: COLORS.text.secondary,
     fontSize: 12,
     lineHeight: 16,
+  },
+  activeActionButtonLabel: {
+    color: COLORS.brand.primary,
+    fontWeight: '700',
+  },
+  replyTargetBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.pill,
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 6,
+  },
+  replyTargetText: {
+    color: COLORS.brand.primaryStrong,
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 14,
   },
   trailingRow: {
     alignItems: 'center',
