@@ -15,6 +15,7 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
   const {
     chatRoom,
     error: roomError,
+    hasJoined,
     joinRoom: joinChatRoom,
     leaveRoom: leaveChatRoom,
     loading: roomLoading,
@@ -26,10 +27,14 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     messages,
     refresh: refreshMessages,
   } = useChatMessages(chatRoomId, Boolean(chatRoomId && chatRoom?.isJoined));
-  const {sendMessage: sendChatMessage, updateNotificationSetting} = useChatActions();
-  const {updateLastRead} = useChatRoomLastRead(
+  const {
+    sendMessage: sendChatMessage,
+    updateNotificationSetting,
+  } = useChatActions();
+  const {skipNextCleanupRead, updateLastRead} = useChatRoomLastRead(
     chatRoomId,
-    Boolean(isFocused && chatRoom?.isJoined),
+    Boolean(isFocused && hasJoined),
+    hasJoined,
   );
   const [membershipLoading, setMembershipLoading] = React.useState(false);
 
@@ -104,17 +109,19 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
   }, [chatRoom, chatRoomId, joinChatRoom]);
 
   const leaveRoom = React.useCallback(async () => {
-    if (!chatRoomId || !chatRoom?.isJoined) {
+    if (!chatRoomId || !hasJoined) {
       return;
     }
 
     try {
       setMembershipLoading(true);
+      await updateLastRead();
+      skipNextCleanupRead();
       await leaveChatRoom();
     } finally {
       setMembershipLoading(false);
     }
-  }, [chatRoom, chatRoomId, leaveChatRoom]);
+  }, [chatRoomId, hasJoined, leaveChatRoom, skipNextCleanupRead, updateLastRead]);
 
   return {
     data,

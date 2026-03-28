@@ -122,17 +122,25 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
 
 export interface UseChatRoomLastReadResult {
   updateLastRead: () => Promise<void>;
+  skipNextCleanupRead: () => void;
 }
 
 export const useChatRoomLastRead = (
   chatRoomId: string | undefined,
   isFocused: boolean,
+  isJoined: boolean,
 ): UseChatRoomLastReadResult => {
   const { user } = useAuth();
   const chatRepository = useChatRepository();
+  const skipNextCleanupReadRef = useRef(false);
+  const isJoinedRef = useRef(isJoined);
+
+  useEffect(() => {
+    isJoinedRef.current = isJoined;
+  }, [isJoined]);
 
   const updateLastRead = useCallback(async () => {
-    if (!chatRoomId || !user?.uid) {
+    if (!chatRoomId || !user?.uid || !isJoinedRef.current) {
       return;
     }
 
@@ -143,8 +151,12 @@ export const useChatRoomLastRead = (
     }
   }, [chatRepository, chatRoomId, user?.uid]);
 
+  const skipNextCleanupRead = useCallback(() => {
+    skipNextCleanupReadRef.current = true;
+  }, []);
+
   useEffect(() => {
-    if (!chatRoomId || !user?.uid || !isFocused) {
+    if (!chatRoomId || !user?.uid || !isFocused || !isJoined) {
       return;
     }
 
@@ -158,9 +170,13 @@ export const useChatRoomLastRead = (
 
     return () => {
       subscription.remove();
+      if (skipNextCleanupReadRef.current) {
+        skipNextCleanupReadRef.current = false;
+        return;
+      }
       updateLastRead();
     };
-  }, [chatRoomId, isFocused, updateLastRead, user?.uid]);
+  }, [chatRoomId, isFocused, isJoined, updateLastRead, user?.uid]);
 
-  return { updateLastRead };
+  return { updateLastRead, skipNextCleanupRead };
 };
