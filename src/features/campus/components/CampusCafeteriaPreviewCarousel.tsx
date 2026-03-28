@@ -1,5 +1,11 @@
 import React from 'react';
-import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -18,10 +24,55 @@ type CampusCafeteriaPreviewCarouselProps = {
   onPressItem: () => void;
 };
 
+const AUTO_SCROLL_INTERVAL_MS = 3000;
+const CARD_WIDTH = 280;
+const CARD_GAP = SPACING.md;
+
 export const CampusCafeteriaPreviewCarousel = ({
   items,
   onPressItem,
 }: CampusCafeteriaPreviewCarouselProps) => {
+  const flatListRef =
+    React.useRef<FlatList<CampusCafeteriaRecommendedMenuViewData>>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [currentIndex, setCurrentIndex] = React.useState(0);
+
+  const clearAutoScrollTimer = React.useCallback(() => {
+    if (!timerRef.current) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  React.useEffect(() => {
+    if (currentIndex > items.length - 1) {
+      setCurrentIndex(0);
+    }
+  }, [currentIndex, items.length]);
+
+  React.useEffect(() => {
+    clearAutoScrollTimer();
+
+    if (items.length <= 1) {
+      return () => undefined;
+    }
+
+    timerRef.current = setTimeout(() => {
+      const nextIndex = currentIndex >= items.length - 1 ? 0 : currentIndex + 1;
+
+      flatListRef.current?.scrollToIndex({
+        animated: true,
+        index: nextIndex,
+      });
+    }, AUTO_SCROLL_INTERVAL_MS);
+
+    return () => {
+      clearAutoScrollTimer();
+    };
+  }, [clearAutoScrollTimer, currentIndex, items.length]);
+
   if (items.length === 0) {
     return (
       <CampusEmptyCard
@@ -33,10 +84,33 @@ export const CampusCafeteriaPreviewCarousel = ({
 
   return (
     <FlatList
-      horizontal
       contentContainerStyle={styles.listContent}
       data={items}
+      decelerationRate="fast"
+      disableIntervalMomentum
+      getItemLayout={(_data, index) => ({
+        index,
+        length: CARD_WIDTH + CARD_GAP,
+        offset: (CARD_WIDTH + CARD_GAP) * index,
+      })}
+      horizontal
       keyExtractor={item => item.id}
+      onMomentumScrollEnd={event => {
+        const nextIndex = Math.round(
+          event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_GAP),
+        );
+
+        setCurrentIndex(Math.max(0, Math.min(items.length - 1, nextIndex)));
+      }}
+      onScrollBeginDrag={clearAutoScrollTimer}
+      onScrollToIndexFailed={({index}) => {
+        flatListRef.current?.scrollToOffset({
+          animated: true,
+          offset: (CARD_WIDTH + CARD_GAP) * index,
+        });
+      }}
+      pagingEnabled={false}
+      ref={flatListRef}
       renderItem={({item}) => {
         const hasLikeCount = item.likeCountLabel.trim().length > 0;
 
@@ -86,6 +160,8 @@ export const CampusCafeteriaPreviewCarousel = ({
         );
       }}
       showsHorizontalScrollIndicator={false}
+      snapToAlignment="start"
+      snapToInterval={CARD_WIDTH + CARD_GAP}
       style={styles.list}
     />
   );
@@ -106,7 +182,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     borderWidth: 1,
     minHeight: 125,
-    width: 280,
+    width: CARD_WIDTH,
     ...SHADOWS.card,
   },
   cardContent: {

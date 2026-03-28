@@ -14,19 +14,23 @@ import {getNoticeToneColors} from '../utils/campusTone';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusNoticePreviewCardProps = {
+  emptyDescription?: string;
+  emptyTitle?: string;
   items: CampusNoticeItemViewData[];
-  onPressItem: () => void;
+  onPressItem: (item: CampusNoticeItemViewData) => void;
 };
 
 export const CampusNoticePreviewCard = ({
+  emptyDescription = '최근 1달 기준 중요한 공지가 생기면 여기에 표시됩니다.',
+  emptyTitle = '최근 1달 기준 중요한 공지가 없습니다',
   items,
   onPressItem,
 }: CampusNoticePreviewCardProps) => {
   if (items.length === 0) {
     return (
       <CampusEmptyCard
-        description="확인하지 않은 공지가 생기면 여기에 표시됩니다."
-        title="새로운 공지가 없습니다"
+        description={emptyDescription}
+        title={emptyTitle}
       />
     );
   }
@@ -40,9 +44,8 @@ export const CampusNoticePreviewCard = ({
           <React.Fragment key={item.id}>
             <TouchableOpacity
               activeOpacity={0.82}
-              onPress={onPressItem}
+              onPress={() => onPressItem(item)}
               style={styles.row}>
-              <View style={styles.dot} />
               <View style={styles.content}>
                 <View style={styles.metaRow}>
                   <View
@@ -60,7 +63,7 @@ export const CampusNoticePreviewCard = ({
                   </View>
                   <Text style={styles.date}>{item.publishedAtLabel}</Text>
                 </View>
-                <Text numberOfLines={1} style={styles.title}>
+                <Text numberOfLines={2} style={styles.title}>
                   {item.title}
                 </Text>
               </View>

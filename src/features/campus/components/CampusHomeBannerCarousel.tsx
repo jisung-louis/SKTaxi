@@ -14,6 +14,13 @@ import {
   type ViewStyle,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Animated, {
+  interpolate,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
@@ -27,8 +34,10 @@ type CampusHomeBannerCarouselProps = {
 
 const CARD_HEIGHT = 185;
 const CARD_GAP = SPACING.md;
+const AUTO_SCROLL_INTERVAL_MS = 3000;
 const INDICATOR_ACTIVE_WIDTH = 20;
 const INDICATOR_SIZE = 4;
+const INDICATOR_PAST_COLOR = '#D1D5DB';
 
 const withAlpha = (hexColor: string, alpha: string) => `${hexColor}${alpha}`;
 
@@ -277,6 +286,41 @@ const BannerCard = ({
   );
 };
 
+const BannerIndicator = ({
+  index,
+  progress,
+}: {
+  index: number;
+  progress: Animated.SharedValue<number>;
+}) => {
+  const animatedStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(progress.value - index);
+
+    return {
+      backgroundColor:
+        progress.value >= index
+          ? interpolateColor(
+              progress.value,
+              [index, index + 1],
+              [COLORS.brand.primary, INDICATOR_PAST_COLOR],
+            )
+          : interpolateColor(
+              progress.value,
+              [index - 1, index],
+              [COLORS.border.default, COLORS.brand.primary],
+            ),
+      width: interpolate(
+        distance,
+        [0, 1],
+        [INDICATOR_ACTIVE_WIDTH, INDICATOR_SIZE],
+        'clamp',
+      ),
+    };
+  });
+
+  return <Animated.View style={[styles.indicator, animatedStyle]} />;
+};
+
 export const CampusHomeBannerCarousel = ({
   items,
   onPressItem,
@@ -285,12 +329,51 @@ export const CampusHomeBannerCarousel = ({
   const cardWidth = width - SPACING.lg * 2;
   const snapToInterval = cardWidth + CARD_GAP;
   const [currentIndex, setCurrentIndex] = React.useState(0);
+  const flatListRef = React.useRef<FlatList<CampusBannerViewData>>(null);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const progress = useSharedValue(0);
 
   React.useEffect(() => {
     if (currentIndex > items.length - 1) {
       setCurrentIndex(0);
     }
   }, [currentIndex, items.length]);
+
+  React.useEffect(() => {
+    progress.value = withTiming(currentIndex, {
+      duration: 280,
+    });
+  }, [currentIndex, progress]);
+
+  const clearAutoScrollTimer = React.useCallback(() => {
+    if (!timerRef.current) {
+      return;
+    }
+
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  React.useEffect(() => {
+    clearAutoScrollTimer();
+
+    if (items.length <= 1) {
+      return () => undefined;
+    }
+
+    timerRef.current = setTimeout(() => {
+      const nextIndex = currentIndex >= items.length - 1 ? 0 : currentIndex + 1;
+
+      flatListRef.current?.scrollToIndex({
+        animated: true,
+        index: nextIndex,
+      });
+    }, AUTO_SCROLL_INTERVAL_MS);
+
+    return () => {
+      clearAutoScrollTimer();
+    };
+  }, [clearAutoScrollTimer, currentIndex, items.length]);
 
   const handleMomentumScrollEnd = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -300,6 +383,16 @@ export const CampusHomeBannerCarousel = ({
       setCurrentIndex(Math.max(0, Math.min(items.length - 1, nextIndex)));
     },
     [items.length, snapToInterval],
+  );
+
+  const handleScrollToIndexFailed = React.useCallback(
+    ({index}: {index: number}) => {
+      flatListRef.current?.scrollToOffset({
+        animated: true,
+        offset: snapToInterval * index,
+      });
+    },
+    [snapToInterval],
   );
 
   const renderItem = React.useCallback<ListRenderItem<CampusBannerViewData>>(
@@ -316,13 +409,21 @@ export const CampusHomeBannerCarousel = ({
   return (
     <View style={styles.section}>
       <FlatList
+        ref={flatListRef}
         contentContainerStyle={styles.listContent}
         data={[...items]}
         decelerationRate="fast"
         disableIntervalMomentum
+        getItemLayout={(_data, index) => ({
+          index,
+          length: snapToInterval,
+          offset: snapToInterval * index,
+        })}
         horizontal
         keyExtractor={item => item.id}
+        onScrollBeginDrag={clearAutoScrollTimer}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
         pagingEnabled={false}
         renderItem={renderItem}
         showsHorizontalScrollIndicator={false}
@@ -331,24 +432,13 @@ export const CampusHomeBannerCarousel = ({
       />
 
       <View style={styles.indicatorRow}>
-        {items.map((item, index) => {
-          const isActive = index === currentIndex;
-
-          return (
-            <View
-              key={item.id}
-              style={[
-                styles.indicator,
-                isActive ? styles.indicatorActive : null,
-                {
-                  backgroundColor: isActive
-                    ? COLORS.brand.primary
-                    : COLORS.border.default,
-                },
-              ]}
-            />
-          );
-        })}
+        {items.map((item, index) => (
+          <BannerIndicator
+            index={index}
+            key={item.id}
+            progress={progress}
+          />
+        ))}
       </View>
     </View>
   );
@@ -603,9 +693,5 @@ const styles = StyleSheet.create({
   indicator: {
     borderRadius: RADIUS.pill,
     height: INDICATOR_SIZE,
-    width: INDICATOR_SIZE,
-  },
-  indicatorActive: {
-    width: INDICATOR_ACTIVE_WIDTH,
   },
 });

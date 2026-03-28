@@ -5,6 +5,7 @@ import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
 type CampusSectionHeaderProps = {
   title: string;
+  titleAccessory?: React.ReactNode;
   subtitle?: string;
   actionLabel?: string;
   onPressAction?: () => void;
@@ -12,6 +13,7 @@ type CampusSectionHeaderProps = {
 
 export const CampusSectionHeader = ({
   title,
+  titleAccessory,
   subtitle,
   actionLabel,
   onPressAction,
@@ -19,7 +21,10 @@ export const CampusSectionHeader = ({
   return (
     <View style={styles.container}>
       <View>
-        <Text style={styles.title}>{title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{title}</Text>
+          {titleAccessory}
+        </View>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       </View>
       {actionLabel && onPressAction ? (
@@ -43,6 +48,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
+  },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.xs,
   },
   subtitle: {
     color: COLORS.text.muted,

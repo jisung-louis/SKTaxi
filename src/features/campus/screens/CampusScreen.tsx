@@ -5,9 +5,12 @@ import {
   Linking,
   ScrollView,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
+  useFocusEffect,
   type NavigationProp,
   type ParamListBase,
   useNavigation,
@@ -22,6 +25,8 @@ import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation} from '@/shared/hooks/useScreenEnterAnimation';
 import {useScreenView} from '@/shared/hooks/useScreenView';
+import {useNotificationUnreadCount} from '@/features/user/hooks/useNotificationUnreadCount';
+import {useAppNoticeUnreadCount} from '@/features/settings/hooks/useAppNoticeUnreadCount';
 
 import {CampusAcademicCalendarPreviewCard} from '../components/CampusAcademicCalendarPreviewCard';
 import {CampusCafeteriaPreviewCarousel} from '../components/CampusCafeteriaPreviewCarousel';
@@ -50,17 +55,37 @@ export const CampusScreen = () => {
     [navigation],
   );
   const {data, loading, error, refetch} = useCampusHomeViewData();
+  const {
+    count: notificationUnreadCount,
+    reload: reloadNotificationUnread,
+  } = useNotificationUnreadCount();
+  const {
+    count: appNoticeUnreadCount,
+    reload: reloadAppNoticeUnread,
+  } = useAppNoticeUnreadCount();
   const defaultBannerItems = React.useMemo(
     () => getDefaultCampusHomeBannerViewData(),
     [],
   );
   const bannerItems = data?.banners ?? defaultBannerItems;
+  const [isImportantNoticeInfoVisible, setIsImportantNoticeInfoVisible] =
+    React.useState(false);
+  const notificationBadgeCount =
+    notificationUnreadCount + appNoticeUnreadCount;
 
   const contentContainerStyle = React.useMemo(
     () => ({
+      paddingTop: 76,
       paddingBottom: BOTTOM_TAB_BAR_HEIGHT + insets.bottom + SPACING.xxl,
     }),
     [insets.bottom],
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      reloadNotificationUnread().catch(() => undefined);
+      reloadAppNoticeUnread().catch(() => undefined);
+    }, [reloadAppNoticeUnread, reloadNotificationUnread]),
   );
 
   const handlePressBanner = React.useCallback(
@@ -114,18 +139,24 @@ export const CampusScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
+        <CampusHomeHeader
+          notificationBadgeCount={notificationBadgeCount}
+          onPressNotification={() =>
+            campusEntryNavigation.openCampusScreen('Notification')
+          }
+          onPressProfile={() =>
+            campusEntryNavigation.openCampusScreen('Profile')
+          }
+        />
+
         <ScrollView
           contentContainerStyle={contentContainerStyle}
+          onScrollBeginDrag={() => {
+            if (isImportantNoticeInfoVisible) {
+              setIsImportantNoticeInfoVisible(false);
+            }
+          }}
           showsVerticalScrollIndicator={false}>
-          <CampusHomeHeader
-            onPressNotification={() =>
-              campusEntryNavigation.openCampusScreen('Notification')
-            }
-            onPressProfile={() =>
-              campusEntryNavigation.openCampusScreen('Profile')
-            }
-          />
-
           <CampusHomeBannerCarousel
             items={bannerItems}
             onPressItem={handlePressBanner}
@@ -169,14 +200,55 @@ export const CampusScreen = () => {
           {data ? (
             <>
               <View style={styles.section}>
-                <CampusSectionHeader
-                  actionLabel={CAMPUS_HOME_ACTION_LABELS.notices}
-                  onPressAction={campusEntryNavigation.openNoticeList}
-                  title="읽지 않은 공지"
-                />
+                <View style={styles.noticeSectionHeaderWrap}>
+                  <CampusSectionHeader
+                    actionLabel={CAMPUS_HOME_ACTION_LABELS.notices}
+                    onPressAction={campusEntryNavigation.openNoticeList}
+                    title="중요한 학사공지"
+                    titleAccessory={
+                      <TouchableOpacity
+                        accessibilityLabel="중요한 학사공지 안내"
+                        accessibilityRole="button"
+                        activeOpacity={0.82}
+                        onPress={() => {
+                          setIsImportantNoticeInfoVisible(previous => !previous);
+                        }}
+                        style={styles.noticeInfoButton}>
+                        <Icon
+                          color={COLORS.text.muted}
+                          name="information-circle-outline"
+                          size={18}
+                        />
+                      </TouchableOpacity>
+                    }
+                  />
+                  {isImportantNoticeInfoVisible ? (
+                    <View style={styles.noticeInfoBubble}>
+                      <Text style={styles.noticeInfoBubbleText}>
+                        최근 1달 내 공지 중 조회수, 좋아요, 댓글이 많은 공지가 나열됩니다
+                      </Text>
+                      <TouchableOpacity
+                        activeOpacity={0.82}
+                        onPress={() => {
+                          setIsImportantNoticeInfoVisible(false);
+                        }}
+                        style={styles.noticeInfoBubbleCloseButton}>
+                        <Icon
+                          color={COLORS.text.inverse}
+                          name="close-outline"
+                          size={18}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
+                </View>
                 <CampusNoticePreviewCard
+                  emptyDescription="최근 1달 내 반응이 높은 학사공지가 있으면 여기에 표시됩니다."
+                  emptyTitle="최근 1달 내 중요한 학사공지가 없습니다"
                   items={data.notices.items}
-                  onPressItem={campusEntryNavigation.openNoticeList}
+                  onPressItem={item =>
+                    campusEntryNavigation.openNoticeDetail(item.id)
+                  }
                 />
               </View>
 
@@ -253,5 +325,42 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: SPACING.xxl,
     paddingHorizontal: SPACING.lg,
+  },
+  noticeInfoBubble: {
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    zIndex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    backgroundColor: COLORS.text.primary,
+    borderRadius: 14,
+    maxWidth: 280,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  noticeInfoBubbleText: {
+    color: COLORS.text.inverse,
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
+    flexShrink: 1,
+  },
+  noticeInfoBubbleCloseButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 18,
+    width: 18,
+    flexShrink: 0,
+  },
+  noticeInfoButton: {
+    alignItems: 'center',
+    height: 22,
+    justifyContent: 'center',
+    width: 22,
+  },
+  noticeSectionHeaderWrap: {
+    position: 'relative',
   },
 });

@@ -7,9 +7,12 @@ export type CampusHighlightTone = 'brand' | 'blue' | 'orange' | 'pink';
 export interface CampusNoticeItemViewData {
   id: string;
   categoryLabel: string;
+  commentCount: number;
+  likeCount: number;
   publishedAtLabel: string;
   title: string;
   tone: CampusNoticeTone;
+  viewCount: number;
 }
 
 export interface CampusTimetableStatusViewData {

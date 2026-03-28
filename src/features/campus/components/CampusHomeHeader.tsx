@@ -2,21 +2,23 @@ import React from 'react';
 import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {TabBadge} from '@/shared/ui/TabBadge';
 import {
   COLORS,
   FONT_FAMILIES,
   RADIUS,
   SHADOWS,
   SPACING,
-  TYPOGRAPHY,
 } from '@/shared/design-system/tokens';
 
 type CampusHomeHeaderProps = {
+  notificationBadgeCount?: number;
   onPressProfile: () => void;
   onPressNotification: () => void;
 };
 
 export const CampusHomeHeader = ({
+  notificationBadgeCount = 0,
   onPressProfile,
   onPressNotification,
 }: CampusHomeHeaderProps) => {
@@ -24,18 +26,25 @@ export const CampusHomeHeader = ({
     <View style={styles.container}>
       <Text style={styles.wordmark}>SKURI</Text>
       <View style={styles.rightButtonContainer}>
-        <TouchableOpacity
-          accessibilityLabel="알림"
-          accessibilityRole="button"
-          activeOpacity={0.8}
-          onPress={onPressNotification}
-          style={styles.button}>
-          <Icon
-            color={COLORS.text.secondary}
-            name="notifications-outline"
-            size={20}
+        <View style={styles.buttonWrap}>
+          <TouchableOpacity
+            accessibilityLabel="알림"
+            accessibilityRole="button"
+            activeOpacity={0.8}
+            onPress={onPressNotification}
+            style={styles.button}>
+            <Icon
+              color={COLORS.text.secondary}
+              name="notifications-outline"
+              size={20}
+            />
+          </TouchableOpacity>
+          <TabBadge
+            count={notificationBadgeCount}
+            size="small"
+            style={styles.badge}
           />
-        </TouchableOpacity>
+        </View>
         <TouchableOpacity
           accessibilityLabel="프로필"
           accessibilityRole="button"
@@ -51,12 +60,19 @@ export const CampusHomeHeader = ({
 
 const styles = StyleSheet.create({
   container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingBottom: SPACING.lg,
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.xl + SPACING.xs,
+    backgroundColor: COLORS.background.pageHeader,
+    /* height: 76, */
   },
   wordmark: {
     color: COLORS.text.primary,
@@ -70,6 +86,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: SPACING.sm,
   },
+  badge: {
+    right: -6,
+    top: -4,
+  },
   button: {
     alignItems: 'center',
     backgroundColor: COLORS.background.surface,
@@ -78,5 +98,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 36,
     ...SHADOWS.card,
+  },
+  buttonWrap: {
+    position: 'relative',
   },
 });

@@ -2,12 +2,8 @@ import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
 import type {INoticeRepository} from '@/features/notice/data/repositories/INoticeRepository';
-import {
-  isNoticeRead,
-  toNoticeTimestampMillis,
-} from '@/features/notice/model/selectors';
-import type {Notice, ReadStatusMap} from '@/features/notice/model/types';
-import {resolveNoticeReadStatus} from '@/features/notice/services/noticeReadStateService';
+import {toNoticeTimestampMillis} from '@/features/notice/model/selectors';
+import type {Notice} from '@/features/notice/model/types';
 import type {ICourseRepository} from '@/features/timetable/data/repositories/ICourseRepository';
 import type {
   ITimetableRepository,
@@ -43,7 +39,9 @@ import {
 } from './campusHomeBannerQuery';
 import {buildCampusRecommendedMenus} from './cafeteriaMenuAssembler';
 
+const IMPORTANT_NOTICE_FETCH_LIMIT = 100;
 const NOTICE_PREVIEW_LIMIT = 3;
+const IMPORTANT_NOTICE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const TIMETABLE_COLLAPSED_VISIBLE_COUNT = 9;
 const TIMETABLE_SESSION_TONES: Array<
   Extract<CampusHighlightTone, 'blue' | 'orange'>
@@ -89,10 +87,13 @@ const mapNoticeToPreviewItem = (notice: Notice): CampusNoticeItemViewData => {
 
   return {
     categoryLabel,
+    commentCount: notice.commentCount ?? 0,
     id: notice.id,
+    likeCount: notice.likeCount ?? 0,
     publishedAtLabel: formatNoticeDateLabel(notice.postedAt),
     title: notice.title,
     tone: getNoticeTone(categoryLabel),
+    viewCount: notice.viewCount ?? 0,
   };
 };
 
@@ -232,41 +233,41 @@ const loadTimetableSnapshot = (
 const formatTimetableDateLabel = (currentDate: Date) =>
   format(currentDate, 'M월 d일 EEEE', {locale: ko});
 
-const loadNoticePreviewItems = async ({
+const isImportantNoticeCandidate = (notice: Notice) => {
+  const millis = toNoticeTimestampMillis(notice.postedAt);
+
+  return (
+    millis != null &&
+    Date.now() - millis <= IMPORTANT_NOTICE_WINDOW_MS &&
+    Date.now() >= millis
+  );
+};
+
+const getImportantNoticeComparator = (randomRankById: Map<string, number>) => {
+  return (left: Notice, right: Notice) =>
+    (right.viewCount ?? 0) - (left.viewCount ?? 0) ||
+    (right.likeCount ?? 0) - (left.likeCount ?? 0) ||
+    (right.commentCount ?? 0) - (left.commentCount ?? 0) ||
+    (randomRankById.get(left.id) ?? 0) - (randomRankById.get(right.id) ?? 0);
+};
+
+const loadImportantNoticePreviewItems = async ({
   noticeRepository,
-  currentUserId,
-  currentUserJoinedAt,
 }: {
-  currentUserId?: string;
-  currentUserJoinedAt?: unknown;
   noticeRepository: INoticeRepository;
 }): Promise<CampusNoticeItemViewData[]> => {
   const notices = await noticeRepository.getRecentNotices(
-    NOTICE_PREVIEW_LIMIT * 3,
+    IMPORTANT_NOTICE_FETCH_LIMIT,
+  );
+  const candidates = notices.filter(isImportantNoticeCandidate);
+  const randomRankById = new Map(
+    candidates.map(notice => [notice.id, Math.random()]),
   );
 
-  let readStatus: ReadStatusMap = {};
-  const userJoinedAt = currentUserJoinedAt ?? null;
-
-  if (currentUserId) {
-    try {
-      readStatus = await resolveNoticeReadStatus({
-        notices,
-        noticeRepository,
-        userId: currentUserId,
-        userJoinedAt,
-      });
-    } catch (error) {
-      console.warn('Campus 공지 읽음 상태를 불러오지 못했습니다.', error);
-    }
-  }
-
-  const unreadNotices = notices.filter(
-    notice => !isNoticeRead(notice, readStatus, userJoinedAt),
-  );
-  const source = unreadNotices.length > 0 ? unreadNotices : notices;
-
-  return source.slice(0, NOTICE_PREVIEW_LIMIT).map(mapNoticeToPreviewItem);
+  return candidates
+    .sort(getImportantNoticeComparator(randomRankById))
+    .slice(0, NOTICE_PREVIEW_LIMIT)
+    .map(mapNoticeToPreviewItem);
 };
 
 const loadTimetablePreview = async ({
@@ -460,14 +461,12 @@ export const loadCampusHomeQueryResult = async ({
   noticeRepository,
   timetableRepository,
   currentUserId,
-  currentUserJoinedAt,
 }: {
   academicRepository: IAcademicRepository;
   campusBannerRepository: ICampusBannerRepository;
   cafeteriaRepository: ICafeteriaRepository;
   courseRepository: ICourseRepository;
   currentUserId?: string;
-  currentUserJoinedAt?: unknown;
   noticeRepository: INoticeRepository;
   timetableRepository: ITimetableRepository;
 }): Promise<CampusHomeViewData> => {
@@ -483,9 +482,7 @@ export const loadCampusHomeQueryResult = async ({
     loadCampusHomeBannerViewData({
       campusBannerRepository,
     }),
-    loadNoticePreviewItems({
-      currentUserId,
-      currentUserJoinedAt,
+    loadImportantNoticePreviewItems({
       noticeRepository,
     }),
     loadTimetablePreview({

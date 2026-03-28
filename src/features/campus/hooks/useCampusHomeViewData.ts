@@ -40,7 +40,6 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
         cafeteriaRepository,
         courseRepository,
         currentUserId: effectiveUserId,
-        currentUserJoinedAt: user?.joinedAt,
         noticeRepository,
         timetableRepository,
       });
@@ -59,7 +58,6 @@ export const useCampusHomeViewData = (): UseCampusHomeViewDataResult => {
     effectiveUserId,
     noticeRepository,
     timetableRepository,
-    user?.joinedAt,
   ]);
 
   useEffect(() => {
