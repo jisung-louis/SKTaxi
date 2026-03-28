@@ -84,7 +84,6 @@ export const useCommunityBoardData = () => {
   const [loading, setLoading] = React.useState(true);
   const [loadingMore, setLoadingMore] = React.useState(false);
   const [nextCursor, setNextCursor] = React.useState<unknown>(undefined);
-  const [searchVisible, setSearchVisible] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const requestIdRef = React.useRef(0);
   const hasActiveSearch =
@@ -175,13 +174,6 @@ export const useCommunityBoardData = () => {
     navigation.navigate('BoardWrite');
   }, [navigation]);
 
-  const handleApplySearch = React.useCallback(
-    (filters: CommunityBoardSearchFilters) => {
-      setSearchFilters(filters);
-    },
-    [],
-  );
-
   const handleClearSearch = React.useCallback(() => {
     setSearchFilters(DEFAULT_FILTERS);
   }, []);
@@ -206,7 +198,6 @@ export const useCommunityBoardData = () => {
     featuredPost,
     filters: searchFilters,
     handleApplyRouteSearch,
-    handleApplySearch,
     handleClearSearch,
     handleOpenPost,
     handleOpenWrite,
@@ -217,7 +208,5 @@ export const useCommunityBoardData = () => {
     loading,
     loadingMore,
     refreshing,
-    searchVisible,
-    setSearchVisible,
   };
 };

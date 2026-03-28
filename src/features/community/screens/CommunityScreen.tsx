@@ -21,7 +21,6 @@ import type {CommunityStackParamList} from '@/app/navigation/types';
 import {useScreenEnterAnimation} from '@/shared/hooks';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 
-import {CommunityBoardSearchModal} from '../components/CommunityBoardSearchModal';
 import {CommunityBoardSegment} from '../components/CommunityBoardSegment';
 import {useCommunityBoardData} from '../hooks/useCommunityBoardData';
 import {CommunityChatSegment} from '../components/CommunityChatSegment';
@@ -55,7 +54,6 @@ export const CommunityScreen = () => {
     error: boardError,
     filters: boardFilters,
     handleApplyRouteSearch,
-    handleApplySearch,
     handleClearSearch,
     handleOpenPost,
     handleOpenWrite,
@@ -66,8 +64,6 @@ export const CommunityScreen = () => {
     loading: boardLoading,
     loadingMore,
     refreshing: boardRefreshing,
-    searchVisible,
-    setSearchVisible,
   } = useCommunityBoardData();
   const chat = useCommunityChatData();
 
@@ -108,11 +104,6 @@ export const CommunityScreen = () => {
     ? '카테고리 필터가 적용되었습니다'
     : undefined;
 
-  const handlePressHeaderAction = React.useCallback(() => {
-    setSelectedSegment('board');
-    setSearchVisible(true);
-  }, [setSearchVisible]);
-
   React.useEffect(() => {
     const nextIndex = selectedSegment === 'board' ? 0 : 1;
     pagerTranslateX.value = withTiming(-nextIndex * pageWidth, {
@@ -127,7 +118,6 @@ export const CommunityScreen = () => {
   const pagerGesture = React.useMemo(
     () =>
       Gesture.Pan()
-        .enabled(!searchVisible)
         .activeOffsetX([-18, 18])
         .failOffsetY([-12, 12])
         .onBegin(() => {
@@ -164,7 +154,6 @@ export const CommunityScreen = () => {
       pageWidth,
       pagerDragStartX,
       pagerTranslateX,
-      searchVisible,
     ],
   );
 
@@ -195,8 +184,6 @@ export const CommunityScreen = () => {
       <Animated.View style={[styles.screen, screenAnimatedStyle]}>
         <View style={styles.headerSection}>
           <PageHeader
-            actionAccessibilityLabel="커뮤니티 검색"
-            onPressAction={handlePressHeaderAction}
             subtitle="학우들과 소통하고 정보를 나눠요"
             title="커뮤니티"
           />
@@ -252,13 +239,6 @@ export const CommunityScreen = () => {
           </GestureDetector>
         </View>
       </Animated.View>
-
-      <CommunityBoardSearchModal
-        currentFilters={boardFilters}
-        onClose={() => setSearchVisible(false)}
-        onSearch={handleApplySearch}
-        visible={searchVisible}
-      />
     </SafeAreaView>
   );
 };
