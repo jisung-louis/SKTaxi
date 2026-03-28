@@ -15,6 +15,12 @@ import type {
 
 export interface NoticeListPage extends PaginatedResult<Notice> {}
 
+export interface NoticeCommentLikeState {
+  commentId: string;
+  isLiked: boolean;
+  likeCount: number;
+}
+
 export interface INoticeRepository {
   getRecentNotices(limit: number): Promise<Notice[]>;
   subscribeToNotices(
@@ -48,6 +54,11 @@ export interface INoticeRepository {
     noticeId: string,
     comment: CommentFormData & {userId: string; userDisplayName: string},
   ): Promise<string>;
+  toggleCommentLike(
+    noticeId: string,
+    commentId: string,
+    userId: string,
+  ): Promise<NoticeCommentLikeState>;
   updateComment(
     noticeId: string,
     commentId: string,

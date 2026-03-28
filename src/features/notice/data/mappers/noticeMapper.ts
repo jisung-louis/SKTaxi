@@ -1,6 +1,7 @@
 import type {
   NoticeBookmarkResponseDto,
   NoticeCommentDto,
+  NoticeCommentLikeResponseDto,
   NoticeDetailDto,
   NoticeLikeResponseDto,
   NoticeReadResponseDto,
@@ -79,6 +80,8 @@ export const mapNoticeCommentDto = (
   isAnonymous: dto.isAnonymous,
   isAuthor: dto.isAuthor,
   isDeleted: dto.isDeleted,
+  isLiked: dto.isLiked,
+  likeCount: dto.likeCount,
   noticeId,
   parentId: dto.parentId ?? null,
   replies: [],
@@ -103,4 +106,12 @@ export const mapNoticeReadResponseDto = (dto: NoticeReadResponseDto) => ({
   isRead: dto.isRead,
   noticeId: dto.noticeId,
   readAt: dto.readAt,
+});
+
+export const mapNoticeCommentLikeResponseDto = (
+  dto: NoticeCommentLikeResponseDto,
+) => ({
+  commentId: dto.commentId,
+  isLiked: dto.isLiked,
+  likeCount: dto.likeCount,
 });

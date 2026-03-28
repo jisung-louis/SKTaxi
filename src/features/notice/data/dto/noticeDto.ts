@@ -65,6 +65,8 @@ export interface NoticeCommentDto {
   anonymousOrder?: number | null;
   isAuthor: boolean;
   isDeleted: boolean;
+  isLiked: boolean;
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,6 +93,12 @@ export interface NoticeReadResponseDto {
   noticeId: string;
   isRead: boolean;
   readAt: string;
+}
+
+export interface NoticeCommentLikeResponseDto {
+  commentId: string;
+  isLiked: boolean;
+  likeCount: number;
 }
 
 export interface CreateNoticeCommentRequestDto {

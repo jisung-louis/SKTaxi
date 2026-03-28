@@ -3,6 +3,7 @@ import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 import type {
   BoardBookmarkResponseDto,
   BoardCommentDto,
+  BoardCommentLikeResponseDto,
   BoardCreateCommentRequestDto,
   BoardCreatePostRequestDto,
   BoardImageUploadResponseDto,
@@ -96,6 +97,18 @@ export class BoardApiClient {
 
   deleteComment(commentId: string) {
     return httpClient.delete<ApiSuccessResponse<null>>(`/v1/comments/${commentId}`);
+  }
+
+  likeComment(commentId: string) {
+    return httpClient.post<ApiSuccessResponse<BoardCommentLikeResponseDto>>(
+      `/v1/comments/${commentId}/like`,
+    );
+  }
+
+  unlikeComment(commentId: string) {
+    return httpClient.delete<ApiSuccessResponse<BoardCommentLikeResponseDto>>(
+      `/v1/comments/${commentId}/like`,
+    );
   }
 
   updatePost(postId: string, data: BoardUpdatePostRequestDto) {

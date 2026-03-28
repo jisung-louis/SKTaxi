@@ -1,6 +1,7 @@
 import type {
   BoardBookmarkResponseDto,
   BoardCommentDto,
+  BoardCommentLikeResponseDto,
   BoardImageUploadResponseDto,
   BoardLikeResponseDto,
   BoardPostCategoryDto,
@@ -129,7 +130,9 @@ export const mapBoardCommentDto = (
   isAnonymous: dto.isAnonymous,
   isAuthor: dto.isAuthor,
   isDeleted: dto.isDeleted,
+  isLiked: dto.isLiked,
   isPostAuthor: dto.isPostAuthor,
+  likeCount: dto.likeCount,
   parentId: dto.parentId ?? null,
   postId,
   updatedAt: toDate(dto.updatedAt),
@@ -143,6 +146,14 @@ export const mapBoardLikeResponseDto = (dto: BoardLikeResponseDto) => ({
 export const mapBoardBookmarkResponseDto = (dto: BoardBookmarkResponseDto) => ({
   bookmarkCount: dto.bookmarkCount,
   isBookmarked: dto.isBookmarked,
+});
+
+export const mapBoardCommentLikeResponseDto = (
+  dto: BoardCommentLikeResponseDto,
+) => ({
+  commentId: dto.commentId,
+  isLiked: dto.isLiked,
+  likeCount: dto.likeCount,
 });
 
 export const mapBoardImageUploadResponseDto = (

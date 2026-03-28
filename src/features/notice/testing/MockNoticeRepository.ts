@@ -91,6 +91,8 @@ const buildSeedComments = (): Map<string, Comment[]> =>
           createdAt: new Date(comment.postedAt),
           updatedAt: new Date(comment.postedAt),
           isDeleted: false,
+          isLiked: false,
+          likeCount: 0,
           parentId: null,
           replies: [],
         })),
@@ -98,12 +100,49 @@ const buildSeedComments = (): Map<string, Comment[]> =>
     ),
   );
 
+const cloneComment = (comment: Comment): Comment => ({
+  ...comment,
+  createdAt: new Date(comment.createdAt),
+  replies: comment.replies?.map(cloneComment) ?? [],
+  updatedAt: comment.updatedAt ? new Date(comment.updatedAt) : undefined,
+});
+
+const buildCommentTree = (flatComments: Comment[]): NoticeCommentTreeNode[] => {
+  const roots: NoticeCommentTreeNode[] = [];
+  const nodeById = new Map<string, NoticeCommentTreeNode>();
+
+  flatComments.forEach(comment => {
+    nodeById.set(comment.id, {
+      ...cloneComment(comment),
+      replies: [],
+    });
+  });
+
+  flatComments.forEach(comment => {
+    const node = nodeById.get(comment.id);
+    if (!node) {
+      return;
+    }
+
+    if (comment.parentId) {
+      nodeById.get(comment.parentId)?.replies.push(node);
+      return;
+    }
+
+    roots.push(node);
+  });
+
+  return roots;
+};
+
 export class MockNoticeRepository implements INoticeRepository {
   private notices = new Map<string, Notice>();
 
   private readStatus = new Map<string, Set<string>>();
 
   private likes = new Map<string, Set<string>>();
+
+  private commentLikes = new Map<string, Set<string>>();
 
   private bookmarks = new Map<string, Set<string>>();
 
@@ -238,8 +277,7 @@ export class MockNoticeRepository implements INoticeRepository {
   }
 
   async getComments(noticeId: string): Promise<NoticeCommentTreeNode[]> {
-    const comments = this.comments.get(noticeId) || [];
-    return comments.map(comment => ({...comment, replies: []}));
+    return buildCommentTree(this.comments.get(noticeId) || []);
   }
 
   subscribeToComments(
@@ -268,6 +306,8 @@ export class MockNoticeRepository implements INoticeRepository {
       userDisplayName: comment.userDisplayName,
       content: comment.content,
       isAnonymous: comment.isAnonymous || false,
+      isLiked: false,
+      likeCount: 0,
       parentId: comment.parentId,
       createdAt: now,
       updatedAt: now,
@@ -284,6 +324,55 @@ export class MockNoticeRepository implements INoticeRepository {
     }
 
     return id;
+  }
+
+  async toggleCommentLike(
+    noticeId: string,
+    commentId: string,
+    userId: string,
+  ) {
+    const currentComments = this.comments.get(noticeId) || [];
+    const targetComment = currentComments.find(comment => comment.id === commentId);
+
+    if (!targetComment) {
+      throw new Error('댓글을 찾을 수 없습니다.');
+    }
+
+    const targetLikes = this.commentLikes.get(commentId) ?? new Set<string>();
+    const nextLiked = !targetLikes.has(userId);
+
+    if (nextLiked) {
+      targetLikes.add(userId);
+    } else {
+      targetLikes.delete(userId);
+    }
+
+    this.commentLikes.set(commentId, targetLikes);
+    this.comments.set(
+      noticeId,
+      currentComments.map(comment =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: nextLiked,
+              likeCount: Math.max(
+                0,
+                (comment.likeCount ?? 0) + (nextLiked ? 1 : -1),
+              ),
+              updatedAt: new Date(),
+            }
+          : comment,
+      ),
+    );
+
+    return {
+      commentId,
+      isLiked: nextLiked,
+      likeCount: Math.max(
+        0,
+        (targetComment.likeCount ?? 0) + (nextLiked ? 1 : -1),
+      ),
+    };
   }
 
   async updateComment(

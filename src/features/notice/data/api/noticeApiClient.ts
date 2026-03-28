@@ -5,6 +5,7 @@ import type {
   NoticeBookmarkResponseDto,
   NoticeBookmarkSummaryDto,
   NoticeCommentDto,
+  NoticeCommentLikeResponseDto,
   NoticeDetailDto,
   NoticeLikeResponseDto,
   NoticePageResponseDto,
@@ -85,9 +86,21 @@ export class NoticeApiClient {
     );
   }
 
+  likeComment(commentId: string) {
+    return httpClient.post<ApiSuccessResponse<NoticeCommentLikeResponseDto>>(
+      `/v1/notice-comments/${commentId}/like`,
+    );
+  }
+
   unlikeNotice(noticeId: string) {
     return httpClient.delete<ApiSuccessResponse<NoticeLikeResponseDto>>(
       `/v1/notices/${noticeId}/like`,
+    );
+  }
+
+  unlikeComment(commentId: string) {
+    return httpClient.delete<ApiSuccessResponse<NoticeCommentLikeResponseDto>>(
+      `/v1/notice-comments/${commentId}/like`,
     );
   }
 

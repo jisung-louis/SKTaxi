@@ -43,6 +43,8 @@ export interface NoticeComment {
   createdAt: Date;
   updatedAt?: Date;
   isDeleted?: boolean;
+  isLiked?: boolean;
+  likeCount?: number;
   parentId?: string | null;
   replyCount?: number;
   isAnonymous?: boolean;

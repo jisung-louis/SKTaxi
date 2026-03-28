@@ -11,6 +11,7 @@ import {
   mapBoardBookmarkResponseDto,
   mapBoardCategoryToDto,
   mapBoardCommentDto,
+  mapBoardCommentLikeResponseDto,
   mapBoardImageUploadResponseDto,
   mapBoardLikeResponseDto,
   mapBoardPostDetailDto,
@@ -373,26 +374,55 @@ export class SpringBoardRepository implements IBoardRepository {
     return nextLikeState.isLiked;
   }
 
+  async toggleCommentLike(
+    postId: string,
+    commentId: string,
+    _userId: string,
+  ) {
+    const currentComments =
+      this.commentCache.get(postId) ?? (await this.getComments(postId));
+    const targetComment = this.flattenComments(currentComments).find(
+      comment => comment.id === commentId,
+    );
+
+    if (!targetComment) {
+      throw new RepositoryError(
+        RepositoryErrorCode.NOT_FOUND,
+        '댓글을 찾을 수 없습니다.',
+      );
+    }
+
+    const response = targetComment.isLiked
+      ? await this.apiClient.unlikeComment(commentId)
+      : await this.apiClient.likeComment(commentId);
+    const nextLikeState = mapBoardCommentLikeResponseDto(response.data);
+    const nextComments = this.flattenComments(currentComments).map(comment =>
+      comment.id === commentId
+        ? {
+            ...comment,
+            isLiked: nextLikeState.isLiked,
+            likeCount: nextLikeState.likeCount,
+          }
+        : comment,
+    );
+
+    this.commentCache.set(postId, buildCommentTree(nextComments));
+    return nextLikeState;
+  }
+
   async updateComment(
     postId: string,
     commentId: string,
     content: string,
   ): Promise<void> {
-    await this.apiClient.updateComment(commentId, {
+    const response = await this.apiClient.updateComment(commentId, {
       content: content.trim(),
     });
+    const updatedComment = mapBoardCommentDto(postId, response.data);
 
     const nextComments = this.flattenComments(
       this.commentCache.get(postId) ?? [],
-    ).map(comment =>
-      comment.id === commentId
-        ? {
-            ...comment,
-            content: content.trim(),
-            updatedAt: new Date(),
-          }
-        : comment,
-    );
+    ).map(comment => (comment.id === commentId ? updatedComment : comment));
 
     this.commentCache.set(postId, buildCommentTree(nextComments));
   }

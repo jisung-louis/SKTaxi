@@ -21,6 +21,12 @@ export interface BoardCommentTreeNode extends BoardComment {
   replies: BoardCommentTreeNode[];
 }
 
+export interface BoardCommentLikeState {
+  commentId: string;
+  isLiked: boolean;
+  likeCount: number;
+}
+
 export interface IBoardRepository {
   getPosts(filters: BoardFilterOptions, limit: number): Promise<PaginatedResult<BoardPost>>;
   getMorePosts(
@@ -60,6 +66,11 @@ export interface IBoardRepository {
     postId: string,
     comment: Omit<BoardComment, 'id' | 'postId' | 'createdAt' | 'updatedAt'>,
   ): Promise<string>;
+  toggleCommentLike(
+    postId: string,
+    commentId: string,
+    userId: string,
+  ): Promise<BoardCommentLikeState>;
   updateComment(postId: string, commentId: string, content: string): Promise<void>;
   deleteComment(postId: string, commentId: string): Promise<void>;
   uploadImage(uri: string, postId?: string): Promise<BoardImage>;

@@ -17,6 +17,7 @@ import {noticeApiClient, NoticeApiClient} from '../api/noticeApiClient';
 import {
   mapNoticeBookmarkResponseDto,
   mapNoticeCommentDto,
+  mapNoticeCommentLikeResponseDto,
   mapNoticeDetailDto,
   mapNoticeLikeResponseDto,
   mapNoticeSummaryDto,
@@ -254,6 +255,42 @@ export class SpringNoticeRepository implements INoticeRepository {
       likeCount: nextLikeState.likeCount,
     });
     return nextLikeState.isLiked;
+  }
+
+  async toggleCommentLike(
+    noticeId: string,
+    commentId: string,
+    _userId: string,
+  ) {
+    const currentComments =
+      this.commentCache.get(noticeId) ?? (await this.getComments(noticeId));
+    const targetComment = this.flattenComments(currentComments).find(
+      comment => comment.id === commentId,
+    );
+
+    if (!targetComment) {
+      throw new RepositoryError(
+        RepositoryErrorCode.NOT_FOUND,
+        '댓글을 찾을 수 없습니다.',
+      );
+    }
+
+    const response = targetComment.isLiked
+      ? await this.apiClient.unlikeComment(commentId)
+      : await this.apiClient.likeComment(commentId);
+    const nextLikeState = mapNoticeCommentLikeResponseDto(response.data);
+    const nextComments = this.flattenComments(currentComments).map(comment =>
+      comment.id === commentId
+        ? {
+            ...comment,
+            isLiked: nextLikeState.isLiked,
+            likeCount: nextLikeState.likeCount,
+          }
+        : comment,
+    );
+
+    this.commentCache.set(noticeId, buildCommentTree(nextComments));
+    return nextLikeState;
   }
 
   async toggleBookmark(noticeId: string, _userId: string): Promise<boolean> {

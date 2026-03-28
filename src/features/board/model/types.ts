@@ -69,8 +69,10 @@ export interface BoardComment {
   isAnonymous?: boolean;
   isAuthor?: boolean;
   isPostAuthor?: boolean;
+  isLiked?: boolean;
   anonId: string | null;
   anonymousOrder?: number;
+  likeCount: number;
   parentId: string | null;
   isDeleted: boolean;
   createdAt: Date;

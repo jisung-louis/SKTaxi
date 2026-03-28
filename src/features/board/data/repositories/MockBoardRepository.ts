@@ -19,6 +19,7 @@ import type {
 const posts = new Map<string, BoardPost>();
 const comments = new Map<string, BoardComment[]>();
 const likes = new Map<string, Set<string>>();
+const commentLikes = new Map<string, Set<string>>();
 const bookmarks = new Map<string, Set<string>>();
 const postSubscriptions = new Set<{
   callbacks: SubscriptionCallbacks<BoardPost[]>;
@@ -407,6 +408,8 @@ export class MockBoardRepository implements IBoardRepository {
     const nextComment: BoardComment = {
       ...comment,
       id,
+      isLiked: false,
+      likeCount: 0,
       postId,
       createdAt: now,
       updatedAt: now,
@@ -429,6 +432,50 @@ export class MockBoardRepository implements IBoardRepository {
 
     emitComments(postId);
     return id;
+  }
+
+  async toggleCommentLike(
+    postId: string,
+    commentId: string,
+    userId: string,
+  ) {
+    const postComments = comments.get(postId) ?? [];
+    const targetComment = postComments.find(comment => comment.id === commentId);
+
+    if (!targetComment) {
+      throw new Error('댓글을 찾을 수 없습니다.');
+    }
+
+    const targetLikes = commentLikes.get(commentId) ?? new Set<string>();
+    const nextLiked = !targetLikes.has(userId);
+
+    if (nextLiked) {
+      targetLikes.add(userId);
+    } else {
+      targetLikes.delete(userId);
+    }
+
+    commentLikes.set(commentId, targetLikes);
+    comments.set(
+      postId,
+      postComments.map(comment =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: nextLiked,
+              likeCount: Math.max(0, comment.likeCount + (nextLiked ? 1 : -1)),
+              updatedAt: new Date(),
+            }
+          : comment,
+      ),
+    );
+
+    emitComments(postId);
+    return {
+      commentId,
+      isLiked: nextLiked,
+      likeCount: Math.max(0, targetComment.likeCount + (nextLiked ? 1 : -1)),
+    };
   }
 
   async updateComment(postId: string, commentId: string, content: string): Promise<void> {

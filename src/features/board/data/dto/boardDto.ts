@@ -79,6 +79,8 @@ export interface BoardCommentDto {
   isAuthor: boolean;
   isPostAuthor: boolean;
   isDeleted: boolean;
+  isLiked: boolean;
+  likeCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -91,6 +93,12 @@ export interface BoardLikeResponseDto {
 export interface BoardBookmarkResponseDto {
   isBookmarked: boolean;
   bookmarkCount: number;
+}
+
+export interface BoardCommentLikeResponseDto {
+  commentId: string;
+  isLiked: boolean;
+  likeCount: number;
 }
 
 export interface BoardCreatePostRequestDto {
