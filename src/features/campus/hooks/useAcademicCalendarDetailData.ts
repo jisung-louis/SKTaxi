@@ -287,7 +287,7 @@ export const useAcademicCalendarDetailData = (initialDate?: string) => {
   const today = React.useMemo(() => normalizeDateObject(new Date()), []);
 
   const data = React.useMemo<AcademicCalendarDetailScreenViewData | undefined>(() => {
-    if (!events.length) {
+    if (!events.length && (loading || error)) {
       return undefined;
     }
 
@@ -324,7 +324,7 @@ export const useAcademicCalendarDetailData = (initialDate?: string) => {
         weekLabel: formatWeekOfMonthLabel(currentDate),
       },
     };
-  }, [activeMode, currentDate, events, today]);
+  }, [activeMode, currentDate, error, events, loading, today]);
 
   const movePrev = React.useCallback(() => {
     setCurrentDate(previousDate => {
