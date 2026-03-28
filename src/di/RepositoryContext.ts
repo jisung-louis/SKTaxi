@@ -10,16 +10,12 @@ import type {
   ICampusBannerRepository,
   ICafeteriaRepository,
   IChatRepository,
-  ICourseRepository,
-  IInquiryRepository,
   IMemberRepository,
   INotificationActionRepository,
   INotificationRepository,
   INoticeRepository,
   IPartyRepository,
-  IStorageRepository,
   ITaxiChatRepository,
-  ITimetableRepository,
 } from './repositoryContracts';
 
 /**
@@ -30,15 +26,11 @@ export interface RepositoryContainer {
   chatRepository: IChatRepository;
   boardRepository: IBoardRepository;
   noticeRepository: INoticeRepository;
-  courseRepository: ICourseRepository;
   notificationRepository: INotificationRepository;
   appNoticeRepository: IAppNoticeRepository;
   cafeteriaRepository: ICafeteriaRepository;
   academicRepository: IAcademicRepository;
   campusBannerRepository: ICampusBannerRepository;
-  inquiryRepository: IInquiryRepository;
-  storageRepository: IStorageRepository;
-  timetableRepository: ITimetableRepository;
   authRepository: IAuthRepository;
   memberRepository: IMemberRepository;
   notificationActionRepository: INotificationActionRepository;

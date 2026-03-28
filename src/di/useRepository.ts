@@ -12,16 +12,12 @@ import type {
   ICampusBannerRepository,
   ICafeteriaRepository,
   IChatRepository,
-  ICourseRepository,
-  IInquiryRepository,
   IMemberRepository,
   INotificationActionRepository,
   INotificationRepository,
   INoticeRepository,
   IPartyRepository,
-  IStorageRepository,
   ITaxiChatRepository,
-  ITimetableRepository,
 } from './repositoryContracts';
 
 /**
@@ -69,14 +65,6 @@ export function useNoticeRepository(): INoticeRepository {
 }
 
 /**
- * Course Repository 접근 훅
- */
-export function useCourseRepository(): ICourseRepository {
-  const {courseRepository} = useRepositories();
-  return courseRepository;
-}
-
-/**
  * Notification Repository 접근 훅
  */
 export function useNotificationRepository(): INotificationRepository {
@@ -114,30 +102,6 @@ export function useAcademicRepository(): IAcademicRepository {
 export function useCampusBannerRepository(): ICampusBannerRepository {
   const {campusBannerRepository} = useRepositories();
   return campusBannerRepository;
-}
-
-/**
- * Inquiry Repository 접근 훅
- */
-export function useInquiryRepository(): IInquiryRepository {
-  const {inquiryRepository} = useRepositories();
-  return inquiryRepository;
-}
-
-/**
- * Storage Repository 접근 훅
- */
-export function useStorageRepository(): IStorageRepository {
-  const {storageRepository} = useRepositories();
-  return storageRepository;
-}
-
-/**
- * Timetable Repository 접근 훅
- */
-export function useTimetableRepository(): ITimetableRepository {
-  const {timetableRepository} = useRepositories();
-  return timetableRepository;
 }
 
 /**

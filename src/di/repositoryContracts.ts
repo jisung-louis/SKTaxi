@@ -10,16 +10,10 @@ export type {IMemberRepository} from '@/features/member';
 export type {INoticeRepository} from '@/features/notice';
 export type {
   IAppNoticeRepository,
-  IInquiryRepository,
 } from '@/features/settings';
 export type {
   INotificationActionRepository,
   IPartyRepository,
   ITaxiChatRepository,
 } from '@/features/taxi';
-export type {
-  ICourseRepository,
-  ITimetableRepository,
-} from '@/features/timetable';
 export type {INotificationRepository} from '@/features/user';
-export type {IStorageRepository} from '@/shared/lib/firebase/storageRepository';
