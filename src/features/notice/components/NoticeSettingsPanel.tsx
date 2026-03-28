@@ -16,8 +16,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 
 import {
+  ToggleSwitch,
+} from '@/shared/design-system/components';
+import {
   COLORS,
-  RADIUS,
   SHADOWS,
   SPACING,
 } from '@/shared/design-system/tokens';
@@ -77,22 +79,12 @@ export function NoticeSettingsPanel({
               <Text style={styles.panelSectionTitle}>전체</Text>
               <View style={styles.rowBetween}>
                 <Text style={styles.itemLabel}>전체 공지 알림</Text>
-                <TouchableOpacity
-                  onPress={() =>
-                    onUpdateMaster(!noticeSettings.noticeNotifications)
-                  }
-                  style={[
-                    styles.toggle,
-                    noticeSettings.noticeNotifications && styles.toggleOn,
-                  ]}
-                  activeOpacity={0.8}>
-                  <View
-                    style={[
-                      styles.knob,
-                      noticeSettings.noticeNotifications && styles.knobOn,
-                    ]}
-                  />
-                </TouchableOpacity>
+                <ToggleSwitch
+                  accessibilityLabel="전체 공지 알림"
+                  onValueChange={onUpdateMaster}
+                  size="large"
+                  value={noticeSettings.noticeNotifications}
+                />
               </View>
             </View>
 
@@ -114,19 +106,13 @@ export function NoticeSettingsPanel({
                         ]}>
                         {category}
                       </Text>
-                      <TouchableOpacity
-                        onPress={() =>
-                          !disabled && onUpdateDetail(key, !enabled)
-                        }
-                        style={[
-                          styles.toggle,
-                          enabled && styles.toggleOn,
-                          disabled && styles.toggleDisabled,
-                        ]}
-                        activeOpacity={0.8}
-                        disabled={disabled}>
-                        <View style={[styles.knob, enabled && styles.knobOn]} />
-                      </TouchableOpacity>
+                      <ToggleSwitch
+                        accessibilityLabel={category}
+                        disabled={disabled}
+                        onValueChange={nextValue => onUpdateDetail(key, nextValue)}
+                        size="large"
+                        value={enabled}
+                      />
                     </View>
                   );
                 },
@@ -137,17 +123,17 @@ export function NoticeSettingsPanel({
               <Text style={styles.panelSectionTitle}>키워드 알림</Text>
               <View style={styles.rowBetween}>
                 <Text style={styles.itemLabel}>키워드 알림 사용</Text>
-                <TouchableOpacity
-                  onPress={() =>
+                <ToggleSwitch
+                  accessibilityLabel="키워드 알림 사용"
+                  onValueChange={() =>
                     Alert.alert(
                       '아직 만들고있어...',
                       '키워드 알림은 아직 구현을 못했어요.\n조금만 기둘..',
                     )
                   }
-                  style={styles.toggle}
-                  activeOpacity={0.8}>
-                  <View style={styles.knob} />
-                </TouchableOpacity>
+                  size="large"
+                  value={false}
+                />
               </View>
             </View>
           </View>
@@ -223,33 +209,5 @@ const styles = StyleSheet.create({
   },
   itemDisabled: {
     color: COLORS.text.muted,
-  },
-  toggle: {
-    width: 48,
-    height: 28,
-    borderRadius: RADIUS.pill,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    backgroundColor: COLORS.background.page,
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  toggleOn: {
-    backgroundColor: `${COLORS.brand.primary}33`,
-    borderColor: COLORS.brand.primary,
-  },
-  toggleDisabled: {
-    opacity: 0.5,
-  },
-  knob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.border.default,
-    transform: [{translateX: 0}],
-  },
-  knobOn: {
-    backgroundColor: COLORS.brand.primary,
-    transform: [{translateX: 20}],
   },
 });

@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import {ToggleSwitch} from '@/shared/design-system/components';
 import {
   COLORS,
   RADIUS,
@@ -55,23 +56,6 @@ interface ChatContextMenuProps {
 
 const MENU_ANIMATION_IN_DURATION = 180;
 const MENU_ANIMATION_OUT_DURATION = 140;
-
-const TogglePill = ({enabled}: {enabled: boolean}) => {
-  return (
-    <View
-      style={[
-        styles.toggleTrack,
-        enabled ? styles.toggleTrackEnabled : styles.toggleTrackDisabled,
-      ]}>
-      <View
-        style={[
-          styles.toggleThumb,
-          enabled ? styles.toggleThumbEnabled : styles.toggleThumbDisabled,
-        ]}
-      />
-    </View>
-  );
-};
 
 export const ChatContextMenu = ({
   items,
@@ -143,7 +127,11 @@ export const ChatContextMenu = ({
                     />
                     <Text style={styles.rowLabel}>{item.label}</Text>
                   </View>
-                  <TogglePill enabled={item.value} />
+                  <ToggleSwitch
+                    pressable={false}
+                    size="compact"
+                    value={item.value}
+                  />
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
@@ -228,31 +216,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     minHeight: 48,
     paddingHorizontal: SPACING.lg,
-  },
-  toggleThumb: {
-    backgroundColor: COLORS.background.surface,
-    borderRadius: RADIUS.pill,
-    height: 16,
-    position: 'absolute',
-    top: 2,
-    width: 16,
-  },
-  toggleThumbDisabled: {
-    left: 2,
-  },
-  toggleThumbEnabled: {
-    left: 18,
-  },
-  toggleTrack: {
-    borderRadius: RADIUS.pill,
-    height: 20,
-    position: 'relative',
-    width: 36,
-  },
-  toggleTrackDisabled: {
-    backgroundColor: COLORS.border.default,
-  },
-  toggleTrackEnabled: {
-    backgroundColor: COLORS.brand.primary,
   },
 });

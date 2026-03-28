@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {
+  ToggleSwitch,
+} from '@/shared/design-system/components';
 import {COLORS, RADIUS} from '@/shared/design-system/tokens';
 
 import {
@@ -188,7 +191,8 @@ export const TimetableAddCourseSheet = ({
           <View style={styles.switchRow}>
             <Text style={styles.fieldLabel}>온라인 수업</Text>
             <ToggleSwitch
-              onPress={() => onSetManualOnline(!data.manual.isOnline)}
+              accessibilityLabel="온라인 수업"
+              onValueChange={onSetManualOnline}
               value={data.manual.isOnline}
             />
           </View>
@@ -415,33 +419,6 @@ const FieldBlock = ({
   );
 };
 
-const ToggleSwitch = ({
-  onPress,
-  value,
-}: {
-  onPress: () => void;
-  value: boolean;
-}) => {
-  return (
-    <TouchableOpacity
-      accessibilityRole="switch"
-      accessibilityState={{checked: value}}
-      activeOpacity={0.88}
-      onPress={onPress}
-      style={[
-        styles.toggleTrack,
-        value ? styles.toggleTrackSelected : null,
-      ]}>
-      <View
-        style={[
-          styles.toggleThumb,
-          value ? styles.toggleThumbSelected : null,
-        ]}
-      />
-    </TouchableOpacity>
-  );
-};
-
 const StepperField = ({
   canDecrease,
   canIncrease,
@@ -665,27 +642,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  toggleTrack: {
-    backgroundColor: COLORS.border.default,
-    borderRadius: RADIUS.pill,
-    height: 24,
-    justifyContent: 'center',
-    paddingHorizontal: 2,
-    width: 44,
-  },
-  toggleTrackSelected: {
-    backgroundColor: COLORS.brand.primary,
-  },
-  toggleThumb: {
-    backgroundColor: COLORS.background.surface,
-    borderRadius: RADIUS.pill,
-    height: 20,
-    transform: [{translateX: 0}],
-    width: 20,
-  },
-  toggleThumbSelected: {
-    transform: [{translateX: 20}],
   },
   inlineRow: {
     flexDirection: 'row',
