@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   contentInput: {
     color: COLORS.text.strong,
     fontSize: 14,
-    lineHeight: 23,
+    lineHeight: 18,
     minHeight: 180,
     padding: 0,
   },
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 16,
     fontWeight: '700',
-    lineHeight: 24,
+    lineHeight: 18,
     minHeight: 24,
     padding: 0,
   },

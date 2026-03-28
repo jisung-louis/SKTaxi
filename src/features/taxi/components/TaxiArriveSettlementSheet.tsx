@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     flex: 1,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 16,
     padding: 0,
   },
   fareInputWrap: {
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   fareSuffix: {
     color: COLORS.text.muted,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 16,
   },
   fieldLabel: {
     color: COLORS.text.secondary,
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: COLORS.text.primary,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 16,
     minHeight: 46,
     paddingHorizontal: 16,
     paddingVertical: 13,

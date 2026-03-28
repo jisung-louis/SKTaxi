@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: COLORS.text.primary,
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 16,
     minHeight: 46,
     paddingHorizontal: 16,
     paddingVertical: 13,

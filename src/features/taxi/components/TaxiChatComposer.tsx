@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
-    lineHeight: 22,
+    lineHeight: 16,
     padding: 0,
   },
   inputSurface: {

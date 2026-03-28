@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: COLORS.text.primary,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 18,
     paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },

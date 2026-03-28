@@ -363,7 +363,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     fontWeight: '500',
-    lineHeight: 22,
+    lineHeight: 16,
     minHeight: 48,
     paddingHorizontal: SPACING.md,
     paddingVertical: 12,

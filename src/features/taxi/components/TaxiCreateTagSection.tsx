@@ -251,6 +251,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     flex: 1,
     fontSize: 15,
+    lineHeight: 16,
     minHeight: 48,
     paddingHorizontal: SPACING.md,
     paddingVertical: 10,

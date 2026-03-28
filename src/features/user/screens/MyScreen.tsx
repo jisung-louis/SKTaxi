@@ -528,7 +528,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     height: 48,
-    lineHeight: 20,
+    lineHeight: 16,
     paddingHorizontal: SPACING.md,
   },
   modalButtonRow: {

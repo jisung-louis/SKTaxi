@@ -5,6 +5,7 @@ export const COLORS = {
     subtle: '#F3F4F6',
     gray: '#E5E7EB',
     grayLight: '#EDEEF0',
+    pageHeader: 'rgba(249, 250, 251, 0.90)',
   },
   text: {
     primary: '#111827',
