@@ -47,6 +47,7 @@ export type CampusStackParamList = {
   AccountModification: undefined;
   NotificationSettings: undefined;
   Inquiries: { type?: string };
+  InquiryHistory: undefined;
   TermsOfUse: undefined;
   PrivacyPolicy: undefined;
   CafeteriaDetail: { scrollToCategory?: string };

@@ -26,3 +26,16 @@ export interface InquiryCreateResponseDto {
   id: string;
   status: string;
 }
+
+export type InquiryStatusDto = 'IN_PROGRESS' | 'PENDING' | 'RESOLVED';
+
+export interface InquiryListItemResponseDto {
+  attachments: InquiryAttachmentDto[];
+  content: string;
+  createdAt: string;
+  id: string;
+  status: InquiryStatusDto;
+  subject: string;
+  type: InquiryTypeDto;
+  updatedAt: string;
+}

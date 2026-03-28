@@ -32,7 +32,7 @@ const INQUIRY_FORM_PLACEHOLDERS = {
   title: '문의 제목을 입력해주세요',
 } as const;
 const INQUIRY_FORM_ATTACHMENT = {
-  helperLines: ['이미지를 첨부하려면 탭하세요', 'JPEG, PNG, WebP 최대 3장'] as [
+  helperLines: ['이미지를 첨부하려면 탭하세요', '최대 3장 첨부 가능'] as [
     string,
     string,
   ],

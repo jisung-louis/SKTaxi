@@ -61,11 +61,27 @@ export const TaxiHistoryScreen = () => {
           <>
             <TaxiHistorySummaryCard item={data.summary} />
 
-            <View style={styles.list}>
-              {data.entries.map(item => (
-                <TaxiHistoryListItem key={item.id} item={item} />
-              ))}
-            </View>
+            {data.entries.length > 0 ? (
+              <View style={styles.list}>
+                {data.entries.map(item => (
+                  <TaxiHistoryListItem key={item.id} item={item} />
+                ))}
+              </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                <StateCard
+                  description="아직 택시 이용 내역이 없습니다. 택시팟에 참여하면 이곳에서 내역을 확인할 수 있어요."
+                  icon={
+                    <Icon
+                      color={COLORS.accent.orange}
+                      name="car-outline"
+                      size={28}
+                    />
+                  }
+                  title="택시 이용 내역이 없습니다"
+                />
+              </View>
+            )}
           </>
         ) : null}
       </ScrollView>
@@ -85,6 +101,9 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+    marginTop: 20,
+  },
+  emptyWrap: {
     marginTop: 20,
   },
 });

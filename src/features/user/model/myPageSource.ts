@@ -1,11 +1,14 @@
 export type MyPageMenuActionKey =
   | 'profileEdit'
+  | 'minecraftAccount'
+  | 'minecraftServer'
   | 'myPosts'
   | 'bookmarks'
   | 'taxiHistory'
   | 'notificationSettings'
   | 'accountManagement'
   | 'inquiries'
+  | 'inquiryHistory'
   | 'appSettings';
 
 export type MyPageStatKey = Extract<

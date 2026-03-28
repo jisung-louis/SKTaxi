@@ -76,14 +76,30 @@ export const MyPostsScreen = () => {
           bounces={false}
           showsVerticalScrollIndicator={false}
           style={styles.scroll}>
-          {data.items.map((item, index) => (
-            <UserPostListItem
-              key={item.postId}
-              isLast={index === data.items.length - 1}
-              item={item}
-              onPress={postId => navigateToBoardDetail(navigation, postId)}
-            />
-          ))}
+          {data.items.length > 0 ? (
+            data.items.map((item, index) => (
+              <UserPostListItem
+                key={item.postId}
+                isLast={index === data.items.length - 1}
+                item={item}
+                onPress={postId => navigateToBoardDetail(navigation, postId)}
+              />
+            ))
+          ) : (
+            <View style={styles.stateWrap}>
+              <StateCard
+                description="아직 작성한 게시글이 없습니다. 첫 글을 작성해보세요."
+                icon={
+                  <Icon
+                    color={COLORS.accent.blue}
+                    name="document-text-outline"
+                    size={28}
+                  />
+                }
+                title="작성한 글이 없습니다"
+              />
+            </View>
+          )}
         </ScrollView>
       ) : null}
     </SafeAreaView>

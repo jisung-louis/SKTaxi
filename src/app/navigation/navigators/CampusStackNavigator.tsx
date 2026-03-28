@@ -14,6 +14,7 @@ import {
 import { TimetableDetailScreen } from '@/features/timetable';
 import {
   AppNoticeDetailScreen,
+  InquiryHistoryScreen,
   InquiriesScreen,
   PrivacyPolicyScreen,
   SettingScreen,
@@ -56,6 +57,10 @@ export const CampusStackNavigator = () => {
         component={NotificationSettingsScreen}
       />
       <CampusStack.Screen name="Inquiries" component={InquiriesScreen} />
+      <CampusStack.Screen
+        name="InquiryHistory"
+        component={InquiryHistoryScreen}
+      />
       <CampusStack.Screen name="TermsOfUse" component={TermsOfUseScreen} />
       <CampusStack.Screen
         name="PrivacyPolicy"

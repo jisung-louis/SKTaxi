@@ -18,6 +18,7 @@ import {type CampusStackParamList} from '@/app/navigation/types';
 import {useAuth} from '@/features/auth';
 import {
   DefaultProfileAvatar,
+  StackHeader,
   StateCard,
 } from '@/shared/design-system/components';
 import {
@@ -60,6 +61,18 @@ export const MyScreen = () => {
         case 'profileEdit':
           navigation.navigate('ProfileEdit');
           return;
+        case 'minecraftAccount':
+          Alert.alert(
+            '구현 예정',
+            '마인크래프트 계정 등록 기능은 추후 제공될 예정입니다.',
+          );
+          return;
+        case 'minecraftServer':
+          Alert.alert(
+            '구현 예정',
+            '마인크래프트 서버 정보 기능은 추후 제공될 예정입니다.',
+          );
+          return;
         case 'myPosts':
           navigation.navigate('MyPosts');
           return;
@@ -77,6 +90,9 @@ export const MyScreen = () => {
           return;
         case 'inquiries':
           navigation.navigate('Inquiries', {type: 'service'});
+          return;
+        case 'inquiryHistory':
+          navigation.navigate('InquiryHistory');
           return;
         case 'appSettings':
           navigation.navigate('Setting');
@@ -159,21 +175,14 @@ export const MyScreen = () => {
   return (
     <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
       <View style={styles.container}>
+        <StackHeader onPressBack={() => navigation.goBack()} title="마이페이지" />
+
         <ScrollView
           contentContainerStyle={[
             styles.content,
-            {paddingBottom: insets.bottom + 28, paddingTop: insets.top + 16},
+            {paddingBottom: insets.bottom + 28},
           ]}
           showsVerticalScrollIndicator={false}>
-          <TouchableOpacity
-            accessibilityLabel="뒤로 가기"
-            accessibilityRole="button"
-            activeOpacity={0.82}
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}>
-            <Icon color={COLORS.text.primary} name="arrow-back" size={22} />
-          </TouchableOpacity>
-
           {loading && !data ? (
             <StateCard
               description="마이페이지를 준비하고 있습니다."
@@ -310,13 +319,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: SPACING.lg,
-  },
-  backButton: {
-    alignItems: 'center',
-    height: 36,
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    width: 36,
+    paddingTop: 20,
   },
   stateCard: {
     marginTop: SPACING.xs,

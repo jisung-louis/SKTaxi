@@ -35,6 +35,26 @@ interface MyPageStatConfig {
 const MY_PAGE_PROFILE_EDIT_LABEL = '프로필 수정';
 const MY_PAGE_MENU_SECTIONS: MyPageMenuSectionConfig[] = [
   {
+    id: 'minecraft',
+    title: '마인크래프트',
+    items: [
+      {
+        actionKey: 'minecraftAccount',
+        iconName: 'cube-outline',
+        id: 'minecraft-account',
+        label: '마인크래프트 계정 등록',
+        tone: 'green',
+      },
+      {
+        actionKey: 'minecraftServer',
+        iconName: 'server-outline',
+        id: 'minecraft-server',
+        label: '마인크래프트 서버 정보',
+        tone: 'blue',
+      },
+    ],
+  },
+  {
     id: 'activity',
     title: '내 활동',
     items: [
@@ -85,6 +105,13 @@ const MY_PAGE_MENU_SECTIONS: MyPageMenuSectionConfig[] = [
         id: 'inquiries',
         label: '문의하기',
         tone: 'blue',
+      },
+      {
+        actionKey: 'inquiryHistory',
+        iconName: 'file-tray-full-outline',
+        id: 'inquiry-history',
+        label: '문의내역',
+        tone: 'green',
       },
       {
         actionKey: 'appSettings',

@@ -36,6 +36,7 @@ export {useAppSettingData} from './hooks/useAppSettingData';
 export {useAppNoticeFeedData} from './hooks/useAppNoticeFeedData';
 export {useLegalDocumentData} from './hooks/useLegalDocumentData';
 export {useInquiryFormData} from './hooks/useInquiryFormData';
+export {useInquiryHistoryData} from './hooks/useInquiryHistoryData';
 export { useSubmitInquiry } from './hooks/useSubmitInquiry';
 export type {
   InquiryData,
@@ -43,6 +44,7 @@ export type {
 } from './hooks/useSubmitInquiry';
 
 export { AppNoticeDetailScreen } from './screens/AppNoticeDetailScreen';
+export { InquiryHistoryScreen } from './screens/InquiryHistoryScreen';
 export { InquiriesScreen } from './screens/InquiriesScreen';
 export { LegalDocumentScreen } from './screens/LegalDocumentScreen';
 export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
@@ -59,6 +61,10 @@ export type {
   InquiryFormScreenViewData,
   InquiryTypeOptionViewData,
 } from './model/inquiryFormViewData';
+export type {
+  InquiryHistoryItemViewData,
+  InquiryHistoryScreenViewData,
+} from './model/inquiryHistoryViewData';
 export type {
   LegalDocumentBannerIconKey,
   LegalDocumentBannerLineSource,

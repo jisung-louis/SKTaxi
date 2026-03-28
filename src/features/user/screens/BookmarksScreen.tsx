@@ -80,25 +80,59 @@ export const BookmarksScreen = () => {
             showsVerticalScrollIndicator={false}
             style={styles.scroll}>
             {activeTab === 'community'
-              ? data.communityItems.map((item, index) => (
-                  <UserPostListItem
-                    bookmarkAlignedRight
-                    key={item.postId}
-                    isLast={index === data.communityItems.length - 1}
-                    item={item}
-                    onPress={postId => navigateToBoardDetail(navigation, postId)}
-                  />
-                ))
-              : data.noticeItems.map((item, index) => (
-                  <UserNoticeBookmarkListItem
-                    key={item.noticeId}
-                    isLast={index === data.noticeItems.length - 1}
-                    item={item}
-                    onPress={noticeId =>
-                      navigateToNoticeDetail(navigation, noticeId)
-                    }
-                  />
-                ))}
+              ? data.communityItems.length > 0
+                ? data.communityItems.map((item, index) => (
+                    <UserPostListItem
+                      bookmarkAlignedRight
+                      key={item.postId}
+                      isLast={index === data.communityItems.length - 1}
+                      item={item}
+                      onPress={postId =>
+                        navigateToBoardDetail(navigation, postId)
+                      }
+                    />
+                  ))
+                : (
+                    <View style={styles.stateWrap}>
+                      <StateCard
+                        description="저장한 커뮤니티 북마크가 없습니다. 관심 있는 글을 북마크해보세요."
+                        icon={
+                          <Icon
+                            color={COLORS.accent.blue}
+                            name="bookmark-outline"
+                            size={28}
+                          />
+                        }
+                        title="커뮤니티 북마크가 없습니다"
+                      />
+                    </View>
+                  )
+              : data.noticeItems.length > 0
+                ? data.noticeItems.map((item, index) => (
+                    <UserNoticeBookmarkListItem
+                      key={item.noticeId}
+                      isLast={index === data.noticeItems.length - 1}
+                      item={item}
+                      onPress={noticeId =>
+                        navigateToNoticeDetail(navigation, noticeId)
+                      }
+                    />
+                  ))
+                : (
+                    <View style={styles.stateWrap}>
+                      <StateCard
+                        description="저장한 공지사항 북마크가 없습니다. 나중에 다시 볼 공지를 저장해보세요."
+                        icon={
+                          <Icon
+                            color={COLORS.accent.orange}
+                            name="notifications-outline"
+                            size={28}
+                          />
+                        }
+                        title="공지사항 북마크가 없습니다"
+                      />
+                    </View>
+                  )}
           </ScrollView>
         </>
       ) : null}
