@@ -39,21 +39,29 @@ export interface ChatThreadDateDividerViewData {
   type: 'date-divider'
 }
 
+export interface ChatThreadSystemMessageViewData {
+  id: string
+  text: string
+  type: 'system-message'
+}
+
 export interface ChatThreadMessageViewData {
   avatar?: ChatAvatarViewData
-  direction: 'incoming' | 'outgoing' | 'system'
+  direction: 'incoming' | 'outgoing'
   id: string
   imageUrl?: string
+  messageKind: 'text' | 'image'
   minuteKey: string
   senderId: string
   senderName: string
   text: string
   timeLabel: string
-  type: 'message'
+  type: 'text-message'
 }
 
 export type ChatThreadItemViewData =
   | ChatThreadDateDividerViewData
+  | ChatThreadSystemMessageViewData
   | ChatThreadMessageViewData
 
 export interface ChatThreadListViewData {

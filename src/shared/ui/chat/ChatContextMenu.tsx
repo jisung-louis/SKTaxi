@@ -1,0 +1,258 @@
+import React from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import Animated, {
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+} from '@/shared/design-system/tokens';
+
+export interface ChatContextMenuToggleItem {
+  iconName: string
+  id: string
+  label: string
+  onPress: () => void
+  type: 'toggle'
+  value: boolean
+}
+
+export interface ChatContextMenuActionItem {
+  iconName: string
+  id: string
+  label: string
+  onPress: () => void
+  tone?: 'default' | 'danger'
+  type: 'action'
+}
+
+export type ChatContextMenuItem =
+  | ChatContextMenuToggleItem
+  | ChatContextMenuActionItem;
+
+interface ChatContextMenuProps {
+  items: ChatContextMenuItem[]
+  onClose: () => void
+  right?: number
+  top?: number
+  visible: boolean
+  width?: number
+}
+
+const MENU_ANIMATION_IN_DURATION = 180;
+const MENU_ANIMATION_OUT_DURATION = 140;
+
+const TogglePill = ({enabled}: {enabled: boolean}) => {
+  return (
+    <View
+      style={[
+        styles.toggleTrack,
+        enabled ? styles.toggleTrackEnabled : styles.toggleTrackDisabled,
+      ]}>
+      <View
+        style={[
+          styles.toggleThumb,
+          enabled ? styles.toggleThumbEnabled : styles.toggleThumbDisabled,
+        ]}
+      />
+    </View>
+  );
+};
+
+export const ChatContextMenu = ({
+  items,
+  onClose,
+  right = 12,
+  top = 64,
+  visible,
+  width = 184,
+}: ChatContextMenuProps) => {
+  const [shouldRender, setShouldRender] = React.useState(visible);
+  const progress = useSharedValue(visible ? 1 : 0);
+
+  React.useEffect(() => {
+    if (visible) {
+      setShouldRender(true);
+      progress.value = withTiming(1, {duration: MENU_ANIMATION_IN_DURATION});
+      return;
+    }
+
+    progress.value = withTiming(
+      0,
+      {duration: MENU_ANIMATION_OUT_DURATION},
+      finished => {
+        if (finished) {
+          runOnJS(setShouldRender)(false);
+        }
+      },
+    );
+  }, [progress, visible]);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(progress.value, [0, 1], [0, 1]),
+  }));
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+    transform: [
+      {translateY: interpolate(progress.value, [0, 1], [-8, 0])},
+      {scale: interpolate(progress.value, [0, 1], [0.96, 1])},
+    ],
+  }));
+
+  if (!shouldRender || items.length === 0) {
+    return null;
+  }
+
+  return (
+    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+      <Animated.View pointerEvents="none" style={[styles.overlay, overlayAnimatedStyle]} />
+      <Pressable onPress={onClose} style={StyleSheet.absoluteFill} />
+
+      <Animated.View style={[styles.card, {right, top, width}, cardAnimatedStyle]}>
+        {items.map((item, index) => {
+          const showDivider = index < items.length - 1;
+
+          return (
+            <React.Fragment key={item.id}>
+              {item.type === 'toggle' ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.82}
+                  onPress={item.onPress}
+                  style={styles.toggleRow}>
+                  <View style={styles.rowLabelGroup}>
+                    <Icon
+                      color={COLORS.text.secondary}
+                      name={item.iconName}
+                      size={15}
+                    />
+                    <Text style={styles.rowLabel}>{item.label}</Text>
+                  </View>
+                  <TogglePill enabled={item.value} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.82}
+                  onPress={() => {
+                    onClose();
+                    item.onPress();
+                  }}
+                  style={styles.actionRow}>
+                  <Icon
+                    color={
+                      item.tone === 'danger'
+                        ? COLORS.status.danger
+                        : COLORS.text.secondary
+                    }
+                    name={item.iconName}
+                    size={15}
+                  />
+                  <Text
+                    style={[
+                      styles.rowLabel,
+                      item.tone === 'danger' ? styles.dangerLabel : null,
+                    ]}>
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {showDivider ? <View style={styles.divider} /> : null}
+            </React.Fragment>
+          );
+        })}
+      </Animated.View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  actionRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    minHeight: 48,
+    paddingHorizontal: SPACING.lg,
+  },
+  card: {
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.subtle,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+    zIndex: 20,
+    ...SHADOWS.raised,
+  },
+  dangerLabel: {
+    color: COLORS.status.danger,
+  },
+  divider: {
+    backgroundColor: COLORS.border.subtle,
+    height: 1,
+    marginHorizontal: SPACING.md,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.06)',
+  },
+  rowLabel: {
+    color: COLORS.text.strong,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  rowLabelGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  toggleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 48,
+    paddingHorizontal: SPACING.lg,
+  },
+  toggleThumb: {
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.pill,
+    height: 16,
+    position: 'absolute',
+    top: 2,
+    width: 16,
+  },
+  toggleThumbDisabled: {
+    left: 2,
+  },
+  toggleThumbEnabled: {
+    left: 18,
+  },
+  toggleTrack: {
+    borderRadius: RADIUS.pill,
+    height: 20,
+    position: 'relative',
+    width: 36,
+  },
+  toggleTrackDisabled: {
+    backgroundColor: COLORS.border.default,
+  },
+  toggleTrackEnabled: {
+    backgroundColor: COLORS.brand.primary,
+  },
+});

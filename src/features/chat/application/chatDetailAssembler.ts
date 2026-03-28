@@ -80,20 +80,25 @@ const buildItems = (
     }
 
     items.push({
-      direction:
-        message.type === 'system'
-          ? 'system'
-          : message.senderId === currentUserId
-          ? 'outgoing'
-          : 'incoming',
-      id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
-      imageUrl: message.type === 'image' ? message.imageUrl : undefined,
-      minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),
-      senderId: message.senderId,
-      senderName: message.senderName,
-      text: message.text,
-      timeLabel: format(createdDate, 'a hh:mm', {locale: ko}),
-      type: 'message',
+      ...(message.type === 'system'
+        ? {
+            id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
+            text: message.text,
+            type: 'system-message' as const,
+          }
+        : {
+            direction:
+              message.senderId === currentUserId ? 'outgoing' : 'incoming',
+            id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
+            imageUrl: message.type === 'image' ? message.imageUrl : undefined,
+            messageKind: message.type === 'image' ? 'image' : 'text',
+            minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),
+            senderId: message.senderId,
+            senderName: message.senderName,
+            text: message.text,
+            timeLabel: format(createdDate, 'a hh:mm', {locale: ko}),
+            type: 'text-message' as const,
+          }),
     });
   });
 

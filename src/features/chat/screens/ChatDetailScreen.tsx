@@ -17,7 +17,6 @@ import Animated from 'react-native-reanimated';
 
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {
-  DetailComposer,
   DetailNotFoundState,
   StateCard,
 } from '@/shared/design-system/components';
@@ -26,6 +25,7 @@ import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 import Button from '@/shared/ui/Button';
 import {
+  ChatComposerBar,
   ChatHeader,
   ChatMessageList,
   ChatPopupMenu,
@@ -284,16 +284,14 @@ export const ChatDetailScreen = () => {
               <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={0}>
-                <DetailComposer
-                  leadingActionAccessibilityLabel="이미지 보내기"
-                  leadingIconName="image-outline"
+                <ChatComposerBar
+                  imageButtonDisabled={imageSending}
                   onChangeText={setComposerValue}
-                  onPressLeadingAction={() => {
+                  onPressImage={() => {
                     handlePickImage().catch(() => undefined);
                   }}
                   onSend={handleSend}
                   placeholder={data.composerPlaceholder}
-                  sendAccessibilityLabel="메시지 전송"
                   value={composerValue}
                 />
               </KeyboardAvoidingView>

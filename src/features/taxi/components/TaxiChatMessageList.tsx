@@ -2,8 +2,6 @@ import React from 'react';
 import {
   Alert,
   Clipboard,
-  Image,
-  ScrollView,
   StyleProp,
   StyleSheet,
   Text,
@@ -22,12 +20,9 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 import Button from '@/shared/ui/Button';
-import {MessageImageBubble} from '@/shared/ui/chat/MessageImageBubble';
+import {ChatAvatar, ChatThreadCore} from '@/shared/ui/chat';
 
-import type {
-  TaxiChatTextMessageViewData,
-  TaxiChatThreadItemViewData,
-} from '../model/taxiChatViewData';
+import type {TaxiChatThreadItemViewData} from '../model/taxiChatViewData';
 
 interface TaxiChatMessageListProps {
   autoScrollKey?: number | string;
@@ -36,73 +31,6 @@ interface TaxiChatMessageListProps {
   items: TaxiChatThreadItemViewData[];
   onPressEndPartyExit?: () => void;
 }
-
-const renderAvatar = (avatar?: TaxiChatTextMessageViewData['avatar']) => {
-  if (!avatar) {
-    return <View style={styles.avatarSpacer} />;
-  }
-
-  if (avatar.kind === 'image') {
-    return <Image source={{uri: avatar.uri}} style={styles.avatarImage} />;
-  }
-
-  return (
-    <View style={[styles.avatarCircle, {backgroundColor: avatar.backgroundColor}]}>
-      {avatar.kind === 'label' ? (
-        <Text style={[styles.avatarLabel, {color: avatar.textColor}]}>
-          {avatar.label}
-        </Text>
-      ) : (
-        <Icon color={avatar.iconColor} name={avatar.iconName} size={16} />
-      )}
-    </View>
-  );
-};
-
-const getPreviousMessage = (
-  items: TaxiChatThreadItemViewData[],
-  index: number,
-) => {
-  for (let itemIndex = index - 1; itemIndex >= 0; itemIndex -= 1) {
-    const item = items[itemIndex];
-
-    if (!item || item.type !== 'text-message') {
-      return null;
-    }
-
-    return item;
-  }
-
-  return null;
-};
-
-const getNextMessage = (
-  items: TaxiChatThreadItemViewData[],
-  index: number,
-) => {
-  for (let itemIndex = index + 1; itemIndex < items.length; itemIndex += 1) {
-    const item = items[itemIndex];
-
-    if (!item || item.type !== 'text-message') {
-      return null;
-    }
-
-    return item;
-  }
-
-  return null;
-};
-
-const isSameGroup = (
-  currentMessage: TaxiChatTextMessageViewData,
-  adjacentMessage: TaxiChatTextMessageViewData | null,
-) =>
-  Boolean(
-    adjacentMessage &&
-      adjacentMessage.direction === currentMessage.direction &&
-      adjacentMessage.senderId === currentMessage.senderId &&
-      adjacentMessage.minuteKey === currentMessage.minuteKey,
-  );
 
 const copyToClipboard = (value: string, message: string) => {
   Clipboard.setString(value);
@@ -128,47 +56,16 @@ export const TaxiChatMessageList = ({
   items,
   onPressEndPartyExit,
 }: TaxiChatMessageListProps) => {
-  const scrollViewRef = React.useRef<ScrollView>(null);
-
-  React.useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({animated: true});
-    }, 40);
-
-    return () => clearTimeout(timeoutId);
-  }, [autoScrollKey, items.length]);
-
   return (
-    <ScrollView
-      contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
-      keyboardDismissMode="interactive"
-      keyboardShouldPersistTaps="handled"
-      ref={scrollViewRef}
-      showsVerticalScrollIndicator={false}>
-      {headerContent}
-
-      {items.map((item, index) => {
-        if (item.type === 'date-divider') {
-          return (
-            <View key={item.id} style={styles.dateDividerRow}>
-              <View style={styles.dateDividerLine} />
-              <Text style={styles.dateDividerLabel}>{item.label}</Text>
-              <View style={styles.dateDividerLine} />
-            </View>
-          );
-        }
-
-        if (item.type === 'system-message') {
-          return (
-            <View key={item.id} style={styles.systemMessageWrap}>
-              <Text style={styles.systemMessageLabel}>{item.text}</Text>
-            </View>
-          );
-        }
-
+    <ChatThreadCore
+      autoScrollKey={autoScrollKey}
+      contentContainerStyle={contentContainerStyle}
+      headerContent={headerContent}
+      items={items}
+      renderCustomItem={item => {
         if (item.type === 'end-message') {
           return (
-            <View key={item.id} style={styles.specialWrap}>
+            <View style={styles.specialWrap}>
               <View style={styles.endCard}>
                 <View style={styles.endCardContent}>
                   <Icon
@@ -205,7 +102,7 @@ export const TaxiChatMessageList = ({
             : COLORS.accent.blue;
 
           return (
-            <View key={item.id} style={styles.messageWrap}>
+            <View style={styles.messageWrap}>
               {isOutgoing ? (
                 <View style={styles.accountMessageRow}>
                   <View style={styles.accountTimeWrap}>
@@ -283,7 +180,7 @@ export const TaxiChatMessageList = ({
               ) : (
                 <View style={styles.incomingRow}>
                   <View style={styles.avatarWrap}>
-                    {renderAvatar(item.avatar)}
+                    <ChatAvatar avatar={item.avatar} />
                   </View>
 
                   <View style={styles.incomingContent}>
@@ -374,9 +271,10 @@ export const TaxiChatMessageList = ({
                 item.accountData.hideName,
               )
             : undefined;
+          const arrivedAccountLabel = item.accountLabel;
 
           return (
-            <View key={item.id} style={styles.specialWrap}>
+            <View style={styles.specialWrap}>
               <View style={styles.arrivedCardStack}>
                 <LinearGradient
                   colors={['#2BCB7E', '#17B96E']}
@@ -434,7 +332,7 @@ export const TaxiChatMessageList = ({
 
                     <View style={styles.arrivedDivider} />
 
-                    {item.accountLabel ? (
+                    {arrivedAccountLabel ? (
                       <View style={styles.arrivedAccountCard}>
                         <Text style={styles.arrivedAccountCardLabel}>송금 계좌</Text>
                         {arrivedAccountHolder ? (
@@ -443,19 +341,19 @@ export const TaxiChatMessageList = ({
                           </Text>
                         ) : null}
                         <Text style={styles.arrivedAccountCardValue}>
-                          {item.accountLabel.replace(' ', ' · ')}
+                          {arrivedAccountLabel.replace(' ', ' · ')}
                         </Text>
                       </View>
                     ) : null}
                   </View>
 
-                  {item.accountLabel ? (
+                  {arrivedAccountLabel ? (
                     <TouchableOpacity
                       accessibilityRole="button"
                       activeOpacity={0.84}
                       onPress={() => {
                         copyToClipboard(
-                          item.accountLabel!,
+                          arrivedAccountLabel,
                           '정산 계좌가 복사되었습니다.',
                         );
                       }}
@@ -474,91 +372,9 @@ export const TaxiChatMessageList = ({
           );
         }
 
-        const previousMessage = getPreviousMessage(items, index);
-        const nextMessage = getNextMessage(items, index);
-        const isGroupStart = !isSameGroup(item, previousMessage);
-        const isGroupEnd = !isSameGroup(item, nextMessage);
-        const wrapperStyle =
-          item.direction === 'outgoing'
-            ? styles.outgoingMessageWrap
-            : styles.incomingMessageWrap;
-
-        if (item.direction === 'outgoing') {
-          return (
-            <View
-              key={item.id}
-              style={[
-                styles.messageWrap,
-                wrapperStyle,
-                !isGroupEnd ? styles.messageWrapCompact : null,
-                isGroupStart ? null : styles.messageWrapGrouped,
-              ]}>
-              <View style={styles.outgoingRow}>
-                {isGroupEnd ? (
-                  <Text style={[styles.timeLabel, styles.outgoingTimeLabel]}>
-                    {item.timeLabel}
-                  </Text>
-                ) : null}
-                <View
-                  style={[
-                    styles.bubble,
-                    styles.outgoingBubble,
-                    item.messageKind === 'image' ? styles.imageBubble : null,
-                  ]}>
-                  {item.imageUrl ? (
-                    <MessageImageBubble uri={item.imageUrl} />
-                  ) : (
-                    <Text style={[styles.messageText, styles.outgoingMessageText]}>
-                      {item.text}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </View>
-          );
-        }
-
-        return (
-          <View
-            key={item.id}
-            style={[
-              styles.messageWrap,
-              wrapperStyle,
-              !isGroupEnd ? styles.messageWrapCompact : null,
-              isGroupStart ? null : styles.messageWrapGrouped,
-            ]}>
-            <View style={styles.incomingRow}>
-              <View style={styles.avatarWrap}>
-                {isGroupStart ? renderAvatar(item.avatar) : <View style={styles.avatarSpacer} />}
-              </View>
-
-              <View style={styles.incomingContent}>
-                {isGroupStart ? (
-                  <Text style={styles.senderName}>{item.senderName}</Text>
-                ) : null}
-                <View style={styles.incomingBubbleRow}>
-                  <View
-                    style={[
-                      styles.bubble,
-                      styles.incomingBubble,
-                      item.messageKind === 'image' ? styles.imageBubble : null,
-                    ]}>
-                    {item.imageUrl ? (
-                      <MessageImageBubble uri={item.imageUrl} />
-                    ) : (
-                      <Text style={styles.messageText}>{item.text}</Text>
-                    )}
-                  </View>
-                  {isGroupEnd ? (
-                    <Text style={styles.timeLabel}>{item.timeLabel}</Text>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
+        return null;
+      }}
+    />
   );
 };
 
@@ -573,6 +389,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
   },
+  accountBubbleBankIncoming: {
+    color: COLORS.text.muted,
+  },
+  accountBubbleBankOutgoing: {
+    color: 'rgba(255,255,255,0.8)',
+  },
   accountBubbleBody: {
     paddingBottom: 4,
     paddingHorizontal: 14,
@@ -585,10 +407,24 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     paddingTop: 9,
   },
+  accountBubbleCopyButtonIncoming: {
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+  },
+  accountBubbleCopyButtonOutgoing: {
+    borderTopColor: 'rgba(255,255,255,0.2)',
+    borderTopWidth: 1,
+  },
   accountBubbleCopyLabel: {
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
+  },
+  accountBubbleCopyLabelIncoming: {
+    color: COLORS.accent.blue,
+  },
+  accountBubbleCopyLabelOutgoing: {
+    color: 'rgba(255,255,255,0.8)',
   },
   accountBubbleHolder: {
     fontSize: 14,
@@ -611,12 +447,6 @@ const styles = StyleSheet.create({
     maxWidth: 156,
     minWidth: 156,
   },
-  accountBubbleBankIncoming: {
-    color: COLORS.text.muted,
-  },
-  accountBubbleBankOutgoing: {
-    color: 'rgba(255,255,255,0.8)',
-  },
   accountBubbleNumber: {
     fontSize: 14,
     lineHeight: 20,
@@ -628,24 +458,20 @@ const styles = StyleSheet.create({
   accountBubbleNumberOutgoing: {
     color: COLORS.text.inverse,
   },
-  accountBubbleCopyButtonIncoming: {
-    borderTopColor: COLORS.border.subtle,
-    borderTopWidth: 1,
-  },
-  accountBubbleCopyButtonOutgoing: {
-    borderTopColor: 'rgba(255,255,255,0.2)',
-    borderTopWidth: 1,
-  },
-  accountBubbleCopyLabelIncoming: {
-    color: COLORS.accent.blue,
-  },
-  accountBubbleCopyLabelOutgoing: {
-    color: 'rgba(255,255,255,0.8)',
+  accountBubbleOutgoing: {
+    backgroundColor: COLORS.brand.primary,
+    borderTopLeftRadius: RADIUS.lg,
+    borderTopRightRadius: 2,
+    minWidth: 104,
   },
   accountBubbleTitle: {
     fontSize: 12,
     fontWeight: '700',
     lineHeight: 16,
+  },
+  accountBubbleTitleIcon: {
+    height: 14,
+    width: 15,
   },
   accountBubbleTitleIncoming: {
     color: COLORS.text.secondary,
@@ -653,32 +479,22 @@ const styles = StyleSheet.create({
   accountBubbleTitleOutgoing: {
     color: 'rgba(255,255,255,0.9)',
   },
-  accountBubbleTitleIcon: {
-    height: 14,
-    width: 15,
-  },
   accountBubbleTitleRow: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
     marginBottom: 8,
   },
+  accountIncomingBubbleRow: {
+    alignItems: 'flex-end',
+    flexDirection: 'row',
+    gap: 6,
+  },
   accountMessageRow: {
     alignItems: 'flex-end',
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'flex-end',
-  },
-  accountBubbleOutgoing: {
-    backgroundColor: COLORS.brand.primary,
-    borderTopLeftRadius: RADIUS.lg,
-    borderTopRightRadius: 2,
-    minWidth: 104,
-  },
-  accountIncomingBubbleRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 6,
   },
   accountTimeLabel: {
     color: COLORS.text.muted,
@@ -714,19 +530,38 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginTop: 1,
   },
+  arrivedAmountLabel: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  arrivedAmountValue: {
+    color: COLORS.status.success,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
   arrivedBody: {
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   arrivedBodyCard: {
     backgroundColor: COLORS.background.surface,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
     borderBottomLeftRadius: RADIUS.lg,
     borderBottomRightRadius: RADIUS.lg,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
     borderTopWidth: 0,
     overflow: 'hidden',
     width: '100%',
+  },
+  arrivedCardStack: {
+    alignSelf: 'stretch',
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    width: '100%',
+    ...SHADOWS.card,
   },
   arrivedCopyButton: {
     alignItems: 'center',
@@ -773,13 +608,6 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.body1,
     fontWeight: '700',
   },
-  arrivedCardStack: {
-    alignSelf: 'stretch',
-    backgroundColor: COLORS.background.surface,
-    borderRadius: RADIUS.lg,
-    width: '100%',
-    ...SHADOWS.card,
-  },
   arrivedIconWrap: {
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -787,18 +615,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
-  },
-  arrivedAmountLabel: {
-    color: COLORS.text.secondary,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 16,
-  },
-  arrivedAmountValue: {
-    color: COLORS.status.success,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
   },
   arrivedInfoLabel: {
     color: COLORS.text.secondary,
@@ -828,61 +644,8 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.md,
     textAlign: 'right',
   },
-  avatarCircle: {
-    alignItems: 'center',
-    borderRadius: RADIUS.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  avatarImage: {
-    borderRadius: RADIUS.pill,
-    height: 36,
-    width: 36,
-  },
-  avatarLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    lineHeight: 18,
-  },
-  avatarSpacer: {
-    height: 36,
-    width: 36,
-  },
   avatarWrap: {
     width: 36,
-  },
-  bubble: {
-    borderRadius: 16,
-    maxWidth: '82%',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  imageBubble: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-  },
-  contentContainer: {
-    flexGrow: 1,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-  },
-  dateDividerLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-    paddingHorizontal: SPACING.md,
-  },
-  dateDividerLine: {
-    backgroundColor: COLORS.border.default,
-    flex: 1,
-    height: 1,
-  },
-  dateDividerRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    marginVertical: SPACING.md,
   },
   endCard: {
     backgroundColor: COLORS.brand.primaryTint,
@@ -914,62 +677,17 @@ const styles = StyleSheet.create({
     color: COLORS.status.danger,
     fontWeight: '700',
   },
-  incomingBubble: {
-    backgroundColor: COLORS.background.surface,
-    borderColor: COLORS.border.subtle,
-    borderTopLeftRadius: 4,
-    borderWidth: 1,
-    ...SHADOWS.card,
-  },
-  incomingBubbleRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 6,
-  },
   incomingContent: {
     flex: 1,
-  },
-  incomingMessageWrap: {
-    alignItems: 'flex-start',
   },
   incomingRow: {
     alignItems: 'flex-start',
     flexDirection: 'row',
     gap: SPACING.sm,
   },
-  messageText: {
-    color: COLORS.text.primary,
-    fontSize: 14,
-    lineHeight: 22,
-  },
   messageWrap: {
     marginBottom: SPACING.xs,
     marginTop: SPACING.sm,
-  },
-  messageWrapGrouped: {
-    marginTop: 0,
-  },
-  messageWrapCompact: {
-    marginBottom: SPACING.xs,
-  },
-  outgoingBubble: {
-    backgroundColor: COLORS.brand.primary,
-    borderTopRightRadius: 4,
-  },
-  outgoingMessageText: {
-    color: COLORS.text.inverse,
-  },
-  outgoingMessageWrap: {
-    alignItems: 'flex-end',
-  },
-  outgoingRow: {
-    alignItems: 'flex-end',
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'flex-end',
-  },
-  outgoingTimeLabel: {
-    textAlign: 'right',
   },
   senderName: {
     color: COLORS.text.strong,
@@ -978,54 +696,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     marginBottom: SPACING.xs,
   },
-  specialHeaderRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  specialHeaderTitleWrap: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: SPACING.sm,
-  },
-  specialSenderLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  specialTimeLabel: {
-    color: COLORS.text.muted,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  specialTitle: {
-    color: COLORS.text.primary,
-    fontSize: 16,
-    fontWeight: '700',
-    lineHeight: 22,
-  },
   specialWrap: {
     alignSelf: 'stretch',
     marginBottom: SPACING.md,
     marginTop: SPACING.sm,
-  },
-  systemMessageLabel: {
-    color: COLORS.text.muted,
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-    backgroundColor: COLORS.background.grayLight,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.md,
-  },
-  systemMessageWrap: {
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-    marginTop: SPACING.sm,
-  },
-  timeLabel: {
-    color: COLORS.text.muted,
-    fontSize: 10,
-    lineHeight: 14,
   },
 });

@@ -1,7 +1,10 @@
 import type {
   ChatAvatarViewData,
+  ChatThreadDateDividerViewData,
   ChatThreadHeaderViewData,
+  ChatThreadMessageViewData,
   ChatThreadMenuViewData,
+  ChatThreadSystemMessageViewData,
 } from '@/shared/ui/chat';
 
 import type {TaxiRecruitDraft} from './taxiRecruitData';
@@ -155,31 +158,9 @@ export interface TaxiChatSourceData {
   title: string;
 }
 
-export interface TaxiChatDateDividerViewData {
-  id: string;
-  label: string;
-  type: 'date-divider';
-}
-
-export interface TaxiChatTextMessageViewData {
-  avatar?: ChatAvatarViewData;
-  direction: 'incoming' | 'outgoing';
-  id: string;
-  imageUrl?: string;
-  messageKind: 'text' | 'image';
-  minuteKey: string;
-  senderId: string;
-  senderName: string;
-  text: string;
-  timeLabel: string;
-  type: 'text-message';
-}
-
-export interface TaxiChatSystemMessageViewData {
-  id: string;
-  text: string;
-  type: 'system-message';
-}
+export type TaxiChatDateDividerViewData = ChatThreadDateDividerViewData;
+export type TaxiChatTextMessageViewData = ChatThreadMessageViewData;
+export type TaxiChatSystemMessageViewData = ChatThreadSystemMessageViewData;
 
 export interface TaxiChatAccountMessageViewData {
   accountData: TaxiChatSourceAccountData;

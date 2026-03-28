@@ -2,7 +2,6 @@ import React from 'react';
 import {
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -21,6 +20,10 @@ import {
   RADIUS,
   SPACING,
 } from '@/shared/design-system/tokens';
+import {
+  CHAT_COMPOSER_ROW_BASE_HEIGHT,
+  ChatComposerBar,
+} from '@/shared/ui/chat';
 
 import type {
   TaxiChatActionTrayActionId,
@@ -138,8 +141,9 @@ export const TaxiChatComposer = ({
   const insets = useSafeAreaInsets();
   const hasTrayActions = actionTrayActions.length > 0;
   const trayProgress = useSharedValue(actionTrayVisible ? 1 : 0);
-  const rowBottomPadding = keyboardVisible ? 10 : Math.max(insets.bottom, 10);
-  const composerRowHeight = 10 + 39 + rowBottomPadding;
+  const composerRowHeight =
+    CHAT_COMPOSER_ROW_BASE_HEIGHT +
+    (keyboardVisible ? 10 : Math.max(insets.bottom, 10));
 
   React.useEffect(() => {
     trayProgress.value = withTiming(actionTrayVisible ? 1 : 0, {duration: 180});
@@ -162,7 +166,18 @@ export const TaxiChatComposer = ({
     transform: [{translateY: interpolate(trayProgress.value, [0, 1], [18, 0])}],
   }));
 
-  const sendEnabled = value.trim().length > 0;
+  const leadingAccessory = hasTrayActions ? (
+    <AnimatedTouchableOpacity
+      accessibilityLabel={actionTrayVisible ? '액션 메뉴 닫기' : '액션 메뉴 열기'}
+      accessibilityRole="button"
+      activeOpacity={0.82}
+      onPress={onPressToggleTray}
+      style={[styles.leadingButton, toggleButtonStyle]}>
+      <Animated.View style={toggleIconStyle}>
+        <Icon color={COLORS.text.inverse} name="add" size={20} />
+      </Animated.View>
+    </AnimatedTouchableOpacity>
+  ) : null;
 
   return (
     <View style={styles.container}>
@@ -206,103 +221,23 @@ export const TaxiChatComposer = ({
         </Animated.View>
       ) : null}
 
-      <View
-        style={[
-          styles.row,
-          {
-            paddingBottom: rowBottomPadding,
-          },
-        ]}>
-        {hasTrayActions ? (
-          <AnimatedTouchableOpacity
-            accessibilityLabel={
-              actionTrayVisible ? '액션 메뉴 닫기' : '액션 메뉴 열기'
-            }
-            accessibilityRole="button"
-            activeOpacity={0.82}
-            onPress={onPressToggleTray}
-            style={[styles.leadingButton, toggleButtonStyle]}>
-            <Animated.View style={toggleIconStyle}>
-              <Icon color={COLORS.text.inverse} name="add" size={20} />
-            </Animated.View>
-          </AnimatedTouchableOpacity>
-        ) : null}
-
-        <TouchableOpacity
-          accessibilityLabel="이미지 보내기"
-          accessibilityRole="button"
-          activeOpacity={imageButtonDisabled ? 1 : 0.82}
-          disabled={imageButtonDisabled}
-          onPress={onPressImage}
-          style={styles.attachmentButton}>
-          <Icon color={COLORS.text.muted} name="image-outline" size={18} />
-        </TouchableOpacity>
-
-        <View style={styles.inputSurface}>
-          <TextInput
-            onChangeText={onChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={COLORS.text.muted}
-            style={styles.input}
-            value={value}
-          />
-        </View>
-
-        <TouchableOpacity
-          accessibilityLabel="메시지 전송"
-          accessibilityRole="button"
-          activeOpacity={sendEnabled ? 0.82 : 1}
-          disabled={!sendEnabled}
-          onPress={() => {
-            const trimmed = value.trim();
-
-            if (!trimmed) {
-              return;
-            }
-
-            onSend(trimmed);
-          }}
-          style={[
-            styles.sendButton,
-            sendEnabled ? styles.sendButtonEnabled : styles.sendButtonDisabled,
-          ]}>
-          <Icon
-            color={sendEnabled ? COLORS.text.inverse : COLORS.text.muted}
-            name="paper-plane-outline"
-            size={18}
-          />
-        </TouchableOpacity>
-      </View>
+      <ChatComposerBar
+        imageButtonDisabled={imageButtonDisabled}
+        keyboardVisible={keyboardVisible}
+        leadingAccessory={leadingAccessory}
+        onChangeText={onChangeText}
+        onPressImage={onPressImage}
+        onSend={onSend}
+        placeholder={placeholder}
+        value={value}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  attachmentButton: {
-    alignItems: 'center',
-    backgroundColor: COLORS.background.subtle,
-    borderRadius: RADIUS.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
   container: {
     overflow: 'visible',
-  },
-  input: {
-    color: COLORS.text.primary,
-    fontSize: 14,
-    fontWeight: '500',
-    lineHeight: 18,
-    padding: 0,
-  },
-  inputSurface: {
-    backgroundColor: COLORS.background.subtle,
-    borderRadius: RADIUS.lg,
-    flex: 1,
-    height: 39,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
   },
   leadingButton: {
     alignItems: 'center',
@@ -311,31 +246,6 @@ const styles = StyleSheet.create({
     height: 36,
     justifyContent: 'center',
     width: 36,
-  },
-  row: {
-    alignItems: 'center',
-    backgroundColor: COLORS.background.surface,
-    borderTopColor: COLORS.border.subtle,
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    minHeight: TAXI_CHAT_COMPOSER_BAR_HEIGHT,
-    paddingHorizontal: SPACING.md,
-    paddingTop: 10,
-    zIndex: 2,
-  },
-  sendButton: {
-    alignItems: 'center',
-    borderRadius: RADIUS.pill,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  sendButtonDisabled: {
-    backgroundColor: COLORS.border.default,
-  },
-  sendButtonEnabled: {
-    backgroundColor: COLORS.brand.primary,
   },
   tray: {
     backgroundColor: COLORS.background.surface,
