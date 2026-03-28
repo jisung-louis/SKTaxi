@@ -303,6 +303,34 @@ export const useBoardDetailData = (postId?: string) => {
         return;
       }
 
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
+
+      if (!targetComment) {
+        throw new Error('댓글을 찾을 수 없습니다.');
+      }
+
+      const previousLikeState = {
+        isLiked: Boolean(targetComment.isLiked),
+        likeCount: targetComment.likeCount,
+      };
+      const optimisticLikeState = {
+        isLiked: !previousLikeState.isLiked,
+        likeCount: Math.max(
+          0,
+          previousLikeState.likeCount + (!previousLikeState.isLiked ? 1 : -1),
+        ),
+      };
+
+      setComments(currentComments =>
+        updateCommentTree(currentComments, commentId, comment => ({
+          ...comment,
+          isLiked: optimisticLikeState.isLiked,
+          likeCount: optimisticLikeState.likeCount,
+        })),
+      );
+
       setCommentLikePendingIds(currentIds => [...currentIds, commentId]);
 
       try {
@@ -321,48 +349,118 @@ export const useBoardDetailData = (postId?: string) => {
         );
 
         return nextLikeState;
+      } catch (toggleError) {
+        setComments(currentComments =>
+          updateCommentTree(currentComments, commentId, comment => ({
+            ...comment,
+            isLiked: previousLikeState.isLiked,
+            likeCount: previousLikeState.likeCount,
+          })),
+        );
+        throw toggleError;
       } finally {
         setCommentLikePendingIds(currentIds =>
           currentIds.filter(currentId => currentId !== commentId),
         );
       }
     },
-    [boardRepository, commentLikePendingIds, postId, user?.uid],
+    [
+      boardRepository,
+      commentLikePendingIds,
+      flattenedCommentEntries,
+      postId,
+      user?.uid,
+    ],
   );
 
   const toggleLike = React.useCallback(async () => {
-    if (!postId || !user?.uid || togglingLike) {
+    if (!postId || !user?.uid || togglingLike || !post) {
       throw new Error('로그인이 필요합니다.');
     }
+
+    const previousLikeState = {
+      isLiked: Boolean(post.isLiked),
+      likeCount: post.likeCount,
+    };
+    const optimisticLikeState = {
+      isLiked: !previousLikeState.isLiked,
+      likeCount: Math.max(
+        0,
+        previousLikeState.likeCount + (!previousLikeState.isLiked ? 1 : -1),
+      ),
+    };
+
+    setPost(currentPost =>
+      currentPost
+        ? {
+            ...currentPost,
+            isLiked: optimisticLikeState.isLiked,
+            likeCount: optimisticLikeState.likeCount,
+          }
+        : currentPost,
+    );
 
     setTogglingLike(true);
 
     try {
       const nextIsLiked = await boardRepository.toggleLike(postId, user.uid);
-      setPost(currentPost => {
-        if (!currentPost) {
-          return currentPost;
-        }
+      const nextLikeCount = Math.max(
+        0,
+        previousLikeState.likeCount + (nextIsLiked ? 1 : -1),
+      );
 
-        const previousIsLiked = Boolean(currentPost.isLiked);
-        const likeDelta =
-          previousIsLiked === nextIsLiked ? 0 : nextIsLiked ? 1 : -1;
-
-        return {
-          ...currentPost,
-          isLiked: nextIsLiked,
-          likeCount: Math.max(0, currentPost.likeCount + likeDelta),
-        };
-      });
+      setPost(currentPost =>
+        currentPost
+          ? {
+              ...currentPost,
+              isLiked: nextIsLiked,
+              likeCount: nextLikeCount,
+            }
+          : currentPost,
+      );
+    } catch (toggleError) {
+      setPost(currentPost =>
+        currentPost
+          ? {
+              ...currentPost,
+              isLiked: previousLikeState.isLiked,
+              likeCount: previousLikeState.likeCount,
+            }
+          : currentPost,
+      );
+      throw toggleError;
     } finally {
       setTogglingLike(false);
     }
-  }, [boardRepository, postId, togglingLike, user?.uid]);
+  }, [boardRepository, post, postId, togglingLike, user?.uid]);
 
   const toggleBookmark = React.useCallback(async () => {
-    if (!postId || !user?.uid || togglingBookmark) {
+    if (!postId || !user?.uid || togglingBookmark || !post) {
       throw new Error('로그인이 필요합니다.');
     }
+
+    const previousBookmarkState = {
+      bookmarkCount: post.bookmarkCount,
+      isBookmarked: Boolean(post.isBookmarked),
+    };
+    const optimisticBookmarkState = {
+      bookmarkCount: Math.max(
+        0,
+        previousBookmarkState.bookmarkCount +
+          (!previousBookmarkState.isBookmarked ? 1 : -1),
+      ),
+      isBookmarked: !previousBookmarkState.isBookmarked,
+    };
+
+    setPost(currentPost =>
+      currentPost
+        ? {
+            ...currentPost,
+            bookmarkCount: optimisticBookmarkState.bookmarkCount,
+            isBookmarked: optimisticBookmarkState.isBookmarked,
+          }
+        : currentPost,
+    );
 
     setTogglingBookmark(true);
 
@@ -371,29 +469,35 @@ export const useBoardDetailData = (postId?: string) => {
         postId,
         user.uid,
       );
-      setPost(currentPost => {
-        if (!currentPost) {
-          return currentPost;
-        }
+      const nextBookmarkCount = Math.max(
+        0,
+        previousBookmarkState.bookmarkCount + (nextIsBookmarked ? 1 : -1),
+      );
 
-        const previousIsBookmarked = Boolean(currentPost.isBookmarked);
-        const bookmarkDelta =
-          previousIsBookmarked === nextIsBookmarked
-            ? 0
-            : nextIsBookmarked
-            ? 1
-            : -1;
-
-        return {
-          ...currentPost,
-          bookmarkCount: Math.max(0, currentPost.bookmarkCount + bookmarkDelta),
-          isBookmarked: nextIsBookmarked,
-        };
-      });
+      setPost(currentPost =>
+        currentPost
+          ? {
+              ...currentPost,
+              bookmarkCount: nextBookmarkCount,
+              isBookmarked: nextIsBookmarked,
+            }
+          : currentPost,
+      );
+    } catch (toggleError) {
+      setPost(currentPost =>
+        currentPost
+          ? {
+              ...currentPost,
+              bookmarkCount: previousBookmarkState.bookmarkCount,
+              isBookmarked: previousBookmarkState.isBookmarked,
+            }
+          : currentPost,
+      );
+      throw toggleError;
     } finally {
       setTogglingBookmark(false);
     }
-  }, [boardRepository, postId, togglingBookmark, user?.uid]);
+  }, [boardRepository, post, postId, togglingBookmark, user?.uid]);
 
   const submitComment = React.useCallback(async () => {
     if (!postId || !user?.uid) {

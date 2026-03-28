@@ -436,6 +436,34 @@ export const useNoticeDetailData = (noticeId?: string) => {
         return;
       }
 
+      const targetComment = flattenedCommentEntries.find(
+        entry => entry.comment.id === commentId,
+      )?.comment;
+
+      if (!targetComment) {
+        throw new Error('댓글을 찾을 수 없습니다.');
+      }
+
+      const previousLikeState = {
+        isLiked: Boolean(targetComment.isLiked),
+        likeCount: targetComment.likeCount ?? 0,
+      };
+      const optimisticLikeState = {
+        isLiked: !previousLikeState.isLiked,
+        likeCount: Math.max(
+          0,
+          previousLikeState.likeCount + (!previousLikeState.isLiked ? 1 : -1),
+        ),
+      };
+
+      setComments(currentComments =>
+        updateCommentTree(currentComments, commentId, comment => ({
+          ...comment,
+          isLiked: optimisticLikeState.isLiked,
+          likeCount: optimisticLikeState.likeCount,
+        })),
+      );
+
       setCommentLikePendingIds(currentIds => [...currentIds, commentId]);
 
       try {
@@ -454,48 +482,118 @@ export const useNoticeDetailData = (noticeId?: string) => {
         );
 
         return nextLikeState;
+      } catch (toggleError) {
+        setComments(currentComments =>
+          updateCommentTree(currentComments, commentId, comment => ({
+            ...comment,
+            isLiked: previousLikeState.isLiked,
+            likeCount: previousLikeState.likeCount,
+          })),
+        );
+        throw toggleError;
       } finally {
         setCommentLikePendingIds(currentIds =>
           currentIds.filter(currentId => currentId !== commentId),
         );
       }
     },
-    [commentLikePendingIds, noticeId, noticeRepository, user?.uid],
+    [
+      commentLikePendingIds,
+      flattenedCommentEntries,
+      noticeId,
+      noticeRepository,
+      user?.uid,
+    ],
   );
 
   const toggleLike = React.useCallback(async () => {
-    if (!noticeId || !user?.uid || togglingLike) {
+    if (!noticeId || !user?.uid || togglingLike || !notice) {
       throw new Error('로그인이 필요합니다.');
     }
+
+    const previousLikeState = {
+      isLiked: Boolean(notice.isLiked),
+      likeCount: notice.likeCount ?? 0,
+    };
+    const optimisticLikeState = {
+      isLiked: !previousLikeState.isLiked,
+      likeCount: Math.max(
+        0,
+        previousLikeState.likeCount + (!previousLikeState.isLiked ? 1 : -1),
+      ),
+    };
+
+    setNotice(currentNotice =>
+      currentNotice
+        ? {
+            ...currentNotice,
+            isLiked: optimisticLikeState.isLiked,
+            likeCount: optimisticLikeState.likeCount,
+          }
+        : currentNotice,
+    );
 
     setTogglingLike(true);
 
     try {
       const nextIsLiked = await noticeRepository.toggleLike(noticeId, user.uid);
-      setNotice(currentNotice => {
-        if (!currentNotice) {
-          return currentNotice;
-        }
+      const nextLikeCount = Math.max(
+        0,
+        previousLikeState.likeCount + (nextIsLiked ? 1 : -1),
+      );
 
-        const previousIsLiked = Boolean(currentNotice.isLiked);
-        const likeDelta =
-          previousIsLiked === nextIsLiked ? 0 : nextIsLiked ? 1 : -1;
-
-        return {
-          ...currentNotice,
-          isLiked: nextIsLiked,
-          likeCount: Math.max(0, (currentNotice.likeCount ?? 0) + likeDelta),
-        };
-      });
+      setNotice(currentNotice =>
+        currentNotice
+          ? {
+              ...currentNotice,
+              isLiked: nextIsLiked,
+              likeCount: nextLikeCount,
+            }
+          : currentNotice,
+      );
+    } catch (toggleError) {
+      setNotice(currentNotice =>
+        currentNotice
+          ? {
+              ...currentNotice,
+              isLiked: previousLikeState.isLiked,
+              likeCount: previousLikeState.likeCount,
+            }
+          : currentNotice,
+      );
+      throw toggleError;
     } finally {
       setTogglingLike(false);
     }
-  }, [noticeId, noticeRepository, togglingLike, user?.uid]);
+  }, [notice, noticeId, noticeRepository, togglingLike, user?.uid]);
 
   const toggleBookmark = React.useCallback(async () => {
-    if (!noticeId || !user?.uid || togglingBookmark) {
+    if (!noticeId || !user?.uid || togglingBookmark || !notice) {
       throw new Error('로그인이 필요합니다.');
     }
+
+    const previousBookmarkState = {
+      bookmarkCount: notice.bookmarkCount ?? 0,
+      isBookmarked: Boolean(notice.isBookmarked),
+    };
+    const optimisticBookmarkState = {
+      bookmarkCount: Math.max(
+        0,
+        previousBookmarkState.bookmarkCount +
+          (!previousBookmarkState.isBookmarked ? 1 : -1),
+      ),
+      isBookmarked: !previousBookmarkState.isBookmarked,
+    };
+
+    setNotice(currentNotice =>
+      currentNotice
+        ? {
+            ...currentNotice,
+            bookmarkCount: optimisticBookmarkState.bookmarkCount,
+            isBookmarked: optimisticBookmarkState.isBookmarked,
+          }
+        : currentNotice,
+    );
 
     setTogglingBookmark(true);
 
@@ -504,32 +602,35 @@ export const useNoticeDetailData = (noticeId?: string) => {
         noticeId,
         user.uid,
       );
-      setNotice(currentNotice => {
-        if (!currentNotice) {
-          return currentNotice;
-        }
+      const nextBookmarkCount = Math.max(
+        0,
+        previousBookmarkState.bookmarkCount + (nextIsBookmarked ? 1 : -1),
+      );
 
-        const previousIsBookmarked = Boolean(currentNotice.isBookmarked);
-        const bookmarkDelta =
-          previousIsBookmarked === nextIsBookmarked
-            ? 0
-            : nextIsBookmarked
-            ? 1
-            : -1;
-
-        return {
-          ...currentNotice,
-          bookmarkCount: Math.max(
-            0,
-            (currentNotice.bookmarkCount ?? 0) + bookmarkDelta,
-          ),
-          isBookmarked: nextIsBookmarked,
-        };
-      });
+      setNotice(currentNotice =>
+        currentNotice
+          ? {
+              ...currentNotice,
+              bookmarkCount: nextBookmarkCount,
+              isBookmarked: nextIsBookmarked,
+            }
+          : currentNotice,
+      );
+    } catch (toggleError) {
+      setNotice(currentNotice =>
+        currentNotice
+          ? {
+              ...currentNotice,
+              bookmarkCount: previousBookmarkState.bookmarkCount,
+              isBookmarked: previousBookmarkState.isBookmarked,
+            }
+          : currentNotice,
+      );
+      throw toggleError;
     } finally {
       setTogglingBookmark(false);
     }
-  }, [noticeId, noticeRepository, togglingBookmark, user?.uid]);
+  }, [notice, noticeId, noticeRepository, togglingBookmark, user?.uid]);
 
   const submitComment = React.useCallback(async () => {
     if (!noticeId || !user?.uid) {
