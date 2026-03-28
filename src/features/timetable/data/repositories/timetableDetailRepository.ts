@@ -1,3 +1,3 @@
-import {MockTimetableDetailRepository} from './MockTimetableDetailRepository';
+import {SpringTimetableDetailRepository} from './SpringTimetableDetailRepository';
 
-export const timetableDetailRepository = new MockTimetableDetailRepository();
+export const timetableDetailRepository = new SpringTimetableDetailRepository();

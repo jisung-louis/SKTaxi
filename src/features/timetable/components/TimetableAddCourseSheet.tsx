@@ -27,9 +27,6 @@ import type {
 } from '../model/timetableDetailViewData';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
 
-const SEARCH_SNAP_POINTS = ['88%'];
-const MANUAL_SNAP_POINTS = ['82%'];
-
 interface TimetableAddCourseSheetProps {
   data: TimetableAddCourseSheetViewData;
   onAddCatalogCourse: (courseId: string) => void;
@@ -66,14 +63,12 @@ export const TimetableAddCourseSheet = ({
   onUpdateQuery,
   visible,
 }: TimetableAddCourseSheetProps) => {
-  const snapPoints =
-    data.activeTab === 'search' ? SEARCH_SNAP_POINTS : MANUAL_SNAP_POINTS;
 
   return (
     <TimetableBottomSheet
       keyboardBehavior="interactive"
       onClose={onClose}
-      snapPoints={snapPoints}
+      snapPoints={['88%']}
       visible={visible}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>강의 추가</Text>

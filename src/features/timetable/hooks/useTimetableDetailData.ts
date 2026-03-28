@@ -21,6 +21,10 @@ import type {
   TimetableTodayRowViewData,
   TimetableWeekdayId,
 } from '../model/timetableDetailViewData';
+import {
+  removeTimetableCourseTone,
+  setTimetableCourseTone,
+} from '../services/timetableToneStorage';
 import {timetableDetailRepository} from '../data/repositories/timetableDetailRepository';
 
 const PERIOD_NUMBERS = Array.from({length: 15}, (_, index) => index + 1);
@@ -526,9 +530,9 @@ export const useTimetableDetailData = (
         return;
       }
 
-      const nextRecord =
-        semesters.find(semester => semester.id === nextSemesterId) ??
-        (await timetableDetailRepository.getSemesterRecord(nextSemesterId));
+      const nextRecord = await timetableDetailRepository.getSemesterRecord(
+        nextSemesterId,
+      );
 
       selectedSemesterIdRef.current = nextSemesterId;
       setRecord(nextRecord ?? null);
@@ -599,47 +603,43 @@ export const useTimetableDetailData = (
       }
 
       const conflictIds = findConflictCourseIds(targetCourse, record.courses);
-      const applyAdd = () =>
-        timetableDetailRepository.addCatalogCourse({
-          courseId,
-          replaceCourseIds: conflictIds,
-          semesterId: selectedSemesterId,
-          toneId: selectedToneId,
-        });
 
       if (conflictIds.length > 0) {
         Alert.alert(
           '시간이 겹치는 강의가 있습니다',
-          '기존 강의를 대체하고 새 강의를 추가할까요?',
-          [
-            {text: '취소', style: 'cancel'},
-            {
-              text: '대체하기',
-              style: 'destructive',
-              onPress: () => {
-                applyAdd()
-                  .then(nextRecord => {
-                    refreshRecord(nextRecord);
-                    closeAddSheet();
-                    Alert.alert(
-                      '강의 추가',
-                      `"${targetCourse.name}" 강의를 시간표에 추가했습니다.`,
-                    );
-                  })
-                  .catch(() => undefined);
-              },
-            },
-          ],
+          '현재 API에서는 겹치는 강의를 자동 대체하지 않습니다. 기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
         );
         return;
       }
 
-      const nextRecord = await applyAdd();
+      try {
+        await setTimetableCourseTone(
+          selectedSemesterId,
+          courseId,
+          selectedToneId,
+        );
+      } catch (toneError) {
+        console.warn('시간표 색상을 저장하지 못했습니다.', toneError);
+      }
+
+      const nextRecord = await timetableDetailRepository.addCatalogCourse({
+        courseId,
+        semesterId: selectedSemesterId,
+        toneId: selectedToneId,
+      });
+
+      if (!nextRecord) {
+        await loadSemester(selectedSemesterId);
+        closeAddSheet();
+        return;
+      }
+
       refreshRecord(nextRecord);
       closeAddSheet();
     },
     [
       closeAddSheet,
+      loadSemester,
       record,
       refreshRecord,
       selectedSemesterId,
@@ -679,45 +679,61 @@ export const useTimetableDetailData = (
       toneId: manualDraft.toneId,
     };
     const conflictIds = findConflictCourseIds(nextCourse, record.courses);
-    const applyAdd = () =>
-      timetableDetailRepository.addManualCourse({
-        draft: manualDraft,
-        replaceCourseIds: conflictIds,
-        semesterId: selectedSemesterId,
-      });
 
-      if (conflictIds.length > 0) {
+    if (conflictIds.length > 0) {
       Alert.alert(
         '시간이 겹치는 강의가 있습니다',
-        '겹치는 강의를 대체하고 직접 입력한 강의를 추가할까요?',
-        [
-          {text: '취소', style: 'cancel'},
-          {
-            text: '대체하기',
-            style: 'destructive',
-            onPress: () => {
-              applyAdd()
-                .then(nextRecord => {
-                  refreshRecord(nextRecord);
-                  closeAddSheet();
-                  Alert.alert(
-                    '강의 추가',
-                    `"${manualDraft.name}" 강의를 시간표에 추가했습니다.`,
-                  );
-                })
-                .catch(() => undefined);
-            },
-          },
-        ],
+        '현재 API에서는 겹치는 강의를 자동 대체하지 않습니다. 기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
       );
       return;
     }
 
-    const nextRecord = await applyAdd();
+    const previousCourseIds = new Set(record.courses.map(course => course.id));
+    const nextRecord = await timetableDetailRepository.addManualCourse({
+      draft: manualDraft,
+      semesterId: selectedSemesterId,
+    });
+
+    if (!nextRecord) {
+      await loadSemester(selectedSemesterId);
+      closeAddSheet();
+      return;
+    }
+
+    const addedCourse = nextRecord.courses.find(
+      course => !previousCourseIds.has(course.id),
+    );
+
+    if (nextRecord && addedCourse) {
+      try {
+        await setTimetableCourseTone(
+          selectedSemesterId,
+          addedCourse.id,
+          manualDraft.toneId,
+        );
+      } catch (toneError) {
+        console.warn('시간표 색상을 저장하지 못했습니다.', toneError);
+      }
+
+      const nextCourses = nextRecord.courses.map(course =>
+        course.id === addedCourse.id
+          ? {...course, toneId: manualDraft.toneId}
+          : course,
+      );
+
+      refreshRecord({
+        ...nextRecord,
+        courses: nextCourses,
+      });
+      closeAddSheet();
+      return;
+    }
+
     refreshRecord(nextRecord);
     closeAddSheet();
   }, [
     closeAddSheet,
+    loadSemester,
     manualDraft,
     record,
     refreshRecord,
@@ -746,15 +762,27 @@ export const useTimetableDetailData = (
               courseId: selectedCourseId,
               semesterId: selectedSemesterId,
             })
-            .then(nextRecord => {
-              refreshRecord(nextRecord);
+            .then(async nextRecord => {
+              try {
+                await removeTimetableCourseTone(
+                  selectedSemesterId,
+                  selectedCourseId,
+                );
+              } catch (toneError) {
+                console.warn('시간표 색상을 삭제하지 못했습니다.', toneError);
+              }
+              if (nextRecord) {
+                refreshRecord(nextRecord);
+              } else {
+                await loadSemester();
+              }
               setSelectedCourseId(undefined);
             })
             .catch(() => undefined);
         },
       },
     ]);
-  }, [record, refreshRecord, selectedCourseId, selectedSemesterId]);
+  }, [loadSemester, record, refreshRecord, selectedCourseId, selectedSemesterId]);
 
   const shareTimetable = React.useCallback(async () => {
     if (!record) {

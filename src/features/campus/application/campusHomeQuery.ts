@@ -4,12 +4,7 @@ import {ko} from 'date-fns/locale';
 import type {INoticeRepository} from '@/features/notice/data/repositories/INoticeRepository';
 import {toNoticeTimestampMillis} from '@/features/notice/model/selectors';
 import type {Notice} from '@/features/notice/model/types';
-import type {ICourseRepository} from '@/features/timetable/data/repositories/ICourseRepository';
-import type {
-  ITimetableRepository,
-  Timetable,
-} from '@/features/timetable/data/repositories/ITimetableRepository';
-import type {Course} from '@/features/timetable/model/types';
+import {timetableApiClient} from '@/features/timetable/data/api/timetableApiClient';
 import {
   generatePeriods,
   getCurrentSemester,
@@ -149,7 +144,10 @@ const getCurrentPeriodNumber = (currentDate: Date) => {
 };
 
 const getTimetableStatus = (
-  schedule: Course['schedule'][number],
+  schedule: {
+    startPeriod: number;
+    endPeriod: number;
+  },
   currentPeriodNumber: number | null,
 ) => {
   if (
@@ -167,68 +165,40 @@ const getTimetableStatus = (
 };
 
 const mapCourseToSession = ({
-  course,
   currentPeriodNumber,
   index,
   schedule,
+  title,
+  professor,
+  location,
+  courseId,
 }: {
-  course: Course;
+  courseId: string;
   currentPeriodNumber: number | null;
   index: number;
-  schedule: Course['schedule'][number];
+  location?: string | null;
+  professor?: string | null;
+  schedule: {
+    dayOfWeek: number;
+    startPeriod: number;
+    endPeriod: number;
+  };
+  title: string;
 }): CampusTimetableSessionViewData => {
   const status = getTimetableStatus(schedule, currentPeriodNumber);
 
   return {
     endPeriod: schedule.endPeriod,
-    id: `${course.id}-${schedule.dayOfWeek}-${schedule.startPeriod}`,
-    instructorLabel: `${course.professor} 교수님`,
+    id: `${courseId}-${schedule.dayOfWeek}-${schedule.startPeriod}`,
+    instructorLabel: professor ? `${professor} 교수님` : undefined,
     isCurrent: Boolean(status),
-    roomLabel: course.location,
+    roomLabel: location ?? undefined,
     startPeriod: schedule.startPeriod,
     status,
-    title: course.name,
+    title,
     tone: TIMETABLE_SESSION_TONES[index % TIMETABLE_SESSION_TONES.length],
   };
 };
-
-const loadTimetableSnapshot = (
-  timetableRepository: ITimetableRepository,
-  userId: string,
-  semester: string,
-) =>
-  new Promise<Timetable | null>((resolve, reject) => {
-    let unsubscribe: (() => void) | undefined;
-    let shouldCleanupImmediately = false;
-    let settled = false;
-
-    const finish =
-      <T>(handler: (value: T) => void) =>
-      (value: T) => {
-        if (settled) {
-          return;
-        }
-
-        settled = true;
-
-        if (unsubscribe) {
-          unsubscribe();
-        } else {
-          shouldCleanupImmediately = true;
-        }
-
-        handler(value);
-      };
-
-    unsubscribe = timetableRepository.subscribeToTimetable(userId, semester, {
-      onData: finish(resolve),
-      onError: finish(reject),
-    });
-
-    if (shouldCleanupImmediately) {
-      unsubscribe();
-    }
-  });
 
 const formatTimetableDateLabel = (currentDate: Date) =>
   format(currentDate, 'M월 d일 EEEE', {locale: ko});
@@ -271,15 +241,11 @@ const loadImportantNoticePreviewItems = async ({
 };
 
 const loadTimetablePreview = async ({
-  courseRepository,
-  timetableRepository,
   currentUserId,
   currentDate,
 }: {
-  courseRepository: ICourseRepository;
   currentDate: Date;
   currentUserId?: string;
-  timetableRepository: ITimetableRepository;
 }): Promise<CampusHomeViewData['timetable']> => {
   const periods = createTimetablePeriods();
 
@@ -297,12 +263,10 @@ const loadTimetablePreview = async ({
   }
 
   const semester = getCurrentSemester();
-  const [timetable, semesterCourses] = await Promise.all([
-    loadTimetableSnapshot(timetableRepository, currentUserId, semester),
-    courseRepository.getCoursesBySemester(semester),
-  ]);
+  const response = await timetableApiClient.getMyTimetable(semester);
+  const timetable = response.data;
 
-  if (!timetable || timetable.courses.length === 0) {
+  if (timetable.courses.length === 0) {
     return {
       collapsedVisibleCount: TIMETABLE_COLLAPSED_VISIBLE_COUNT,
       dateLabel: formatTimetableDateLabel(currentDate),
@@ -313,32 +277,27 @@ const loadTimetablePreview = async ({
   }
 
   const currentDayOfWeek = currentDate.getDay();
-  const courseById = new Map(
-    semesterCourses.map(course => [course.id, course]),
-  );
-  const selectedCourses = timetable.courses
-    .map(courseId => courseById.get(courseId))
-    .filter((course): course is Course => Boolean(course));
   const currentPeriodNumber = getCurrentPeriodNumber(currentDate);
-  const sessions = selectedCourses
-    .flatMap(course =>
-      course.schedule.map(schedule => ({
-        course,
-        schedule,
-      })),
-    )
-    .filter(({schedule}) => schedule.dayOfWeek === currentDayOfWeek)
+  const sessions = timetable.slots
+    .filter(slot => slot.dayOfWeek === currentDayOfWeek)
     .sort(
       (left, right) =>
-        left.schedule.startPeriod - right.schedule.startPeriod ||
-        left.course.name.localeCompare(right.course.name, 'ko-KR'),
+        left.startPeriod - right.startPeriod ||
+        left.courseName.localeCompare(right.courseName, 'ko-KR'),
     )
-    .map(({course, schedule}, index) =>
+    .map((slot, index) =>
       mapCourseToSession({
-        course,
+        courseId: slot.courseId,
         currentPeriodNumber,
         index,
-        schedule,
+        location: slot.location,
+        professor: slot.professor,
+        schedule: {
+          dayOfWeek: slot.dayOfWeek,
+          startPeriod: slot.startPeriod,
+          endPeriod: slot.endPeriod,
+        },
+        title: slot.courseName,
       }),
     );
 
@@ -457,18 +416,14 @@ export const loadCampusHomeQueryResult = async ({
   academicRepository,
   campusBannerRepository,
   cafeteriaRepository,
-  courseRepository,
   noticeRepository,
-  timetableRepository,
   currentUserId,
 }: {
   academicRepository: IAcademicRepository;
   campusBannerRepository: ICampusBannerRepository;
   cafeteriaRepository: ICafeteriaRepository;
-  courseRepository: ICourseRepository;
   currentUserId?: string;
   noticeRepository: INoticeRepository;
-  timetableRepository: ITimetableRepository;
 }): Promise<CampusHomeViewData> => {
   const currentDate = new Date();
   const currentDateKey = formatLocalDateKey(currentDate);
@@ -486,10 +441,8 @@ export const loadCampusHomeQueryResult = async ({
       noticeRepository,
     }),
     loadTimetablePreview({
-      courseRepository,
       currentDate,
       currentUserId,
-      timetableRepository,
     }),
     cafeteriaRepository.getCurrentWeekMenu().then(menu =>
       menu
