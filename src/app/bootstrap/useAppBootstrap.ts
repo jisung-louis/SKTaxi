@@ -26,7 +26,7 @@ export const useAppBootstrap = (): AppBootstrapState => {
     const unsubscribeAuth = subscribeAuthStateChange(() => {});
 
     if (Platform.OS === 'android') {
-      ImmersiveMode.setBarMode('BottomSticky');
+      ImmersiveMode.setBarMode('Normal');
     }
 
     checkVersionUpdate()
