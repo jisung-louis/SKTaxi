@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Debug builds need cleartext HTTP for Metro on localhost:8081. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
