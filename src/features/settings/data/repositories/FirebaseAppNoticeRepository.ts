@@ -13,7 +13,11 @@ import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { getApp } from '@react-native-firebase/app';
 import type { SubscriptionCallbacks, Unsubscribe } from '@/shared/types/subscription';
 
-import { AppNotice, IAppNoticeRepository } from './IAppNoticeRepository';
+import {
+  AppNotice,
+  AppNoticeReadState,
+  IAppNoticeRepository,
+} from './IAppNoticeRepository';
 
 /**
  * Firestore 기반 App Notice Repository 구현체
@@ -24,6 +28,10 @@ export class FirebaseAppNoticeRepository implements IAppNoticeRepository {
 
   constructor() {
     this.db = firestore(getApp());
+  }
+
+  async getUnreadCount(): Promise<number> {
+    return 0;
   }
 
   private parseAppNotice(docSnap: FirebaseFirestoreTypes.DocumentSnapshot): AppNotice {
@@ -80,6 +88,14 @@ export class FirebaseAppNoticeRepository implements IAppNoticeRepository {
     }
 
     return this.parseAppNotice(snapshot);
+  }
+
+  async markAsRead(noticeId: string): Promise<AppNoticeReadState> {
+    return {
+      appNoticeId: noticeId,
+      isRead: true,
+      readAt: new Date(),
+    };
   }
 
   subscribeToAppNotice(

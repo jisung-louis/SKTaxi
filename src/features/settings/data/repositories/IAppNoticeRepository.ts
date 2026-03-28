@@ -18,10 +18,19 @@ export interface AppNotice {
   actionUrl?: string;
 }
 
+export interface AppNoticeReadState {
+  appNoticeId: string;
+  isRead: boolean;
+  readAt: Date;
+}
+
 /**
  * App Notice Repository 인터페이스
  */
 export interface IAppNoticeRepository {
+  getUnreadCount(): Promise<number>;
+  markAsRead(noticeId: string): Promise<AppNoticeReadState>;
+
   /**
    * 앱 공지사항 목록 실시간 구독
    * @param callbacks - 데이터 및 에러 콜백

@@ -138,7 +138,9 @@ export function useInAppNotifications(
     loading,
     initialized,
     error,
-    unreadCount: notifications.filter((n) => !n.isRead).length,
+    unreadCount: notifications.filter(
+      notification => !notification.isRead && notification.type !== 'app_notice',
+    ).length,
     markAsRead,
     markAllAsRead,
     deleteNotification,

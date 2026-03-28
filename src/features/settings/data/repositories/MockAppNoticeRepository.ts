@@ -2,6 +2,7 @@ import type { SubscriptionCallbacks, Unsubscribe } from '@/shared/types/subscrip
 
 import type {
   AppNotice,
+  AppNoticeReadState,
   IAppNoticeRepository,
 } from './IAppNoticeRepository';
 import { APP_NOTICE_RECORDS_MOCK } from '../../mocks/appNotice.mock';
@@ -15,12 +16,17 @@ const notices: AppNotice[] = APP_NOTICE_RECORDS_MOCK.map((record, index) => ({
   publishedAt: new Date(Date.now() - index * 1000 * 60 * 60 * 12),
   imageUrls: record.galleryImages.map(image => String(image)),
 }));
+const appNoticeReadAtById = new Map<string, Date>();
 
 const emit = <T,>(callbacks: SubscriptionCallbacks<T>, value: T) => {
   setTimeout(() => callbacks.onData(value), 0);
 };
 
 export class MockAppNoticeRepository implements IAppNoticeRepository {
+  async getUnreadCount(): Promise<number> {
+    return notices.filter(notice => !appNoticeReadAtById.has(notice.id)).length;
+  }
+
   async getAppNotices(): Promise<AppNotice[]> {
     return notices.map(notice => ({ ...notice, imageUrls: [...(notice.imageUrls ?? [])] }));
   }
@@ -30,6 +36,17 @@ export class MockAppNoticeRepository implements IAppNoticeRepository {
     return notice
       ? { ...notice, imageUrls: [...(notice.imageUrls ?? [])] }
       : null;
+  }
+
+  async markAsRead(noticeId: string): Promise<AppNoticeReadState> {
+    const readAt = appNoticeReadAtById.get(noticeId) ?? new Date();
+    appNoticeReadAtById.set(noticeId, readAt);
+
+    return {
+      appNoticeId: noticeId,
+      isRead: true,
+      readAt,
+    };
   }
 
   subscribeToAppNotices(callbacks: SubscriptionCallbacks<AppNotice[]>): Unsubscribe {

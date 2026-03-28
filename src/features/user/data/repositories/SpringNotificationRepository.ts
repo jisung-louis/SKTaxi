@@ -73,9 +73,14 @@ const createSubscriptionError = (error: unknown) => {
   );
 };
 
+const shouldIncludeInUnreadCount = (notification: Notification) =>
+  notification.type !== 'app_notice';
+
 const countUnreadNotifications = (notifications: Notification[]) =>
   notifications.reduce(
-    (count, notification) => count + (notification.isRead ? 0 : 1),
+    (count, notification) =>
+      count +
+      (notification.isRead || !shouldIncludeInUnreadCount(notification) ? 0 : 1),
     0,
   );
 

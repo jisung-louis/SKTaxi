@@ -22,6 +22,8 @@ interface UseNotificationCenterDataResult {
 }
 
 const NOTIFICATION_CENTER_LIMIT = 100;
+const isInboxNotification = (notification: Notification) =>
+  notification.type !== 'app_notice';
 
 export const useNotificationCenterData =
   (): UseNotificationCenterDataResult => {
@@ -35,7 +37,9 @@ export const useNotificationCenterData =
 
     const applyNotifications = React.useCallback(
       (notifications: Notification[]) => {
-        const items = notifications.map(mapNotificationToInboxItemViewData);
+        const items = notifications
+          .filter(isInboxNotification)
+          .map(mapNotificationToInboxItemViewData);
         setData(buildNotificationCenterViewData(items));
       },
       [],

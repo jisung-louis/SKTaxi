@@ -1,5 +1,6 @@
 import React from 'react';
 
+import {useAuth} from '@/features/auth';
 import {useAppNoticeRepository} from '@/di/useRepository';
 
 import {assembleAppNoticeDetailViewData} from '../application/appNoticeViewAssembler';
@@ -41,6 +42,7 @@ const buildBadges = (
 export const useAppNoticeDetailData = (
   noticeId: string | undefined,
 ): UseAppNoticeDetailDataResult => {
+  const {user} = useAuth();
   const appNoticeRepository = useAppNoticeRepository();
   const [data, setData] = React.useState<AppNoticeDetailViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -72,6 +74,12 @@ export const useAppNoticeDetailData = (
         ...viewData,
         badges: buildBadges(notice.priority === 'urgent', viewData.categoryLabel),
       });
+
+      if (user?.uid) {
+        appNoticeRepository.markAsRead(noticeId).catch(markError => {
+          console.error('앱 공지 읽음 처리에 실패했습니다.', markError);
+        });
+      }
     } catch (loadError) {
       console.error('앱 공지사항 상세를 불러오지 못했습니다.', loadError);
       setData(null);
@@ -79,7 +87,7 @@ export const useAppNoticeDetailData = (
     } finally {
       setLoading(false);
     }
-  }, [appNoticeRepository, noticeId]);
+  }, [appNoticeRepository, noticeId, user?.uid]);
 
   React.useEffect(() => {
     load();

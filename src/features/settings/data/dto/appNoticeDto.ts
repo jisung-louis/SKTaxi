@@ -18,3 +18,13 @@ export interface AppNoticeResponseDto {
   title: string;
   updatedAt: string;
 }
+
+export interface AppNoticeUnreadCountResponseDto {
+  count: number;
+}
+
+export interface AppNoticeReadResponseDto {
+  appNoticeId: string;
+  isRead: boolean;
+  readAt: string;
+}
