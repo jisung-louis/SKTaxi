@@ -7,6 +7,7 @@ import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 import {taxiHomeApiClient} from '../data/api/taxiHomeApiClient';
 import type {
   JoinRequestListItemResponseDto,
+  PartyParticipantSummaryResponseDto,
   PartyStatusDto,
   PartySummaryResponseDto,
 } from '../data/dto/taxiHomeDto';
@@ -21,15 +22,6 @@ import type {
   TaxiHomeSortDefinition,
   TaxiHomeSourceData,
 } from '../model/taxiHomeViewData';
-
-const AVATAR_PALETTE = [
-  {backgroundColor: '#E5E7EB', textColor: '#111827'},
-  {backgroundColor: '#FDE68A', textColor: '#111827'},
-  {backgroundColor: '#BFDBFE', textColor: '#1E3A8A'},
-  {backgroundColor: '#D1FAE5', textColor: '#065F46'},
-  {backgroundColor: '#FBCFE8', textColor: '#9D174D'},
-  {backgroundColor: '#DDD6FE', textColor: '#5B21B6'},
-] as const;
 
 const TAXI_HOME_FILTERS: TaxiHomeFilterDefinition[] = [
   {
@@ -72,28 +64,6 @@ interface PersonalTaxiState {
   pendingJoinRequestsByPartyId: Map<string, JoinRequestListItemResponseDto>;
   resolved: boolean;
 }
-
-const hashSeed = (value: string) =>
-  Array.from(value).reduce(
-    (seed, character) => seed + character.charCodeAt(0),
-    0,
-  );
-
-const buildCounterAvatar = (
-  id: string,
-  label: string,
-  seedValue: string,
-): TaxiHomeAvatarViewData => {
-  const palette = AVATAR_PALETTE[hashSeed(seedValue) % AVATAR_PALETTE.length];
-
-  return {
-    backgroundColor: palette.backgroundColor,
-    id,
-    kind: 'label',
-    label: label.slice(0, 1) || '?',
-    textColor: palette.textColor,
-  };
-};
 
 const buildDefaultAvatar = (id: string): TaxiHomeAvatarViewData => ({
   backgroundColor: COLORS.border.default,
@@ -203,15 +173,33 @@ const buildStatusMeta = (status: PartyStatusDto) => {
 const buildParticipantAvatars = (
   party: PartySummaryResponseDto,
 ): TaxiHomeAvatarViewData[] => {
+  const visibleParticipants = (party.participantSummaries ?? [])
+    .filter(participant => !participant.isLeader && participant.id !== party.leaderId)
+    .slice(0, 3);
+
+  if (visibleParticipants.length > 0) {
+    return visibleParticipants.map(buildParticipantAvatar);
+  }
+
   const participantCount = Math.max(Math.min(party.currentMembers - 1, 3), 0);
 
   return Array.from({length: participantCount}, (_, index) =>
-    buildCounterAvatar(
-      `${party.id}-member-${index + 1}`,
-      `${index + 1}`,
-      `${party.id}-member-${index + 1}`,
-    ),
+    buildDefaultAvatar(`${party.id}-member-${index + 1}`),
   );
+};
+
+const buildParticipantAvatar = (
+  participant: PartyParticipantSummaryResponseDto,
+): TaxiHomeAvatarViewData => {
+  if (participant.photoUrl) {
+    return {
+      id: participant.id,
+      kind: 'image',
+      uri: participant.photoUrl,
+    };
+  }
+
+  return buildDefaultAvatar(participant.id);
 };
 
 const normalizePartyTags = (tags?: string[] | null) =>

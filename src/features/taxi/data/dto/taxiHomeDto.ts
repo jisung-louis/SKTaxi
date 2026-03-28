@@ -28,8 +28,16 @@ export interface PartySummaryResponseDto {
   leaderName?: string | null;
   leaderPhotoUrl?: string | null;
   maxMembers: number;
+  participantSummaries?: PartyParticipantSummaryResponseDto[] | null;
   status: PartyStatusDto;
   tags?: string[] | null;
+}
+
+export interface PartyParticipantSummaryResponseDto {
+  id: string;
+  isLeader: boolean;
+  nickname?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface PartyPageResponseDto {
