@@ -67,6 +67,8 @@ export interface BoardComment {
   authorName: string;
   authorProfileImage: string | null;
   isAnonymous?: boolean;
+  isAuthor?: boolean;
+  isPostAuthor?: boolean;
   anonId: string | null;
   anonymousOrder?: number;
   parentId: string | null;

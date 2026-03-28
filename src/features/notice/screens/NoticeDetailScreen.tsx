@@ -2,12 +2,15 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Linking,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -82,6 +85,10 @@ export const NoticeDetailScreen = () => {
   const scrollBottomPadding = isKeyboardVisible
     ? keyboardHeight + 88 + insets.bottom
     : 88;
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const composerRef = React.useRef<TextInput>(null);
+  const commentOffsetMapRef = React.useRef(new Map<string, number>());
+  const pendingScrollCommentIdRef = React.useRef<string | null>(null);
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -119,28 +126,78 @@ export const NoticeDetailScreen = () => {
   }, [toggleBookmark]);
 
   const handleSubmitComment = React.useCallback(() => {
-    submitComment().catch(submitError => {
-      Alert.alert(
-        '오류',
-        submitError instanceof Error
-          ? submitError.message
-          : isEditingComment
-          ? '댓글 수정에 실패했습니다.'
-          : '댓글 작성에 실패했습니다.',
-      );
-    });
-  }, [isEditingComment, submitComment]);
+    submitComment()
+      .then(result => {
+        const targetCommentId = result?.commentId;
+
+        composerRef.current?.blur();
+        Keyboard.dismiss();
+
+        if (!targetCommentId) {
+          return;
+        }
+
+        pendingScrollCommentIdRef.current = targetCommentId;
+
+        setTimeout(() => {
+          const commentOffset = commentOffsetMapRef.current.get(targetCommentId);
+
+          if (commentOffset == null) {
+            return;
+          }
+
+          pendingScrollCommentIdRef.current = null;
+          scrollViewRef.current?.scrollTo({
+            animated: true,
+            y: Math.max(0, commentOffset - headerOffset - SPACING.md),
+          });
+        }, Platform.OS === 'ios' ? 220 : 120);
+      })
+      .catch(submitError => {
+        Alert.alert(
+          '오류',
+          submitError instanceof Error
+            ? submitError.message
+            : isEditingComment
+            ? '댓글 수정에 실패했습니다.'
+            : '댓글 작성에 실패했습니다.',
+        );
+      });
+  }, [headerOffset, isEditingComment, submitComment]);
 
   const handleStartEditingComment = React.useCallback(
     (commentId: string) => {
       startEditingComment(commentId);
+      setTimeout(() => {
+        composerRef.current?.focus();
+      }, 40);
     },
     [startEditingComment],
   );
 
   const handleCancelCommentEdit = React.useCallback(() => {
     cancelCommentEdit();
+    composerRef.current?.blur();
+    Keyboard.dismiss();
   }, [cancelCommentEdit]);
+
+  const handleCommentLayout = React.useCallback(
+    (commentId: string, event: LayoutChangeEvent) => {
+      const nextOffset = event.nativeEvent.layout.y;
+      commentOffsetMapRef.current.set(commentId, nextOffset);
+
+      if (pendingScrollCommentIdRef.current !== commentId) {
+        return;
+      }
+
+      pendingScrollCommentIdRef.current = null;
+      scrollViewRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, nextOffset - headerOffset - SPACING.md),
+      });
+    },
+    [headerOffset],
+  );
 
   const handleOpenExternalLink = React.useCallback(() => {
     const targetUrl = notice?.link?.trim();
@@ -196,6 +253,7 @@ export const NoticeDetailScreen = () => {
         ) : data ? (
           <>
             <ScrollView
+              ref={scrollViewRef}
               contentContainerStyle={[
                 styles.scrollContent,
                 {
@@ -281,16 +339,19 @@ export const NoticeDetailScreen = () => {
               ) : (
                 <View style={styles.commentsList}>
                   {commentItems.map(comment => (
-                    <DetailCommentCard
-                      actionLabel={comment.isEditable ? '수정' : undefined}
-                      comment={comment}
+                    <View
                       key={comment.id}
-                      onPressAction={
-                        comment.isEditable
-                          ? () => handleStartEditingComment(comment.id)
-                          : undefined
-                      }
-                    />
+                      onLayout={event => handleCommentLayout(comment.id, event)}>
+                      <DetailCommentCard
+                        actionLabel={comment.isEditable ? '수정' : undefined}
+                        comment={comment}
+                        onPressAction={
+                          comment.isEditable
+                            ? () => handleStartEditingComment(comment.id)
+                            : undefined
+                        }
+                      />
+                    </View>
                   ))}
                 </View>
               )}
@@ -313,6 +374,7 @@ export const NoticeDetailScreen = () => {
                 </View>
               ) : null}
               <DetailComposer
+                ref={composerRef}
                 onChangeText={setCommentDraft}
                 onSend={handleSubmitComment}
                 placeholder={
@@ -323,6 +385,10 @@ export const NoticeDetailScreen = () => {
                 sendEnabled={
                   !submittingComment && commentDraft.trim().length > 0
                 }
+                textInputProps={{
+                  blurOnSubmit: false,
+                  returnKeyType: 'done',
+                }}
                 value={commentDraft}
               />
             </KeyboardAvoidingView>

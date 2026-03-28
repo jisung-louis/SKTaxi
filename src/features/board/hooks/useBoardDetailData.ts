@@ -4,7 +4,10 @@ import {ko} from 'date-fns/locale';
 
 import {useAuth} from '@/features/auth';
 import {formatKoreanAbsoluteWithRelativeTime} from '@/shared/lib/date';
-import type {ContentDetailViewData} from '@/shared/types/contentDetailViewData';
+import type {
+  ContentDetailCommentViewData,
+  ContentDetailViewData,
+} from '@/shared/types/contentDetailViewData';
 
 import type {BoardCommentTreeNode} from '../data/repositories/IBoardRepository';
 import type {BoardComment, BoardPost} from '../model/types';
@@ -48,6 +51,22 @@ const getCommentAuthorLabel = (comment: BoardComment) => {
   return `익명${comment.anonymousOrder ?? ''}`;
 };
 
+export interface BoardDetailCommentItem extends ContentDetailCommentViewData {
+  isEditable: boolean;
+}
+
+const toCommentItems = (
+  comments: BoardCommentTreeNode[],
+): BoardDetailCommentItem[] =>
+  flattenComments(comments).map(comment => ({
+    authorLabel: getCommentAuthorLabel(comment),
+    body: comment.content,
+    dateLabel: formatBoardCommentDateLabel(comment.createdAt.toISOString()),
+    id: comment.id,
+    isEditable: Boolean(comment.isAuthor),
+    likeCount: 0,
+  }));
+
 const toViewData = (
   post: BoardPost,
   comments: BoardCommentTreeNode[],
@@ -68,13 +87,7 @@ const toViewData = (
     })),
   ],
   commentInputPlaceholder: '댓글을 입력하세요...',
-  comments: flattenComments(comments).map(comment => ({
-    authorLabel: getCommentAuthorLabel(comment),
-    body: comment.content,
-    dateLabel: formatBoardCommentDateLabel(comment.createdAt.toISOString()),
-    id: comment.id,
-    likeCount: 0,
-  })),
+  comments: toCommentItems(comments),
   dateLabel: formatKoreanAbsoluteWithRelativeTime(post.createdAt),
   emptyCommentsLabel: '첫 댓글을 남겨보세요!',
   metaBadges: [
@@ -121,7 +134,31 @@ export const useBoardDetailData = (postId?: string) => {
   const [togglingBookmark, setTogglingBookmark] = React.useState(false);
   const [submittingComment, setSubmittingComment] = React.useState(false);
   const [deletingPost, setDeletingPost] = React.useState(false);
+  const [editingCommentId, setEditingCommentId] = React.useState<string | null>(
+    null,
+  );
   const requestIdRef = React.useRef(0);
+  const commentItems = React.useMemo(() => toCommentItems(comments), [comments]);
+
+  const refreshComments = React.useCallback(async () => {
+    if (!postId) {
+      setComments([]);
+      return [];
+    }
+
+    const nextComments = await boardRepository.getComments(postId);
+    setComments(nextComments);
+    setPost(currentPost =>
+      currentPost
+        ? {
+            ...currentPost,
+            commentCount: flattenComments(nextComments).length,
+          }
+        : currentPost,
+    );
+
+    return nextComments;
+  }, [boardRepository, postId]);
 
   const loadDetail = React.useCallback(async () => {
     const currentRequestId = requestIdRef.current + 1;
@@ -177,6 +214,11 @@ export const useBoardDetailData = (postId?: string) => {
   React.useEffect(() => {
     loadDetail().catch(() => undefined);
   }, [loadDetail]);
+
+  React.useEffect(() => {
+    setCommentDraft('');
+    setEditingCommentId(null);
+  }, [postId]);
 
   const canManageActions = React.useMemo(() => {
     if (!post) {
@@ -264,32 +306,57 @@ export const useBoardDetailData = (postId?: string) => {
     setSubmittingComment(true);
 
     try {
-      await boardRepository.createComment(postId, {
-        anonId: null,
-        authorId: user.uid,
-        authorName: user.displayName ?? '익명',
-        authorProfileImage: user.photoURL ?? null,
-        content: trimmedComment,
-        isAnonymous: false,
-        isDeleted: false,
-        parentId: null,
-      });
+      let targetCommentId = editingCommentId;
 
-      const nextComments = await boardRepository.getComments(postId);
-      setComments(nextComments);
+      if (editingCommentId) {
+        await boardRepository.updateComment(postId, editingCommentId, trimmedComment);
+      } else {
+        targetCommentId = await boardRepository.createComment(postId, {
+          anonId: null,
+          authorId: user.uid,
+          authorName: user.displayName ?? '익명',
+          authorProfileImage: user.photoURL ?? null,
+          content: trimmedComment,
+          isAnonymous: false,
+          isAuthor: true,
+          isDeleted: false,
+          isPostAuthor: false,
+          parentId: null,
+        });
+      }
+
+      await refreshComments();
       setCommentDraft('');
-      setPost(currentPost =>
-        currentPost
-          ? {
-              ...currentPost,
-              commentCount: flattenComments(nextComments).length,
-            }
-          : currentPost,
-      );
+      setEditingCommentId(null);
+
+      return {
+        commentId: targetCommentId,
+      };
     } finally {
       setSubmittingComment(false);
     }
-  }, [boardRepository, commentDraft, postId, user]);
+  }, [boardRepository, commentDraft, editingCommentId, postId, refreshComments, user]);
+
+  const startEditingComment = React.useCallback(
+    (commentId: string) => {
+      const targetComment = flattenComments(comments).find(
+        comment => comment.id === commentId,
+      );
+
+      if (!targetComment || !targetComment.isAuthor) {
+        return;
+      }
+
+      setEditingCommentId(commentId);
+      setCommentDraft(targetComment.content);
+    },
+    [comments],
+  );
+
+  const cancelCommentEdit = React.useCallback(() => {
+    setEditingCommentId(null);
+    setCommentDraft('');
+  }, []);
 
   const deletePost = React.useCallback(async () => {
     if (!postId) {
@@ -311,17 +378,22 @@ export const useBoardDetailData = (postId?: string) => {
   );
 
   return {
+    cancelCommentEdit,
     canManageActions,
     commentDraft,
+    commentItems,
     data,
     deletePost,
     deletingPost,
+    editingCommentId,
     error,
+    isEditingComment: Boolean(editingCommentId),
     loading,
     notFound,
     post,
     reload: loadDetail,
     setCommentDraft,
+    startEditingComment,
     submitComment,
     submittingComment,
     toggleBookmark,

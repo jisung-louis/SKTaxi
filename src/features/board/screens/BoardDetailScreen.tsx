@@ -2,11 +2,14 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
+  LayoutChangeEvent,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -57,17 +60,22 @@ export const BoardDetailScreen = () => {
   const screenAnimatedStyle = useScreenEnterAnimation();
   const [isMenuVisible, setIsMenuVisible] = React.useState(false);
   const {
+    cancelCommentEdit,
     canManageActions,
     commentDraft,
+    commentItems,
     data,
     deletePost,
     deletingPost,
+    editingCommentId,
     error,
+    isEditingComment,
     loading,
     notFound,
     post,
     reload,
     setCommentDraft,
+    startEditingComment,
     submitComment,
     submittingComment,
     toggleBookmark,
@@ -80,6 +88,10 @@ export const BoardDetailScreen = () => {
   const scrollBottomPadding = isKeyboardVisible
     ? keyboardHeight + 88 + insets.bottom
     : 88;
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const composerRef = React.useRef<TextInput>(null);
+  const commentOffsetMapRef = React.useRef(new Map<string, number>());
+  const pendingScrollCommentIdRef = React.useRef<string | null>(null);
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -157,15 +169,78 @@ export const BoardDetailScreen = () => {
   }, [toggleBookmark]);
 
   const handleSubmitComment = React.useCallback(() => {
-    submitComment().catch(submitError => {
-      Alert.alert(
-        '오류',
-        submitError instanceof Error
-          ? submitError.message
-          : '댓글 작성에 실패했습니다.',
-      );
-    });
-  }, [submitComment]);
+    submitComment()
+      .then(result => {
+        const targetCommentId = result?.commentId;
+
+        composerRef.current?.blur();
+        Keyboard.dismiss();
+
+        if (!targetCommentId) {
+          return;
+        }
+
+        pendingScrollCommentIdRef.current = targetCommentId;
+
+        setTimeout(() => {
+          const commentOffset = commentOffsetMapRef.current.get(targetCommentId);
+
+          if (commentOffset == null) {
+            return;
+          }
+
+          pendingScrollCommentIdRef.current = null;
+          scrollViewRef.current?.scrollTo({
+            animated: true,
+            y: Math.max(0, commentOffset - headerOffset - SPACING.md),
+          });
+        }, Platform.OS === 'ios' ? 220 : 120);
+      })
+      .catch(submitError => {
+        Alert.alert(
+          '오류',
+          submitError instanceof Error
+            ? submitError.message
+            : isEditingComment
+            ? '댓글 수정에 실패했습니다.'
+            : '댓글 작성에 실패했습니다.',
+        );
+      });
+  }, [headerOffset, isEditingComment, submitComment]);
+
+  const handleStartEditingComment = React.useCallback(
+    (commentId: string) => {
+      startEditingComment(commentId);
+      setTimeout(() => {
+        composerRef.current?.focus();
+      }, 40);
+    },
+    [startEditingComment],
+  );
+
+  const handleCancelCommentEdit = React.useCallback(() => {
+    cancelCommentEdit();
+    composerRef.current?.blur();
+    Keyboard.dismiss();
+  }, [cancelCommentEdit]);
+
+  const handleCommentLayout = React.useCallback(
+    (commentId: string, event: LayoutChangeEvent) => {
+      const nextOffset = event.nativeEvent.layout.y;
+      commentOffsetMapRef.current.set(commentId, nextOffset);
+
+      if (pendingScrollCommentIdRef.current !== commentId) {
+        return;
+      }
+
+      pendingScrollCommentIdRef.current = null;
+      scrollViewRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, nextOffset - headerOffset - SPACING.md),
+      });
+    },
+    [headerOffset],
+  );
 
   const rightAccessory = data ? (
     <TouchableOpacity
@@ -216,6 +291,7 @@ export const BoardDetailScreen = () => {
         ) : data ? (
           <>
             <ScrollView
+              ref={scrollViewRef}
               contentInsetAdjustmentBehavior="never"
               contentContainerStyle={[
                 styles.scrollContent,
@@ -267,10 +343,10 @@ export const BoardDetailScreen = () => {
 
               <View style={[styles.divider, styles.commentsDivider]} />
               <Text style={styles.commentsTitle}>
-                댓글 {data.comments.length}
+                댓글 {commentItems.length}
               </Text>
 
-              {data.comments.length === 0 ? (
+              {commentItems.length === 0 ? (
                 <View style={styles.emptyCommentsWrap}>
                   <Text style={styles.emptyCommentsLabel}>
                     {data.emptyCommentsLabel}
@@ -278,8 +354,20 @@ export const BoardDetailScreen = () => {
                 </View>
               ) : (
                 <View style={styles.commentsList}>
-                  {data.comments.map(comment => (
-                    <DetailCommentCard comment={comment} key={comment.id} />
+                  {commentItems.map(comment => (
+                    <View
+                      key={comment.id}
+                      onLayout={event => handleCommentLayout(comment.id, event)}>
+                      <DetailCommentCard
+                        actionLabel={comment.isEditable ? '수정' : undefined}
+                        comment={comment}
+                        onPressAction={
+                          comment.isEditable
+                            ? () => handleStartEditingComment(comment.id)
+                            : undefined
+                        }
+                      />
+                    </View>
                   ))}
                 </View>
               )}
@@ -290,13 +378,33 @@ export const BoardDetailScreen = () => {
               keyboardVerticalOffset={0}
               pointerEvents="box-none"
               style={styles.composerAvoidingView}>
+              {isEditingComment ? (
+                <View style={styles.editingBanner}>
+                  <Text style={styles.editingBannerText}>댓글 수정 중</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    activeOpacity={0.8}
+                    onPress={handleCancelCommentEdit}>
+                    <Text style={styles.editingBannerAction}>취소</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
               <DetailComposer
+                ref={composerRef}
                 onChangeText={setCommentDraft}
                 onSend={handleSubmitComment}
-                placeholder={data.commentInputPlaceholder}
+                placeholder={
+                  editingCommentId
+                    ? '댓글을 수정하세요...'
+                    : data.commentInputPlaceholder
+                }
                 sendEnabled={
                   !submittingComment && commentDraft.trim().length > 0
                 }
+                textInputProps={{
+                  blurOnSubmit: false,
+                  returnKeyType: 'done',
+                }}
                 value={commentDraft}
               />
             </KeyboardAvoidingView>
@@ -357,6 +465,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.border.default,
     height: 1,
     marginBottom: SPACING.xl,
+  },
+  editingBanner: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderTopColor: COLORS.border.subtle,
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.sm,
+  },
+  editingBannerAction: {
+    color: COLORS.brand.primary,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  editingBannerText: {
+    color: COLORS.text.secondary,
+    fontSize: 13,
+    lineHeight: 18,
   },
   emptyCommentsLabel: {
     color: COLORS.text.muted,

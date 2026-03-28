@@ -445,6 +445,8 @@ export const useNoticeDetailData = (noticeId?: string) => {
     setSubmittingComment(true);
 
     try {
+      let targetCommentId = editingCommentId;
+
       if (editingCommentId) {
         await noticeRepository.updateComment(
           noticeId,
@@ -452,7 +454,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
           trimmedComment,
         );
       } else {
-        await noticeRepository.createComment(noticeId, {
+        targetCommentId = await noticeRepository.createComment(noticeId, {
           content: trimmedComment,
           isAnonymous: false,
           parentId: null,
@@ -464,6 +466,10 @@ export const useNoticeDetailData = (noticeId?: string) => {
       await refreshComments();
       setCommentDraft('');
       setEditingCommentId(null);
+
+      return {
+        commentId: targetCommentId,
+      };
     } finally {
       setSubmittingComment(false);
     }

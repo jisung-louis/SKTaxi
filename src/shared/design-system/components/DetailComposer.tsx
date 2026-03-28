@@ -29,107 +29,109 @@ interface DetailComposerProps {
   value?: string;
 }
 
-export const DetailComposer = ({
-  editable = true,
-  leadingActionAccessibilityLabel = '첨부',
-  leadingIconName,
-  onChangeText,
-  onPressLeadingAction,
-  onSend,
-  placeholder,
-  sendAccessibilityLabel = '전송',
-  sendEnabled,
-  textInputProps,
-  value,
-}: DetailComposerProps) => {
-  const insets = useSafeAreaInsets();
-  const [internalValue, setInternalValue] = React.useState('');
-  const resolvedValue = value ?? internalValue;
-  const isSendEnabled =
-    sendEnabled ?? (editable && resolvedValue.trim().length > 0);
+export const DetailComposer = React.forwardRef<TextInput, DetailComposerProps>(
+  (
+    {
+      editable = true,
+      leadingActionAccessibilityLabel = '첨부',
+      leadingIconName,
+      onChangeText,
+      onPressLeadingAction,
+      onSend,
+      placeholder,
+      sendAccessibilityLabel = '전송',
+      sendEnabled,
+      textInputProps,
+      value,
+    },
+    ref,
+  ) => {
+    const insets = useSafeAreaInsets();
+    const [internalValue, setInternalValue] = React.useState('');
+    const resolvedValue = value ?? internalValue;
+    const isSendEnabled =
+      sendEnabled ?? (editable && resolvedValue.trim().length > 0);
 
-  const handleChangeText = React.useCallback(
-    (nextValue: string) => {
-      if (value === undefined) {
-        setInternalValue(nextValue);
+    const handleChangeText = React.useCallback(
+      (nextValue: string) => {
+        if (value === undefined) {
+          setInternalValue(nextValue);
+        }
+
+        onChangeText?.(nextValue);
+      },
+      [onChangeText, value],
+    );
+
+    const handleSend = React.useCallback(() => {
+      const trimmedValue = resolvedValue.trim();
+
+      if (!trimmedValue || !isSendEnabled) {
+        return;
       }
 
-      onChangeText?.(nextValue);
-    },
-    [onChangeText, value],
-  );
+      onSend?.(trimmedValue);
 
-  const handleSend = React.useCallback(() => {
-    const trimmedValue = resolvedValue.trim();
+      if (value === undefined) {
+        setInternalValue('');
+      }
+    }, [isSendEnabled, onSend, resolvedValue, value]);
 
-    if (!trimmedValue || !isSendEnabled) {
-      return;
-    }
+    return (
+      <View style={[styles.container, {paddingBottom: insets.bottom}]}>
+        <View style={styles.row}>
+          {leadingIconName && onPressLeadingAction ? (
+            <TouchableOpacity
+              accessibilityLabel={leadingActionAccessibilityLabel}
+              accessibilityRole="button"
+              activeOpacity={0.82}
+              onPress={onPressLeadingAction}
+              style={styles.leadingButton}>
+              <Icon
+                color={COLORS.text.muted}
+                name={leadingIconName}
+                size={18}
+              />
+            </TouchableOpacity>
+          ) : null}
 
-    onSend?.(trimmedValue);
+          <View style={styles.inputSurface}>
+            <TextInput
+              ref={ref}
+              editable={editable}
+              onChangeText={handleChangeText}
+              placeholder={placeholder}
+              placeholderTextColor={COLORS.text.muted}
+              style={styles.input}
+              textAlignVertical="center"
+              value={resolvedValue}
+              {...textInputProps}
+            />
+          </View>
 
-    if (value === undefined) {
-      setInternalValue('');
-    }
-  }, [isSendEnabled, onSend, resolvedValue, value]);
-
-  return (
-    <View
-      style={[
-        styles.container,
-        {paddingBottom: insets.bottom}
-      ]}>
-      <View style={styles.row}>
-        {leadingIconName && onPressLeadingAction ? (
           <TouchableOpacity
-            accessibilityLabel={leadingActionAccessibilityLabel}
+            accessibilityLabel={sendAccessibilityLabel}
             accessibilityRole="button"
-            activeOpacity={0.82}
-            onPress={onPressLeadingAction}
-            style={styles.leadingButton}>
+            activeOpacity={isSendEnabled ? 0.82 : 1}
+            disabled={!isSendEnabled}
+            onPress={handleSend}
+            style={[
+              styles.sendButton,
+              isSendEnabled ? styles.sendButtonActive : null,
+            ]}>
             <Icon
-              color={COLORS.text.muted}
-              name={leadingIconName}
+              color={isSendEnabled ? COLORS.text.inverse : COLORS.text.muted}
+              name="paper-plane-outline"
               size={18}
             />
           </TouchableOpacity>
-        ) : null}
-
-        <View style={styles.inputSurface}>
-          <TextInput
-            editable={editable}
-            onChangeText={handleChangeText}
-            placeholder={placeholder}
-            placeholderTextColor={COLORS.text.muted}
-            style={styles.input}
-            textAlignVertical="center"
-            value={resolvedValue}
-            {...textInputProps}
-          />
         </View>
-
-        <TouchableOpacity
-          accessibilityLabel={sendAccessibilityLabel}
-          accessibilityRole="button"
-          activeOpacity={isSendEnabled ? 0.82 : 1}
-          disabled={!isSendEnabled}
-          onPress={handleSend}
-          style={[
-            styles.sendButton,
-            isSendEnabled ? styles.sendButtonActive : null,
-          ]}>
-          <Icon
-            color={
-              isSendEnabled ? COLORS.text.inverse : COLORS.text.muted
-            }
-            name="paper-plane-outline"
-            size={18}
-          />
-        </TouchableOpacity>
       </View>
-    </View>
-  );
-};
+    );
+  },
+);
+
+DetailComposer.displayName = 'DetailComposer';
 
 const styles = StyleSheet.create({
   container: {
@@ -165,8 +167,8 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     fontWeight: '500',
-    lineHeight: 23,
     padding: 0,
+    lineHeight: 16,
   },
   sendButton: {
     alignItems: 'center',
