@@ -1,9 +1,12 @@
 import React from 'react';
 import {
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -18,7 +21,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {ToneBadge} from '@/shared/design-system/components';
+import {
+  DefaultProfileAvatar,
+  ToneBadge,
+} from '@/shared/design-system/components';
 import type {
   TaxiHomeAvatarViewData,
   TaxiHomePartyCardViewData,
@@ -41,7 +47,7 @@ const EXPANDED_BORDER_COLOR = '#86EFAC';
 const DEFAULT_CARD_BORDER_COLOR = COLORS.border.subtle;
 
 const renderAvatarLabel = (avatar: TaxiHomeAvatarViewData) => {
-  if (!avatar.label) {
+  if (avatar.kind !== 'label' || !avatar.label) {
     return '?';
   }
 
@@ -52,6 +58,46 @@ const buildAvatarStyle = (
   baseStyle: ViewStyle,
   backgroundColor: string,
 ): ViewStyle[] => [baseStyle, {backgroundColor}];
+
+const AvatarCircle = ({
+  avatar,
+  size,
+  style,
+  textStyle,
+}: {
+  avatar: TaxiHomeAvatarViewData;
+  size: number;
+  style: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+}) => {
+  if (avatar.kind === 'image') {
+    return (
+      <Image
+        source={{uri: avatar.uri}}
+        style={[style as any, styles.avatarImage, {height: size, width: size}]}
+      />
+    );
+  }
+
+  if (avatar.kind === 'icon') {
+    return (
+      <DefaultProfileAvatar
+        backgroundColor={avatar.backgroundColor}
+        iconColor={avatar.iconColor}
+        size={size}
+        style={style}
+      />
+    );
+  }
+
+  return (
+    <View style={buildAvatarStyle(style as ViewStyle, avatar.backgroundColor)}>
+      <Text style={[textStyle, {color: avatar.textColor}]}>
+        {renderAvatarLabel(avatar)}
+      </Text>
+    </View>
+  );
+};
 
 const getJoinActionIconName = (
   state: TaxiHomePartyCardViewData['joinAction']['state'],
@@ -122,12 +168,18 @@ export const TaxiHomePartyCard = ({
   }, [expandable, onPressCard, party]);
 
   const leaderAvatarStyle = React.useMemo(
-    () => buildAvatarStyle(styles.leaderAvatar, party.leaderAvatar.backgroundColor),
-    [party.leaderAvatar.backgroundColor],
+    () =>
+      party.leaderAvatar.kind === 'label'
+        ? buildAvatarStyle(styles.leaderAvatar, party.leaderAvatar.backgroundColor)
+        : styles.leaderAvatar,
+    [party.leaderAvatar],
   );
   const leaderAvatarLabelStyle = React.useMemo(
-    () => [styles.leaderAvatarLabel, {color: party.leaderAvatar.textColor}],
-    [party.leaderAvatar.textColor],
+    () =>
+      party.leaderAvatar.kind === 'label'
+        ? [styles.leaderAvatarLabel, {color: party.leaderAvatar.textColor}]
+        : styles.leaderAvatarLabel,
+    [party.leaderAvatar],
   );
 
   return (
@@ -258,11 +310,12 @@ export const TaxiHomePartyCard = ({
 
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
-            <View style={leaderAvatarStyle}>
-              <Text style={leaderAvatarLabelStyle}>
-                {renderAvatarLabel(party.leaderAvatar)}
-              </Text>
-            </View>
+            <AvatarCircle
+              avatar={party.leaderAvatar}
+              size={28}
+              style={leaderAvatarStyle}
+              textStyle={leaderAvatarLabelStyle}
+            />
 
             <View style={styles.leaderMeta}>
               <Text numberOfLines={1} style={styles.leaderName}>
@@ -278,7 +331,9 @@ export const TaxiHomePartyCard = ({
                 {party.participantAvatars.map((avatar, index) => {
                   const memberAvatarStyle = buildAvatarStyle(
                     styles.memberAvatar,
-                    avatar.backgroundColor,
+                    avatar.kind === 'label'
+                      ? avatar.backgroundColor
+                      : COLORS.border.default,
                   );
                   const memberAvatarStyleWithOffset =
                     index > 0
@@ -286,22 +341,27 @@ export const TaxiHomePartyCard = ({
                       : memberAvatarStyle;
                   const memberAvatarLabelStyle = [
                     styles.memberAvatarLabel,
-                    {color: avatar.textColor},
+                    {
+                      color:
+                        avatar.kind === 'label'
+                          ? avatar.textColor
+                          : COLORS.text.muted,
+                    },
                   ];
 
                   return (
-                    <View
+                    <AvatarCircle
+                      avatar={avatar}
                       key={avatar.id}
+                      size={24}
                       style={[
                         ...memberAvatarStyleWithOffset,
                         {
                           zIndex: party.participantAvatars.length - index,
                         },
-                      ]}>
-                      <Text style={memberAvatarLabelStyle}>
-                        {renderAvatarLabel(avatar)}
-                      </Text>
-                    </View>
+                      ]}
+                      textStyle={memberAvatarLabelStyle}
+                    />
                   );
                 })}
               </View>
@@ -558,6 +618,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     lineHeight: 14,
+  },
+  avatarImage: {
+    borderRadius: RADIUS.pill,
   },
   memberSummaryLabel: {
     color: COLORS.text.tertiary,

@@ -15,6 +15,13 @@ export type TaxiAcceptancePendingAvatarViewData =
       textColor: string;
     }
   | {
+      backgroundColor: string;
+      iconColor: string;
+      iconName: string;
+      id: string;
+      kind: 'icon';
+    }
+  | {
       id: string;
       kind: 'image';
       uri: string;

@@ -1,6 +1,7 @@
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
+import {COLORS} from '@/shared/design-system/tokens';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {taxiHomeApiClient} from '../data/api/taxiHomeApiClient';
@@ -78,7 +79,7 @@ const hashSeed = (value: string) =>
     0,
   );
 
-const buildAvatar = (
+const buildCounterAvatar = (
   id: string,
   label: string,
   seedValue: string,
@@ -88,20 +89,41 @@ const buildAvatar = (
   return {
     backgroundColor: palette.backgroundColor,
     id,
+    kind: 'label',
     label: label.slice(0, 1) || '?',
     textColor: palette.textColor,
   };
 };
 
+const buildDefaultAvatar = (id: string): TaxiHomeAvatarViewData => ({
+  backgroundColor: COLORS.border.default,
+  iconColor: COLORS.text.muted,
+  iconName: 'person-outline',
+  id,
+  kind: 'icon',
+});
+
+const buildLeaderAvatar = ({
+  id,
+  photoUrl,
+}: {
+  id: string;
+  photoUrl?: string | null;
+}): TaxiHomeAvatarViewData => {
+  if (photoUrl) {
+    return {
+      id,
+      kind: 'image',
+      uri: photoUrl,
+    };
+  }
+
+  return buildDefaultAvatar(id);
+};
+
 const mapHomeAvatarToPendingAvatar = (
   avatar: TaxiHomeAvatarViewData,
-): TaxiAcceptancePendingAvatarViewData => ({
-  backgroundColor: avatar.backgroundColor,
-  id: avatar.id,
-  kind: 'label',
-  label: avatar.label,
-  textColor: avatar.textColor,
-});
+): TaxiAcceptancePendingAvatarViewData => ({...avatar});
 
 const cloneAcceptancePendingAvatar = (
   avatar: TaxiAcceptancePendingAvatarViewData,
@@ -184,7 +206,7 @@ const buildParticipantAvatars = (
   const participantCount = Math.max(Math.min(party.currentMembers - 1, 3), 0);
 
   return Array.from({length: participantCount}, (_, index) =>
-    buildAvatar(
+    buildCounterAvatar(
       `${party.id}-member-${index + 1}`,
       `${index + 1}`,
       `${party.id}-member-${index + 1}`,
@@ -336,7 +358,10 @@ const buildBasePartyCard = (
     estimatedFareLabel: '미정',
     filterIds: buildFilterIds(party.departure.name),
     id: party.id,
-    leaderAvatar: buildAvatar(party.leaderId, leaderName, party.leaderId),
+    leaderAvatar: buildLeaderAvatar({
+      id: party.leaderId,
+      photoUrl: party.leaderPhotoUrl,
+    }),
     leaderName,
     leaderRoleLabel: '파티장',
     maxMemberCount: party.maxMembers,

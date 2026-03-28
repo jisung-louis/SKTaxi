@@ -1,7 +1,7 @@
 import React from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 
+import {DefaultProfileAvatar} from '@/shared/design-system/components';
 import {RADIUS} from '@/shared/design-system/tokens';
 
 import type {ChatAvatarViewData} from './types';
@@ -28,6 +28,17 @@ export const ChatAvatar = ({
     );
   }
 
+  if (avatar.kind === 'icon') {
+    return (
+      <DefaultProfileAvatar
+        backgroundColor={avatar.backgroundColor}
+        iconColor={avatar.iconColor}
+        iconName={avatar.iconName}
+        size={size}
+      />
+    );
+  }
+
   return (
     <View
       style={[
@@ -39,13 +50,9 @@ export const ChatAvatar = ({
           width: size,
         },
       ]}>
-      {avatar.kind === 'label' ? (
-        <Text style={[styles.avatarLabel, {color: avatar.textColor}]}>
-          {avatar.label}
-        </Text>
-      ) : (
-        <Icon color={avatar.iconColor} name={avatar.iconName} size={16} />
-      )}
+      <Text style={[styles.avatarLabel, {color: avatar.textColor}]}>
+        {avatar.label}
+      </Text>
     </View>
   );
 };

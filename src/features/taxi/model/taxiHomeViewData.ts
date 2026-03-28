@@ -14,12 +14,26 @@ export interface TaxiHomeSortDefinition {
   label: string;
 }
 
-export interface TaxiHomeAvatarViewData {
-  id: string;
-  label: string;
-  backgroundColor: string;
-  textColor: string;
-}
+export type TaxiHomeAvatarViewData =
+  | {
+      backgroundColor: string;
+      id: string;
+      kind: 'icon';
+      iconColor: string;
+      iconName: string;
+    }
+  | {
+      backgroundColor: string;
+      id: string;
+      kind: 'label';
+      label: string;
+      textColor: string;
+    }
+  | {
+      id: string;
+      kind: 'image';
+      uri: string;
+    };
 
 export interface TaxiHomePartyAction {
   type: 'preview' | 'open-chat';

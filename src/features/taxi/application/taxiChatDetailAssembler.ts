@@ -63,6 +63,37 @@ const buildHeader = (
   title: partyChat.title,
 });
 
+const buildMessageAvatar = ({
+  currentUserId,
+  partyChat,
+  senderId,
+}: {
+  currentUserId: string;
+  partyChat: TaxiChatSourceData;
+  senderId: string;
+}) => {
+  if (senderId === currentUserId) {
+    return undefined;
+  }
+
+  const participant = partyChat.participants.find(member => member.id === senderId);
+
+  if (participant?.photoUrl) {
+    return {
+      backgroundColor: COLORS.border.default,
+      kind: 'image' as const,
+      uri: participant.photoUrl,
+    };
+  }
+
+  return {
+    backgroundColor: COLORS.border.default,
+    iconColor: COLORS.text.muted,
+    iconName: 'person-outline' as const,
+    kind: 'icon' as const,
+  };
+};
+
 const buildActionTrayActions = (
   partyChat: TaxiChatSourceData,
   management: TaxiChatSummaryManagementViewData,
@@ -227,7 +258,13 @@ const buildItems = (
     if (message.type === 'account' && message.accountData) {
       items.push({
         accountData: message.accountData,
-        avatar: message.avatar,
+        avatar:
+          message.avatar ??
+          buildMessageAvatar({
+            currentUserId,
+            partyChat,
+            senderId: message.senderId,
+          }),
         direction:
           message.senderId === currentUserId ? 'outgoing' : 'incoming',
         id: message.id,
@@ -283,7 +320,13 @@ const buildItems = (
     }
 
     items.push({
-      avatar: message.avatar,
+      avatar:
+        message.avatar ??
+        buildMessageAvatar({
+          currentUserId,
+          partyChat,
+          senderId: message.senderId,
+        }),
       direction:
         message.senderId === currentUserId ? 'outgoing' : 'incoming',
       id: message.id,

@@ -2,6 +2,8 @@ import React from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {DefaultProfileAvatar} from '@/shared/design-system/components';
+
 import type {
   TaxiAcceptancePendingAvatarViewData,
   TaxiAcceptancePendingInfoRowViewData,
@@ -43,6 +45,17 @@ const AvatarCircle = ({
       <Image
         source={{uri: avatar.uri}}
         style={[baseStyle, styles.avatarImage]}
+      />
+    );
+  }
+
+  if (avatar.kind === 'icon') {
+    return (
+      <DefaultProfileAvatar
+        backgroundColor={avatar.backgroundColor}
+        iconColor={avatar.iconColor}
+        size={size}
+        style={baseStyle}
       />
     );
   }

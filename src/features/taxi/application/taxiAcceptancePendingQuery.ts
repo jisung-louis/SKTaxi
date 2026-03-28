@@ -1,3 +1,4 @@
+import {COLORS} from '@/shared/design-system/tokens';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {taxiHomeApiClient} from '../data/api/taxiHomeApiClient';
@@ -12,41 +13,21 @@ import type {
   TaxiAcceptancePendingSourceData,
 } from '../model/taxiAcceptancePendingViewData';
 
-const AVATAR_PALETTE = [
-  {backgroundColor: '#E5E7EB', textColor: '#111827'},
-  {backgroundColor: '#FDE68A', textColor: '#111827'},
-  {backgroundColor: '#BFDBFE', textColor: '#1E3A8A'},
-  {backgroundColor: '#D1FAE5', textColor: '#065F46'},
-] as const;
-
-const hashSeed = (value: string) =>
-  Array.from(value).reduce(
-    (seed, character) => seed + character.charCodeAt(0),
-    0,
-  );
-
-const buildLabelAvatar = (
+const buildDefaultAvatar = (
   id: string,
-  label: string,
-): TaxiAcceptancePendingAvatarViewData => {
-  const palette = AVATAR_PALETTE[hashSeed(id) % AVATAR_PALETTE.length];
-
-  return {
-    backgroundColor: palette.backgroundColor,
-    id,
-    kind: 'label',
-    label: label.slice(0, 1) || '?',
-    textColor: palette.textColor,
-  };
-};
+): TaxiAcceptancePendingAvatarViewData => ({
+  backgroundColor: COLORS.border.default,
+  iconColor: COLORS.text.muted,
+  iconName: 'person-outline',
+  id,
+  kind: 'icon',
+});
 
 const buildMemberAvatar = ({
   id,
-  label,
   photoUrl,
 }: {
   id: string;
-  label: string;
   photoUrl?: string | null;
 }): TaxiAcceptancePendingAvatarViewData => {
   if (photoUrl) {
@@ -57,7 +38,7 @@ const buildMemberAvatar = ({
     };
   }
 
-  return buildLabelAvatar(id, label);
+  return buildDefaultAvatar(id);
 };
 
 const mapRequestState = (
@@ -151,7 +132,6 @@ const buildSourceFromParty = ({
     .map(member =>
       buildMemberAvatar({
         id: member.id,
-        label: member.nickname?.trim() || member.id,
         photoUrl: member.photoUrl,
       }),
     );
@@ -170,10 +150,6 @@ const buildSourceFromParty = ({
         : seed.estimatedFareLabel,
     leaderAvatar: buildMemberAvatar({
       id: leaderMember?.id ?? `${party.id}-leader`,
-      label:
-        leaderMember?.nickname?.trim() ||
-        party.leaderName?.trim() ||
-        seed.leaderName,
       photoUrl: leaderMember?.photoUrl ?? party.leaderPhotoUrl,
     }),
     leaderName:

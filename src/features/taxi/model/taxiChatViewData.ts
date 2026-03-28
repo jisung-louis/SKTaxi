@@ -84,6 +84,7 @@ export interface TaxiChatSourceParticipant {
   id: string;
   isLeader: boolean;
   name: string;
+  photoUrl?: string;
   settled: boolean;
   settledAt?: string;
 }

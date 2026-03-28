@@ -79,17 +79,26 @@ const buildItems = (
       previousDateKey = dateKey;
     }
 
-    items.push({
-      ...(message.type === 'system'
-        ? {
-            id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
-            text: message.text,
-            type: 'system-message' as const,
-          }
-        : {
-            direction:
-              message.senderId === currentUserId ? 'outgoing' : 'incoming',
-            id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
+      items.push({
+        ...(message.type === 'system'
+          ? {
+              id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
+              text: message.text,
+              type: 'system-message' as const,
+            }
+          : {
+              avatar:
+                message.senderId === currentUserId
+                  ? undefined
+                  : {
+                      backgroundColor: COLORS.border.default,
+                      iconColor: COLORS.text.muted,
+                      iconName: 'person-outline' as const,
+                      kind: 'icon' as const,
+                    },
+              direction:
+                message.senderId === currentUserId ? 'outgoing' : 'incoming',
+              id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
             imageUrl: message.type === 'image' ? message.imageUrl : undefined,
             messageKind: message.type === 'image' ? 'image' : 'text',
             minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),

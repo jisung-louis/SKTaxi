@@ -1,7 +1,6 @@
 import React from 'react';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
-
 import {COLORS} from '@/shared/design-system/tokens';
 
 import {
@@ -25,13 +24,6 @@ interface UseTaxiAcceptancePendingDataResult {
   refetch: () => Promise<void>;
 }
 
-const FALLBACK_AVATAR_BACKGROUNDS = [
-  '#E5E7EB',
-  '#FDE68A',
-  '#BFDBFE',
-  '#D1FAE5',
-] as const;
-
 const cloneAvatar = (
   avatar: TaxiAcceptancePendingAvatarViewData,
 ): TaxiAcceptancePendingAvatarViewData => {
@@ -42,19 +34,14 @@ const cloneAvatar = (
   return {...avatar};
 };
 
-const createLabelAvatar = (
+const createDefaultAvatar = (
   id: string,
-  label: string,
-  index = 0,
 ): TaxiAcceptancePendingAvatarViewData => ({
-  backgroundColor:
-    FALLBACK_AVATAR_BACKGROUNDS[
-      index % FALLBACK_AVATAR_BACKGROUNDS.length
-    ],
+  backgroundColor: COLORS.border.default,
+  iconColor: COLORS.text.muted,
+  iconName: 'person-outline',
   id,
-  kind: 'label',
-  label: label.slice(0, 1) || '?',
-  textColor: COLORS.text.primary,
+  kind: 'icon',
 });
 
 const buildSeedFromLegacyParams = (
@@ -74,8 +61,8 @@ const buildSeedFromLegacyParams = (
 
   const {party, requestId} = params;
   const members = Array.isArray(party.members) ? party.members : [];
-  const memberAvatars = members.slice(0, 2).map((memberId, index) =>
-    createLabelAvatar(memberId, memberId, index + 1),
+  const memberAvatars = members.slice(0, 2).map(memberId =>
+    createDefaultAvatar(memberId),
   );
 
   return {
@@ -87,16 +74,13 @@ const buildSeedFromLegacyParams = (
       party.settlement?.perPersonAmount && party.settlement.perPersonAmount > 0
         ? `${party.settlement.perPersonAmount.toLocaleString('ko-KR')}원`
         : '미정',
-    leaderAvatar: createLabelAvatar(
-      `${party.id ?? requestId}-leader`,
-      party.leaderId,
-    ),
+    leaderAvatar: createDefaultAvatar(`${party.id ?? requestId}-leader`),
     leaderName: party.leaderId,
     maxMemberCount: party.maxMembers,
     memberAvatars:
       memberAvatars.length > 0
         ? memberAvatars
-        : [createLabelAvatar(`${party.id ?? requestId}-member`, '파', 1)],
+        : [createDefaultAvatar(`${party.id ?? requestId}-member`)],
     partyId: party.id ?? requestId,
     requestId,
   };

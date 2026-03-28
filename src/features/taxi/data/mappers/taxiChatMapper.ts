@@ -197,6 +197,7 @@ export const buildTaxiChatSourceData = ({
       id: member.id,
       isLeader: member.isLeader,
       name: resolveParticipantName(party, member),
+      photoUrl: member.photoUrl ?? undefined,
       settled: settlement?.settled ?? false,
       settledAt: settlement?.settledAt ?? undefined,
     };
