@@ -59,7 +59,7 @@
 | 2 | **TaxiParty** | Core | 택시 동승 모집, 요청 처리, 정산, 파티 채팅 규칙 | Party, JoinRequest, Settlement, PartyMessage |
 | 3 | **Chat** | Supporting | 공개 채팅방 관리, 메시지 교환 (채팅 엔진) | ChatRoom, ChatMessage, ChatRoomMember |
 | 4 | **Board** | Supporting | 게시글 CRUD, 댓글, 좋아요/북마크 | Post, Comment, PostInteraction |
-| 5 | **Notice** | Supporting | 학교 공지 크롤링/조회, 앱 공지 | Notice, NoticeComment, AppNotice, NoticeReadStatus |
+| 5 | **Notice** | Supporting | 학교 공지 크롤링/조회, 앱 공지 | Notice, NoticeComment, AppNotice, NoticeReadStatus, AppNoticeReadStatus |
 | 6 | **Academic** | Generic | 강의 정보, 시간표, 학사 일정 | Course, UserTimetable, AcademicSchedule |
 | 7 | **Support** | Generic | 문의/신고 접수, 앱 버전, 법적 문서, 학식 메뉴 | Inquiry, Report, AppVersion, LegalDocument, CafeteriaMenu |
 | - | **Notification** | Infra | 도메인 이벤트 기반 알림 인박스 | UserNotification |
@@ -313,6 +313,8 @@ Hooks:
   - 공개방 참여/나가기/커스텀방 생성은 REST(`POST /v1/chat-rooms`, `POST /v1/chat-rooms/{id}/join`, `DELETE /v1/chat-rooms/{id}/members/me`)로 처리
   - 공개방 create/join은 가입 완료된 active member만 가능하며, 미가입 UID는 `MEMBER_NOT_FOUND`
   - 커스텀 공개방 생성자는 자동으로 joined 상태가 되며, join 시 초기 unread는 0으로 시작한다
+  - 공개방 참여/나가기와 파티 채팅 멤버 입장/퇴장은 실제 `SYSTEM` chat message를 저장하고 `/topic/chat/{chatRoomId}`로 브로드캐스트한다
+  - 멤버 입장 직후 생성된 join `SYSTEM` 메시지는 해당 신규 멤버의 `lastReadAt`을 서버가 최신 메시지 시각으로 맞춰 unread가 0으로 유지되게 한다
   - 회원 프로필 학과 변경 시 기존 학과방 membership은 자동 제거하고, 새 학과방은 자동 참여시키지 않는다
   - 채팅방 목록 실시간: `/user/queue/chat-rooms` 사용자 전용 요약 채널 1개 구독
   - 채팅방 상세 실시간: `/topic/chat/{chatRoomId}` 방 단위 구독
@@ -353,10 +355,13 @@ Hooks:
     - id, postId, content, authorId, authorName, authorProfileImage
     - isAnonymous, anonId (= "{postId}:{userId}", 글 단위 익명 식별자)
     - anonymousOrder (서버 계산, 아래 규칙 참조)
-    - parentId (self-reference), isDeleted
+    - parentId (self-reference), likeCount, isDeleted
     - depth 제한 없음 (무제한 self-reference)
-    - 조회 응답은 flat list + `parentId` + `depth`
+    - 조회 응답은 flat list + `parentId` + `depth` + `likeCount` + `isLiked`
     - 부모 삭제 정책(B): 부모는 placeholder("삭제된 댓글입니다")로 soft delete, 자식은 유지
+  - CommentLike
+    - userId, commentId
+    - 댓글 좋아요 중복 방지 및 comment.likeCount 동기화 용도
 
   anonymousOrder 계산 규칙:
     - 게시글(postId) 단위로 Map<anonId, order> 관리
@@ -428,10 +433,13 @@ Hooks:
     - id, noticeId, userId, userDisplayName
     - content, isAnonymous, anonId (= "{noticeId}:{userId}")
     - anonymousOrder (서버 계산: Board Comment의 anonymousOrder 계산 규칙과 동일, noticeId 단위 Map 관리)
-    - parentId, isDeleted
+    - parentId, likeCount, isDeleted
     - depth 제한 없음 (무제한 self-reference)
-    - 조회 응답은 Board Comment와 동일하게 flat list + `parentId` + `depth`
+    - 조회 응답은 Board Comment와 동일하게 flat list + `parentId` + `depth` + `likeCount` + `isLiked`
     - 부모 삭제 정책: Board Comment와 동일하게 placeholder soft delete
+  - NoticeCommentLike
+    - userId, commentId
+    - 공지 댓글 좋아요 중복 방지 및 noticeComment.likeCount 동기화 용도
   - NoticeReadStatus
     - userId, noticeId, isRead, readAt
   - NoticeLike
@@ -474,7 +482,7 @@ Hooks:
 회원 탈퇴 연계 정책:
   - 공지 본문은 회원과 독립적인 외부 데이터이므로 영향 없음
   - `NoticeComment`는 본문을 유지하고 `userId`, `userDisplayName`만 익명화
-  - `NoticeLike`, `NoticeBookmark`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
+  - `NoticeCommentLike`, `NoticeLike`, `NoticeBookmark`, `NoticeReadStatus`는 탈퇴 회원 기준으로 정리
 
 댓글 수정 정책:
   - `PATCH /v1/notice-comments/{commentId}`는 `content`만 수정 가능
@@ -561,9 +569,13 @@ Hooks:
 엔티티:
   - Inquiry
     - id, type (FEATURE, BUG, ACCOUNT, SERVICE, OTHER)
-    - subject, content, userId, userEmail, userName
+    - subject, content, attachments[] (url, thumbUrl, width, height, size, mime)
+    - userId, userEmail, userName
     - userRealname, userStudentId
     - status (PENDING, IN_PROGRESS, RESOLVED), adminMemo
+    - attachments는 최대 3개, JPEG/PNG/WebP만 허용
+    - 요청에서 attachments 생략/null은 허용하고 서버에서 빈 배열로 정규화
+    - 응답은 항상 `attachments: []` 형태를 유지하며 null을 반환하지 않음
   - Report
     - id, targetType (POST, COMMENT, MEMBER)
     - targetId, targetAuthorId, category, reason
@@ -597,10 +609,12 @@ Hooks:
   - `/v1/admin/**`는 공통 인가 어노테이션(`@AdminApiAccess`)과 `ADMIN_REQUIRED` 표준 응답으로 보호
   - 문의/신고 목록은 `AdminPageRequestPolicy` 기준 `page=0`, `size=20`, `size<=100`, 정렬 `createdAt DESC`를 사용
   - CSV export와 자유 검색은 Phase 11에서 문서 규약만 정리하고 런타임 API는 추가하지 않음
+  - 문의 첨부 이미지는 `POST /v1/images?context=INQUIRY_IMAGE` 업로드 결과 메타데이터를 그대로 재사용한다.
 
 회원 탈퇴 연계 정책:
   - inquiry/report record는 운영 추적 목적상 보존
   - inquiry의 구조화 개인정보(`userEmail`, `userName`, `userRealname`, `userStudentId`)만 마스킹
+  - inquiry 첨부 이미지 메타데이터와 업로드된 이미지는 탈퇴 후에도 보존
   - 자유서술 `content` 전체 자동 마스킹은 Phase 10 범위에서 제외
 ```
 
@@ -745,8 +759,8 @@ UserNotification 엔티티:
   - `SETTLEMENT_COMPLETED`: 파티 전체 멤버 대상, `allNotifications` + `partyNotifications` 반영, 인앱 인박스 생성
   - `MEMBER_KICKED`: 강퇴된 멤버 대상, 자진 이탈과 리더 제외, `allNotifications` + `partyNotifications` 반영, 인앱 인박스 생성
   - `PARTY_ENDED`: 리더 제외 파티 멤버 대상, `allNotifications` + `partyNotifications` 반영, 인앱 인박스 생성
-  - `CHAT_MESSAGE`(공개 채팅): 채팅방 멤버 대상, `allNotifications` + 채팅방 mute 반영, 인앱 인박스 미생성
-  - `CHAT_MESSAGE`(파티 채팅): 파티 멤버 대상, `TEXT`/`IMAGE`뿐 아니라 `ACCOUNT`/`SYSTEM`/`ARRIVED`/`END`도 포함, 채팅 mute 중심 parity를 유지하고 전역 토글은 현재 미반영, 인앱 인박스 미생성, payload canonical 식별자는 `chatRoomId`
+  - `CHAT_MESSAGE`(공개 채팅): 채팅방 멤버 대상, `allNotifications` + 채팅방 mute 반영, 인앱 인박스 미생성. 단, 멤버 입장/퇴장 `SYSTEM` 메시지는 push에서 제외
+  - `CHAT_MESSAGE`(파티 채팅): 파티 멤버 대상, `TEXT`/`IMAGE`뿐 아니라 `ACCOUNT`/일반 `SYSTEM`/`ARRIVED`/`END`도 포함, 채팅 mute 중심 parity를 유지하고 전역 토글은 현재 미반영, 인앱 인박스 미생성, payload canonical 식별자는 `chatRoomId`. 단, 멤버 입장/퇴장 `SYSTEM` 메시지는 push에서 제외
   - `POST_LIKED`: 게시글 작성자 대상, 자기 좋아요 제외, `allNotifications` + `boardLikeNotifications` 반영, 인앱 인박스 생성
   - `COMMENT_CREATED`(게시글): 게시글 작성자, 부모 댓글 작성자, 게시글 북마크 사용자 대상, 자기 자신 제외, `allNotifications` + `commentNotifications` + `bookmarkedPostCommentNotifications` 반영, 중복 대상자는 1회 dedupe 후 인앱 인박스 생성
   - `COMMENT_CREATED`(공지): 현재 `Notice.author`는 문자열 필드만 있어 공지 작성자 식별이 불가능하므로, 부모 댓글 작성자 대상 답글 알림만 발송하며 `allNotifications` + `commentNotifications`를 반영
@@ -796,12 +810,14 @@ com.skuri.skuri_backend
 │   ├── support
 │   │   ├── controller
 │   │   │   ├── AppVersionController.java
+│   │   │   ├── LegalDocumentController.java
 │   │   │   ├── InquiryController.java
 │   │   │   ├── ReportController.java
 │   │   │   ├── CafeteriaMenuController.java
 │   │   │   ├── InquiryAdminController.java
 │   │   │   ├── ReportAdminController.java
 │   │   │   ├── AppVersionAdminController.java
+│   │   │   ├── LegalDocumentAdminController.java
 │   │   │   └── CafeteriaMenuAdminController.java
 │   │   ├── dto
 │   │   │   ├── request

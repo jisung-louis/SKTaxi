@@ -1106,7 +1106,7 @@ FCM 토큰 삭제
   - `memberSettlements[*].leftParty`, `leftAt`, `displayName`으로 이탈 멤버를 식별
   - 리더는 나간 정산 대상 멤버에 대해서도 계속 `confirmSettlement` 가능
 - 리더가 탈퇴(회원탈퇴)하면 파티 강제 종료 (`endReason: WITHDRAWED`)
-- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"홍길동님이 파티에서 나갔어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"멤버가 파티에서 나갔어요."`를 사용합니다.
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"홍길동님이 나갔어요."`가 추가됩니다. 닉네임이 비어 있거나 찾지 못하면 `"멤버가 나갔어요."`를 사용합니다.
 
 **Response:**
 ```json
@@ -1192,7 +1192,7 @@ FCM 토큰 삭제
 동승 요청 수락 (리더만)
 
 - 요청 수락으로 파티 인원이 정원(`maxMembers`)에 도달하면 파티 상태는 자동으로 `CLOSED` 전이됩니다.
-- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"{requesterName}님이 파티에 합류했어요."`가 추가됩니다. 닉네임을 찾지 못하면 `"새 멤버가 파티에 합류했어요."`를 사용합니다.
+- 성공 시 파티 채팅방에 서버 생성 `SYSTEM` 메시지 `"{requesterName}님이 입장했어요."`가 추가됩니다. 닉네임이 비어 있거나 찾지 못하면 `"새 멤버가 입장했어요."`를 사용합니다.
 - 정원 도달로 자동 `CLOSED` 되면 같은 트랜잭션 안에서 위 합류 안내 뒤에 `"모집이 마감되었어요."` `SYSTEM` 메시지가 추가됩니다.
 - 실시간 브로드캐스트는 `합류 안내 -> 모집 마감 안내` 순서로 수행됩니다.
 - history 조회는 기본 정렬이 `createdAt DESC`라서 더 나중에 저장된 모집 마감 메시지가 먼저 보일 수 있으며, 같은 `createdAt`인 경우에도 서버가 저장 순서를 기준으로 결정적으로 tie-break 합니다.
@@ -1670,8 +1670,9 @@ Authorization:Bearer <firebase_id_token>
 | `TEXT` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 안녕하세요` | `chatRoomId=party:party_uuid` |
 | `IMAGE` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 사진을 보냈어요.` | `chatRoomId=party:party_uuid` |
 | `ACCOUNT` | `명학역 → 성결대학교 파티 채팅방` | `홍길동 : 계좌 정보를 공유했어요. (카카오뱅크 3333-01-1234567)` | `chatRoomId=party:party_uuid` |
-| `SYSTEM` (일반 안내) | `파티 안내 메시지` | `김철수님이 파티에서 나갔어요.` | `chatRoomId=party:party_uuid` |
+| `SYSTEM` (일반 안내) | `파티 안내 메시지` | `김철수님이 나갔어요.` | `chatRoomId=party:party_uuid` |
 
+> 파티 채팅의 멤버 입장/퇴장 `SYSTEM` 메시지(`"{nickname}님이 입장했어요."`, `"{nickname}님이 나갔어요."`, fallback 포함)는 히스토리와 STOMP에는 노출되지만 `CHAT_MESSAGE` push는 보내지 않습니다.
 > `SYSTEM`의 `"모집이 마감되었어요."`, `"모집이 재개되었어요."`, `ARRIVED`, `END` 메시지는 각각 `PARTY_CLOSED`, `PARTY_REOPENED`, `PARTY_ARRIVED`, `PARTY_ENDED` 도메인 알림으로만 푸시되며, 중복 `CHAT_MESSAGE` push는 보내지 않습니다.
 
 **수신 포맷 (서버 → 클라이언트):**
@@ -1948,7 +1949,9 @@ Authorization:Bearer <firebase_id_token>
 - 부모 댓글 삭제 시 하드 삭제하지 않고 `isDeleted=true`, `content="삭제된 댓글입니다"`로 placeholder 처리
 - 자식 댓글은 유지한다.
 - 조회 응답은 flat list를 반환한다.
-- 각 댓글은 최소 `id`, `parentId`, `depth`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
+- 각 댓글은 최소 `id`, `parentId`, `depth`, `likeCount`, `isLiked`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
+- `likeCount`는 전체 댓글 좋아요 수다.
+- `isLiked`는 현재 로그인 사용자 기준 댓글 좋아요 여부다.
 - 서버는 thread 순서를 보장한 flat list를 반환하고, 클라이언트가 트리 UI를 조립한다.
 
 #### POST /v1/posts/{postId}/comments
@@ -1969,8 +1972,37 @@ Authorization:Bearer <firebase_id_token>
 }
 ```
 
+**댓글 좋아요 응답 필드:**
+- 댓글 생성/수정/목록 응답은 모두 `likeCount`, `isLiked`를 포함한다.
+- 좋아요 등록/취소는 idempotent 하며, 이미 좋아요된 상태에서 다시 `POST`해도 현재 상태를 반환한다.
+- 좋아요하지 않은 상태에서 `DELETE`해도 현재 상태를 반환한다.
+
 #### PATCH /v1/comments/{commentId}
 #### DELETE /v1/comments/{commentId}
+#### POST /v1/comments/{commentId}/like
+#### DELETE /v1/comments/{commentId}/like
+
+```json
+{
+  "success": true,
+  "data": {
+    "commentId": "comment_uuid",
+    "isLiked": true,
+    "likeCount": 3
+  }
+}
+```
+
+```json
+{
+  "success": true,
+  "data": {
+    "commentId": "comment_uuid",
+    "isLiked": false,
+    "likeCount": 2
+  }
+}
+```
 
 ### 5.6 내 게시글/북마크
 
@@ -2197,6 +2229,8 @@ Authorization:Bearer <firebase_id_token>
       "isAnonymous": false,
       "anonymousOrder": null,
       "isAuthor": true,
+      "likeCount": 5,
+      "isLiked": true,
       "isDeleted": false,
       "createdAt": "2026-02-03T12:00:00",
       "updatedAt": "2026-02-03T12:00:00"
@@ -2211,6 +2245,8 @@ Authorization:Bearer <firebase_id_token>
       "isAnonymous": true,
       "anonymousOrder": 2,
       "isAuthor": false,
+      "likeCount": 0,
+      "isLiked": false,
       "isDeleted": false,
       "createdAt": "2026-02-03T12:10:00",
       "updatedAt": "2026-02-03T12:10:00"
@@ -2245,6 +2281,8 @@ Authorization:Bearer <firebase_id_token>
     "isAnonymous": false,
     "anonymousOrder": null,
     "isAuthor": true,
+    "likeCount": 5,
+    "isLiked": true,
     "isDeleted": false,
     "createdAt": "2026-02-03T12:00:00",
     "updatedAt": "2026-02-03T12:00:00"
@@ -2261,7 +2299,9 @@ Authorization:Bearer <firebase_id_token>
   - 삭제 후에도 순번 재계산 없음
 - 부모 댓글 삭제 시 하드 삭제하지 않고 `isDeleted=true`, `content="삭제된 댓글입니다"` placeholder 처리하며 자식은 유지한다.
 - 조회 응답은 flat list를 반환한다.
-- 각 댓글은 최소 `id`, `parentId`, `depth`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
+- 각 댓글은 최소 `id`, `parentId`, `depth`, `likeCount`, `isLiked`, `createdAt`, `updatedAt`, `isDeleted`를 포함한다.
+- `likeCount`는 전체 댓글 좋아요 수다.
+- `isLiked`는 현재 로그인 사용자 기준 댓글 좋아요 여부다.
 - 서버는 thread 순서를 보장한 flat list를 반환하고, 클라이언트가 트리 UI를 조립한다.
 
 #### PATCH /v1/notice-comments/{commentId}
@@ -2288,6 +2328,8 @@ Authorization:Bearer <firebase_id_token>
     "isAnonymous": false,
     "anonymousOrder": null,
     "isAuthor": true,
+    "likeCount": 5,
+    "isLiked": true,
     "isDeleted": false,
     "createdAt": "2026-02-03T12:00:00",
     "updatedAt": "2026-02-03T12:30:00"
@@ -2302,6 +2344,34 @@ Authorization:Bearer <firebase_id_token>
 
 #### DELETE /v1/notice-comments/{commentId}
 공지 댓글 삭제
+
+#### POST /v1/notice-comments/{commentId}/like
+공지 댓글 좋아요
+
+```json
+{
+  "success": true,
+  "data": {
+    "commentId": "notice_comment_uuid",
+    "isLiked": true,
+    "likeCount": 5
+  }
+}
+```
+
+#### DELETE /v1/notice-comments/{commentId}/like
+공지 댓글 좋아요 취소
+
+```json
+{
+  "success": true,
+  "data": {
+    "commentId": "notice_comment_uuid",
+    "isLiked": false,
+    "likeCount": 4
+  }
+}
+```
 
 ### 6.3 내 공지 북마크
 
@@ -2371,6 +2441,7 @@ Authorization:Bearer <firebase_id_token>
 - `GET /v1/app-notices/{appNoticeId}`
 위 두 API는 모두 Public API이며 인증이 필요 없다.
 - Public 조회는 `publishedAt <= now()`인 앱 공지만 노출한다.
+- 앱 공지 unread count와 읽음 처리는 일반 알림(`GET /v1/notifications/unread-count`)과 별도 source of truth를 사용한다.
 
 **Response:**
 ```json
@@ -2387,6 +2458,44 @@ Authorization:Bearer <firebase_id_token>
     "publishedAt": "2026-02-20T00:00:00Z",
     "createdAt": "2026-02-19T12:00:00Z",
     "updatedAt": "2026-02-19T12:00:00Z"
+  }
+}
+```
+
+#### GET /v1/members/me/app-notices/unread-count
+읽지 않은 앱 공지 수
+
+**정책:**
+- 인증이 필요하다.
+- `publishedAt <= now()`인 앱 공지 중 아직 읽지 않은 공지 개수만 집계한다.
+- 일반 알림 unread count에는 영향을 주지 않는다.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "count": 2
+  }
+}
+```
+
+#### POST /v1/members/me/app-notices/{appNoticeId}/read
+앱 공지 읽음 처리
+
+**정책:**
+- 인증이 필요하다.
+- `publishedAt <= now()`인 앱 공지만 읽음 처리할 수 있다.
+- 이미 읽은 공지를 다시 읽음 처리해도 성공 응답을 반환하며, 최초 `readAt`을 유지한다.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "appNoticeId": "app_notice_uuid",
+    "isRead": true,
+    "readAt": "2026-03-26T14:30:00"
   }
 }
 ```
@@ -2619,9 +2728,25 @@ Authorization:Bearer <firebase_id_token>
 {
   "type": "BUG",
   "subject": "앱 오류 문의",
-  "content": "채팅 화면에서 오류가 발생합니다."
+  "content": "채팅 화면에서 오류가 발생합니다.",
+  "attachments": [
+    {
+      "url": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0.jpg",
+      "thumbUrl": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0_thumb.jpg",
+      "width": 800,
+      "height": 600,
+      "size": 245123,
+      "mime": "image/jpeg"
+    }
+  ]
 }
 ```
+
+- `attachments`는 optional 필드입니다.
+- 요청에서 `attachments`를 생략하거나 `null`로 보내면 서버는 빈 배열로 정규화합니다.
+- `attachments`는 최대 3개까지 허용합니다.
+- 각 첨부 항목은 `url`, `thumbUrl`, `width`, `height`, `size`, `mime` 전체 메타데이터를 저장합니다.
+- 허용 MIME은 `image/jpeg`, `image/png`, `image/webp`입니다.
 
 **Response:**
 ```json
@@ -2649,6 +2774,16 @@ Authorization:Bearer <firebase_id_token>
       "subject": "앱 오류 문의",
       "content": "채팅 화면에서 오류가 발생합니다.",
       "status": "PENDING",
+      "attachments": [
+        {
+          "url": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0.jpg",
+          "thumbUrl": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0_thumb.jpg",
+          "width": 800,
+          "height": 600,
+          "size": 245123,
+          "mime": "image/jpeg"
+        }
+      ],
       "createdAt": "2026-02-03T12:00:00Z",
       "updatedAt": "2026-02-03T12:00:00Z"
     }
@@ -2908,6 +3043,10 @@ Authorization:Bearer <firebase_id_token>
 #### GET /v1/notifications
 알림 목록
 
+**정책:**
+- 목록 `content`는 기존 인박스 알림을 그대로 반환하며 `APP_NOTICE` 타입도 포함될 수 있다.
+- 다만 응답의 `unreadCount`는 일반 알림 unread 집계값으로, `APP_NOTICE`를 제외한다.
+
 **Query Parameters:**
 
 | 파라미터 | 타입 | 기본값 | 설명 |
@@ -2948,6 +3087,10 @@ Authorization:Bearer <firebase_id_token>
 
 #### GET /v1/notifications/unread-count
 읽지 않은 알림 수
+
+**정책:**
+- 이 값은 일반 알림 unread 집계이며 `APP_NOTICE`는 제외한다.
+- 앱 공지 unread count는 `GET /v1/members/me/app-notices/unread-count`로 별도 조회한다.
 
 **Response:**
 ```json
@@ -3037,8 +3180,8 @@ Authorization:Bearer <firebase_id_token>
 | `SETTLEMENT_COMPLETED` | 마지막 정산 완료 | 파티 전체 멤버 | `allNotifications` + `partyNotifications` | O |
 | `MEMBER_KICKED` | 강퇴 감지 | 강퇴된 멤버 | `allNotifications` + `partyNotifications` | O |
 | `PARTY_ENDED` | 파티 해체 | 리더 제외 파티 멤버 | `allNotifications` + `partyNotifications` | O |
-| `CHAT_MESSAGE` (공개 채팅) | 공개 채팅방 메시지 | 채팅방 멤버(송신자 제외) | `allNotifications` + 채팅방 mute | X |
-| `CHAT_MESSAGE` (파티 채팅) | 파티 채팅 메시지 (`TEXT`, `IMAGE`, `ACCOUNT`, 일반 `SYSTEM`) | 파티 멤버(송신자 제외) | 파티 채팅 mute 대상 제외, `data`는 `chatRoomId` canonical 사용. `모집 마감`/`모집 재개`/`도착`/`종료`는 `PARTY_*` 알림으로 전송 | X |
+| `CHAT_MESSAGE` (공개 채팅) | 공개 채팅방 메시지 | 채팅방 멤버(송신자 제외) | `allNotifications` + 채팅방 mute. 멤버 입장/퇴장 `SYSTEM` 메시지는 push 제외 | X |
+| `CHAT_MESSAGE` (파티 채팅) | 파티 채팅 메시지 (`TEXT`, `IMAGE`, `ACCOUNT`, 일반 `SYSTEM`) | 파티 멤버(송신자 제외) | 파티 채팅 mute 대상 제외, `data`는 `chatRoomId` canonical 사용. 멤버 입장/퇴장 `SYSTEM` 메시지와 `모집 마감`/`모집 재개`/`도착`/`종료`는 `CHAT_MESSAGE` push 제외 | X |
 | `POST_LIKED` | 게시글 좋아요 | 게시글 작성자 | `allNotifications` + `boardLikeNotifications` | O |
 | `COMMENT_CREATED` (게시글) | 댓글/답글 생성 | 게시글 작성자, 부모 댓글 작성자, 게시글 북마크 사용자 | `allNotifications` + `commentNotifications` + `bookmarkedPostCommentNotifications` (중복 수신자는 1회 dedupe) | O |
 | `COMMENT_CREATED` (공지) | 공지 댓글 답글 생성 | 부모 댓글 작성자 | `allNotifications` + `commentNotifications` | O |
@@ -3515,8 +3658,11 @@ Cache-Control: no-cache
 |-----------|---------|
 | `SNAPSHOT` | 연결 직후/재연결 직후 현재 상태 스냅샷 전송 |
 | `NOTIFICATION` | 새 알림 도착 (모든 알림 타입 공통) |
-| `UNREAD_COUNT_CHANGED` | 읽지 않은 알림 수 변경 |
+| `UNREAD_COUNT_CHANGED` | 읽지 않은 일반 알림 수 변경 (`APP_NOTICE` 제외) |
 | `HEARTBEAT` | 30초 주기 연결 유지 |
+
+- `SNAPSHOT.unreadCount`와 `UNREAD_COUNT_CHANGED.count`는 모두 일반 알림 unread 집계이며 `APP_NOTICE`를 제외합니다.
+- 앱 공지 unread count는 `GET /v1/members/me/app-notices/unread-count`로 별도 조회합니다.
 
 **RN 파싱 기준 DTO (strict)**
 
@@ -3861,7 +4007,7 @@ data: {
 | 필드 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `file` | File | O | 이미지 파일 (JPEG, PNG, WebP) |
-| `context` | string | O | 업로드 컨텍스트 (`POST_IMAGE` \| `CHAT_IMAGE` \| `APP_NOTICE_IMAGE` \| `CAMPUS_BANNER_IMAGE` \| `PROFILE_IMAGE`) |
+| `context` | string | O | 업로드 컨텍스트 (`POST_IMAGE` \| `CHAT_IMAGE` \| `APP_NOTICE_IMAGE` \| `CAMPUS_BANNER_IMAGE` \| `PROFILE_IMAGE` \| `INQUIRY_IMAGE`) |
 
 **context 권한 정책**
 
@@ -3870,6 +4016,7 @@ data: {
 | `POST_IMAGE` | 인증 사용자 | Board `images[]` |
 | `CHAT_IMAGE` | 인증 사용자 | Chat `imageUrl` |
 | `PROFILE_IMAGE` | 인증 사용자 | Member profile `photoUrl` |
+| `INQUIRY_IMAGE` | 인증 사용자 | Inquiry `attachments[]` |
 | `APP_NOTICE_IMAGE` | 관리자만 허용 | AppNotice `imageUrls[]` |
 | `CAMPUS_BANNER_IMAGE` | 관리자만 허용 | CampusBanner `imageUrl` |
 
@@ -3891,6 +4038,7 @@ data: {
 - `POST_IMAGE` → `posts/YYYY/MM/DD/{uuid}.{ext}`
 - `CHAT_IMAGE` → `chat/YYYY/MM/DD/{uuid}.{ext}`
 - `PROFILE_IMAGE` → `profiles/YYYY/MM/DD/{uuid}.{ext}`
+- `INQUIRY_IMAGE` → `inquiries/YYYY/MM/DD/{uuid}.{ext}`
 - `APP_NOTICE_IMAGE` → `app-notices/YYYY/MM/DD/{uuid}.{ext}`
 - `CAMPUS_BANNER_IMAGE` → `campus-banners/YYYY/MM/DD/{uuid}.{ext}`
 
@@ -3986,6 +4134,18 @@ data: {
     │
     └─ 2. PATCH /v1/members/me
            { "photoUrl": "https://..." }
+```
+
+#### 문의 첨부 이미지
+
+```
+클라이언트
+    │
+    ├─ 1. POST /v1/images (multipart, context=INQUIRY_IMAGE)
+    │      └─ Response: { url, thumbUrl, width, height, size, mime }
+    │
+    └─ 2. POST /v1/inquiries
+           { "attachments": [{ "url": "https://...", "thumbUrl": "https://...", "width": 800, "height": 600, "size": 245123, "mime": "image/jpeg" }], ... }
 ```
 
 ---
@@ -4745,6 +4905,16 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
         "subject": "채팅 화면 오류",
         "content": "채팅 진입 시 앱이 종료됩니다.",
         "status": "PENDING",
+        "attachments": [
+          {
+            "url": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0.jpg",
+            "thumbUrl": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0_thumb.jpg",
+            "width": 800,
+            "height": 600,
+            "size": 245123,
+            "mime": "image/jpeg"
+          }
+        ],
         "memo": null,
         "userEmail": "user@sungkyul.ac.kr",
         "userName": "스쿠리유저",
@@ -4786,6 +4956,16 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
     "subject": "채팅 화면 오류",
     "content": "채팅 진입 시 앱이 종료됩니다.",
     "status": "RESOLVED",
+    "attachments": [
+      {
+        "url": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0.jpg",
+        "thumbUrl": "https://cdn.skuri.app/uploads/inquiries/2026/03/28/4f3ec1a0_thumb.jpg",
+        "width": 800,
+        "height": 600,
+        "size": 245123,
+        "mime": "image/jpeg"
+      }
+    ],
     "memo": "재현 후 수정 배포 완료",
     "userEmail": "user@sungkyul.ac.kr",
     "userName": "스쿠리유저",
