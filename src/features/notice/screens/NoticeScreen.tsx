@@ -35,6 +35,8 @@ export const NoticeScreen = () => {
   const screenAnimatedStyle = useScreenEnterAnimation();
 
   const {
+    banner,
+    bannerFirstUnreadNoticeId,
     data,
     error,
     hasMore,
@@ -81,12 +83,12 @@ export const NoticeScreen = () => {
   }, []);
 
   const handlePressUnreadBanner = React.useCallback(() => {
-    if (!data.firstUnreadNoticeId) {
+    if (!bannerFirstUnreadNoticeId) {
       return;
     }
 
-    handleOpenNotice(data.firstUnreadNoticeId);
-  }, [data.firstUnreadNoticeId, handleOpenNotice]);
+    handleOpenNotice(bannerFirstUnreadNoticeId);
+  }, [bannerFirstUnreadNoticeId, handleOpenNotice]);
 
   const handleListSectionScroll = React.useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -135,12 +137,14 @@ export const NoticeScreen = () => {
             subtitle={data.subtitle}
             title={data.title}
           />
-          <NoticeUnreadBanner
-            banner={data.banner}
-            onPressAction={
-              data.banner.actionLabel ? handlePressUnreadBanner : undefined
-            }
-          />
+          {banner?.hasUnread ? (
+            <NoticeUnreadBanner
+              banner={banner}
+              onPressAction={
+                banner.actionLabel ? handlePressUnreadBanner : undefined
+              }
+            />
+          ) : null}
         </View>
 
         <View style={styles.categorySection}>

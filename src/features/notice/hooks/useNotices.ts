@@ -8,6 +8,7 @@ import {useNoticeRepository} from './useNoticeRepository';
 const NOTICES_PER_PAGE = 20;
 
 export interface UseNoticesResult {
+  activeCategoryKey: string;
   notices: Notice[];
   loading: boolean;
   loadingMore: boolean;
@@ -36,6 +37,9 @@ export function useNotices(
 ): UseNoticesResult {
   const noticeRepository = useNoticeRepository();
 
+  const [activeCategoryKey, setActiveCategoryKey] = useState(
+    selectedCategory || '전체',
+  );
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -75,6 +79,7 @@ export function useNotices(
       },
     }));
 
+    setActiveCategoryKey(catKey);
     setNotices(page.data);
     cursorRef.current = page.cursor;
     setHasMore(page.hasMore);
@@ -88,6 +93,7 @@ export function useNotices(
       const cached = categoryCacheRef.current[catKey];
 
       if (useCache && cached?.initialized) {
+        setActiveCategoryKey(catKey);
         setNotices(cached.items);
         cursorRef.current = cached.cursor;
         setHasMore(cached.hasMore);
@@ -228,6 +234,7 @@ export function useNotices(
   }, [hasMore, loadingMore, noticeRepository, selectedCategory]);
 
   return {
+    activeCategoryKey,
     notices,
     loading,
     loadingMore,

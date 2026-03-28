@@ -3,13 +3,14 @@ import React from 'react';
 import {formatKoreanRelativeTime} from '@/shared/lib/date';
 
 import {NOTICE_CATEGORIES} from '../model/constants';
-import type {Notice} from '../model/types';
-import {isNoticeRead} from '../model/selectors';
+import type {Notice, ReadStatusMap} from '../model/types';
+import {countUnreadNotices, isNoticeRead} from '../model/selectors';
 import type {
   NoticeHomeCategoryId,
   NoticeHomeNoticeItemViewData,
   NoticeHomeViewData,
 } from '../model/noticeHomeViewData';
+import {buildNoticeReadStatus} from '../services/noticeReadStateService';
 import {useNotices} from './useNotices';
 import {useNoticeSettings} from './useNoticeSettings';
 import {
@@ -52,7 +53,7 @@ const buildNoticeHomeViewData = ({
 }: {
   firstUnreadNoticeId?: string;
   items: Notice[];
-  readStatus: Record<string, boolean>;
+  readStatus: ReadStatusMap;
   selectedCategoryId: NoticeHomeCategoryId;
   unreadCount: number;
   userJoinedAt: unknown;
@@ -93,6 +94,7 @@ export const useNoticeHomeData = () => {
     React.useState<NoticeHomeCategoryId>('전체');
 
   const {
+    activeCategoryKey,
     error,
     hasMore,
     loadMore,
@@ -102,7 +104,6 @@ export const useNoticeHomeData = () => {
     notices,
     readStatus,
     refresh,
-    unreadCount,
     userJoinedAt,
     userJoinedAtLoaded,
   } = useNotices(selectedCategoryId);
@@ -115,11 +116,43 @@ export const useNoticeHomeData = () => {
     updateMaster,
   } = useNoticeSettings();
 
+  const resolvedReadStatus = React.useMemo(
+    () =>
+      buildNoticeReadStatus({
+        notices,
+        previousReadStatus: readStatus,
+        userJoinedAt,
+      }),
+    [notices, readStatus, userJoinedAt],
+  );
+
+  const resolvedUnreadCount = React.useMemo(
+    () => countUnreadNotices(notices, resolvedReadStatus, userJoinedAt),
+    [notices, resolvedReadStatus, userJoinedAt],
+  );
+
   const firstUnreadNoticeId = React.useMemo(
     () =>
-      notices.find(notice => !isNoticeRead(notice, readStatus, userJoinedAt))
-        ?.id,
-    [notices, readStatus, userJoinedAt],
+      notices.find(
+        notice => !isNoticeRead(notice, resolvedReadStatus, userJoinedAt),
+      )?.id,
+    [notices, resolvedReadStatus, userJoinedAt],
+  );
+
+  const isBannerReady =
+    userJoinedAtLoaded && !loading && activeCategoryKey === selectedCategoryId;
+
+  const banner = React.useMemo(
+    () =>
+      isBannerReady && resolvedUnreadCount > 0
+        ? {
+            actionLabel: '보기',
+            description: `${resolvedUnreadCount}개의 새로운 공지가 있어요`,
+            hasUnread: true,
+            title: '읽지 않은 공지',
+          }
+        : null,
+    [isBannerReady, resolvedUnreadCount],
   );
 
   const data = React.useMemo(
@@ -127,22 +160,24 @@ export const useNoticeHomeData = () => {
       buildNoticeHomeViewData({
         firstUnreadNoticeId,
         items: notices,
-        readStatus,
+        readStatus: resolvedReadStatus,
         selectedCategoryId,
-        unreadCount,
+        unreadCount: resolvedUnreadCount,
         userJoinedAt,
       }),
     [
       firstUnreadNoticeId,
       notices,
-      readStatus,
+      resolvedReadStatus,
       selectedCategoryId,
-      unreadCount,
+      resolvedUnreadCount,
       userJoinedAt,
     ],
   );
 
   return {
+    banner,
+    bannerFirstUnreadNoticeId: banner ? firstUnreadNoticeId : undefined,
     data,
     error,
     hasMore,
