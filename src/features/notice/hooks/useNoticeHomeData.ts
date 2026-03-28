@@ -8,11 +8,14 @@ import type {
   NoticeHomeCategoryDefinition,
   NoticeHomeCategoryId,
   NoticeHomeNoticeItemViewData,
-  NoticeHomeTone,
   NoticeHomeViewData,
 } from '../model/noticeHomeViewData';
 import {useNotices} from './useNotices';
 import {useNoticeSettings} from './useNoticeSettings';
+import {
+  getNoticeCategoryDisplayLabel,
+  getNoticeCategoryTone,
+} from '../utils/noticePresentation';
 
 const NOTICE_HOME_CATEGORIES: NoticeHomeCategoryDefinition[] = [
   {
@@ -53,42 +56,17 @@ const NOTICE_HOME_CATEGORIES: NoticeHomeCategoryDefinition[] = [
   },
 ];
 
-const CATEGORY_DISPLAY_LABEL_MAP: Record<string, string> = {
-  '공모/행사': '행사',
-  '장학/등록/학자금': '장학',
-  '취업/진로개발/창업': '취업',
-  생활관: '시설',
-  시설: '시설',
-  일반: '시설',
-  입찰구매정보: '시설',
-  학사: '학사',
-};
-
-const CATEGORY_TONE_MAP: Record<string, NoticeHomeTone> = {
-  시설: 'gray',
-  장학: 'purple',
-  취업: 'orange',
-  행사: 'pink',
-  학사: 'blue',
-};
-
-const getCategoryDisplayLabel = (category: string) =>
-  CATEGORY_DISPLAY_LABEL_MAP[category] ?? category.split('/')[0] ?? category;
-
-const getCategoryTone = (label: string): NoticeHomeTone =>
-  CATEGORY_TONE_MAP[label] ?? 'gray';
-
 const mapNoticeToViewData = (
   notice: Notice,
   isUnread: boolean,
 ): NoticeHomeNoticeItemViewData => {
-  const categoryLabel = getCategoryDisplayLabel(notice.category);
+  const categoryLabel = getNoticeCategoryDisplayLabel(notice.category);
 
   return {
     authorLabel: notice.author || notice.department || '성결대학교',
     bookmarkCount: notice.bookmarkCount ?? 0,
     categoryLabel,
-    categoryTone: getCategoryTone(categoryLabel),
+    categoryTone: getNoticeCategoryTone(categoryLabel),
     commentCount: notice.commentCount ?? 0,
     id: notice.id,
     isBookmarked: Boolean(notice.isBookmarked),

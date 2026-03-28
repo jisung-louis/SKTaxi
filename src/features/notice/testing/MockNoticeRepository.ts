@@ -180,6 +180,14 @@ export class MockNoticeRepository implements INoticeRepository {
     return this.getNoticePage(category, cursor, limit);
   }
 
+  async searchNotices(
+    search: string,
+    cursor: unknown,
+    limit: number,
+  ): Promise<NoticeListPage> {
+    return this.getNoticePage('전체', cursor, limit, search);
+  }
+
   async getNotice(noticeId: string): Promise<Notice | null> {
     return this.notices.get(noticeId) || null;
   }
@@ -421,9 +429,21 @@ export class MockNoticeRepository implements INoticeRepository {
     this.comments.clear();
   }
 
-  private getOrderedNotices(category: string): Notice[] {
+  private getOrderedNotices(category: string, search?: string): Notice[] {
+    const normalizedSearch = search?.trim().toLowerCase();
+
     return Array.from(this.notices.values())
       .filter(notice => category === '전체' || notice.category === category)
+      .filter(notice => {
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        return (
+          notice.title.toLowerCase().includes(normalizedSearch) ||
+          notice.content.toLowerCase().includes(normalizedSearch)
+        );
+      })
       .sort(
         (first, second) =>
           new Date(second.createdAt).getTime() -
@@ -439,15 +459,16 @@ export class MockNoticeRepository implements INoticeRepository {
     category: string,
     cursor: unknown,
     limit: number,
+    search?: string,
   ): NoticeListPage {
-    const notices = this.getOrderedNotices(category);
+    const notices = this.getOrderedNotices(category, search);
     const cursorId = typeof cursor === 'string' ? cursor : null;
     const startIndex = cursorId
       ? notices.findIndex(notice => notice.id === cursorId) + 1
       : 0;
 
     if (cursorId && startIndex === 0) {
-      return {data: [], hasMore: false, cursor: null};
+      return {data: [], hasMore: false, cursor: null, totalElements: 0};
     }
 
     const page = notices.slice(startIndex, startIndex + limit);
@@ -456,6 +477,7 @@ export class MockNoticeRepository implements INoticeRepository {
       data: page,
       hasMore: notices.length > startIndex + page.length,
       cursor: this.getCursor(page),
+      totalElements: notices.length,
     };
   }
 }

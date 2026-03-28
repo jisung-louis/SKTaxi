@@ -72,6 +72,14 @@ export const NoticeScreen = () => {
     [markAsRead, navigation],
   );
 
+  const handleOpenSearch = React.useCallback(() => {
+    navigation.navigate('NoticeSearch');
+  }, [navigation]);
+
+  const handleOpenSettings = React.useCallback(() => {
+    setPanelVisible(true);
+  }, []);
+
   const handlePressUnreadBanner = React.useCallback(() => {
     if (!data.firstUnreadNoticeId) {
       return;
@@ -113,8 +121,17 @@ export const NoticeScreen = () => {
       <Animated.View style={[styles.content, screenAnimatedStyle]}>
         <View style={styles.headerSection}>
           <PageHeader
-            actionAccessibilityLabel="공지 알림 설정 열기"
-            onPressAction={() => setPanelVisible(true)}
+            actions={[
+              {
+                accessibilityLabel: '공지 검색 열기',
+                onPress: handleOpenSearch,
+              },
+              {
+                accessibilityLabel: '공지 알림 설정 열기',
+                iconName: 'notifications-outline',
+                onPress: handleOpenSettings,
+              },
+            ]}
             subtitle={data.subtitle}
             title={data.title}
           />

@@ -148,6 +148,19 @@ export class SpringNoticeRepository implements INoticeRepository {
     return this.fetchNotices(category, limit, extractCursor(cursor).page);
   }
 
+  async searchNotices(
+    search: string,
+    cursor: unknown,
+    limit: number,
+  ): Promise<NoticeListPage> {
+    return this.fetchNotices(
+      '전체',
+      limit,
+      extractCursor(cursor).page,
+      search,
+    );
+  }
+
   async getNotice(noticeId: string): Promise<Notice | null> {
     try {
       const response = await this.apiClient.getNotice(noticeId);
@@ -327,10 +340,12 @@ export class SpringNoticeRepository implements INoticeRepository {
     category: string,
     limit: number,
     page: number,
+    search?: string,
   ): Promise<NoticeListPage> {
     const response = await this.apiClient.getNotices({
       category: category === '전체' ? undefined : category,
       page,
+      search: search?.trim() || undefined,
       size: limit,
     });
     const pageData = response.data;
@@ -360,6 +375,7 @@ export class SpringNoticeRepository implements INoticeRepository {
         : null,
       data: notices,
       hasMore: pageData.hasNext,
+      totalElements: pageData.totalElements,
     };
   }
 

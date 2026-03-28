@@ -13,7 +13,9 @@ import type {
   ReadStatusMap,
 } from '../../model/types';
 
-export interface NoticeListPage extends PaginatedResult<Notice> {}
+export interface NoticeListPage extends PaginatedResult<Notice> {
+  totalElements?: number;
+}
 
 export interface NoticeCommentLikeState {
   commentId: string;
@@ -30,6 +32,11 @@ export interface INoticeRepository {
   ): Unsubscribe;
   getMoreNotices(
     category: string,
+    cursor: unknown,
+    limit: number,
+  ): Promise<NoticeListPage>;
+  searchNotices(
+    search: string,
     cursor: unknown,
     limit: number,
   ): Promise<NoticeListPage>;

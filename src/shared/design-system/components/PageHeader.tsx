@@ -4,10 +4,18 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, RADIUS, SHADOWS, SPACING} from '../tokens';
 
+interface PageHeaderAction {
+  accessibilityLabel?: string;
+  iconName?: string;
+  iconSize?: number;
+  onPress: () => void;
+}
+
 interface PageHeaderProps {
   actionAccessibilityLabel?: string;
   actionIconName?: string;
   actionIconSize?: number;
+  actions?: PageHeaderAction[];
   onPressAction?: () => void;
   subtitle: string;
   title: string;
@@ -17,10 +25,36 @@ export const PageHeader = ({
   actionAccessibilityLabel = '열기',
   actionIconName = 'search-outline',
   actionIconSize = 22,
+  actions,
   onPressAction,
   subtitle,
   title,
 }: PageHeaderProps) => {
+  const resolvedActions = React.useMemo<PageHeaderAction[]>(() => {
+    if (actions?.length) {
+      return actions;
+    }
+
+    if (!onPressAction) {
+      return [];
+    }
+
+    return [
+      {
+        accessibilityLabel: actionAccessibilityLabel,
+        iconName: actionIconName,
+        iconSize: actionIconSize,
+        onPress: onPressAction,
+      },
+    ];
+  }, [
+    actionAccessibilityLabel,
+    actionIconName,
+    actionIconSize,
+    actions,
+    onPressAction,
+  ]);
+
   return (
     <View style={styles.container}>
       <View>
@@ -28,19 +62,24 @@ export const PageHeader = ({
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
-      {onPressAction ? (
-        <TouchableOpacity
-          accessibilityLabel={actionAccessibilityLabel}
-          accessibilityRole="button"
-          activeOpacity={0.85}
-          onPress={onPressAction}
-          style={styles.actionButton}>
-          <Icon
-            color={COLORS.text.secondary}
-            name={actionIconName}
-            size={actionIconSize}
-          />
-        </TouchableOpacity>
+      {resolvedActions.length > 0 ? (
+        <View style={styles.actions}>
+          {resolvedActions.map((action, index) => (
+            <TouchableOpacity
+              key={`${action.accessibilityLabel ?? action.iconName ?? 'action'}-${index}`}
+              accessibilityLabel={action.accessibilityLabel ?? '열기'}
+              accessibilityRole="button"
+              activeOpacity={0.85}
+              onPress={action.onPress}
+              style={styles.actionButton}>
+              <Icon
+                color={COLORS.text.secondary}
+                name={action.iconName ?? 'search-outline'}
+                size={action.iconSize ?? 22}
+              />
+            </TouchableOpacity>
+          ))}
+        </View>
       ) : null}
     </View>
   );
@@ -64,6 +103,12 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
     fontSize: 14,
     lineHeight: 20,
+  },
+  actions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginLeft: SPACING.lg,
   },
   actionButton: {
     alignItems: 'center',

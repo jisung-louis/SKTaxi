@@ -41,6 +41,7 @@ export type { NoticeStackParamList } from './model/navigation';
 export type { NoticeCategory } from './model/constants';
 
 export { NoticeDetailScreen } from './screens/NoticeDetailScreen';
+export { NoticeSearchScreen } from './screens/NoticeSearchScreen';
 export { NoticeScreen } from './screens/NoticeScreen';
 
 export {
