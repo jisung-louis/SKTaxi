@@ -23,6 +23,7 @@ import {
 } from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 import Button from '@/shared/ui/Button';
 import {
   ChatHeader,
@@ -58,9 +59,11 @@ export const ChatDetailScreen = () => {
     notFound,
     reload,
     sendMessage,
+    sendImageMessage,
     toggleNotification,
   } = useChatDetailData(route.params?.chatRoomId);
   const [composerValue, setComposerValue] = React.useState('');
+  const [imageSending, setImageSending] = React.useState(false);
   const [menuVisible, setMenuVisible] = React.useState(false);
 
   const navigateToCommunityChat = React.useCallback(() => {
@@ -105,6 +108,36 @@ export const ChatDetailScreen = () => {
       );
     }
   }, [joinRoom]);
+
+  const handlePickImage = React.useCallback(async () => {
+    if (imageSending) {
+      return;
+    }
+
+    const image = await pickImageAsset();
+
+    if (!image) {
+      return;
+    }
+
+    try {
+      setImageSending(true);
+      await sendImageMessage({
+        fileName: image.fileName,
+        mimeType: image.mimeType,
+        uri: image.uri,
+      });
+    } catch (sendError) {
+      Alert.alert(
+        '이미지 전송 실패',
+        sendError instanceof Error
+          ? sendError.message
+          : '이미지를 전송하지 못했습니다.',
+      );
+    } finally {
+      setImageSending(false);
+    }
+  }, [imageSending, sendImageMessage]);
 
   const handleLeave = React.useCallback(() => {
     Alert.alert('채팅방 나가기', '채팅방에서 나갈까요?', [
@@ -252,11 +285,11 @@ export const ChatDetailScreen = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={0}>
                 <DetailComposer
-                  leadingActionAccessibilityLabel="첨부 메뉴"
-                  leadingIconName="add-outline"
+                  leadingActionAccessibilityLabel="이미지 보내기"
+                  leadingIconName="image-outline"
                   onChangeText={setComposerValue}
                   onPressLeadingAction={() => {
-                    Alert.alert('준비 중', '첨부 기능은 다음 단계에서 연결할 예정입니다.');
+                    handlePickImage().catch(() => undefined);
                   }}
                   onSend={handleSend}
                   placeholder={data.composerPlaceholder}

@@ -22,6 +22,7 @@ import type {
   ChatThreadItemViewData,
   ChatThreadMessageViewData,
 } from './types';
+import {MessageImageBubble} from './MessageImageBubble';
 
 interface ChatMessageListProps {
   contentContainerStyle?: StyleProp<ViewStyle>
@@ -153,7 +154,7 @@ export const ChatMessageList = ({
                 styles.messageWrap,
                 wrapperStyle,
                 !isGroupEnd ? styles.messageWrapCompact : null,
-                { marginTop: isGroupStart ? SPACING.sm : 0 },
+                isGroupStart ? styles.messageWrapSpaced : null,
               ]}>
               <View style={styles.outgoingRow}>
                 {isGroupEnd ? (
@@ -161,10 +162,19 @@ export const ChatMessageList = ({
                     {item.timeLabel}
                   </Text>
                 ) : null}
-                <View style={[styles.bubble, styles.outgoingBubble]}>
-                  <Text style={[styles.messageText, styles.outgoingMessageText]}>
-                    {item.text}
-                  </Text>
+                <View
+                  style={[
+                    styles.bubble,
+                    styles.outgoingBubble,
+                    item.imageUrl ? styles.imageBubble : null,
+                  ]}>
+                  {item.imageUrl ? (
+                    <MessageImageBubble uri={item.imageUrl} />
+                  ) : (
+                    <Text style={[styles.messageText, styles.outgoingMessageText]}>
+                      {item.text}
+                    </Text>
+                  )}
                 </View>
               </View>
             </View>
@@ -178,7 +188,7 @@ export const ChatMessageList = ({
               styles.messageWrap,
               wrapperStyle,
               !isGroupEnd ? styles.messageWrapCompact : null,
-              { marginTop: isGroupStart ? SPACING.sm : 0 },
+              isGroupStart ? styles.messageWrapSpaced : null,
             ]}>
             <View style={styles.incomingRow}>
               <View style={styles.avatarWrap}>
@@ -190,8 +200,17 @@ export const ChatMessageList = ({
                   <Text style={styles.senderName}>{item.senderName}</Text>
                 ) : null}
                 <View style={styles.incomingBubbleRow}>
-                  <View style={[styles.bubble, styles.incomingBubble]}>
-                    <Text style={styles.messageText}>{item.text}</Text>
+                  <View
+                    style={[
+                      styles.bubble,
+                      styles.incomingBubble,
+                      item.imageUrl ? styles.imageBubble : null,
+                    ]}>
+                    {item.imageUrl ? (
+                      <MessageImageBubble uri={item.imageUrl} />
+                    ) : (
+                      <Text style={styles.messageText}>{item.text}</Text>
+                    )}
                   </View>
                   {isGroupEnd ? (
                     <Text style={styles.timeLabel}>{item.timeLabel}</Text>
@@ -236,6 +255,11 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
     paddingHorizontal: 15,
     paddingVertical: 10,
+  },
+  imageBubble: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
   },
   contentContainer: {
     flexGrow: 1,
@@ -288,10 +312,13 @@ const styles = StyleSheet.create({
   },
   messageWrap: {
     marginBottom: SPACING.xs,
-    marginTop: SPACING.sm,
+    marginTop: 0,
   },
   messageWrapCompact: {
     marginBottom: SPACING.xs,
+  },
+  messageWrapSpaced: {
+    marginTop: SPACING.sm,
   },
   outgoingBubble: {
     backgroundColor: COLORS.brand.primary,
@@ -322,17 +349,20 @@ const styles = StyleSheet.create({
   systemMessageLabel: {
     color: COLORS.text.muted,
     fontSize: 12,
-    lineHeight: 16,
+    lineHeight: 18,
     textAlign: 'center',
+    backgroundColor: COLORS.background.grayLight,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
   },
   systemMessageWrap: {
     alignItems: 'center',
     marginBottom: SPACING.md,
+    marginTop: SPACING.sm,
   },
   timeLabel: {
     color: COLORS.text.muted,
     fontSize: 10,
     lineHeight: 14,
-    marginBottom: 2,
   },
 });

@@ -125,3 +125,24 @@ export const sendChatTextMessage = async ({
     type: 'text',
   });
 };
+
+export const sendChatImageMessage = async ({
+  chatRepository,
+  chatRoomId,
+  imageUrl,
+}: {
+  chatRepository: IChatRepository;
+  chatRoomId: string;
+  imageUrl: string;
+}) => {
+  const trimmedImageUrl = imageUrl.trim();
+
+  if (!trimmedImageUrl) {
+    throw new Error('이미지 업로드에 실패했습니다.');
+  }
+
+  await chatRepository.sendMessage(chatRoomId, {
+    imageUrl: trimmedImageUrl,
+    type: 'image',
+  });
+};

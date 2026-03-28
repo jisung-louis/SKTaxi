@@ -43,6 +43,7 @@ export interface ChatThreadMessageViewData {
   avatar?: ChatAvatarViewData
   direction: 'incoming' | 'outgoing' | 'system'
   id: string
+  imageUrl?: string
   minuteKey: string
   senderId: string
   senderName: string

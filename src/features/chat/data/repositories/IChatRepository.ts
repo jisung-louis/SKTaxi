@@ -4,6 +4,7 @@ import type {
 } from '@/shared/types/subscription';
 
 import type {
+  ChatImageUploadInput,
   ChatMessage,
   ChatMessageDraft,
   ChatRoomCreateDraft,
@@ -56,6 +57,8 @@ export interface IChatRepository {
     chatRoomId: string,
     message: ChatMessageDraft,
   ): Promise<void>;
+
+  uploadImage(image: ChatImageUploadInput): Promise<string>;
 
   getNotificationSetting(chatRoomId: string, userId: string): Promise<boolean>;
 

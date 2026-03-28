@@ -2,8 +2,9 @@ import { useCallback, useState } from 'react';
 
 import { useAuth } from '@/features/auth';
 
-import type { ChatRoom } from '../model/types';
+import type { ChatImageUploadInput, ChatRoom } from '../model/types';
 import {
+  sendChatImageMessage,
   sendChatTextMessage,
 } from '../services/chatRoomService';
 
@@ -13,6 +14,11 @@ export interface UseChatActionsResult {
   sendMessage: (
     chatRoomId: string,
     text: string,
+    chatRoom?: ChatRoom | null,
+  ) => Promise<void>;
+  sendImageMessage: (
+    chatRoomId: string,
+    image: ChatImageUploadInput,
     chatRoom?: ChatRoom | null,
   ) => Promise<void>;
   sending: boolean;
@@ -47,6 +53,37 @@ export const useChatActions = (): UseChatActionsResult => {
         });
       } catch (err) {
         console.error('메시지 전송 실패:', err);
+        setSendError(err as Error);
+        throw err;
+      } finally {
+        setSending(false);
+      }
+    },
+    [chatRepository, user?.uid],
+  );
+
+  const sendImageMessage = useCallback(
+    async (
+      chatRoomId: string,
+      image: ChatImageUploadInput,
+      _chatRoom?: ChatRoom | null,
+    ) => {
+      if (!user?.uid) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      try {
+        setSending(true);
+        setSendError(null);
+
+        const imageUrl = await chatRepository.uploadImage(image);
+        await sendChatImageMessage({
+          chatRepository,
+          chatRoomId,
+          imageUrl,
+        });
+      } catch (err) {
+        console.error('이미지 전송 실패:', err);
         setSendError(err as Error);
         throw err;
       } finally {
@@ -102,6 +139,7 @@ export const useChatActions = (): UseChatActionsResult => {
 
   return {
     sendMessage,
+    sendImageMessage,
     sending,
     sendError,
     joinRoom,

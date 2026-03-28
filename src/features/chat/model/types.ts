@@ -60,6 +60,12 @@ export interface ChatMessageDraft {
   type: Extract<ChatMessageType, 'text' | 'image'>;
 }
 
+export interface ChatImageUploadInput {
+  fileName?: string;
+  mimeType?: string;
+  uri: string;
+}
+
 export interface ChatRoomCreateDraft {
   description?: string;
   name: string;

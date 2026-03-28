@@ -87,6 +87,7 @@ const buildItems = (
           ? 'outgoing'
           : 'incoming',
       id: message.id ?? `${roomId}-${createdDate.toISOString()}`,
+      imageUrl: message.type === 'image' ? message.imageUrl : undefined,
       minuteKey: format(createdDate, 'yyyy-MM-dd HH:mm'),
       senderId: message.senderId,
       senderName: message.senderName,

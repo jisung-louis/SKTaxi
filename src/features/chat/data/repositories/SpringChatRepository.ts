@@ -6,6 +6,7 @@ import {
   RepositoryError,
   RepositoryErrorCode,
 } from '@/shared/lib/errors';
+import {uploadImage as uploadSharedImage} from '@/shared/api/imageUploadClient';
 import {
   chatSocketClient,
   createNativeStompSocket,
@@ -15,6 +16,7 @@ import {
 } from '@/shared/realtime';
 
 import type {
+  ChatImageUploadInput,
   ChatMessage,
   ChatMessageDraft,
   ChatRoomCreateDraft,
@@ -617,6 +619,21 @@ export class SpringChatRepository implements IChatRepository {
     } else {
       await this.loadChatRoom(chatRoomId, true);
     }
+  }
+
+  async uploadImage({
+    fileName,
+    mimeType,
+    uri,
+  }: ChatImageUploadInput): Promise<string> {
+    const response = await uploadSharedImage({
+      context: 'CHAT_IMAGE',
+      fileName,
+      mimeType,
+      uri,
+    });
+
+    return response.url;
   }
 
   private buildListFilter(filter: ChatRoomFilter) {

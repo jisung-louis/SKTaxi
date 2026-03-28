@@ -4,6 +4,7 @@ import {useIsFocused} from '@react-navigation/native';
 import {useAuth} from '@/features/auth';
 
 import {buildChatDetailViewData} from '../application/chatDetailAssembler';
+import type {ChatImageUploadInput} from '../model/types';
 
 import {useChatActions} from './useChatActions';
 import {useChatMessages} from './useChatMessages';
@@ -28,6 +29,7 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     refresh: refreshMessages,
   } = useChatMessages(chatRoomId, Boolean(chatRoomId && chatRoom?.isJoined));
   const {
+    sendImageMessage: sendChatImageMessage,
     sendMessage: sendChatMessage,
     updateNotificationSetting,
   } = useChatActions();
@@ -84,6 +86,18 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     [chatRoom, chatRoomId, sendChatMessage, updateLastRead],
   );
 
+  const sendImageMessage = React.useCallback(
+    async (image: ChatImageUploadInput) => {
+      if (!chatRoomId || !chatRoom?.isJoined) {
+        throw new Error('참여 중인 채팅방만 이미지를 전송할 수 있습니다.');
+      }
+
+      await sendChatImageMessage(chatRoomId, image, chatRoom);
+      await updateLastRead();
+    },
+    [chatRoom, chatRoomId, sendChatImageMessage, updateLastRead],
+  );
+
   const toggleNotification = React.useCallback(async () => {
     if (!chatRoomId || !chatRoom?.isJoined) {
       throw new Error('참여 중인 채팅방만 알림 설정을 변경할 수 있습니다.');
@@ -133,6 +147,7 @@ export const useChatDetailData = (chatRoomId: string | undefined) => {
     notFound,
     reload,
     sendMessage,
+    sendImageMessage,
     toggleNotification,
   };
 };
