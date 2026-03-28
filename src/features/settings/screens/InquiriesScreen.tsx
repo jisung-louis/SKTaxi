@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     height: 47,
-    lineHeight: 16,
+    lineHeight: 18,
     paddingHorizontal: 17,
     paddingVertical: 13,
   },

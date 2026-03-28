@@ -163,8 +163,8 @@ const styles = StyleSheet.create({
   subtitle: {
     color: COLORS.text.secondary,
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 16,
     marginRight: SPACING.sm,
   },
   badge: {

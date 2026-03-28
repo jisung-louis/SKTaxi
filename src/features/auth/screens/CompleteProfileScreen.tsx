@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     fontSize: 14,
     height: 50,
-    lineHeight: 16,
+    lineHeight: 18,
     paddingHorizontal: 17,
     paddingRight: 64,
   },

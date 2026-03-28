@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 18,
     paddingVertical: 0,
   },
 });

@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     padding: 0,
-    lineHeight: 16,
+    lineHeight: 18,
   },
   sendButton: {
     alignItems: 'center',
