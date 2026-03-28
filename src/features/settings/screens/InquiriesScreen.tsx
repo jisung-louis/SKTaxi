@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,11 +26,17 @@ import {
   SPACING,
 } from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
+import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 
 import {InquiryTypeChips} from '../components/InquiryTypeChips';
 import {useInquiryFormData} from '../hooks/useInquiryFormData';
 
 type InquiriesRouteProp = RouteProp<CampusStackParamList, 'Inquiries'>;
+const ALLOWED_INQUIRY_IMAGE_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 
 export const InquiriesScreen = () => {
   useScreenView();
@@ -37,8 +44,10 @@ export const InquiriesScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
   const route = useRoute<InquiriesRouteProp>();
   const {
+    addAttachment,
     content,
     data,
+    removeAttachment,
     reset,
     selectType,
     setContent,
@@ -69,9 +78,29 @@ export const InquiriesScreen = () => {
     }
   }, [navigation, reset, submit]);
 
-  const handlePressAttachment = React.useCallback(() => {
-    Alert.alert('파일 첨부', '파일 첨부는 추후 연결 예정입니다.');
-  }, []);
+  const handlePressAttachment = React.useCallback(async () => {
+    try {
+      const image = await pickImageAsset({
+        allowedMimeTypes: ALLOWED_INQUIRY_IMAGE_MIME_TYPES,
+      });
+
+      if (!image) {
+        return;
+      }
+
+      addAttachment({
+        fileName: image.fileName,
+        mimeType: image.mimeType,
+        uri: image.uri,
+      });
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : '이미지를 첨부하지 못했습니다.';
+      Alert.alert('알림', message);
+    }
+  }, [addAttachment]);
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
@@ -121,6 +150,7 @@ export const InquiriesScreen = () => {
         </FormField>
 
         <FormField
+          counterLabel={data.attachmentCountLabel}
           label={data.attachmentTitle}
           optionalLabel="(선택)"
           style={styles.section}>
@@ -144,6 +174,40 @@ export const InquiriesScreen = () => {
               {data.attachmentHelperLines[1]}
             </Text>
           </TouchableOpacity>
+
+          {data.attachments.length > 0 ? (
+            <View style={styles.attachmentList}>
+              {data.attachments.map(attachment => (
+                <View key={attachment.id} style={styles.attachmentItem}>
+                  <Image
+                    source={{uri: attachment.uri}}
+                    style={styles.attachmentPreview}
+                  />
+
+                  <View style={styles.attachmentBody}>
+                    <Text numberOfLines={1} style={styles.attachmentName}>
+                      {attachment.label}
+                    </Text>
+                    <Text style={styles.attachmentMeta}>이미지 첨부 완료</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    accessibilityLabel={`${attachment.label} 삭제`}
+                    accessibilityRole="button"
+                    activeOpacity={0.82}
+                    disabled={submitting}
+                    onPress={() => removeAttachment(attachment.id)}
+                    style={styles.attachmentRemoveButton}>
+                    <Icon
+                      color={COLORS.text.secondary}
+                      name="close-circle"
+                      size={22}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </FormField>
 
         <InfoBanner
@@ -240,6 +304,44 @@ const styles = StyleSheet.create({
     color: COLORS.text.muted,
     fontSize: 12,
     lineHeight: 16,
+  },
+  attachmentList: {
+    gap: 10,
+    marginTop: 12,
+  },
+  attachmentItem: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.surface,
+    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    flexDirection: 'row',
+    padding: 10,
+  },
+  attachmentPreview: {
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    height: 48,
+    marginRight: 12,
+    width: 48,
+  },
+  attachmentBody: {
+    flex: 1,
+  },
+  attachmentName: {
+    color: COLORS.text.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
+    marginBottom: 2,
+  },
+  attachmentMeta: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  attachmentRemoveButton: {
+    marginLeft: 12,
   },
   banner: {
     marginBottom: 20,

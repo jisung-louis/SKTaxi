@@ -6,9 +6,17 @@ export interface InquiryTypeOptionViewData {
   label: string;
 }
 
+export interface InquiryFormAttachmentViewData {
+  id: string;
+  label: string;
+  uri: string;
+}
+
 export interface InquiryFormScreenViewData {
+  attachmentCountLabel: string;
   attachmentHelperLines: [string, string];
   attachmentTitle: string;
+  attachments: InquiryFormAttachmentViewData[];
   contentCountLabel: string;
   contentMaxLength: number;
   contentPlaceholder: string;

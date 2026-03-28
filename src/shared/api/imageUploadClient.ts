@@ -1,6 +1,14 @@
 import type {ApiSuccessResponse} from './apiResponse';
 import {httpClient} from './httpClient';
 
+export type ImageUploadContext =
+  | 'APP_NOTICE_IMAGE'
+  | 'CAMPUS_BANNER_IMAGE'
+  | 'CHAT_IMAGE'
+  | 'INQUIRY_IMAGE'
+  | 'POST_IMAGE'
+  | 'PROFILE_IMAGE';
+
 export interface ImageUploadResponseDto {
   height?: number | null;
   mime?: string | null;
@@ -16,7 +24,7 @@ export const uploadImage = async ({
   mimeType,
   uri,
 }: {
-  context: 'CHAT_IMAGE';
+  context: ImageUploadContext;
   fileName?: string;
   mimeType?: string;
   uri: string;
