@@ -32,8 +32,8 @@ const TAB_ICON_NAMES = {
     inactive: 'notifications-outline',
   },
   CommunityTab: {
-    active: 'people',
-    inactive: 'people-outline',
+    active: 'chatbubble',
+    inactive: 'chatbubble-outline',
   },
 } as const;
 
