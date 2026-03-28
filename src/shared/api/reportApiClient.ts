@@ -1,7 +1,13 @@
 import type {ApiSuccessResponse} from './apiResponse';
 import {httpClient} from './httpClient';
 
-export type ReportTargetTypeDto = 'COMMENT' | 'MEMBER' | 'POST';
+export type ReportTargetTypeDto =
+  | 'CHAT_MESSAGE'
+  | 'CHAT_ROOM'
+  | 'COMMENT'
+  | 'MEMBER'
+  | 'POST'
+  | 'TAXI_PARTY';
 
 export interface CreateReportRequestDto {
   category: string;

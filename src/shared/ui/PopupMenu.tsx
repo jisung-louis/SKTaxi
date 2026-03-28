@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Modal,
   Pressable,
   StyleSheet,
   Text,
@@ -60,7 +61,26 @@ export const PopupMenu = ({
   width = 184,
 }: PopupMenuProps) => {
   const [shouldRender, setShouldRender] = React.useState(visible);
+  const [renderItems, setRenderItems] = React.useState(items);
+  const [renderPosition, setRenderPosition] = React.useState({
+    right,
+    top,
+    width,
+  });
   const progress = useSharedValue(visible ? 1 : 0);
+
+  React.useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    setRenderItems(items);
+    setRenderPosition({
+      right,
+      top,
+      width,
+    });
+  }, [items, right, top, visible, width]);
 
   React.useEffect(() => {
     if (visible) {
@@ -92,85 +112,99 @@ export const PopupMenu = ({
     ],
   }));
 
-  if (!shouldRender || items.length === 0) {
+  if (!shouldRender || renderItems.length === 0) {
     return null;
   }
 
   return (
-    <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <Animated.View
-        pointerEvents="none"
-        style={[styles.overlay, overlayAnimatedStyle]}
-      />
-      <Pressable onPress={onClose} style={StyleSheet.absoluteFill} />
+    <Modal
+      animationType="none"
+      onRequestClose={onClose}
+      transparent
+      visible={shouldRender}>
+      <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.overlay, overlayAnimatedStyle]}
+        />
+        <Pressable onPress={onClose} style={StyleSheet.absoluteFill} />
 
-      <Animated.View
-        style={[styles.card, {right, top, width}, cardAnimatedStyle]}>
-        {items.map((item, index) => {
-          const showDivider = index < items.length - 1;
+        <Animated.View
+          style={[
+            styles.card,
+            {
+              right: renderPosition.right,
+              top: renderPosition.top,
+              width: renderPosition.width,
+            },
+            cardAnimatedStyle,
+          ]}>
+          {renderItems.map((item, index) => {
+            const showDivider = index < renderItems.length - 1;
 
-          return (
-            <React.Fragment key={item.id}>
-              {item.type === 'toggle' ? (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityState={{disabled: item.disabled}}
-                  activeOpacity={item.disabled ? 1 : 0.82}
-                  disabled={item.disabled}
-                  onPress={item.onPress}
-                  style={[
-                    styles.toggleRow,
-                    item.disabled ? styles.disabledRow : null,
-                  ]}>
-                  <View style={styles.rowLabelGroup}>
+            return (
+              <React.Fragment key={item.id}>
+                {item.type === 'toggle' ? (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityState={{disabled: item.disabled}}
+                    activeOpacity={item.disabled ? 1 : 0.82}
+                    disabled={item.disabled}
+                    onPress={item.onPress}
+                    style={[
+                      styles.toggleRow,
+                      item.disabled ? styles.disabledRow : null,
+                    ]}>
+                    <View style={styles.rowLabelGroup}>
+                      <Icon
+                        color={COLORS.text.secondary}
+                        name={item.iconName}
+                        size={15}
+                      />
+                      <Text style={styles.rowLabel}>{item.label}</Text>
+                    </View>
+                    <ToggleSwitch
+                      disabled={item.disabled}
+                      pressable={false}
+                      size="compact"
+                      value={item.value}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    activeOpacity={0.82}
+                    onPress={() => {
+                      onClose();
+                      item.onPress();
+                    }}
+                    style={styles.actionRow}>
                     <Icon
-                      color={COLORS.text.secondary}
+                      color={
+                        item.tone === 'danger'
+                          ? COLORS.status.danger
+                          : COLORS.text.secondary
+                      }
                       name={item.iconName}
                       size={15}
                     />
-                    <Text style={styles.rowLabel}>{item.label}</Text>
-                  </View>
-                  <ToggleSwitch
-                    disabled={item.disabled}
-                    pressable={false}
-                    size="compact"
-                    value={item.value}
-                  />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  activeOpacity={0.82}
-                  onPress={() => {
-                    onClose();
-                    item.onPress();
-                  }}
-                  style={styles.actionRow}>
-                  <Icon
-                    color={
-                      item.tone === 'danger'
-                        ? COLORS.status.danger
-                        : COLORS.text.secondary
-                    }
-                    name={item.iconName}
-                    size={15}
-                  />
-                  <Text
-                    style={[
-                      styles.rowLabel,
-                      item.tone === 'danger' ? styles.dangerLabel : null,
-                    ]}>
-                    {item.label}
-                  </Text>
-                </TouchableOpacity>
-              )}
+                    <Text
+                      style={[
+                        styles.rowLabel,
+                        item.tone === 'danger' ? styles.dangerLabel : null,
+                      ]}>
+                      {item.label}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
-              {showDivider ? <View style={styles.divider} /> : null}
-            </React.Fragment>
-          );
-        })}
-      </Animated.View>
-    </View>
+                {showDivider ? <View style={styles.divider} /> : null}
+              </React.Fragment>
+            );
+          })}
+        </Animated.View>
+      </View>
+    </Modal>
   );
 };
 

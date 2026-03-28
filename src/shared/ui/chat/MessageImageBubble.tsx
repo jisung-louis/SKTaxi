@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  GestureResponderEvent,
   Image,
   StyleSheet,
   TouchableOpacity,
@@ -14,7 +15,13 @@ import {COLORS, RADIUS} from '@/shared/design-system/tokens';
 const MAX_LANDSCAPE_WIDTH = 220;
 const MAX_PORTRAIT_WIDTH = 180;
 
-export const MessageImageBubble = ({uri}: {uri: string}) => {
+export const MessageImageBubble = ({
+  onLongPress,
+  uri,
+}: {
+  onLongPress?: (event: GestureResponderEvent) => void;
+  uri: string;
+}) => {
   const [aspectRatio, setAspectRatio] = React.useState(1);
   const [viewerVisible, setViewerVisible] = React.useState(false);
 
@@ -61,6 +68,8 @@ export const MessageImageBubble = ({uri}: {uri: string}) => {
         accessibilityLabel="이미지 메시지 크게 보기"
         accessibilityRole="button"
         activeOpacity={0.92}
+        delayLongPress={220}
+        onLongPress={onLongPress}
         onPress={() => {
           setViewerVisible(true);
         }}>

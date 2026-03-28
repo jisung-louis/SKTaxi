@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Alert,
   Clipboard,
+  GestureResponderEvent,
   StyleProp,
   StyleSheet,
   Text,
@@ -22,13 +23,21 @@ import {
 import Button from '@/shared/ui/Button';
 import {ChatAvatar, ChatThreadCore} from '@/shared/ui/chat';
 
-import type {TaxiChatThreadItemViewData} from '../model/taxiChatViewData';
+import type {
+  TaxiChatAccountMessageViewData,
+  TaxiChatTextMessageViewData,
+  TaxiChatThreadItemViewData,
+} from '../model/taxiChatViewData';
 
 interface TaxiChatMessageListProps {
   autoScrollKey?: number | string;
   contentContainerStyle?: StyleProp<ViewStyle>;
   headerContent?: React.ReactNode;
   items: TaxiChatThreadItemViewData[];
+  onLongPressMessage?: (
+    item: TaxiChatAccountMessageViewData | TaxiChatTextMessageViewData,
+    event: GestureResponderEvent,
+  ) => void;
   onPressEndPartyExit?: () => void;
 }
 
@@ -54,6 +63,7 @@ export const TaxiChatMessageList = ({
   contentContainerStyle,
   headerContent,
   items,
+  onLongPressMessage,
   onPressEndPartyExit,
 }: TaxiChatMessageListProps) => {
   return (
@@ -62,6 +72,7 @@ export const TaxiChatMessageList = ({
       contentContainerStyle={contentContainerStyle}
       headerContent={headerContent}
       items={items}
+      onLongPressMessage={onLongPressMessage}
       renderCustomItem={item => {
         if (item.type === 'end-message') {
           return (
@@ -109,73 +120,81 @@ export const TaxiChatMessageList = ({
                     <Text style={styles.accountTimeLabel}>{item.timeLabel}</Text>
                   </View>
 
-                  <View
-                    style={[styles.accountBubble, styles.accountBubbleOutgoing]}>
-                    <View style={styles.accountBubbleBody}>
-                      <View style={styles.accountBubbleTitleRow}>
-                        <Icon
-                          color={accountIconColor}
-                          name="wallet"
-                          size={14}
-                          style={styles.accountBubbleTitleIcon}
-                        />
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    delayLongPress={220}
+                    disabled={!onLongPressMessage}
+                    onLongPress={event => {
+                      onLongPressMessage?.(item, event);
+                    }}>
+                    <View
+                      style={[styles.accountBubble, styles.accountBubbleOutgoing]}>
+                      <View style={styles.accountBubbleBody}>
+                        <View style={styles.accountBubbleTitleRow}>
+                          <Icon
+                            color={accountIconColor}
+                            name="wallet"
+                            size={14}
+                            style={styles.accountBubbleTitleIcon}
+                          />
+                          <Text
+                            style={[
+                              styles.accountBubbleTitle,
+                              styles.accountBubbleTitleOutgoing,
+                            ]}>
+                            계좌 정보
+                          </Text>
+                        </View>
+
                         <Text
+                          numberOfLines={1}
                           style={[
-                            styles.accountBubbleTitle,
-                            styles.accountBubbleTitleOutgoing,
+                            styles.accountBubbleHolder,
+                            styles.accountBubbleHolderOutgoing,
                           ]}>
-                          계좌 정보
+                          {accountHolderLabel}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={[
+                            styles.accountBubbleBank,
+                            styles.accountBubbleBankOutgoing,
+                          ]}>
+                          {item.accountData.bankName}
+                        </Text>
+                        <Text
+                          numberOfLines={1}
+                          style={[
+                            styles.accountBubbleNumber,
+                            styles.accountBubbleNumberOutgoing,
+                          ]}>
+                          {item.accountData.accountNumber}
                         </Text>
                       </View>
 
-                      <Text
-                        numberOfLines={1}
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        activeOpacity={0.84}
+                        onPress={() => {
+                          copyToClipboard(
+                            item.accountData.accountNumber,
+                            '계좌번호가 복사되었습니다.',
+                          );
+                        }}
                         style={[
-                          styles.accountBubbleHolder,
-                          styles.accountBubbleHolderOutgoing,
+                          styles.accountBubbleCopyButton,
+                          styles.accountBubbleCopyButtonOutgoing,
                         ]}>
-                        {accountHolderLabel}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.accountBubbleBank,
-                          styles.accountBubbleBankOutgoing,
-                        ]}>
-                        {item.accountData.bankName}
-                      </Text>
-                      <Text
-                        numberOfLines={1}
-                        style={[
-                          styles.accountBubbleNumber,
-                          styles.accountBubbleNumberOutgoing,
-                        ]}>
-                        {item.accountData.accountNumber}
-                      </Text>
+                        <Text
+                          style={[
+                            styles.accountBubbleCopyLabel,
+                            styles.accountBubbleCopyLabelOutgoing,
+                          ]}>
+                          계좌번호 복사
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      activeOpacity={0.84}
-                      onPress={() => {
-                        copyToClipboard(
-                          item.accountData.accountNumber,
-                          '계좌번호가 복사되었습니다.',
-                        );
-                      }}
-                      style={[
-                        styles.accountBubbleCopyButton,
-                        styles.accountBubbleCopyButtonOutgoing,
-                      ]}>
-                      <Text
-                        style={[
-                          styles.accountBubbleCopyLabel,
-                          styles.accountBubbleCopyLabelOutgoing,
-                        ]}>
-                        계좌번호 복사
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <View style={styles.incomingRow}>
@@ -187,73 +206,81 @@ export const TaxiChatMessageList = ({
                     <Text style={styles.senderName}>{item.senderName}</Text>
 
                     <View style={styles.accountIncomingBubbleRow}>
-                      <View
-                        style={[styles.accountBubble, styles.accountBubbleIncoming]}>
-                        <View style={styles.accountBubbleBody}>
-                          <View style={styles.accountBubbleTitleRow}>
-                            <Icon
-                              color={accountIconColor}
-                              name="wallet"
-                              size={14}
-                              style={styles.accountBubbleTitleIcon}
-                            />
+                      <TouchableOpacity
+                        activeOpacity={0.92}
+                        delayLongPress={220}
+                        disabled={!onLongPressMessage}
+                        onLongPress={event => {
+                          onLongPressMessage?.(item, event);
+                        }}>
+                        <View
+                          style={[styles.accountBubble, styles.accountBubbleIncoming]}>
+                          <View style={styles.accountBubbleBody}>
+                            <View style={styles.accountBubbleTitleRow}>
+                              <Icon
+                                color={accountIconColor}
+                                name="wallet"
+                                size={14}
+                                style={styles.accountBubbleTitleIcon}
+                              />
+                              <Text
+                                style={[
+                                  styles.accountBubbleTitle,
+                                  styles.accountBubbleTitleIncoming,
+                                ]}>
+                                계좌 정보
+                              </Text>
+                            </View>
+
                             <Text
+                              numberOfLines={1}
                               style={[
-                                styles.accountBubbleTitle,
-                                styles.accountBubbleTitleIncoming,
+                                styles.accountBubbleHolder,
+                                styles.accountBubbleHolderIncoming,
                               ]}>
-                              계좌 정보
+                              {accountHolderLabel}
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                styles.accountBubbleBank,
+                                styles.accountBubbleBankIncoming,
+                              ]}>
+                              {item.accountData.bankName}
+                            </Text>
+                            <Text
+                              numberOfLines={1}
+                              style={[
+                                styles.accountBubbleNumber,
+                                styles.accountBubbleNumberIncoming,
+                              ]}>
+                              {item.accountData.accountNumber}
                             </Text>
                           </View>
 
-                          <Text
-                            numberOfLines={1}
+                          <TouchableOpacity
+                            accessibilityRole="button"
+                            activeOpacity={0.84}
+                            onPress={() => {
+                              copyToClipboard(
+                                item.accountData.accountNumber,
+                                '계좌번호가 복사되었습니다.',
+                              );
+                            }}
                             style={[
-                              styles.accountBubbleHolder,
-                              styles.accountBubbleHolderIncoming,
+                              styles.accountBubbleCopyButton,
+                              styles.accountBubbleCopyButtonIncoming,
                             ]}>
-                            {accountHolderLabel}
-                          </Text>
-                          <Text
-                            numberOfLines={1}
-                            style={[
-                              styles.accountBubbleBank,
-                              styles.accountBubbleBankIncoming,
-                            ]}>
-                            {item.accountData.bankName}
-                          </Text>
-                          <Text
-                            numberOfLines={1}
-                            style={[
-                              styles.accountBubbleNumber,
-                              styles.accountBubbleNumberIncoming,
-                            ]}>
-                            {item.accountData.accountNumber}
-                          </Text>
+                            <Text
+                              style={[
+                                styles.accountBubbleCopyLabel,
+                                styles.accountBubbleCopyLabelIncoming,
+                              ]}>
+                              계좌번호 복사
+                            </Text>
+                          </TouchableOpacity>
                         </View>
-
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          activeOpacity={0.84}
-                          onPress={() => {
-                            copyToClipboard(
-                              item.accountData.accountNumber,
-                              '계좌번호가 복사되었습니다.',
-                            );
-                          }}
-                          style={[
-                            styles.accountBubbleCopyButton,
-                            styles.accountBubbleCopyButtonIncoming,
-                          ]}>
-                          <Text
-                            style={[
-                              styles.accountBubbleCopyLabel,
-                              styles.accountBubbleCopyLabelIncoming,
-                            ]}>
-                            계좌번호 복사
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
+                      </TouchableOpacity>
 
                       <Text style={styles.accountTimeLabel}>{item.timeLabel}</Text>
                     </View>

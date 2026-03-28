@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Clipboard,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -27,12 +28,22 @@ import Button from '@/shared/ui/Button';
 import {
   ChatComposerBar,
   ChatHeader,
+  ChatMessagePopupMenu,
   ChatMessageList,
   ChatPopupMenu,
+  resolveChatMenuPosition,
+  type ChatThreadMessageViewData,
 } from '@/shared/ui/chat';
+import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
+import type {ReportCategory} from '@/shared/lib/moderation';
 
 import {useChatDetailData} from '../hooks/useChatDetailData';
 import type {ChatStackParamList} from '../model/navigation';
+import {
+  CHAT_REPORT_CATEGORIES,
+  submitChatMessageReport,
+  submitChatRoomReport,
+} from '../services/chatModerationService';
 
 type ChatDetailNavigationProp = NativeStackNavigationProp<
   CommunityStackParamList,
@@ -66,6 +77,21 @@ export const ChatDetailScreen = () => {
   const [composerValue, setComposerValue] = React.useState('');
   const [imageSending, setImageSending] = React.useState(false);
   const [menuVisible, setMenuVisible] = React.useState(false);
+  const [messageMenuState, setMessageMenuState] = React.useState<{
+    message: ChatThreadMessageViewData;
+    right: number;
+    top: number;
+  } | null>(null);
+  const [isReportSubmitting, setIsReportSubmitting] = React.useState(false);
+  const [isReportVisible, setIsReportVisible] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState('');
+  const [selectedReportCategory, setSelectedReportCategory] =
+    React.useState<ReportCategory | null>(null);
+  const [reportTarget, setReportTarget] = React.useState<
+    | {id: string; type: 'message'}
+    | {id: string; type: 'room'}
+    | null
+  >(null);
 
   const navigateToCommunityChat = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -166,9 +192,147 @@ export const ChatDetailScreen = () => {
     ]);
   }, [leaveRoom, navigateToCommunityChat]);
 
-  const handleReport = React.useCallback(() => {
-    Alert.alert('신고하기', '신고 기능은 다음 단계에서 연결할 예정입니다.');
-  }, []);
+  const handleCloseReportModal = React.useCallback(() => {
+    if (isReportSubmitting) {
+      return;
+    }
+
+    setIsReportVisible(false);
+    setReportTarget(null);
+    setSelectedReportCategory(null);
+    setReportReason('');
+  }, [isReportSubmitting]);
+
+  const handleOpenRoomReport = React.useCallback(() => {
+    if (!route.params?.chatRoomId) {
+      return;
+    }
+
+    setMenuVisible(false);
+    setMessageMenuState(null);
+    setReportTarget({id: route.params.chatRoomId, type: 'room'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
+  }, [route.params?.chatRoomId]);
+
+  const handleLongPressMessage = React.useCallback(
+    (message: ChatThreadMessageViewData, pageX: number, pageY: number) => {
+      const canCopy = message.messageKind !== 'image';
+      const canReport = message.direction !== 'outgoing';
+
+      if (!canCopy && !canReport) {
+        return;
+      }
+
+      setMenuVisible(false);
+      const position = resolveChatMenuPosition({pageX, pageY});
+
+      setMessageMenuState({
+        message,
+        ...position,
+      });
+    },
+    [],
+  );
+
+  const handleCopyMessage = React.useCallback(() => {
+    const message = messageMenuState?.message;
+
+    if (!message) {
+      return;
+    }
+
+    if (message.messageKind === 'image') {
+      Alert.alert('복사 불가', '이미지 메시지는 복사할 수 없습니다.');
+      return;
+    }
+
+    const text = message.text.trim();
+
+    if (!text) {
+      Alert.alert('복사 불가', '복사할 텍스트가 없습니다.');
+      return;
+    }
+
+    Clipboard.setString(text);
+    Alert.alert('복사 완료', '메시지가 클립보드에 복사되었습니다.');
+  }, [messageMenuState]);
+
+  const handleOpenMessageReport = React.useCallback(() => {
+    const messageId = messageMenuState?.message.id;
+
+    if (!messageId) {
+      return;
+    }
+
+    setMessageMenuState(null);
+    setReportTarget({id: messageId, type: 'message'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
+  }, [messageMenuState]);
+
+  const handleSubmitReport = React.useCallback(async () => {
+    if (!reportTarget) {
+      return;
+    }
+
+    if (!selectedReportCategory) {
+      Alert.alert('신고 유형 선택', '신고 유형을 선택해주세요.');
+      return;
+    }
+
+    if (!reportReason.trim()) {
+      Alert.alert('신고 사유 입력', '신고 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsReportSubmitting(true);
+
+      if (reportTarget.type === 'message') {
+        await submitChatMessageReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      } else {
+        await submitChatRoomReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      }
+
+      handleCloseReportModal();
+      Alert.alert(
+        '신고 접수 완료',
+        '신고가 접수되었습니다. 운영팀이 확인 후 처리할 예정입니다.',
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        '신고 접수 실패',
+        caughtError instanceof Error
+          ? caughtError.message
+          : '신고 접수에 실패했습니다.',
+      );
+    } finally {
+      setIsReportSubmitting(false);
+    }
+  }, [
+    handleCloseReportModal,
+    reportReason,
+    reportTarget,
+    selectedReportCategory,
+  ]);
+
+  const canOpenRoomMenu = Boolean(
+    data &&
+      (data.menu.canLeave ||
+        data.menu.canReport ||
+        data.menu.canToggleNotification),
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
@@ -178,9 +342,9 @@ export const ChatDetailScreen = () => {
             header={data.header}
             onPressBack={handlePressBack}
             onPressMenu={
-              data.mode === 'preview'
-                ? undefined
-                : () => setMenuVisible(previousValue => !previousValue)
+              canOpenRoomMenu
+                ? () => setMenuVisible(previousValue => !previousValue)
+                : undefined
             }
           />
         ) : (
@@ -279,6 +443,13 @@ export const ChatDetailScreen = () => {
                 <ChatMessageList
                   contentContainerStyle={styles.threadContent}
                   items={data.items}
+                  onLongPressMessage={(message, event) => {
+                    handleLongPressMessage(
+                      message,
+                      event.nativeEvent.pageX,
+                      event.nativeEvent.pageY,
+                    );
+                  }}
                 />
               </View>
 
@@ -309,13 +480,45 @@ export const ChatDetailScreen = () => {
             notificationEnabled={data.menu.notificationEnabled}
             onClose={() => setMenuVisible(false)}
             onLeave={data.menu.canLeave ? handleLeave : undefined}
-            onReport={handleReport}
+            onReport={handleOpenRoomReport}
             onToggleNotification={() => {
               toggleNotification().catch(() => undefined);
             }}
             visible={menuVisible}
           />
         ) : null}
+
+        <ChatMessagePopupMenu
+          canCopy={Boolean(
+            messageMenuState &&
+              messageMenuState.message.messageKind !== 'image',
+          )}
+          canReport={Boolean(
+            messageMenuState &&
+              messageMenuState.message.direction !== 'outgoing',
+          )}
+          onClose={() => setMessageMenuState(null)}
+          onCopy={handleCopyMessage}
+          onReport={handleOpenMessageReport}
+          right={messageMenuState?.right ?? 12}
+          top={messageMenuState?.top ?? 64}
+          visible={messageMenuState !== null}
+        />
+
+        <ReportReasonModal
+          categories={CHAT_REPORT_CATEGORIES}
+          onChangeReason={setReportReason}
+          onClose={handleCloseReportModal}
+          onSelectCategory={setSelectedReportCategory}
+          onSubmit={() => {
+            handleSubmitReport().catch(() => undefined);
+          }}
+          reason={reportReason}
+          selectedCategory={selectedReportCategory}
+          submitting={isReportSubmitting}
+          title={reportTarget?.type === 'message' ? '메시지 신고' : '채팅방 신고'}
+          visible={isReportVisible}
+        />
       </Animated.View>
     </SafeAreaView>
   );

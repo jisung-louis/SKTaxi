@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Clipboard,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -25,7 +26,13 @@ import {
 } from '@/shared/hooks';
 import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 import type {UserAccountInfo as AccountInfo} from '@/shared/types/user';
-import {ChatHeader} from '@/shared/ui/chat';
+import {
+  ChatHeader,
+  ChatMessagePopupMenu,
+  resolveChatMenuPosition,
+} from '@/shared/ui/chat';
+import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
+import type {ReportCategory} from '@/shared/lib/moderation';
 
 import {TaxiAccountSheet} from '../components/TaxiAccountSheet';
 import {TaxiArriveSettlementSheet} from '../components/TaxiArriveSettlementSheet';
@@ -45,7 +52,16 @@ import {
 } from '../components/TaxiTaxiCallSheet';
 import {useTaxiChatDetailData} from '../hooks/useTaxiChatDetailData';
 import type {TaxiStackParamList} from '../model/navigation';
-import type {TaxiChatActionTrayActionId} from '../model/taxiChatViewData';
+import type {
+  TaxiChatAccountMessageViewData,
+  TaxiChatActionTrayActionId,
+  TaxiChatTextMessageViewData,
+} from '../model/taxiChatViewData';
+import {
+  CHAT_REPORT_CATEGORIES,
+  submitChatMessageReport,
+  submitTaxiPartyReport,
+} from '@/features/chat/services/chatModerationService';
 
 type TaxiChatNavigationProp = NativeStackNavigationProp<
   TaxiStackParamList,
@@ -149,6 +165,21 @@ export const ChatScreen = () => {
     React.useState<AccountInfo | null>(null);
   const [sendingAccount, setSendingAccount] = React.useState(false);
   const [sendingImage, setSendingImage] = React.useState(false);
+  const [messageMenuState, setMessageMenuState] = React.useState<{
+    message: TaxiChatAccountMessageViewData | TaxiChatTextMessageViewData;
+    right: number;
+    top: number;
+  } | null>(null);
+  const [isReportSubmitting, setIsReportSubmitting] = React.useState(false);
+  const [isReportVisible, setIsReportVisible] = React.useState(false);
+  const [reportReason, setReportReason] = React.useState('');
+  const [selectedReportCategory, setSelectedReportCategory] =
+    React.useState<ReportCategory | null>(null);
+  const [reportTarget, setReportTarget] = React.useState<
+    | {id: string; type: 'message'}
+    | {id: string; type: 'party'}
+    | null
+  >(null);
   const accountInfo = user?.accountInfo ?? user?.account ?? null;
 
   const snapshotAccountInfo = React.useMemo<AccountInfo | null>(() => {
@@ -227,6 +258,146 @@ export const ChatScreen = () => {
       },
     ]);
   }, [leaveParty, navigation, runAction]);
+
+  const handleCloseReportModal = React.useCallback(() => {
+    if (isReportSubmitting) {
+      return;
+    }
+
+    setIsReportVisible(false);
+    setReportTarget(null);
+    setSelectedReportCategory(null);
+    setReportReason('');
+  }, [isReportSubmitting]);
+
+  const handleOpenPartyReport = React.useCallback(() => {
+    if (!route.params?.partyId) {
+      return;
+    }
+
+    setMenuVisible(false);
+    setMessageMenuState(null);
+    setReportTarget({id: route.params.partyId, type: 'party'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
+  }, [route.params?.partyId]);
+
+  const handleLongPressMessage = React.useCallback(
+    (
+      message: TaxiChatAccountMessageViewData | TaxiChatTextMessageViewData,
+      pageX: number,
+      pageY: number,
+    ) => {
+      const canCopy =
+        message.type === 'account-message' || message.messageKind !== 'image';
+      const canReport = message.direction !== 'outgoing';
+
+      if (!canCopy && !canReport) {
+        return;
+      }
+
+      setMenuVisible(false);
+      const position = resolveChatMenuPosition({pageX, pageY});
+
+      setMessageMenuState({
+        message,
+        ...position,
+      });
+    },
+    [],
+  );
+
+  const handleCopyMessage = React.useCallback(() => {
+    const message = messageMenuState?.message;
+
+    if (!message) {
+      return;
+    }
+
+    if (message.type === 'text-message' && message.messageKind === 'image') {
+      Alert.alert('복사 불가', '이미지 메시지는 복사할 수 없습니다.');
+      return;
+    }
+
+    const text = message.text.trim();
+
+    if (!text) {
+      Alert.alert('복사 불가', '복사할 텍스트가 없습니다.');
+      return;
+    }
+
+    Clipboard.setString(text);
+    Alert.alert('복사 완료', '메시지가 클립보드에 복사되었습니다.');
+  }, [messageMenuState]);
+
+  const handleOpenMessageReport = React.useCallback(() => {
+    const messageId = messageMenuState?.message.id;
+
+    if (!messageId) {
+      return;
+    }
+
+    setMessageMenuState(null);
+    setReportTarget({id: messageId, type: 'message'});
+    setSelectedReportCategory(null);
+    setReportReason('');
+    setIsReportVisible(true);
+  }, [messageMenuState]);
+
+  const handleSubmitReport = React.useCallback(async () => {
+    if (!reportTarget) {
+      return;
+    }
+
+    if (!selectedReportCategory) {
+      Alert.alert('신고 유형 선택', '신고 유형을 선택해주세요.');
+      return;
+    }
+
+    if (!reportReason.trim()) {
+      Alert.alert('신고 사유 입력', '신고 사유를 입력해주세요.');
+      return;
+    }
+
+    try {
+      setIsReportSubmitting(true);
+
+      if (reportTarget.type === 'message') {
+        await submitChatMessageReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      } else {
+        await submitTaxiPartyReport(
+          reportTarget.id,
+          selectedReportCategory,
+          reportReason,
+        );
+      }
+
+      handleCloseReportModal();
+      Alert.alert(
+        '신고 접수 완료',
+        '신고가 접수되었습니다. 운영팀이 확인 후 처리할 예정입니다.',
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        '신고 접수 실패',
+        caughtError instanceof Error
+          ? caughtError.message
+          : '신고 접수에 실패했습니다.',
+      );
+    } finally {
+      setIsReportSubmitting(false);
+    }
+  }, [
+    handleCloseReportModal,
+    reportReason,
+    reportTarget,
+    selectedReportCategory,
+  ]);
 
   const handleCancelParty = React.useCallback(() => {
     Alert.alert('파티 없애기', '파티를 취소하고 채팅을 종료할까요?', [
@@ -563,6 +734,13 @@ export const ChatScreen = () => {
                 ]}
                 headerContent={<TaxiChatSummaryCard summary={data.summary} />}
                 items={data.items}
+                onLongPressMessage={(message, event) => {
+                  handleLongPressMessage(
+                    message,
+                    event.nativeEvent.pageX,
+                    event.nativeEvent.pageY,
+                  );
+                }}
                 onPressEndPartyExit={handlePressBack}
               />
             </View>
@@ -598,6 +776,7 @@ export const ChatScreen = () => {
             canCancelParty={data.menu.canCancelParty}
             canEditParty={data.menu.canEditParty}
             canLeave={Boolean(data.menu.canLeave)}
+            canReport
             destructiveActionLabel={
               data.summary.partyStatus === 'open' ||
               data.summary.partyStatus === 'closed'
@@ -635,6 +814,7 @@ export const ChatScreen = () => {
               handleEndParty();
             }}
             onLeaveParty={handleLeaveParty}
+            onReport={handleOpenPartyReport}
             onToggleNotification={() => {
               toggleNotification().catch(toggleError => {
                 Alert.alert(
@@ -727,6 +907,39 @@ export const ChatScreen = () => {
             />
           </>
         ) : null}
+
+        <ChatMessagePopupMenu
+          canCopy={Boolean(
+            messageMenuState &&
+              (messageMenuState.message.type === 'account-message' ||
+                messageMenuState.message.messageKind !== 'image'),
+          )}
+          canReport={Boolean(
+            messageMenuState &&
+              messageMenuState.message.direction !== 'outgoing',
+          )}
+          onClose={() => setMessageMenuState(null)}
+          onCopy={handleCopyMessage}
+          onReport={handleOpenMessageReport}
+          right={messageMenuState?.right ?? 12}
+          top={messageMenuState?.top ?? 64}
+          visible={messageMenuState !== null}
+        />
+
+        <ReportReasonModal
+          categories={CHAT_REPORT_CATEGORIES}
+          onChangeReason={setReportReason}
+          onClose={handleCloseReportModal}
+          onSelectCategory={setSelectedReportCategory}
+          onSubmit={() => {
+            handleSubmitReport().catch(() => undefined);
+          }}
+          reason={reportReason}
+          selectedCategory={selectedReportCategory}
+          submitting={isReportSubmitting}
+          title={reportTarget?.type === 'message' ? '메시지 신고' : '택시파티 신고'}
+          visible={isReportVisible}
+        />
       </Animated.View>
     </SafeAreaView>
   );

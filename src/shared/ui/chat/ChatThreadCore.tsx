@@ -1,9 +1,11 @@
 import React from 'react';
 import {
+  GestureResponderEvent,
   ScrollView,
   StyleProp,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from 'react-native';
@@ -31,6 +33,10 @@ interface ChatThreadCoreProps<
   contentContainerStyle?: StyleProp<ViewStyle>
   headerContent?: React.ReactNode
   items: TItem[]
+  onLongPressMessage?: (
+    item: ChatThreadMessageViewData,
+    event: GestureResponderEvent,
+  ) => void
   renderCustomItem?: (item: TItem, index: number) => React.ReactNode
 }
 
@@ -98,6 +104,7 @@ export const ChatThreadCore = <
   contentContainerStyle,
   headerContent,
   items,
+  onLongPressMessage,
   renderCustomItem,
 }: ChatThreadCoreProps<TItem>) => {
   const scrollViewRef = React.useRef<ScrollView>(null);
@@ -173,20 +180,34 @@ export const ChatThreadCore = <
                     {item.timeLabel}
                   </Text>
                 ) : null}
-                <View
-                  style={[
-                    styles.bubble,
-                    styles.outgoingBubble,
-                    item.messageKind === 'image' ? styles.imageBubble : null,
-                  ]}>
-                  {item.imageUrl ? (
-                    <MessageImageBubble uri={item.imageUrl} />
-                  ) : (
-                    <Text style={[styles.messageText, styles.outgoingMessageText]}>
-                      {item.text}
-                    </Text>
-                  )}
-                </View>
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  delayLongPress={220}
+                  disabled={!onLongPressMessage || Boolean(item.imageUrl)}
+                  style={styles.pressableBubble}
+                  onLongPress={event => {
+                    onLongPressMessage?.(item, event);
+                  }}>
+                  <View
+                    style={[
+                      styles.bubble,
+                      styles.outgoingBubble,
+                      item.messageKind === 'image' ? styles.imageBubble : null,
+                    ]}>
+                    {item.imageUrl ? (
+                      <MessageImageBubble
+                        onLongPress={event => {
+                          onLongPressMessage?.(item, event);
+                        }}
+                        uri={item.imageUrl}
+                      />
+                    ) : (
+                      <Text style={[styles.messageText, styles.outgoingMessageText]}>
+                        {item.text}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
               </View>
             </View>
           );
@@ -211,18 +232,32 @@ export const ChatThreadCore = <
                   <Text style={styles.senderName}>{item.senderName}</Text>
                 ) : null}
                 <View style={styles.incomingBubbleRow}>
-                  <View
-                    style={[
-                      styles.bubble,
-                      styles.incomingBubble,
-                      item.messageKind === 'image' ? styles.imageBubble : null,
-                    ]}>
-                    {item.imageUrl ? (
-                      <MessageImageBubble uri={item.imageUrl} />
-                    ) : (
-                      <Text style={styles.messageText}>{item.text}</Text>
-                    )}
-                  </View>
+                  <TouchableOpacity
+                    activeOpacity={0.92}
+                    delayLongPress={220}
+                    disabled={!onLongPressMessage || Boolean(item.imageUrl)}
+                    style={styles.pressableBubble}
+                    onLongPress={event => {
+                      onLongPressMessage?.(item, event);
+                    }}>
+                    <View
+                      style={[
+                        styles.bubble,
+                        styles.incomingBubble,
+                        item.messageKind === 'image' ? styles.imageBubble : null,
+                      ]}>
+                      {item.imageUrl ? (
+                        <MessageImageBubble
+                          onLongPress={event => {
+                            onLongPressMessage?.(item, event);
+                          }}
+                          uri={item.imageUrl}
+                        />
+                      ) : (
+                        <Text style={styles.messageText}>{item.text}</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
                   {isGroupEnd ? (
                     <Text style={styles.timeLabel}>{item.timeLabel}</Text>
                   ) : null}
@@ -242,7 +277,6 @@ const styles = StyleSheet.create({
   },
   bubble: {
     borderRadius: 16,
-    maxWidth: '82%',
     paddingHorizontal: 15,
     paddingVertical: 10,
   },
@@ -325,6 +359,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 6,
     justifyContent: 'flex-end',
+  },
+  pressableBubble: {
+    flexShrink: 1,
+    maxWidth: '82%',
   },
   outgoingTimeLabel: {
     textAlign: 'right',

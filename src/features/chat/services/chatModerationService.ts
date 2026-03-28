@@ -1,8 +1,5 @@
-import { authInstance } from '@/shared/lib/firebase';
-import type { ReportCategory } from '@/shared/lib/moderation';
-
-import type { ChatMessage } from '../model/types';
-import { chatModerationRuntime } from '../data/composition/chatModerationRuntime';
+import {reportApiClient} from '@/shared/api/reportApiClient';
+import type {ReportCategory} from '@/shared/lib/moderation';
 
 export const CHAT_REPORT_CATEGORIES: ReportCategory[] = [
   '스팸',
@@ -12,18 +9,44 @@ export const CHAT_REPORT_CATEGORIES: ReportCategory[] = [
   '기타',
 ];
 
-const getCurrentUserId = () => authInstance.currentUser?.uid;
-
 export const submitChatMessageReport = (
-  targetMessage: ChatMessage,
+  messageId: string,
   category: ReportCategory,
+  reason: string,
 ) =>
-  chatModerationRuntime.createReport(
-    {
-      targetType: 'chat_message',
-      targetId: targetMessage.id || '',
-      targetAuthorId: targetMessage.senderId,
+  reportApiClient
+    .createReport({
       category,
-    },
-    getCurrentUserId(),
-  );
+      reason: reason.trim(),
+      targetId: messageId,
+      targetType: 'CHAT_MESSAGE',
+    })
+    .then(response => response.data.id);
+
+export const submitChatRoomReport = (
+  chatRoomId: string,
+  category: ReportCategory,
+  reason: string,
+) =>
+  reportApiClient
+    .createReport({
+      category,
+      reason: reason.trim(),
+      targetId: chatRoomId,
+      targetType: 'CHAT_ROOM',
+    })
+    .then(response => response.data.id);
+
+export const submitTaxiPartyReport = (
+  partyId: string,
+  category: ReportCategory,
+  reason: string,
+) =>
+  reportApiClient
+    .createReport({
+      category,
+      reason: reason.trim(),
+      targetId: partyId,
+      targetType: 'TAXI_PARTY',
+    })
+    .then(response => response.data.id);
