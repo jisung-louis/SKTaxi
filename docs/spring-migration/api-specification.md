@@ -2557,7 +2557,7 @@ Authorization:Bearer <firebase_id_token>
 | `department` | string | 학과 |
 | `professor` | string | 교수명 |
 | `search` | string | 강의명/과목코드/카테고리/교수/강의실/비고 키워드 검색 |
-| `dayOfWeek` | int | 요일 (1-5) |
+| `dayOfWeek` | int | 요일 (1-6, 월-토) |
 | `grade` | int | 학년 |
 | `page` | int | 페이지 번호 (기본: 0) |
 | `size` | int | 페이지 크기 (기본: 20, 최대: 100) |
@@ -2575,6 +2575,7 @@ Authorization:Bearer <firebase_id_token>
         "division": "001",
         "name": "민법총칙",
         "credits": 3,
+        "isOnline": false,
         "professor": "문상혁",
         "department": "법학과",
         "grade": 2,
@@ -2605,7 +2606,26 @@ Authorization:Bearer <firebase_id_token>
 }
 ```
 
+공식 강의 카탈로그는 현재 모두 오프라인 강의로 취급하므로 `isOnline`은 `false`로 내려간다.
+
 ### 7.2 시간표
+
+#### GET /v1/timetables/my/semesters
+내 시간표 학기 목록 조회
+
+강의 카탈로그 학기와 사용자가 이미 가진 시간표 학기의 합집합을 최신 학기 우선으로 반환한다.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    { "id": "2026-1", "label": "2026-1학기" },
+    { "id": "2025-2", "label": "2025-2학기" },
+    { "id": "2025-1", "label": "2025-1학기" }
+  ]
+}
+```
 
 #### GET /v1/timetables/my
 내 시간표 조회
@@ -2623,8 +2643,8 @@ Authorization:Bearer <firebase_id_token>
   "data": {
     "id": "timetable_uuid",
     "semester": "2026-1",
-    "courseCount": 1,
-    "totalCredits": 3,
+    "courseCount": 2,
+    "totalCredits": 5,
     "courses": [
       {
         "id": "course_uuid",
@@ -2635,9 +2655,22 @@ Authorization:Bearer <firebase_id_token>
         "location": "영401",
         "category": "전공선택",
         "credits": 3,
+        "isOnline": false,
         "schedule": [
           { "dayOfWeek": 1, "startPeriod": 3, "endPeriod": 4 }
         ]
+      },
+      {
+        "id": "manual_course_uuid",
+        "code": "직접 입력",
+        "division": null,
+        "name": "플랫폼세미나",
+        "professor": "직접 입력",
+        "location": null,
+        "category": null,
+        "credits": 2,
+        "isOnline": true,
+        "schedule": []
       }
     ],
     "slots": [
@@ -2657,6 +2690,7 @@ Authorization:Bearer <firebase_id_token>
 ```
 
 시간표가 아직 생성되지 않은 경우에도 `200 OK`를 반환하며, `id`는 `null`, `courses`/`slots`는 빈 배열로 내려간다.
+직접 입력 온라인 강의는 `courses[]`에는 포함되지만 `slots[]`에는 포함되지 않는다.
 `semester`를 생략하면 서버는 현재 날짜 기준 `2~7월 -> yyyy-1`, `8~12월 -> yyyy-2`, `1월 -> 전년도 yyyy-2` 규칙으로 학기를 계산한다.
 성결대학교 실제 학기 시작은 3월/9월이지만, 스쿠리는 수강신청과 시간표 준비 수요를 반영해 한 달 앞선 2월/8월부터 새 학기를 사용한다.
 
@@ -2675,8 +2709,53 @@ Authorization:Bearer <firebase_id_token>
 
 `GET /v1/timetables/my`와 동일한 형태의 최신 시간표를 반환한다.
 
+#### POST /v1/timetables/my/manual-courses
+시간표에 직접 입력 강의 추가
+
+오프라인 직접 입력 강의 예시:
+```json
+{
+  "semester": "2026-1",
+  "name": "캡스톤세미나",
+  "professor": "정태현",
+  "credits": 3,
+  "isOnline": false,
+  "locationLabel": "공학관 502",
+  "dayOfWeek": 2,
+  "startPeriod": 9,
+  "endPeriod": 11
+}
+```
+
+온라인 직접 입력 강의 예시:
+```json
+{
+  "semester": "2026-1",
+  "name": "플랫폼세미나",
+  "professor": "",
+  "credits": 2,
+  "isOnline": true,
+  "locationLabel": null,
+  "dayOfWeek": null,
+  "startPeriod": null,
+  "endPeriod": null
+}
+```
+
+검증 규칙:
+- `isOnline = true`면 `locationLabel`, `dayOfWeek`, `startPeriod`, `endPeriod`는 모두 선택값이다.
+- `isOnline = false`면 `locationLabel`, `dayOfWeek`, `startPeriod`, `endPeriod`가 모두 필요하다.
+- `dayOfWeek`는 `1-6 (월-토)` 범위를 사용한다.
+- 온라인 강의는 시간 충돌 검사 대상이 아니며 `slots[]`에 포함되지 않는다.
+
+**Response (200 OK):**
+
+`GET /v1/timetables/my`와 동일한 형태의 최신 시간표를 반환한다.
+
 #### DELETE /v1/timetables/my/courses/{courseId}
 시간표에서 강의 삭제
+
+일반 강의 ID와 직접 입력 강의 ID를 모두 사용할 수 있다.
 
 **Query Parameters:**
 
@@ -4354,6 +4433,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 - 목적: 관리자용 회원 상세 사이드패널/상세 화면
 - 활성 회원과 탈퇴 회원 모두 조회할 수 있다.
 - 운영 화면 요구사항에 맞춰 `bankAccount`, `notificationSetting`, `withdrawnAt`를 함께 제공한다.
+- `bankAccount`는 관리자 상세 응답 계약에 포함되며, admin-role 변경 감사 로그 최소 snapshot 정책과 별개로 유지한다.
 
 **Response (200 OK):**
 ```json
@@ -4395,6 +4475,104 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
       }
     }
   }
+}
+```
+
+#### GET /v1/admin/members/{memberId}/activity
+회원 활동 요약 조회
+
+- 목적: `/users` 상세 패널 하단의 count card + 최근 활동 섹션
+- ACTIVE 회원만 조회할 수 있다. 회원이 없으면 `404 MEMBER_NOT_FOUND`, 탈퇴 회원(`WITHDRAWN`)이면 `409 MEMBER_ACTIVITY_NOT_AVAILABLE_FOR_WITHDRAWN`을 반환한다.
+- 활동 요약은 현재 DB에 남아 있는 데이터만 기준으로 계산한다. 삭제/익명화된 과거 활동을 복원하지 않는다.
+- count 정의:
+  - `posts`: 현재 저장된 active post 중 `authorId = memberId`
+  - `comments`: 현재 저장된 active comment 중 `authorId = memberId`
+  - `partiesCreated`: `leaderId = memberId`
+  - `partiesJoined`: party membership 기준 참여 파티 수에서 leader role 제외
+  - `inquiries`: `userId = memberId`
+  - `reportsSubmitted`: `reporterId = memberId`
+- recent list는 도메인별 최신순 최대 5건이며, `recentParties`는 `LEADER`/`JOINED` role을 함께 내려준다.
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "memberId": "dw9rPtuticbjnaYPkeiF3RGPpqk1",
+    "generatedAt": "2026-03-29T16:00:00",
+    "counts": {
+      "posts": 12,
+      "comments": 34,
+      "partiesCreated": 3,
+      "partiesJoined": 7,
+      "inquiries": 2,
+      "reportsSubmitted": 1
+    },
+    "recentPosts": [
+      {
+        "id": "post-1",
+        "title": "택시 파티 구해요",
+        "category": "GENERAL",
+        "createdAt": "2026-03-28T14:00:00"
+      }
+    ],
+    "recentComments": [
+      {
+        "id": "comment-1",
+        "postId": "post-1",
+        "postTitle": "택시 파티 구해요",
+        "contentPreview": "저도 참여하고 싶어요",
+        "createdAt": "2026-03-28T14:10:00"
+      }
+    ],
+    "recentParties": [
+      {
+        "id": "party-1",
+        "role": "LEADER",
+        "status": "OPEN",
+        "routeSummary": "성결대 정문 → 안양역",
+        "departureTime": "2026-03-30T18:00:00",
+        "createdAt": "2026-03-29T09:00:00"
+      },
+      {
+        "id": "party-2",
+        "role": "JOINED",
+        "status": "CLOSED",
+        "routeSummary": "성결대 정문 → 범계역",
+        "departureTime": "2026-03-29T18:30:00",
+        "createdAt": "2026-03-28T20:00:00"
+      }
+    ],
+    "recentInquiries": [
+      {
+        "id": "inquiry-1",
+        "type": "ACCOUNT",
+        "subject": "계정 문의",
+        "status": "PENDING",
+        "createdAt": "2026-03-28T11:00:00"
+      }
+    ],
+    "recentReports": [
+      {
+        "id": "report-1",
+        "targetType": "POST",
+        "targetId": "post-9",
+        "category": "SPAM",
+        "status": "REVIEWING",
+        "createdAt": "2026-03-27T20:00:00"
+      }
+    ]
+  }
+}
+```
+
+**Response (409 Conflict - withdrawn member):**
+```json
+{
+  "success": false,
+  "message": "탈퇴한 회원의 활동 요약은 조회할 수 없습니다.",
+  "errorCode": "MEMBER_ACTIVITY_NOT_AVAILABLE_FOR_WITHDRAWN",
+  "timestamp": "2026-03-29T12:00:00"
 }
 ```
 
@@ -5415,6 +5593,7 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 > - 2026-03-05: Chat 계약 동기화 — `lastMessage.createdAt`/`accountData` 필드로 통일, 비공개 채팅방 접근 정책(REST/WS) 및 STOMP 에러 포맷(`/user/queue/errors`) 명시
 > - 2026-03-05: Chat 명세 보완 — 채팅방 요약 `lastMessage.senderName` 예시 추가, STOMP 메시지 `NON_NULL` 직렬화 정책 명시
 > - 2026-03-28: Chat 메시지 계약 확장 — 일반/파티 채팅 REST + STOMP payload에 `senderPhotoUrl` 추가, source of truth를 `members.photo_url`로 고정하고 `null` 직렬화 정책을 명시
+> - 2026-03-29: Admin Member Activity API 추가 — `GET /v1/admin/members/{memberId}/activity`를 ACTIVE 회원 + 현재 저장 데이터 기준 read model로 추가하고, 탈퇴 회원은 `409 MEMBER_ACTIVITY_NOT_AVAILABLE_FOR_WITHDRAWN`으로 비제공 처리
 > - 2026-03-29: Admin Member API review fix — `PATCH /v1/admin/members/{memberId}/admin-role`에 self role change 금지(`400 SELF_ADMIN_ROLE_CHANGE_NOT_ALLOWED`)를 추가하고, admin-role 감사 로그 snapshot을 최소 필드만 저장하도록 조정. 관리자 상세 응답의 `bankAccount`/`notificationSetting` 계약은 유지
 > - 2026-03-05: Support API 보완 — `GET /v1/cafeteria-menus/{weekId}` 명시 추가
 > - 2026-03-05: Admin Support API 추가 — 문의/신고 운영 조회·처리 (`GET/PATCH /v1/admin/inquiries*`, `GET/PATCH /v1/admin/reports*`)

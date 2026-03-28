@@ -1,6 +1,6 @@
 # Spring 백엔드 도메인 분석
 
-> 최종 수정일: 2026-03-28
+> 최종 수정일: 2026-03-29
 > 분석 기준: Firestore 컬렉션, Cloud Functions 트리거, Context/Hook 구조
 
 본 문서는 현재 Firebase 기반 SKURI Taxi 앱을 Spring Boot + MySQL 백엔드로 마이그레이션하기 위한 **도메인 분석 결과**입니다.
@@ -119,6 +119,11 @@ Hooks:
   - 회원 탈퇴는 hard delete 대신 soft delete tombstone(`status`, `withdrawnAt`)으로 관리
   - 탈퇴 시 `members` row는 보존하되 개인정보를 스크럽하고, `linked_accounts`는 전량 삭제
   - 탈퇴한 동일 Firebase UID는 `POST /v1/members`에서 재활성화하지 않고 `409 WITHDRAWN_MEMBER_REJOIN_NOT_ALLOWED`를 반환
+  - 관리자 백오피스용 회원 관리 P1 API는 `/v1/admin/members`, `/v1/admin/members/{memberId}`, `/v1/admin/members/{memberId}/admin-role`로 제공한다.
+  - 관리자 상세 응답은 운영 화면 요구에 맞춰 `bankAccount`, `notificationSetting`, `withdrawnAt`를 포함한다.
+  - 관리자 권한 변경은 기존 `members.isAdmin` boolean만 조작하며, 자기 자신의 계정 대상 요청은 `400 SELF_ADMIN_ROLE_CHANGE_NOT_ALLOWED`, 탈퇴 회원 대상 요청은 `409 CONFLICT`로 거부한다.
+  - 이번 Phase는 self role change guard만 적용하고, 마지막 관리자 수 계산 같은 추가 운영 정책은 후속 범위로 남긴다.
+  - admin-role 변경 감사 로그는 최소 snapshot(`id`, `email`, `nickname`, `isAdmin`, `status`)만 저장하고 `bankAccount`, `notificationSetting`는 적재하지 않는다.
 ```
 
 ### 3.2 TaxiParty (택시 파티)
@@ -517,27 +522,36 @@ Hooks:
 엔티티:
   - Course
     - id, grade, category, code, division, name
-    - credits, professor, schedule[], location
+    - credits, professor, schedule[], location, isOnline(false)
     - note, semester, department
   - CourseSchedule (Embedded)
-    - dayOfWeek (1-5), startPeriod, endPeriod
+    - dayOfWeek (1-6), startPeriod, endPeriod
   - UserTimetable
     - id, userId, semester
     - unique(userId, semester)
-    - courses[] via UserTimetableCourse
-    - 같은 시간표 내 동일 강의 중복 추가 금지
-    - 시간표 강의 추가 시 dayOfWeek/startPeriod/endPeriod overlap 차단
-    - 조회 응답은 `courses[] + slots[]` 구조로 프론트 렌더링을 지원
+    - 공식 강의는 `UserTimetableCourse`, 직접 입력 강의는 `UserTimetableManualCourse`로 별도 저장
+    - 같은 시간표 내 동일 공식 강의 중복 추가 금지
+    - 오프라인 강의 추가 시 dayOfWeek/startPeriod/endPeriod overlap 차단
+    - 온라인 직접 입력 강의는 시간 충돌 검사 대상이 아니며 `slots[]`에 포함되지 않음
+    - 조회 응답은 공식 강의와 직접 입력 강의를 합친 `courses[] + slots[]` 구조를 사용
+    - `courses[]` 각 항목은 `isOnline`을 포함하고, 직접 입력 강의는 자체 ID를 사용
     - `GET /v1/timetables/my`는 semester 미지정 시 현재 날짜 기준 `2~7월 -> yyyy-1`, `8~12월 -> yyyy-2`, `1월 -> 전년도 yyyy-2` 규칙으로 현재 학기를 해석
     - 실제 학교 학기 시작은 3월/9월이지만, 수강신청/시간표 준비 수요를 반영해 스쿠리 학기 기준을 한 달 앞당겨 사용
   - UserTimetableCourse
     - timetableId, courseId
+  - UserTimetableManualCourse
+    - id, timetableId, name, professor, credits
+    - isOnline, location, dayOfWeek, startPeriod, endPeriod
+    - 온라인 강의는 location/schedule 없이 저장 가능
   - AcademicSchedule
     - id, title, startDate, endDate
     - type (SINGLE, MULTI), isPrimary, description
   - Course 검색
-    - semester/department/professor/dayOfWeek/grade 필터 지원
+    - semester/department/professor/dayOfWeek(1-6)/grade 필터 지원
     - search는 강의명/과목코드/카테고리/교수/강의실/비고를 대상으로 한다
+  - Timetable 학기 옵션
+    - `GET /v1/timetables/my/semesters`
+    - 강의 카탈로그 학기 + 내 시간표 학기(직접 입력 포함)의 합집합을 최신 학기 우선으로 반환
 
 학사 일정 알림 정책 (후속 구현):
   - 기본 트리거 기준일은 `startDate`다.
@@ -1414,3 +1428,4 @@ public enum MessageDirection {
 > - 2026-03-09: Phase 10 Member 라이프사이클 반영 — soft delete tombstone, 동일 UID 재가입 차단, TaxiParty/Chat/Board/Notice/Support/Notification/Academic 탈퇴 정합성 정책 추가
 > - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `AdminAuditLog` 엔티티를 `actorId/action/targetType/targetId/diffBefore/diffAfter/timestamp` 구조로 구체화하고, Support 운영 목록/인가 공통 규약을 반영
 > - 2026-03-25: Notice 북마크 구현 반영 — `NoticeBookmark` 저장 모델, 내 북마크 공지 목록 naming parity(`rssPreview`, `postedAt`), withdrawal cleanup 정책 추가
+> - 2026-03-29: Member Admin API review fix — self role change 금지와 admin-role 감사 로그 최소 snapshot 정책을 Member 도메인 설명에 반영하고, 관리자 상세 응답의 `bankAccount` 유지 계약을 명시

@@ -3,6 +3,11 @@
 `MyScreen`과 `AccountModificationScreen`은 실제 API 연결을 진행한다.
 다만 아래 항목은 현재 백엔드 API가 없거나, 프론트 화면 요구사항을 충족하기에 아직 부족해서 mock 상태를 유지한다.
 
+참고:
+
+- 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`는 2026-03-29 기준 backend 계약이 존재한다.
+- 이 문서는 RN 사용자 화면 gap만 다루므로 관리자 백오피스 API 현황은 별도로 추적한다.
+
 ## 1. 공지 북마크 API
 
 현재 확인된 API:
