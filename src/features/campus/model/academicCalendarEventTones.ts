@@ -1,56 +1,63 @@
-import type {ComponentProps} from 'react';
-import Icon from 'react-native-vector-icons/Ionicons';
-
 import {COLORS} from '@/shared/design-system/tokens';
 
-import type {AcademicCalendarEventKind} from './academicCalendarDetailSource';
-
-export interface AcademicCalendarEventTone {
+export interface AcademicCalendarEventColorTone {
+  accentColor: string;
   barColor: string;
-  iconBackgroundColor: string;
-  iconColor: string;
-  iconName: ComponentProps<typeof Icon>['name'];
+  barTextColor: string;
 }
 
-const ACADEMIC_CALENDAR_EVENT_TONES: Record<
-  AcademicCalendarEventKind,
-  AcademicCalendarEventTone
-> = {
-  closure: {
-    barColor: '#FB7185',
-    iconBackgroundColor: '#FFF1F2',
-    iconColor: '#F43F5E',
-    iconName: 'flag-outline',
-  },
-  exam: {
-    barColor: '#60A5FA',
-    iconBackgroundColor: '#FFFBEB',
-    iconColor: '#F59E0B',
-    iconName: 'construct-outline',
-  },
-  holiday: {
-    barColor: '#A78BFA',
-    iconBackgroundColor: '#FFFBEB',
-    iconColor: '#F59E0B',
-    iconName: 'calendar-outline',
-  },
-  registration: {
-    barColor: '#60A5FA',
-    iconBackgroundColor: '#F5F3FF',
-    iconColor: '#8B5CF6',
-    iconName: 'book-outline',
-  },
-  semester: {
-    barColor: '#34D399',
-    iconBackgroundColor: '#EFF6FF',
-    iconColor: '#3B82F6',
-    iconName: 'flag-outline',
-  },
-};
+export const ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE: readonly AcademicCalendarEventColorTone[] =
+  [
+    {
+      accentColor: '#DBEAFE',
+      barColor: '#BFDBFE',
+      barTextColor: '#1D4ED8',
+    },
+    {
+      accentColor: '#FFEDD5',
+      barColor: '#FED7AA',
+      barTextColor: '#C2410C',
+    },
+    {
+      accentColor: '#FCE7F3',
+      barColor: '#FBCFE8',
+      barTextColor: '#BE185D',
+    },
+    {
+      accentColor: COLORS.brand.primarySoft,
+      barColor: '#BBF7D0',
+      barTextColor: COLORS.brand.primaryStrong,
+    },
+    {
+      accentColor: '#F3E8FF',
+      barColor: '#E9D5FF',
+      barTextColor: '#7E22CE',
+    },
+    {
+      accentColor: '#FEF3C7',
+      barColor: '#FDE68A',
+      barTextColor: '#A16207',
+    },
+    {
+      accentColor: '#CCFBF1',
+      barColor: '#99F6E4',
+      barTextColor: '#0F766E',
+    },
+    {
+      accentColor: '#FEE2E2',
+      barColor: '#FECACA',
+      barTextColor: '#B91C1C',
+    },
+  ] as const;
 
-export const getAcademicCalendarEventTone = (
-  kind: AcademicCalendarEventKind,
-) => ACADEMIC_CALENDAR_EVENT_TONES[kind];
+export const getAcademicCalendarEventColorTone = (
+  index: number,
+): AcademicCalendarEventColorTone =>
+  ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[
+    ((index % ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE.length) +
+      ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE.length) %
+      ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE.length
+  ];
 
 export const ACADEMIC_CALENDAR_BADGE_TONE = {
   backgroundColor: '#FFF1F2',

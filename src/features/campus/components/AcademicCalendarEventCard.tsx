@@ -1,6 +1,5 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
   COLORS,
@@ -22,10 +21,9 @@ export const AcademicCalendarEventCard = ({item}: AcademicCalendarEventCardProps
       <View
         style={[
           styles.iconWrap,
-          {backgroundColor: item.iconBackgroundColor},
-        ]}>
-        <Icon color={item.iconColor} name={item.iconName} size={18} />
-      </View>
+          {backgroundColor: item.accentColor},
+        ]}
+      />
 
       <View style={styles.content}>
         <View style={styles.titleRow}>

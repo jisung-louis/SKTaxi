@@ -56,10 +56,11 @@ export interface CampusCafeteriaRecommendedMenuViewData {
 export interface CampusAcademicEventBadgeViewData {
   label: string;
   tone: CampusHighlightTone;
-  placement?: 'inline' | 'trailing';
 }
 
 export interface CampusAcademicEventViewData {
+  dateBoxBackgroundColor: string;
+  dateBoxTextColor: string;
   id: string;
   monthLabel: string;
   dayLabel: string;

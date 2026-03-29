@@ -133,7 +133,12 @@ export const AcademicCalendarMonthView = ({
                     width: bar.span * cellWidth - 4,
                   },
                 ]}>
-                <Text numberOfLines={1} style={styles.monthBarLabel}>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.monthBarLabel,
+                    {color: bar.barTextColor},
+                  ]}>
                   {bar.title}
                 </Text>
               </TouchableOpacity>
@@ -218,7 +223,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   monthBarLabel: {
-    color: COLORS.text.inverse,
     fontSize: 8,
     fontWeight: '500',
     lineHeight: 8,

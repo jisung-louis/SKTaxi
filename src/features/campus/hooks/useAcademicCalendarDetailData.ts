@@ -5,9 +5,10 @@ import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
 import {toAcademicCalendarEventSource} from '../application/academicCalendarEventMapper';
 import {
-  getAcademicCalendarEventTone,
+  ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE,
   ACADEMIC_CALENDAR_STATUS_TONES,
 } from '../model/academicCalendarEventTones';
+import type {AcademicCalendarEventColorTone} from '../model/academicCalendarEventTones';
 import type {AcademicCalendarEventSource} from '../model/academicCalendarDetailSource';
 import type {
   AcademicCalendarDayCellViewData,
@@ -91,26 +92,43 @@ const buildStatusMeta = (
   };
 };
 
+const sortAcademicEventsByVisibleOrder = (
+  events: AcademicCalendarEventSource[],
+) =>
+  [...events].sort(
+    (left, right) =>
+      normalizeDate(left.startDate).getTime() -
+        normalizeDate(right.startDate).getTime() ||
+      normalizeDate(left.endDate).getTime() -
+        normalizeDate(right.endDate).getTime() ||
+      left.title.localeCompare(right.title, 'ko-KR'),
+  );
+
+const buildEventColorMap = (events: AcademicCalendarEventSource[]) =>
+  new Map(
+    sortAcademicEventsByVisibleOrder(events).map((event, index) => [
+      event.id,
+      ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[
+        index % ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE.length
+      ],
+    ]),
+  );
+
 const toListItems = (
   events: AcademicCalendarEventSource[],
+  eventColorMap: Map<string, AcademicCalendarEventColorTone>,
   today: Date,
 ): AcademicCalendarListItemViewData[] =>
-  [...events]
-    .sort(
-      (left, right) =>
-        normalizeDate(left.startDate).getTime() -
-        normalizeDate(right.startDate).getTime(),
-    )
+  sortAcademicEventsByVisibleOrder(events)
     .map(event => {
-      const tone = getAcademicCalendarEventTone(event.kind);
       const status = buildStatusMeta(event, today);
+      const eventTone =
+        eventColorMap.get(event.id) ?? ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[0];
 
       return {
+        accentColor: eventTone.accentColor,
         dateLabel: formatEventDateLabel(event),
         eventId: event.id,
-        iconBackgroundColor: tone.iconBackgroundColor,
-        iconColor: tone.iconColor,
-        iconName: tone.iconName,
         importantLabel: event.isImportant ? '중요' : undefined,
         statusBackgroundColor: status.backgroundColor,
         statusLabel: status.label,
@@ -122,6 +140,7 @@ const toListItems = (
 const toMonthWeeks = (
   currentDate: Date,
   events: AcademicCalendarEventSource[],
+  eventColorMap: Map<string, AcademicCalendarEventColorTone>,
   today: Date,
 ): AcademicCalendarMonthWeekViewData[] =>
   getMonthWeeks(currentDate).map((week, weekIndex) => {
@@ -139,18 +158,25 @@ const toMonthWeeks = (
       startDate: rangeStart,
     });
     const bars: AcademicCalendarEventBarViewData[] = positionedEvents.map(
-      positioned => ({
-        barColor: getAcademicCalendarEventTone(positioned.event.kind).barColor,
-        eventId: positioned.event.id,
-        id: `${positioned.event.id}-${weekIndex}`,
-        leftColumn: positioned.leftColumn,
-        opacity: 1,
-        roundedEnd: positioned.roundedEnd,
-        roundedStart: positioned.roundedStart,
-        rowIndex: positioned.rowIndex,
-        span: positioned.span,
-        title: positioned.event.title,
-      }),
+      positioned => {
+        const eventTone =
+          eventColorMap.get(positioned.event.id) ??
+          ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[0];
+
+        return {
+          barColor: eventTone.barColor,
+          barTextColor: eventTone.barTextColor,
+          eventId: positioned.event.id,
+          id: `${positioned.event.id}-${weekIndex}`,
+          leftColumn: positioned.leftColumn,
+          opacity: 1,
+          roundedEnd: positioned.roundedEnd,
+          roundedStart: positioned.roundedStart,
+          rowIndex: positioned.rowIndex,
+          span: positioned.span,
+          title: positioned.event.title,
+        };
+      },
     );
 
     return {
@@ -202,6 +228,7 @@ const toWeekDays = (
 const toWeekBars = (
   currentDate: Date,
   events: AcademicCalendarEventSource[],
+  eventColorMap: Map<string, AcademicCalendarEventColorTone>,
 ): AcademicCalendarEventBarViewData[] => {
   const {start, end} = getWeekRange(currentDate);
 
@@ -209,18 +236,25 @@ const toWeekBars = (
     endDate: end,
     events: getEventsInRange(events, start, end),
     startDate: start,
-  }).map(positioned => ({
-    barColor: getAcademicCalendarEventTone(positioned.event.kind).barColor,
-    eventId: positioned.event.id,
-    id: `${positioned.event.id}-week`,
-    leftColumn: positioned.leftColumn,
-    opacity: 1,
-    roundedEnd: positioned.roundedEnd,
-    roundedStart: positioned.roundedStart,
-    rowIndex: positioned.rowIndex,
-    span: positioned.span,
-    title: positioned.event.title,
-  }));
+  }).map(positioned => {
+    const eventTone =
+      eventColorMap.get(positioned.event.id) ??
+      ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[0];
+
+    return {
+      barColor: eventTone.barColor,
+      barTextColor: eventTone.barTextColor,
+      eventId: positioned.event.id,
+      id: `${positioned.event.id}-week`,
+      leftColumn: positioned.leftColumn,
+      opacity: 1,
+      roundedEnd: positioned.roundedEnd,
+      roundedStart: positioned.roundedStart,
+      rowIndex: positioned.rowIndex,
+      span: positioned.span,
+      title: positioned.event.title,
+    };
+  });
 };
 
 const pickScrollTargetEventId = (
@@ -297,7 +331,11 @@ export const useAcademicCalendarDetailData = (initialDate?: string) => {
     const monthEvents = getEventsInRange(events, monthStart, monthEnd);
     const weekEvents = getEventsInRange(events, weekRange.start, weekRange.end);
     const visibleEvents = activeMode === 'month' ? monthEvents : weekEvents;
-    const weekBars = toWeekBars(currentDate, events);
+    const monthEventColorMap = buildEventColorMap(monthEvents);
+    const weekEventColorMap = buildEventColorMap(weekEvents);
+    const visibleEventColorMap =
+      activeMode === 'month' ? monthEventColorMap : weekEventColorMap;
+    const weekBars = toWeekBars(currentDate, weekEvents, weekEventColorMap);
 
     return {
       activeMode,
@@ -305,13 +343,13 @@ export const useAcademicCalendarDetailData = (initialDate?: string) => {
       currentLabel: formatCurrentLabel(currentDate),
       currentSubLabel:
         activeMode === 'week' ? formatWeekOfMonthLabel(currentDate) : undefined,
-      listItems: toListItems(visibleEvents, today),
+      listItems: toListItems(visibleEvents, visibleEventColorMap, today),
       listTitle:
         activeMode === 'month'
           ? `${currentDate.getMonth() + 1}월 일정`
           : '이번 주 일정',
       monthView: {
-        weeks: toMonthWeeks(currentDate, events, today),
+        weeks: toMonthWeeks(currentDate, monthEvents, monthEventColorMap, today),
       },
       weekView: {
         bars: weekBars,

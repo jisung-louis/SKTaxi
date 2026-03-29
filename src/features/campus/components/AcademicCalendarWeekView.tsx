@@ -104,7 +104,12 @@ export const AcademicCalendarWeekView = ({
               width: bar.span * cellWidth - 8,
             },
           ]}>
-          <Text numberOfLines={1} style={styles.weekBarLabel}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.weekBarLabel,
+              {color: bar.barTextColor},
+            ]}>
             {bar.title}
           </Text>
         </TouchableOpacity>
@@ -170,7 +175,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   weekBarLabel: {
-    color: COLORS.text.inverse,
     fontSize: 8,
     fontWeight: '500',
     lineHeight: 8,

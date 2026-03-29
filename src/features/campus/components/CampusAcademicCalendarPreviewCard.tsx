@@ -41,23 +41,32 @@ export const CampusAcademicCalendarPreviewCard = ({
             activeOpacity={0.82}
             onPress={onPressItem}
             style={styles.row}>
-            <View style={styles.dateBox}>
-              <Text style={styles.monthText}>{item.monthLabel}</Text>
-              <Text style={styles.dayText}>{item.dayLabel}</Text>
+            <View
+              style={[
+                styles.dateBox,
+                {backgroundColor: item.dateBoxBackgroundColor},
+              ]}>
+              <Text
+                style={[
+                  styles.monthText,
+                  {color: item.dateBoxTextColor},
+                ]}>
+                {item.monthLabel}
+              </Text>
+              <Text
+                style={[
+                  styles.dayText,
+                  {color: item.dateBoxTextColor},
+                ]}>
+                {item.dayLabel}
+              </Text>
             </View>
             <View style={styles.content}>
               <View style={styles.titleRow}>
-                <View style={styles.titleInline}>
-                  <Text numberOfLines={1} style={styles.title}>
-                    {item.title}
-                  </Text>
-                  {item.badge?.placement === 'inline' ? (
-                    <EventBadge badge={item.badge} />
-                  ) : null}
-                </View>
-                {item.badge?.placement !== 'inline' && item.badge ? (
-                  <EventBadge badge={item.badge} />
-                ) : null}
+                <Text numberOfLines={1} style={styles.title}>
+                  {item.title}
+                </Text>
+                {item.badge ? <EventBadge badge={item.badge} /> : null}
               </View>
               <Text style={styles.dateRange}>{item.dateRangeLabel}</Text>
             </View>
@@ -108,20 +117,17 @@ const styles = StyleSheet.create({
   },
   dateBox: {
     alignItems: 'center',
-    backgroundColor: COLORS.accent.blueSoft,
     borderRadius: RADIUS.md,
     height: 48,
     justifyContent: 'center',
     width: 48,
   },
   monthText: {
-    color: COLORS.accent.blue,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
   },
   dayText: {
-    color: COLORS.accent.blue,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 28,
@@ -135,20 +141,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 2,
   },
-  titleInline: {
-    alignItems: 'center',
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginRight: SPACING.sm,
-  },
   title: {
     color: COLORS.text.primary,
     flexShrink: 1,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
+    marginRight: SPACING.sm,
   },
   dateRange: {
     color: COLORS.text.tertiary,

@@ -18,6 +18,7 @@ export interface AcademicCalendarEventBarViewData {
   rowIndex: number;
   span: number;
   barColor: string;
+  barTextColor: string;
   opacity: number;
   roundedEnd: boolean;
   roundedStart: boolean;
@@ -42,11 +43,9 @@ export interface AcademicCalendarWeekViewData {
 }
 
 export interface AcademicCalendarListItemViewData {
+  accentColor: string;
   dateLabel: string;
   eventId: string;
-  iconBackgroundColor: string;
-  iconColor: string;
-  iconName: string;
   importantLabel?: string;
   statusBackgroundColor: string;
   statusLabel: string;

@@ -12,6 +12,7 @@ import {
 } from '@/features/timetable/services/timetableUtils';
 import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
+import {getAcademicCalendarEventColorTone} from '../model/academicCalendarEventTones';
 import type {IAcademicRepository} from '../data/repositories/IAcademicRepository';
 import type {ICampusBannerRepository} from '../data/repositories/ICampusBannerRepository';
 import type {ICafeteriaRepository} from '../data/repositories/ICafeteriaRepository';
@@ -27,7 +28,6 @@ import {
   type CampusTimetableSessionViewData,
 } from '../model/campusHome';
 import {formatLocalDateKey} from '../model/cafeteria';
-import {toAcademicCalendarEventSource} from './academicCalendarEventMapper';
 import {
   getDefaultCampusHomeBannerViewData,
   loadCampusHomeBannerViewData,
@@ -323,51 +323,15 @@ const loadTimetablePreview = async ({
   };
 };
 
-const buildAcademicBadge = ({
-  isImportant,
-  kind,
-}: {
-  isImportant?: boolean;
-  kind: ReturnType<typeof toAcademicCalendarEventSource>['kind'];
-}): CampusAcademicEventBadgeViewData | undefined => {
-  if (isImportant) {
-    return {
-      label: '중요',
-      placement: 'inline',
-      tone: 'pink',
-    };
-  }
-
-  switch (kind) {
-    case 'exam':
-      return {
-        label: '시험',
-        placement: 'trailing',
-        tone: 'blue',
-      };
-    case 'registration':
-      return {
-        label: '학사',
-        placement: 'trailing',
-        tone: 'brand',
-      };
-    case 'holiday':
-      return {
-        label: '휴일',
-        placement: 'trailing',
-        tone: 'orange',
-      };
-    case 'closure':
-      return {
-        label: '휴강',
-        placement: 'trailing',
+const buildAcademicBadge = (
+  isImportant?: boolean,
+): CampusAcademicEventBadgeViewData | undefined =>
+  isImportant
+    ? {
+        label: '중요',
         tone: 'pink',
-      };
-    case 'semester':
-    default:
-      return undefined;
-  }
-};
+      }
+    : undefined;
 
 const formatAcademicDateRangeLabel = (startDate: string, endDate: string) => {
   const start = normalizeDate(startDate);
@@ -380,12 +344,15 @@ const formatAcademicDateRangeLabel = (startDate: string, endDate: string) => {
 
 const mapScheduleToAcademicPreviewItem = (
   schedule: Awaited<ReturnType<IAcademicRepository['getSchedules']>>[number],
+  index: number,
 ): CampusAcademicEventViewData => {
-  const source = toAcademicCalendarEventSource(schedule);
   const startDate = normalizeDate(schedule.startDate);
+  const colorTone = getAcademicCalendarEventColorTone(index);
 
   return {
-    badge: buildAcademicBadge(source),
+    badge: buildAcademicBadge(schedule.isPrimary),
+    dateBoxBackgroundColor: colorTone.accentColor,
+    dateBoxTextColor: colorTone.barTextColor,
     dateRangeLabel: formatAcademicDateRangeLabel(
       schedule.startDate,
       schedule.endDate,
