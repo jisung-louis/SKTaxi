@@ -16,7 +16,8 @@
 - 실제 앱 코드에서 호출 중인 endpoint를 우선 기록한다.
 - “완료/부분 연결/미연결”은 backend 전체가 아니라 **앱 사용자 기능 기준**으로 판단한다.
 - 실서버 연동 디버깅을 위해 로깅은 허용하되, 인증 정보와 민감 데이터는 반드시 마스킹한다.
-- 참고: 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`는 2026-03-29 기준 backend 계약이 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다.
+- 참고: 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`와 목록용 `GET /v1/admin/members` 확장 계약(`realname`, `lastLoginOs`, `currentAppVersion`, `sortBy/sortDirection`)은 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다. `currentAppVersion`은 최근 활성 FCM 토큰의 `app_version` 기준으로 제공된다.
+- 참고: 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`도 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다.
 
 ---
 
