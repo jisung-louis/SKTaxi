@@ -2,14 +2,6 @@ export {
   JoinRequestModal,
 } from './components';
 
-export { FirebasePartyRepository } from './data/repositories/FirebasePartyRepository';
-export {
-  FirebaseNotificationActionRepository,
-  FirestoreNotificationActionRepository,
-} from './data/repositories/FirebaseNotificationActionRepository';
-export {
-  FirestorePartyRepository,
-} from './data/repositories/FirebasePartyRepository';
 export type { IPartyRepository } from './data/repositories/IPartyRepository';
 export type {
   INotificationActionRepository,

@@ -1,5 +1,4 @@
 export type { IChatRepository } from './data/repositories/IChatRepository';
-export { SpringChatRepository } from './data/repositories/SpringChatRepository';
 
 export { useChatActions } from './hooks/useChatActions';
 export type { UseChatActionsResult } from './hooks/useChatActions';

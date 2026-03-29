@@ -1,11 +1,3 @@
-export {
-  FirebaseCourseRepository,
-  FirestoreCourseRepository,
-} from './data/repositories/FirebaseCourseRepository';
-export {
-  FirebaseTimetableRepository,
-  FirestoreTimetableRepository,
-} from './data/repositories/FirebaseTimetableRepository';
 export type { ICourseRepository } from './data/repositories/ICourseRepository';
 export type {
   ITimetableRepository,

@@ -1,17 +1,5 @@
-export {
-  FirebaseAppConfigRepository,
-  FirestoreAppConfigRepository,
-} from './data/repositories/FirebaseAppConfigRepository';
-export {
-  FirebaseAppNoticeRepository,
-  FirestoreAppNoticeRepository,
-} from './data/repositories/FirebaseAppNoticeRepository';
 export {SpringAppNoticeRepository} from './data/repositories/SpringAppNoticeRepository';
 export {SpringAppConfigRepository} from './data/repositories/SpringAppConfigRepository';
-export {
-  FirebaseInquiryRepository,
-  FirestoreInquiryRepository,
-} from './data/repositories/FirebaseInquiryRepository';
 export type {
   AppNotice,
   IAppNoticeRepository,
@@ -46,8 +34,6 @@ export { PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
 export { SettingScreen } from './screens/SettingScreen';
 export { TermsOfUseScreen } from './screens/TermsOfUseScreen';
 export { AppNoticeFeedList } from './components/AppNoticeFeedList';
-export {MockLegalDocumentRepository} from './data/repositories/MockLegalDocumentRepository';
-export {MockInquiryFormRepository} from './data/repositories/MockInquiryFormRepository';
 
 export type {
   InquiryFormTypeKey,

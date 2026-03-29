@@ -1,9 +1,5 @@
 export { MinecraftSection } from './components/MinecraftSection';
 
-export {
-  FirebaseMinecraftRepository,
-  FirestoreMinecraftRepository,
-} from './data/repositories/FirebaseMinecraftRepository';
 export type {
   DeleteAccountParams,
   IMinecraftRepository,

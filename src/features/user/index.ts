@@ -2,10 +2,6 @@ export {MyPageMenuSection} from './components/MyPageMenuSection';
 export {MyPageStatCard} from './components/MyPageStatCard';
 
 export type {IMyPageRepository} from './data/repositories/IMyPageRepository';
-export {
-  FirebaseNotificationRepository,
-  FirestoreNotificationRepository,
-} from './data/repositories/FirebaseNotificationRepository';
 export {SpringNotificationRepository} from './data/repositories/SpringNotificationRepository';
 export type {
   INotificationRepository,
@@ -88,11 +84,6 @@ export {MyPostsScreen} from './screens/MyPostsScreen';
 export {NotificationScreen} from './screens/NotificationScreen';
 export {NotificationSettingsScreen} from './screens/NotificationSettingsScreen';
 export {TaxiHistoryScreen} from './screens/TaxiHistoryScreen';
-export {MockAccountManagementRepository} from './data/repositories/MockAccountManagementRepository';
-export {MockMyPageRepository} from './data/repositories/MockMyPageRepository';
-export {MockNotificationSettingsScreenRepository} from './data/repositories/MockNotificationSettingsScreenRepository';
-export {MockProfileEditRepository} from './data/repositories/MockProfileEditRepository';
-export {MockUserActivityRepository} from './data/repositories/MockUserActivityRepository';
 
 export {
   DEFAULT_USER_DISPLAY_NAME,
