@@ -607,7 +607,6 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - `src/features/board/hooks/useBoardDetailData.ts`
 - `src/features/notice/hooks/useNoticeHomeData.ts`
 - `src/features/notice/hooks/useNoticeDetailData.ts`
-- `src/features/notice/testing/MockNoticeRepository.ts`
 - `src/features/community/application/communityBoardQuery.ts`
 - `src/features/community/hooks/useCommunityBoardData.ts`
 - `src/features/campus/hooks/useAcademicCalendarDetailData.ts`
@@ -648,7 +647,7 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 
 - Board detail은 더 이상 전용 mock singleton을 거치지 않고 중앙 DI `boardRepository`에서 게시글/댓글을 읽어 화면 모델로 조합한다.
 - Notice home/detail은 전용 home/detail repository entrypoint를 제거하고 중앙 DI `noticeRepository` + 기존 hook/query 경계로 수렴했다.
-- `MockNoticeRepository`는 기존 notice mock 화면 데이터를 seed로 흡수해 notice domain mock source of truth를 한 곳으로 모았다.
+- Notice domain에 남아 있던 mock source path 정리를 통해 runtime 경로는 중앙 DI `noticeRepository` 기준으로만 유지한다.
 - Community board home은 `communityBoardQuery`를 통해 중앙 DI `boardRepository` 결과를 화면 모델로 변환하고, feature-local `communityHomeRepository` 의존을 제거했다.
 - Campus academic calendar detail은 중앙 DI `academicRepository`에서 schedule을 읽어 detail source로 변환한다.
 - Campus home은 `campusHomeQuery`에서 중앙 DI `noticeRepository` / `userRepository` / `timetableRepository` / `courseRepository` / `cafeteriaRepository` / `academicRepository`와 기존 taxi query를 조합하는 구조로 수렴했다.

@@ -74,7 +74,7 @@ Cloud Functions는 **“데이터가 이렇게 바뀌었을 때 / 이 시간이 
 
 2. **추상화 이점**  
    - 구현체를 `FirestorePartyRepository` → `SpringPartyRepository`처럼 바꿀 수 있어, 백엔드를 Spring으로 옮겨도 **호출부(훅/화면) 시그니처는 그대로** 유지 가능  
-   - 테스트 시 `MockPartyRepository` 등으로 대체 가능
+   - 테스트 시 목적에 맞는 test double 구현으로 대체 가능
 
 **데이터 흐름:**  
 `화면/훅` → `usePartyRepository()` 등으로 Repository 획득 → `createParty()`, `subscribeToParties()` 등 호출 → **Firestore SDK로 직접** `parties` 컬렉션 읽기/쓰기/구독.  
