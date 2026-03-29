@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { BoardPost, BoardSearchFilters } from '../model/types';
 import type { BoardFilterOptions } from '../data/repositories/IBoardRepository';
-import { filterVisibleBoardPosts } from '../services/boardModerationService';
 import {
   filterBoardPostsBySearchText,
   toBoardFilterOptions,
@@ -21,17 +20,11 @@ export interface UseBoardPostsResult {
   refresh: () => void;
 }
 
-async function resolveVisiblePosts(
+function resolveVisiblePosts(
   posts: BoardPost[],
   filters: BoardSearchFilters,
-): Promise<BoardPost[]> {
-  const searchedPosts = filterBoardPostsBySearchText(posts, filters.searchText);
-
-  try {
-    return await filterVisibleBoardPosts(searchedPosts);
-  } catch {
-    return searchedPosts;
-  }
+) {
+  return filterBoardPostsBySearchText(posts, filters.searchText);
 }
 
 export function useBoardPosts(
@@ -52,7 +45,7 @@ export function useBoardPosts(
 
   const applyPosts = useCallback(
     async (nextPosts: BoardPost[], requestId: number, append = false) => {
-      const visiblePosts = await resolveVisiblePosts(nextPosts, filters);
+      const visiblePosts = resolveVisiblePosts(nextPosts, filters);
       if (!isMountedRef.current || requestId !== requestIdRef.current) {
         return;
       }
@@ -77,7 +70,7 @@ export function useBoardPosts(
       unsubscribeRef.current?.();
       unsubscribeRef.current = boardRepository.subscribeToPosts(filterOptions, POSTS_PER_PAGE, {
         onData: (nextPosts) => {
-          void applyPosts(nextPosts, requestId);
+          applyPosts(nextPosts, requestId).catch(() => undefined);
         },
         onError: (err) => {
           if (!isMountedRef.current || requestId !== requestIdRef.current) {
@@ -145,12 +138,12 @@ export function useBoardPosts(
     setPosts([]);
     cursorRef.current = null;
     setHasMore(true);
-    void loadAndSubscribe();
+    loadAndSubscribe().catch(() => undefined);
   }, [loadAndSubscribe]);
 
   useEffect(() => {
     isMountedRef.current = true;
-    void loadAndSubscribe();
+    loadAndSubscribe().catch(() => undefined);
 
     return () => {
       isMountedRef.current = false;

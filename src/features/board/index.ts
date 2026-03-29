@@ -52,8 +52,6 @@ export {BoardWriteScreen} from './screens/BoardWriteScreen';
 
 export {
   BOARD_REPORT_CATEGORIES,
-  blockBoardAuthor,
-  filterVisibleBoardPosts,
   submitBoardCommentReport,
   submitBoardPostReport,
 } from './services/boardModerationService';

@@ -1,5 +1,4 @@
 import type {IBoardRepository} from '@/features/board/data/repositories/IBoardRepository';
-import {filterVisibleBoardPosts} from '@/features/board/services/boardModerationService';
 import {
   filterBoardPostsBySearchText,
   toBoardFilterOptions,
@@ -65,15 +64,13 @@ export const loadCommunityBoardPage = async ({
           limit,
         );
 
-  const visibleItems = await filterVisibleBoardPosts(
-    filterBoardPostsBySearchText(page.data, filters.searchText),
-  );
+  const visibleItems = filterBoardPostsBySearchText(page.data, filters.searchText);
 
   let featuredPost: CommunityBoardSourceItem | undefined;
 
   if (!filters.category && !filters.searchText && cursor == null) {
     const popularPage = await boardRepository.getPosts({sortBy: 'popular'}, 1);
-    const visiblePopular = await filterVisibleBoardPosts(popularPage.data);
+    const visiblePopular = popularPage.data;
     const [popularPost] = visiblePopular.sort(
       (left, right) =>
         getPostPopularityScore(right) - getPostPopularityScore(left),
