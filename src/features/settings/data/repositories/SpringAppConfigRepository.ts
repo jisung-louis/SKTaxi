@@ -25,9 +25,7 @@ export class SpringAppConfigRepository implements IAppConfigRepository {
       modalConfig.message = data.message;
     }
 
-    if (data.showButton) {
-      modalConfig.showButton = true;
-    }
+    modalConfig.showButton = data.showButton;
 
     if (data.buttonText) {
       modalConfig.buttonText = data.buttonText;

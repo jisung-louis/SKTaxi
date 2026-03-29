@@ -14,25 +14,17 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigation } from '@/app/navigation/AppNavigation';
 import { AppProviders } from '@/app/providers/AppProviders';
 import { AppRuntimeHost } from '@/app/bootstrap/AppRuntimeHost';
-import { useAppBootstrap } from '@/app/bootstrap/useAppBootstrap';
-import { ForceUpdateModal } from '@/shared/ui/ForceUpdateModal';
+import { StartupModalHost } from '@/app/bootstrap/StartupModalHost';
 import '@/shared/lib/firebase';
 
 const AppContent = () => {
-  const { forceUpdateRequired, modalConfig } = useAppBootstrap();
-
   return (
-    <>
-      <AppProviders>
-        <AppNavigation>
-          <AppRuntimeHost />
-        </AppNavigation>
-      </AppProviders>
-      <ForceUpdateModal
-        visible={forceUpdateRequired}
-        config={modalConfig}
-      />
-    </>
+    <AppProviders>
+      <AppNavigation>
+        <AppRuntimeHost />
+        <StartupModalHost />
+      </AppNavigation>
+    </AppProviders>
   );
 };
 

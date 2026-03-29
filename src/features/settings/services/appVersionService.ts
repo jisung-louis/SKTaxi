@@ -6,6 +6,18 @@ import { appConfigRepository } from '../data/composition/settingsRuntime';
 
 export type { VersionModalConfig } from '@/shared/types/version';
 
+export type VersionCheckResult =
+  | {
+      status: 'success';
+      needsUpdate: boolean;
+      forceUpdate: boolean;
+      minimumVersion: string;
+      modalConfig?: VersionModalConfig;
+    }
+  | {
+      status: 'error';
+    };
+
 export function getCurrentAppVersion(): string {
   try {
     try {
@@ -76,18 +88,14 @@ export async function getMinimumRequiredVersion(): Promise<{
   };
 }
 
-export async function checkVersionUpdate(): Promise<{
-  needsUpdate: boolean;
-  forceUpdate: boolean;
-  minimumVersion: string;
-  modalConfig?: VersionModalConfig;
-}> {
+export async function checkVersionUpdate(): Promise<VersionCheckResult> {
   try {
     const currentVersion = getCurrentAppVersion();
     const versionInfo = await getMinimumRequiredVersion();
 
     if (!versionInfo) {
       return {
+        status: 'success',
         needsUpdate: false,
         forceUpdate: false,
         minimumVersion: currentVersion,
@@ -97,6 +105,7 @@ export async function checkVersionUpdate(): Promise<{
     const needsUpdate = isVersionLessThan(currentVersion, versionInfo.version);
 
     return {
+      status: 'success',
       needsUpdate,
       forceUpdate: versionInfo.forceUpdate && needsUpdate,
       minimumVersion: versionInfo.version,
@@ -104,10 +113,6 @@ export async function checkVersionUpdate(): Promise<{
     };
   } catch (error) {
     console.error('버전 체크 중 오류:', error);
-    return {
-      needsUpdate: false,
-      forceUpdate: false,
-      minimumVersion: '0.0.1',
-    };
+    return {status: 'error'};
   }
 }

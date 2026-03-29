@@ -12,3 +12,19 @@ export interface AppVersionInfo {
   forceUpdate: boolean;
   modalConfig?: VersionModalConfig;
 }
+
+export type StartupModalMode =
+  | 'hidden'
+  | 'force-update'
+  | 'soft-update'
+  | 'maintenance';
+
+export type VisibleStartupModalMode = Exclude<StartupModalMode, 'hidden'>;
+
+export interface StartupNoticeItem {
+  id: string;
+  isImportant?: boolean;
+  publishedLabel: string;
+  summary: string;
+  title: string;
+}

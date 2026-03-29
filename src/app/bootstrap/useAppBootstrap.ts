@@ -3,23 +3,30 @@ import { Platform } from 'react-native';
 import ImmersiveMode from 'react-native-immersive-mode';
 
 import { logCrashlyticsMessage, subscribeAuthStateChange } from '@/shared/lib/firebase';
-import type { VersionModalConfig } from '@/shared/types/version';
+import type {
+  StartupModalMode,
+  VersionModalConfig,
+} from '@/shared/types/version';
 
 import { configureGoogleSignin } from './configureGoogleSignin';
 import { checkVersionUpdate } from './versionCheck';
 
 export interface AppBootstrapState {
-  forceUpdateRequired: boolean;
+  checkingVersion: boolean;
+  dismissStartupModal: () => void;
   modalConfig?: VersionModalConfig;
+  retryVersionCheck: () => void;
+  startupModalMode: StartupModalMode;
 }
 
 export const useAppBootstrap = (): AppBootstrapState => {
-  const [forceUpdateRequired, setForceUpdateRequired] = useState(false);
+  const [checkingVersion, setCheckingVersion] = useState(true);
   const [modalConfig, setModalConfig] = useState<VersionModalConfig | undefined>();
+  const [retryKey, setRetryKey] = useState(0);
+  const [startupModalMode, setStartupModalMode] =
+    useState<StartupModalMode>('hidden');
 
   useEffect(() => {
-    let isMounted = true;
-
     configureGoogleSignin();
     logCrashlyticsMessage('App mounted');
 
@@ -29,28 +36,69 @@ export const useAppBootstrap = (): AppBootstrapState => {
       ImmersiveMode.setBarMode('Normal');
     }
 
-    checkVersionUpdate()
-      .then(result => {
-        if (!isMounted || !result.forceUpdate) {
-          return;
-        }
-
-        setForceUpdateRequired(true);
-        setModalConfig(result.modalConfig);
-        console.log('강제 업데이트 필요:', result);
-      })
-      .catch(error => {
-        console.error('버전 체크 실패:', error);
-      });
-
     return () => {
-      isMounted = false;
       unsubscribeAuth();
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    setCheckingVersion(true);
+
+    checkVersionUpdate()
+      .then(result => {
+        if (!isMounted) {
+          return;
+        }
+
+        if (result.status === 'error') {
+          setStartupModalMode('maintenance');
+          setModalConfig(undefined);
+          return;
+        }
+
+        if (!result.needsUpdate) {
+          setStartupModalMode('hidden');
+          setModalConfig(undefined);
+          return;
+        }
+
+        setStartupModalMode(
+          result.forceUpdate ? 'force-update' : 'soft-update',
+        );
+        setModalConfig(result.modalConfig);
+      })
+      .catch(error => {
+        console.error('버전 체크 실패:', error);
+        if (!isMounted) {
+          return;
+        }
+        setStartupModalMode('maintenance');
+        setModalConfig(undefined);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setCheckingVersion(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [retryKey]);
+
   return {
-    forceUpdateRequired,
+    checkingVersion,
+    dismissStartupModal: () => {
+      setStartupModalMode(currentMode =>
+        currentMode === 'soft-update' ? 'hidden' : currentMode,
+      );
+    },
     modalConfig,
+    retryVersionCheck: () => {
+      setRetryKey(currentKey => currentKey + 1);
+    },
+    startupModalMode,
   };
 };

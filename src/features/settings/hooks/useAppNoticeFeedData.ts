@@ -15,6 +15,10 @@ interface UseAppNoticeFeedDataResult {
   reload: () => Promise<void>;
 }
 
+interface UseAppNoticeFeedDataOptions {
+  enabled?: boolean;
+}
+
 const buildBadges = (important: boolean): AppNoticeBadgeViewData[] => {
   if (!important) {
     return [];
@@ -29,13 +33,21 @@ const buildBadges = (important: boolean): AppNoticeBadgeViewData[] => {
   ];
 };
 
-export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
+export const useAppNoticeFeedData = (
+  options: UseAppNoticeFeedDataOptions = {},
+): UseAppNoticeFeedDataResult => {
   const appNoticeRepository = useAppNoticeRepository();
   const [data, setData] = React.useState<AppNoticeFeedViewData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const enabled = options.enabled ?? true;
 
   const load = React.useCallback(async () => {
+    if (!enabled) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -55,11 +67,18 @@ export const useAppNoticeFeedData = (): UseAppNoticeFeedDataResult => {
     } finally {
       setLoading(false);
     }
-  }, [appNoticeRepository]);
+  }, [appNoticeRepository, enabled]);
 
   React.useEffect(() => {
+    if (!enabled) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     load();
-  }, [load]);
+  }, [enabled, load]);
 
   return {
     data,
