@@ -2802,19 +2802,37 @@ Authorization:Bearer <firebase_id_token>
             "endPeriod": 4
           }
         ]
+      },
+      {
+        "id": "course_online_uuid",
+        "semester": "2026-1",
+        "code": "20797",
+        "division": "001",
+        "name": "사랑의인문학(KCU온라인강좌)",
+        "credits": 3,
+        "isOnline": true,
+        "professor": null,
+        "department": "교양",
+        "grade": 1,
+        "category": "교양선택",
+        "location": null,
+        "note": null,
+        "schedule": []
       }
     ],
     "page": 0,
     "size": 20,
-    "totalElements": 500,
-    "totalPages": 25,
-    "hasNext": true,
+    "totalElements": 2,
+    "totalPages": 1,
+    "hasNext": false,
     "hasPrevious": false
   }
 }
 ```
 
-공식 강의 카탈로그는 현재 모두 오프라인 강의로 취급하므로 `isOnline`은 `false`로 내려간다.
+- 공식 강의도 `isOnline`을 가질 수 있다.
+- 공식 온라인 강의는 `schedule=[]`, `location=null`로 응답될 수 있다.
+- 공식 강의와 직접 입력 강의는 저장 모델은 분리하지만, 온라인 의미와 시간표 노출 규칙은 동일하게 맞춘다.
 
 ### 7.2 시간표
 
@@ -2852,7 +2870,7 @@ Authorization:Bearer <firebase_id_token>
     "id": "timetable_uuid",
     "semester": "2026-1",
     "courseCount": 2,
-    "totalCredits": 5,
+    "totalCredits": 6,
     "courses": [
       {
         "id": "course_uuid",
@@ -2869,14 +2887,14 @@ Authorization:Bearer <firebase_id_token>
         ]
       },
       {
-        "id": "manual_course_uuid",
-        "code": "직접 입력",
-        "division": null,
-        "name": "플랫폼세미나",
-        "professor": "직접 입력",
+        "id": "course_online_uuid",
+        "code": "20797",
+        "division": "001",
+        "name": "사랑의인문학(KCU온라인강좌)",
+        "professor": null,
         "location": null,
-        "category": null,
-        "credits": 2,
+        "category": "교양선택",
+        "credits": 3,
         "isOnline": true,
         "schedule": []
       }
@@ -2898,7 +2916,8 @@ Authorization:Bearer <firebase_id_token>
 ```
 
 시간표가 아직 생성되지 않은 경우에도 `200 OK`를 반환하며, `id`는 `null`, `courses`/`slots`는 빈 배열로 내려간다.
-직접 입력 온라인 강의는 `courses[]`에는 포함되지만 `slots[]`에는 포함되지 않는다.
+- 공식 온라인 강의와 직접 입력 온라인 강의는 모두 `courses[]`에는 포함되지만 `slots[]`에는 포함되지 않는다.
+- 공식 온라인 강의는 직접 입력 온라인 강의와 동일하게 시간 충돌 검사 대상에서도 제외된다.
 `semester`를 생략하면 서버는 현재 날짜 기준 `2~7월 -> yyyy-1`, `8~12월 -> yyyy-2`, `1월 -> 전년도 yyyy-2` 규칙으로 학기를 계산한다.
 성결대학교 실제 학기 시작은 3월/9월이지만, 스쿠리는 수강신청과 시간표 준비 수요를 반영해 한 달 앞선 2월/8월부터 새 학기를 사용한다.
 
@@ -3234,6 +3253,9 @@ Authorization:Bearer <firebase_id_token>
 #### GET /v1/cafeteria-menus
 학식 메뉴
 
+`menus`는 기존 호환용 원본 메뉴 문자열 배열이고, `categories`/`menuEntries`는 학식 상세 화면과 Campus home preview용 구조화 필드다.
+이번 계약에는 가격이 포함되지 않으며, `likeCount`/`dislikeCount`와 `badges`는 관리자 입력 메타데이터로 관리한다.
+
 **Query Parameters:**
 
 | 파라미터 | 타입 | 설명 |
@@ -3254,6 +3276,55 @@ Authorization:Bearer <firebase_id_token>
         "theBab": ["돈까스", "된장찌개"],
         "fryRice": ["볶음밥", "짜장면"]
       }
+    },
+    "categories": [
+      {
+        "code": "rollNoodles",
+        "label": "Roll & Noodles"
+      },
+      {
+        "code": "theBab",
+        "label": "The bab"
+      },
+      {
+        "code": "fryRice",
+        "label": "Fry & Rice"
+      }
+    ],
+    "menuEntries": {
+      "2026-02-03": {
+        "rollNoodles": [
+          {
+            "id": "2026-02-03-rollNoodles-우동",
+            "title": "우동",
+            "badges": [],
+            "likeCount": 12,
+            "dislikeCount": 1
+          },
+          {
+            "id": "2026-02-03-rollNoodles-김밥",
+            "title": "김밥",
+            "badges": [
+              {
+                "code": "TAKEOUT",
+                "label": "테이크아웃"
+              }
+            ],
+            "likeCount": 31,
+            "dislikeCount": 2
+          }
+        ],
+        "theBab": [
+          {
+            "id": "2026-02-03-theBab-돈까스",
+            "title": "돈까스",
+            "badges": [],
+            "likeCount": 18,
+            "dislikeCount": 4
+          }
+        ],
+        "fryRice": []
+      }
     }
   }
 }
@@ -3261,6 +3332,8 @@ Authorization:Bearer <firebase_id_token>
 
 #### GET /v1/cafeteria-menus/{weekId}
 특정 주차 학식 메뉴
+
+응답 계약은 `GET /v1/cafeteria-menus`와 동일하다.
 
 **Path Parameters:**
 
@@ -3281,6 +3354,55 @@ Authorization:Bearer <firebase_id_token>
         "rollNoodles": ["우동", "김밥"],
         "theBab": ["돈까스", "된장찌개"],
         "fryRice": ["볶음밥", "짜장면"]
+      }
+    },
+    "categories": [
+      {
+        "code": "rollNoodles",
+        "label": "Roll & Noodles"
+      },
+      {
+        "code": "theBab",
+        "label": "The bab"
+      },
+      {
+        "code": "fryRice",
+        "label": "Fry & Rice"
+      }
+    ],
+    "menuEntries": {
+      "2026-02-03": {
+        "rollNoodles": [
+          {
+            "id": "2026-02-03-rollNoodles-우동",
+            "title": "우동",
+            "badges": [],
+            "likeCount": 12,
+            "dislikeCount": 1
+          },
+          {
+            "id": "2026-02-03-rollNoodles-김밥",
+            "title": "김밥",
+            "badges": [
+              {
+                "code": "TAKEOUT",
+                "label": "테이크아웃"
+              }
+            ],
+            "likeCount": 31,
+            "dislikeCount": 2
+          }
+        ],
+        "theBab": [
+          {
+            "id": "2026-02-03-theBab-돈까스",
+            "title": "돈까스",
+            "badges": [],
+            "likeCount": 18,
+            "dislikeCount": 4
+          }
+        ],
+        "fryRice": []
       }
     }
   }
@@ -5377,7 +5499,47 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 #### POST /v1/admin/cafeteria-menus
 학식 메뉴 등록
 
+`menus` 또는 `menuEntries` 중 하나는 반드시 전달해야 한다.
+둘 다 전달하면 각 날짜/카테고리별 메뉴 제목 배열이 정확히 일치해야 하며, 불일치 시 `400 INVALID_REQUEST`를 반환한다.
+`menuEntries.badges`는 자유 입력 라벨과 optional code를 받으며, code를 생략하면 서버가 label 기반으로 자동 생성한다.
+좋아요/싫어요 카운트는 이번 범위에서 관리자 입력 메타데이터로만 관리한다.
+
 **Request:**
+```json
+{
+  "weekId": "2026-W08",
+  "weekStart": "2026-02-16",
+  "weekEnd": "2026-02-20",
+  "menuEntries": {
+    "2026-02-16": {
+      "rollNoodles": [
+        {
+          "title": "존슨부대찌개",
+          "badges": [
+            {
+              "code": "TAKEOUT",
+              "label": "테이크아웃"
+            }
+          ],
+          "likeCount": 178,
+          "dislikeCount": 22
+        }
+      ],
+      "theBab": [
+        {
+          "title": "돈까스",
+          "badges": [],
+          "likeCount": 31,
+          "dislikeCount": 4
+        }
+      ],
+      "fryRice": []
+    }
+  }
+}
+```
+
+기존 하위호환 요청 예시:
 ```json
 {
   "weekId": "2026-W08",
@@ -5403,9 +5565,51 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
     "weekEnd": "2026-02-20",
     "menus": {
       "2026-02-16": {
-        "rollNoodles": ["우동", "김밥"],
-        "theBab": ["돈까스", "된장찌개"],
-        "fryRice": ["볶음밥", "짜장면"]
+        "rollNoodles": ["존슨부대찌개"],
+        "theBab": ["돈까스"],
+        "fryRice": []
+      }
+    },
+    "categories": [
+      {
+        "code": "rollNoodles",
+        "label": "Roll & Noodles"
+      },
+      {
+        "code": "theBab",
+        "label": "The bab"
+      },
+      {
+        "code": "fryRice",
+        "label": "Fry & Rice"
+      }
+    ],
+    "menuEntries": {
+      "2026-02-16": {
+        "rollNoodles": [
+          {
+            "id": "2026-02-16-rollNoodles-존슨부대찌개",
+            "title": "존슨부대찌개",
+            "badges": [
+              {
+                "code": "TAKEOUT",
+                "label": "테이크아웃"
+              }
+            ],
+            "likeCount": 178,
+            "dislikeCount": 22
+          }
+        ],
+        "theBab": [
+          {
+            "id": "2026-02-16-theBab-돈까스",
+            "title": "돈까스",
+            "badges": [],
+            "likeCount": 31,
+            "dislikeCount": 4
+          }
+        ],
+        "fryRice": []
       }
     }
   }
@@ -5497,24 +5701,27 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
   "semester": "2026-1",
   "courses": [
     {
-      "code": "CSE301",
+      "grade": 1,
+      "category": "교양선택",
+      "code": "20797",
       "division": "001",
-      "name": "소프트웨어공학",
-      "professor": "홍길동",
-      "department": "컴퓨터공학과",
+      "name": "사랑의인문학(KCU온라인강좌)",
       "credits": 3,
-      "grade": 3,
-      "category": "전공필수",
-      "location": "공학관 301",
+      "professor": null,
+      "location": null,
+      "department": "교양",
       "note": null,
-      "schedule": [
-        { "dayOfWeek": 1, "startPeriod": 1, "endPeriod": 2 },
-        { "dayOfWeek": 3, "startPeriod": 1, "endPeriod": 2 }
-      ]
+      "isOnline": true,
+      "schedule": []
     }
   ]
 }
 ```
+
+- `isOnline`은 nullable Boolean이며, 값이 없으면 `false`로 처리한다.
+- `isOnline = false`면 `schedule`이 최소 1개 이상 필요하다.
+- `isOnline = true`면 `schedule`은 비어 있어야 하며, 현재 직접 입력 온라인 강의와 같은 의미로 취급한다.
+- `isOnline = true`일 때 `location`은 입력돼도 서버에서 의미상 사용하지 않고 `null`로 정규화할 수 있다.
 
 **Response (200 OK):**
 ```json
@@ -6325,7 +6532,6 @@ isAdmin == false 시: 403 FORBIDDEN (ADMIN_REQUIRED)
 > - 2026-03-29: Admin Member List contract 확장 — `GET /v1/admin/members`에 `sortBy/sortDirection` 기반 컬럼 정렬과 `lastLoginOs`(`fcm_tokens.platform`)를 추가하고, 이름 컬럼은 `realname` 기준으로 고정
 > - 2026-03-29: FCM token app version 반영 — `POST /v1/members/me/fcm-tokens`에 optional `appVersion`을 추가하고, `GET /v1/admin/members`의 `currentAppVersion`을 최근 활성 FCM 토큰의 `app_version` 기준으로 제공
 > - 2026-03-29: TaxiParty Admin P1 구현 반영 — 관리자 파티 목록/상세/상태 변경 계약과 관련 404/409 에러코드를 `/v3/api-docs` 기준으로 동기화
-> - 2026-03-29: TaxiParty Admin follow-up 구현 반영 — 관리자 멤버 제거/시스템 메시지/pending join request 조회 계약과 관련 404/409/422 에러코드 및 sender 표기 정책을 `/v3/api-docs` 기준으로 동기화
 > - 2026-03-05: Support API 보완 — `GET /v1/cafeteria-menus/{weekId}` 명시 추가
 > - 2026-03-05: Admin Support API 추가 — 문의/신고 운영 조회·처리 (`GET/PATCH /v1/admin/inquiries*`, `GET/PATCH /v1/admin/reports*`)
 > - 2026-03-05: Admin 권한 정책 반영 — `ROLE_ADMIN + @PreAuthorize` 기반 접근 제어와 `ADMIN_REQUIRED` 에러코드 명시, 공개 채팅방 Admin API 검증 규칙 보강

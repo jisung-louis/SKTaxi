@@ -119,8 +119,18 @@ Hooks:
   - 회원 탈퇴는 hard delete 대신 soft delete tombstone(`status`, `withdrawnAt`)으로 관리
   - 탈퇴 시 `members` row는 보존하되 개인정보를 스크럽하고, `linked_accounts`는 전량 삭제
   - 탈퇴한 동일 Firebase UID는 `POST /v1/members`에서 재활성화하지 않고 `409 WITHDRAWN_MEMBER_REJOIN_NOT_ALLOWED`를 반환
-  - 관리자 백오피스용 회원 관리 P1 API는 `/v1/admin/members`, `/v1/admin/members/{memberId}`, `/v1/admin/members/{memberId}/admin-role`로 제공한다.
+  - 관리자 백오피스용 회원 관리 API는 `/v1/admin/members`, `/v1/admin/members/{memberId}`, `/v1/admin/members/{memberId}/activity`, `/v1/admin/members/{memberId}/admin-role`로 제공한다.
+  - 관리자 회원 목록은 `query/status/isAdmin/department` 필터와 `sortBy/sortDirection` 정렬을 지원한다. 정렬 미지정 시 `joinedAt DESC`, null 값은 항상 마지막이다.
+  - 관리자 회원 목록의 이름 컬럼은 `members.realname`을 사용한다.
+  - 관리자 회원 목록의 `lastLoginOs`, `currentAppVersion`은 최근 활성 FCM 토큰(`coalesce(last_used_at, created_at)` 최신)의 `fcm_tokens.platform`, `fcm_tokens.app_version`을 함께 사용한다.
+  - `POST /v1/members/me/fcm-tokens`의 `appVersion`은 optional이며, 신규 토큰 등록 시 미전송하면 `null`로 저장하고 같은 토큰 재등록 시 `null` 또는 빈 문자열이면 기존 값을 유지한다.
+  - 관리자 대시보드 read-model API는 `/v1/admin/dashboard/summary`, `/v1/admin/dashboard/activity`, `/v1/admin/dashboard/recent-items`로 제공한다.
+  - 관리자 대시보드 집계는 모두 `Asia/Seoul` 기준이며, `summary.newMembersToday`는 `members.joinedAt` 기준 오늘 `00:00 ~ generatedAt`, `activity`는 `7 | 30`일 버킷만 지원한다.
+  - `summary.totalMembers`는 `members` 전체 row 수를 사용한다. soft delete tombstone(`WITHDRAWN`)도 포함하며, ACTIVE 전용 카운트는 이번 read model 범위에 포함하지 않는다.
+  - `recent-items`는 현재 저장된 Inquiry/Report/AppNotice/Party만 source로 사용하고, 게시된 앱 공지(`publishedAt <= now`)만 포함한다. 학교 공지 sync 이력이나 별도 운영 action은 대시보드 계약에 포함하지 않는다.
   - 관리자 상세 응답은 운영 화면 요구에 맞춰 `bankAccount`, `notificationSetting`, `withdrawnAt`를 포함한다.
+  - 활동 요약은 ACTIVE 회원만 제공하며, 현재 저장된 post/comment/party/inquiry/report 데이터를 조합한 read-only 관리자 read model이다. 댓글은 삭제되지 않은 comment이면서 부모 post도 삭제되지 않은 경우만 집계한다. 탈퇴 회원은 `409 MEMBER_ACTIVITY_NOT_AVAILABLE_FOR_WITHDRAWN`을 반환한다.
+  - 활동 요약의 count는 `posts/comments/partiesCreated/partiesJoined/inquiries/reportsSubmitted`를 사용하고, recent list는 도메인별 최신 5건으로 유지한다.
   - 관리자 권한 변경은 기존 `members.isAdmin` boolean만 조작하며, 자기 자신의 계정 대상 요청은 `400 SELF_ADMIN_ROLE_CHANGE_NOT_ALLOWED`, 탈퇴 회원 대상 요청은 `409 CONFLICT`로 거부한다.
   - 이번 Phase는 self role change guard만 적용하고, 마지막 관리자 수 계산 같은 추가 운영 정책은 후속 범위로 남긴다.
   - admin-role 변경 감사 로그는 최소 snapshot(`id`, `email`, `nickname`, `isAdmin`, `status`)만 저장하고 `bankAccount`, `notificationSetting`는 적재하지 않는다.
@@ -215,11 +225,34 @@ Hooks:
   - `PartyMember`, `PartyTag`, `MemberSettlement`는 `Party` aggregate 내부 컬렉션으로 관리
   - 영속화는 `PartyRepository` 단일 저장으로 처리(cascade + orphanRemoval)
   - 하위 엔티티 전용 Repository는 현재 운영 코드에서 사용하지 않음
+  - 관리자 운영 목록 조회는 `PartyRepository.searchAdminParties(status, departureDate, query)`로 제공하며, `query`는 출발지/도착지/leaderId/leader nickname을 검색한다.
 
 파티 수정 정책:
   - `PATCH /v1/parties/{id}`는 `departureTime`, `detail`만 허용 (화이트리스트)
   - `OPEN`, `CLOSED` 상태에서만 수정 가능
   - `CLOSED` 상태에서 수정해도 상태 자동 변경 없음 (`reopen`으로만 모집 재개)
+
+관리자 운영 API:
+  - `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`
+  - `DELETE /v1/admin/parties/{partyId}/members/{memberId}`, `POST /v1/admin/parties/{partyId}/messages/system`, `GET /v1/admin/parties/{partyId}/join-requests`
+  - 관리자 상태 변경 액션은 `CLOSE | REOPEN | CANCEL | END` 4개만 제공한다.
+  - 관리자라도 기존 상태 머신을 우회하지 않는다.
+    - `CLOSE`: `OPEN`에서만 가능
+    - `REOPEN`: `CLOSED`에서만 가능
+    - `CANCEL`: `OPEN | CLOSED`에서만 가능
+    - `END`: `ARRIVED`에서만 가능 (`forceEnd()` 재사용)
+  - 상태 변경 후 파티 채팅방 시스템 메시지/SSE/Notification event는 기존 public service와 동일한 규칙을 재사용한다.
+  - 관리자 audit snapshot은 최소 상태 필드(`id`, `status`, `endReason`, `settlementStatus`, `endedAt`)만 저장한다.
+  - 운영 응답에서는 현재 도메인에 없는 `gender`, `lastStatusChangedAt` 같은 파생 필드를 억지로 만들지 않는다.
+  - 관리자 멤버 제거는 기존 `party.removeMember(...)` + 채팅방 membership sync + leave 시스템 메시지 + SSE `KICKED` + `PartyMemberKicked` notification event를 재사용한다.
+    - leader 제거는 `PARTY_LEADER_REMOVAL_NOT_ALLOWED`로 차단한다.
+    - `ARRIVED`, `ENDED` 상태에서는 멤버 제거를 허용하지 않는다.
+  - 관리자 시스템 메시지는 party chat room이 있을 때만 생성되며, 서버 내부적으로 `SYSTEM` + `ADMIN_SYSTEM` source를 사용해 leader/member 사칭을 피한다.
+    - 응답/표시 기준 `senderName`은 `관리자`, `senderPhotoUrl`은 `null`이다.
+  - 관리자 join request 조회는 현재 `PENDING` 상태만 대상으로 하며, `requestedAt(createdAt) DESC` 최신순 정렬을 사용한다.
+  - write admin audit(`멤버 제거`, `시스템 메시지`)는 최소 snapshot만 저장한다.
+    - party member: `partyId`, `memberId`, `isLeader`, `joinedAt`
+    - chat message: `id`, `chatRoomId`, `senderId`, `senderName`, `type`, `source`, `text`, `createdAt`
 
 파티 자동 종료 정책 (@Scheduled):
   - 실행 주기: 4시간마다
@@ -356,12 +389,12 @@ Hooks:
     - id, title, content, authorId, authorName, authorProfileImage
     - isAnonymous, anonId, category
     - viewCount, likeCount, commentCount, bookmarkCount
-    - isPinned, isDeleted, images[], createdAt, updatedAt
+    - isPinned, isHidden, isDeleted, images[], createdAt, updatedAt
   - Comment
     - id, postId, content, authorId, authorName, authorProfileImage
     - isAnonymous, anonId (= "{postId}:{userId}", 글 단위 익명 식별자)
     - anonymousOrder (서버 계산, 아래 규칙 참조)
-    - parentId (self-reference), likeCount, isDeleted
+    - parentId (self-reference), likeCount, isHidden, isDeleted
     - depth 제한 없음 (무제한 self-reference)
     - 조회 응답은 flat list + `parentId` + `depth` + `likeCount` + `isLiked`
     - 부모 삭제 정책(B): 부모는 placeholder("삭제된 댓글입니다")로 soft delete, 자식은 유지
@@ -400,6 +433,23 @@ Hooks:
   - 게시글/댓글 본문은 보존
   - `authorId`, `authorName`, `authorProfileImage`는 탈퇴 사용자 익명화 값으로 치환
   - 탈퇴 회원의 좋아요/북마크 기록은 삭제하고 `likeCount`, `bookmarkCount`를 보정
+
+관리자 moderation 정책:
+  - 관리자 전용 API:
+    - `GET /v1/admin/posts`
+    - `GET /v1/admin/posts/{postId}`
+    - `PATCH /v1/admin/posts/{postId}/moderation`
+    - `GET /v1/admin/comments`
+    - `PATCH /v1/admin/comments/{commentId}/moderation`
+  - moderation 상태는 `VISIBLE`, `HIDDEN`, `DELETED`
+  - 기존 soft delete를 유지하고 `isHidden` visibility 필드만 최소 확장해 상태를 표현한다.
+    - `VISIBLE`: `isHidden=false`, `isDeleted=false`
+    - `HIDDEN`: `isHidden=true`, `isDeleted=false`
+    - `DELETED`: 기존 soft delete (`isDeleted=true`)
+  - 게시글 public 조회는 `HIDDEN`, `DELETED`를 모두 제외한다.
+  - 댓글 public 조회는 `DELETED`와 동일하게 thread 구조를 유지해야 하므로, `HIDDEN` 댓글도 placeholder로 마스킹한다.
+  - `commentCount`는 public active comment 기준이므로 `VISIBLE -> HIDDEN/DELETED` 시 감소하고 `HIDDEN -> VISIBLE` 시 증가한다.
+  - `DELETED`는 복구하지 않고, `HIDDEN <-> VISIBLE`만 허용한다. 같은 상태 재요청이나 `DELETED -> *`는 `409`로 차단한다.
 ```
 
 ### 3.5 Notice (공지사항)
@@ -522,8 +572,9 @@ Hooks:
 엔티티:
   - Course
     - id, grade, category, code, division, name
-    - credits, professor, schedule[], location, isOnline(false)
+    - credits, professor, schedule[], location, isOnline
     - note, semester, department
+    - 공식 강의도 `isOnline=true`를 가질 수 있으며, 이 경우 `schedule[]`은 비어 있어야 한다.
   - CourseSchedule (Embedded)
     - dayOfWeek (1-6), startPeriod, endPeriod
   - UserTimetable
@@ -532,9 +583,10 @@ Hooks:
     - 공식 강의는 `UserTimetableCourse`, 직접 입력 강의는 `UserTimetableManualCourse`로 별도 저장
     - 같은 시간표 내 동일 공식 강의 중복 추가 금지
     - 오프라인 강의 추가 시 dayOfWeek/startPeriod/endPeriod overlap 차단
-    - 온라인 직접 입력 강의는 시간 충돌 검사 대상이 아니며 `slots[]`에 포함되지 않음
+    - 온라인 공식 강의와 온라인 직접 입력 강의는 모두 시간 충돌 검사 대상이 아니며 `slots[]`에 포함되지 않음
     - 조회 응답은 공식 강의와 직접 입력 강의를 합친 `courses[] + slots[]` 구조를 사용
-    - `courses[]` 각 항목은 `isOnline`을 포함하고, 직접 입력 강의는 자체 ID를 사용
+    - `courses[]` 각 항목은 `isOnline`을 포함하고, 공식 강의/직접 입력 강의 모두 실제 온라인 여부를 그대로 반영한다.
+    - 공식 온라인 강의는 직접 입력 온라인 강의와 같은 의미로 취급하지만 저장 모델은 합치지 않는다.
     - `GET /v1/timetables/my`는 semester 미지정 시 현재 날짜 기준 `2~7월 -> yyyy-1`, `8~12월 -> yyyy-2`, `1월 -> 전년도 yyyy-2` 규칙으로 현재 학기를 해석
     - 실제 학교 학기 시작은 3월/9월이지만, 수강신청/시간표 준비 수요를 반영해 스쿠리 학기 기준을 한 달 앞당겨 사용
   - UserTimetableCourse
@@ -549,6 +601,7 @@ Hooks:
   - Course 검색
     - semester/department/professor/dayOfWeek(1-6)/grade 필터 지원
     - search는 강의명/과목코드/카테고리/교수/강의실/비고를 대상으로 한다
+    - 공식 온라인 강의는 `isOnline=true`, `schedule=[]`, `location=null`로 정규화해 반환할 수 있다.
   - Timetable 학기 옵션
     - `GET /v1/timetables/my/semesters`
     - 강의 카탈로그 학기 + 내 시간표 학기(직접 입력 포함)의 합집합을 최신 학기 우선으로 반환
@@ -617,6 +670,11 @@ Hooks:
   - CafeteriaMenu
     - weekId, weekStart, weekEnd
     - menus: Map<date, Map<restaurant, items[]>>
+    - menuEntries: Map<date, Map<category, entries[]>>
+    - entry: title, badges[] (code, label), likeCount, dislikeCount
+    - 조회 응답은 기존 `menus`를 유지하면서 `categories`, `menuEntries`를 함께 제공한다.
+    - 가격은 학식 API 계약에 포함하지 않는다.
+    - 좋아요/싫어요 수와 보조 태그는 관리자 입력 메타데이터로 저장하며, 이번 범위에 사용자 반응 등록 API는 포함하지 않는다.
   - AdminAuditLog
     - id, actorId, action, targetType, targetId
     - diffBefore (JSON snapshot), diffAfter (JSON snapshot), timestamp
@@ -1429,3 +1487,5 @@ public enum MessageDirection {
 > - 2026-03-10: Phase 11 Admin 공통 인프라 반영 — `AdminAuditLog` 엔티티를 `actorId/action/targetType/targetId/diffBefore/diffAfter/timestamp` 구조로 구체화하고, Support 운영 목록/인가 공통 규약을 반영
 > - 2026-03-25: Notice 북마크 구현 반영 — `NoticeBookmark` 저장 모델, 내 북마크 공지 목록 naming parity(`rssPreview`, `postedAt`), withdrawal cleanup 정책 추가
 > - 2026-03-29: Member Admin API review fix — self role change 금지와 admin-role 감사 로그 최소 snapshot 정책을 Member 도메인 설명에 반영하고, 관리자 상세 응답의 `bankAccount` 유지 계약을 명시
+> - 2026-03-29: TaxiParty Admin P1 반영 — 관리자 파티 목록/상세/상태 변경 API와 검색 기준, 상태 전이 재사용 정책, 최소 감사 snapshot 범위를 TaxiParty 도메인 설명에 반영
+> - 2026-03-29: TaxiParty Admin follow-up 반영 — 관리자 멤버 제거/시스템 메시지/pending join request 조회와 leader 제거 금지, 관리자 시스템 메시지 sender semantics, pending 최신순 조회 규칙을 반영
