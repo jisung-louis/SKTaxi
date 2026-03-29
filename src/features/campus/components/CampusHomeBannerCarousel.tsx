@@ -17,9 +17,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
   interpolate,
   interpolateColor,
+  useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
 } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -340,9 +340,7 @@ export const CampusHomeBannerCarousel = ({
   }, [currentIndex, items.length]);
 
   React.useEffect(() => {
-    progress.value = withTiming(currentIndex, {
-      duration: 280,
-    });
+    progress.value = currentIndex;
   }, [currentIndex, progress]);
 
   const clearAutoScrollTimer = React.useCallback(() => {
@@ -385,6 +383,15 @@ export const CampusHomeBannerCarousel = ({
     [items.length, snapToInterval],
   );
 
+  const handleScroll = useAnimatedScrollHandler(
+    event => {
+      const nextProgress = event.contentOffset.x / snapToInterval;
+
+      progress.value = Math.max(0, Math.min(items.length - 1, nextProgress));
+    },
+    [items.length, progress, snapToInterval],
+  );
+
   const handleScrollToIndexFailed = React.useCallback(
     ({index}: {index: number}) => {
       flatListRef.current?.scrollToOffset({
@@ -408,7 +415,7 @@ export const CampusHomeBannerCarousel = ({
 
   return (
     <View style={styles.section}>
-      <FlatList
+      <Animated.FlatList
         ref={flatListRef}
         contentContainerStyle={styles.listContent}
         data={[...items]}
@@ -423,9 +430,11 @@ export const CampusHomeBannerCarousel = ({
         keyExtractor={item => item.id}
         onScrollBeginDrag={clearAutoScrollTimer}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScroll={handleScroll}
         onScrollToIndexFailed={handleScrollToIndexFailed}
         pagingEnabled={false}
         renderItem={renderItem}
+        scrollEventThrottle={16}
         showsHorizontalScrollIndicator={false}
         snapToAlignment="start"
         snapToInterval={snapToInterval}
