@@ -165,6 +165,9 @@ export const TaxiArriveSettlementSheet = ({
             setBankName(nextBankName);
             setBankDropdownOpen(false);
           }}
+          onRequestClose={() => {
+            setBankDropdownOpen(false);
+          }}
           onPressTrigger={() => {
             setBankDropdownOpen(current => !current);
           }}

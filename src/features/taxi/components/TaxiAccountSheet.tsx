@@ -130,6 +130,9 @@ export const TaxiAccountSheet = ({
             setBankName(nextBankName);
             setBankDropdownOpen(false);
           }}
+          onRequestClose={() => {
+            setBankDropdownOpen(false);
+          }}
           onPressTrigger={() => {
             setBankDropdownOpen(current => !current);
           }}
