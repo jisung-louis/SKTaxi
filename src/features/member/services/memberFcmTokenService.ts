@@ -4,6 +4,7 @@ import {
   getCurrentFcmToken,
   subscribeMessagingTokenRefresh,
 } from '@/shared/lib/firebase/messaging';
+import {getCurrentAppVersion} from '@/features/settings/services/appVersionService';
 
 import type { MemberFcmTokenPlatform } from '../model/types';
 import type { IMemberRepository } from '../data/repositories/IMemberRepository';
@@ -57,7 +58,11 @@ const registerResolvedFcmToken = async ({
     return;
   }
 
-  await memberRepository.registerFcmToken(token, platform);
+  await memberRepository.registerFcmToken(
+    token,
+    platform,
+    getCurrentAppVersion(),
+  );
 };
 
 export const saveMemberFcmToken = async ({

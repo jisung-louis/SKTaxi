@@ -24,6 +24,7 @@ export interface IMemberRepository {
   registerFcmToken(
     token: string,
     platform: MemberFcmTokenPlatform,
+    appVersion?: string,
   ): Promise<void>;
 
   deleteFcmToken(token: string): Promise<void>;

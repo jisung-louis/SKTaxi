@@ -39,8 +39,13 @@ export class SpringMemberRepository implements IMemberRepository {
     return mapMemberResponseDto(response.data);
   }
 
-  async registerFcmToken(token: string, platform: 'ios' | 'android') {
+  async registerFcmToken(
+    token: string,
+    platform: 'ios' | 'android',
+    appVersion?: string,
+  ) {
     await this.apiClient.registerFcmToken({
+      appVersion,
       token,
       platform,
     });
