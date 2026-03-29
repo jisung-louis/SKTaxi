@@ -58,11 +58,12 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({
       return;
     }
 
-    if (!config?.buttonUrl) {
+    if (config?.buttonUrl) {
+      openAppStore(config.buttonUrl);
       return;
     }
 
-    openAppStore(config.buttonUrl);
+    openAppStore();
   };
 
   const iconName =
@@ -94,7 +95,6 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({
       visible={visible}
       transparent={false}
       animationType="fade"
-      onRequestClose={showCloseButton ? onPressClose : undefined}
       statusBarTranslucent
     >
       <SafeAreaView style={styles.container}>
@@ -169,19 +169,21 @@ export const ForceUpdateModal: React.FC<ForceUpdateModalProps> = ({
                   <View style={styles.noticeList}>
                     {noticeItems.map(item => (
                       <View key={item.id} style={styles.noticeCard}>
-                        <View style={styles.noticeMetaRow}>
-                          {item.isImportant ? (
-                            <View style={styles.importantBadge}>
-                              <Text style={styles.importantBadgeText}>중요</Text>
-                            </View>
-                          ) : (
-                            <View />
-                          )}
-                          <Text style={styles.noticePublishedLabel}>
-                            {item.publishedLabel}
-                          </Text>
+                        <View style={styles.noticeTitleRow}>
+                          <Text numberOfLines={2} style={styles.noticeCardTitle}>{item.title}</Text>
+                          <View style={styles.noticeTitleBadgeRow}>
+                            {item.isImportant ? (
+                              <View style={styles.importantBadge}>
+                                <Text style={styles.importantBadgeText}>중요</Text>
+                              </View>
+                            ) : (
+                              null
+                            )}
+                            <Text style={styles.noticePublishedLabel}>
+                              {item.publishedLabel}
+                            </Text>
+                          </View>
                         </View>
-                        <Text style={styles.noticeCardTitle}>{item.title}</Text>
                         <Text numberOfLines={2} style={styles.noticeSummary}>
                           {item.summary}
                         </Text>
@@ -311,11 +313,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: 14,
   },
-  noticeMetaRow: {
+  noticeTitleRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  noticeTitleBadgeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
   },
   importantBadge: {
     backgroundColor: COLORS.accent.pinkSoft,
@@ -339,7 +346,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: 6,
   },
   noticeSummary: {
     color: COLORS.text.secondary,
