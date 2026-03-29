@@ -654,8 +654,9 @@ Phase E와 이번 후속 스레드까지 반영한 현재 구현은 Taxi Party r
 - Campus home은 `campusHomeQuery`에서 중앙 DI `noticeRepository` / `userRepository` / `timetableRepository` / `courseRepository` / `cafeteriaRepository` / `academicRepository`와 기존 taxi query를 조합하는 구조로 수렴했다.
 - Cafeteria detail은 `cafeteriaMenuAssembler`를 통해 중앙 DI `cafeteriaRepository`의 weekly menu를 화면 모델로 재구성하고, 가격/반응 mock metadata 의존을 제거했다.
 - 2026-03-29 기준 backend는 학식 응답에 `categories`와 `menuEntries`를 추가 제공하므로, Cafeteria detail과 Campus preview는 Figma 구현 시 구조화 메타데이터를 직접 사용할 수 있다.
+- 2026-03-29 기준 backend는 같은 주 안에서 동일한 `category + title`의 메타데이터 일관성도 저장 시점에 강제하므로, 프론트는 주간 동일성을 전제로 상세 dedupe와 preview 대표 메뉴 선택을 구현할 수 있다.
 - Campus home / cafeteria detail의 feature-local repository entrypoint는 제거했고, screen-level source of truth를 중앙 DI + query/assembler 기준으로 정리했다.
-- `MockCafeteriaRepository`는 local 날짜 키 기준으로 동작하도록 정리했고, detail 전용 mock metadata 파일 대신 central weekly menu seed만 유지한다.
+- `MockCafeteriaRepository`는 더 이상 runtime/import 참조가 없어 제거했고, 학식 데이터 source of truth는 중앙 DI `cafeteriaRepository`로 일원화했다.
 - `MockCourseRepository` / `MockTimetableRepository`는 중앙 DI 기준으로 campus home timetable preview를 재현할 수 있도록 timetable detail mock을 seed source로 흡수했다.
 - Board/Notice/Campus에 남아 있던 Firebase repository 파일과 dead local repository surface는 runtime import가 없는 dead path였으므로 제거했다.
 
