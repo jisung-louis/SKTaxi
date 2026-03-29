@@ -7,7 +7,7 @@
 
 - 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`와 목록용 `GET /v1/admin/members` 확장 계약(`realname`, `lastLoginOs`, `currentAppVersion`, `sortBy/sortDirection`)은 2026-03-29 기준 backend 계약이 존재한다.
 - 관리자 웹 `/users`의 `currentAppVersion` 컬럼은 최근 활성 FCM 토큰의 `app_version` 기준으로 제공된다.
-- 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`도 2026-03-29 기준 backend 계약이 존재한다.
+- 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`, `DELETE /v1/admin/parties/{partyId}/members/{memberId}`, `POST /v1/admin/parties/{partyId}/messages/system`, `GET /v1/admin/parties/{partyId}/join-requests`도 2026-03-29 기준 backend 계약이 존재한다.
 - 이 문서는 RN 사용자 화면 gap만 다루므로 관리자 백오피스 API 현황은 별도로 추적한다.
 
 ## 1. 공지 북마크 API

@@ -16,7 +16,7 @@
 - 다음 Codex 스레드가 어디서부터 이어야 하는지 즉시 판단
 - 이미 합의된 아키텍처/실행 규칙을 다시 뒤흔들지 않도록 기준 고정
 - 참고: 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`와 목록용 `GET /v1/admin/members` 확장 계약(`realname`, `lastLoginOs`, `currentAppVersion`, `sortBy/sortDirection`)은 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다. `currentAppVersion`은 최근 활성 FCM 토큰의 `app_version` 기준으로 제공된다.
-- 참고: 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`는 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다.
+- 참고: 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`, `DELETE /v1/admin/parties/{partyId}/members/{memberId}`, `POST /v1/admin/parties/{partyId}/messages/system`, `GET /v1/admin/parties/{partyId}/join-requests`는 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다.
 
 ---
 
