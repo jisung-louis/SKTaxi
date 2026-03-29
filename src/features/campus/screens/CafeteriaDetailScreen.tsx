@@ -1,5 +1,5 @@
 import React from 'react';
-import {ActivityIndicator, ScrollView, StyleSheet, View} from 'react-native';
+import {ActivityIndicator, Alert, ScrollView, StyleSheet, View} from 'react-native';
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -16,6 +16,7 @@ import {useScreenView} from '@/shared/hooks/useScreenView';
 import {CafeteriaCategoryCard} from '../components/CafeteriaCategoryCard';
 import {CafeteriaDetailHeader} from '../components/CafeteriaDetailHeader';
 import {useCafeteriaDetailData} from '../hooks/useCafeteriaDetailData';
+import type {CafeteriaMenuReactionType} from '../model/cafeteria';
 
 type CafeteriaDetailRouteProp = RouteProp<CampusStackParamList, 'CafeteriaDetail'>;
 type CafeteriaDetailNavigationProp = NativeStackNavigationProp<
@@ -33,7 +34,8 @@ export const CafeteriaDetailScreen = () => {
   const categoryRefs = React.useRef<Record<string, View | null>>({});
   const hasAutoScrolledRef = React.useRef(false);
   const scrollToCategoryParam = route.params?.scrollToCategory;
-  const {data, error, loading, reload} = useCafeteriaDetailData();
+  const {data, error, loading, pendingReactionMenuId, reload, upsertReaction} =
+    useCafeteriaDetailData();
 
   const scrollToCategory = React.useCallback((categoryId: string) => {
     const targetRef = categoryRefs.current[categoryId];
@@ -66,6 +68,22 @@ export const CafeteriaDetailScreen = () => {
 
     return () => clearTimeout(timeoutId);
   }, [data, scrollToCategory, scrollToCategoryParam]);
+
+  const handlePressReaction = React.useCallback(
+    async (menuId: string, reaction: CafeteriaMenuReactionType) => {
+      try {
+        await upsertReaction(menuId, reaction);
+      } catch (caughtError) {
+        const message =
+          caughtError instanceof Error && caughtError.message
+            ? caughtError.message
+            : '반응을 저장하지 못했습니다. 잠시 후 다시 시도해주세요.';
+
+        Alert.alert('오류', message);
+      }
+    },
+    [upsertReaction],
+  );
 
   return (
     <SafeAreaView edges={['left', 'right']} style={styles.safeArea}>
@@ -119,7 +137,16 @@ export const CafeteriaDetailScreen = () => {
                     categoryRefs.current[category.id] = node;
                   }}
                   collapsable={false}>
-                  <CafeteriaCategoryCard category={category} />
+                  <CafeteriaCategoryCard
+                    category={category}
+                    onPressDislikeReaction={menuId => {
+                      handlePressReaction(menuId, 'DISLIKE');
+                    }}
+                    onPressLikeReaction={menuId => {
+                      handlePressReaction(menuId, 'LIKE');
+                    }}
+                    pendingReactionMenuId={pendingReactionMenuId}
+                  />
                 </View>
               ))}
             </View>

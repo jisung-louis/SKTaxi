@@ -1,8 +1,15 @@
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {campusApiClient, CampusApiClient} from '../api/campusApiClient';
-import {mapCafeteriaMenuDto} from '../mappers/campusMapper';
-import type {WeeklyMenu} from '../../model/cafeteria';
+import {
+  mapCafeteriaMenuDto,
+  mapCafeteriaMenuReactionResponseDto,
+} from '../mappers/campusMapper';
+import type {
+  CafeteriaMenuReactionSummary,
+  CafeteriaMenuReactionType,
+  WeeklyMenu,
+} from '../../model/cafeteria';
 import type {ICafeteriaRepository} from './ICafeteriaRepository';
 
 export class SpringCafeteriaRepository implements ICafeteriaRepository {
@@ -38,5 +45,17 @@ export class SpringCafeteriaRepository implements ICafeteriaRepository {
 
       throw error;
     }
+  }
+
+  async upsertMenuReaction(
+    menuId: string,
+    reaction: CafeteriaMenuReactionType | null,
+  ): Promise<CafeteriaMenuReactionSummary> {
+    const response = await this.apiClient.upsertCafeteriaMenuReaction(
+      menuId,
+      reaction,
+    );
+
+    return mapCafeteriaMenuReactionResponseDto(response.data);
   }
 }

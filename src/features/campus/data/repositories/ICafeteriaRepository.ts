@@ -1,7 +1,11 @@
 // SKTaxi: Cafeteria Repository 인터페이스 - DIP 원칙 적용
 // 학식 메뉴 데이터 접근 추상화
 
-import { WeeklyMenu } from '../../model/cafeteria';
+import type {
+  CafeteriaMenuReactionSummary,
+  CafeteriaMenuReactionType,
+  WeeklyMenu,
+} from '../../model/cafeteria';
 
 /**
  * Cafeteria Repository 인터페이스
@@ -19,4 +23,9 @@ export interface ICafeteriaRepository {
    * @returns 주간 메뉴 또는 null
    */
   getCurrentWeekMenu(): Promise<WeeklyMenu | null>;
+
+  upsertMenuReaction(
+    menuId: string,
+    reaction: CafeteriaMenuReactionType | null,
+  ): Promise<CafeteriaMenuReactionSummary>;
 }

@@ -4,6 +4,7 @@ import {
   type CafeteriaMenuBadge,
   type CafeteriaMenuCategoryDefinition,
   type CafeteriaMenuEntry,
+  type CafeteriaMenuReactionType,
   type WeeklyMenu,
 } from '../model/cafeteria';
 import type {CafeteriaCategoryId} from '../model/cafeteriaDetailSource';
@@ -18,6 +19,7 @@ export interface CafeteriaMenuSummaryItem {
   dislikeCount: number;
   id: string;
   likeCount: number;
+  myReaction: CafeteriaMenuReactionType | null;
   title: string;
 }
 
@@ -114,6 +116,7 @@ export const buildCafeteriaDetailSections = ({
           dislikeCount: item.dislikeCount,
           id: item.id,
           likeCount: item.likeCount,
+          myReaction: item.myReaction,
           title: item.title,
         })),
         title: category.label,

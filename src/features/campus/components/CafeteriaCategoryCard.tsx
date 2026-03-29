@@ -10,12 +10,22 @@ import {CafeteriaReactionChip} from './CafeteriaReactionChip';
 
 interface CafeteriaCategoryCardProps {
   category: CafeteriaCategorySectionViewData;
+  onPressDislikeReaction?: (menuId: string) => void;
+  onPressLikeReaction?: (menuId: string) => void;
+  pendingReactionMenuId?: string | null;
 }
 
 export const CafeteriaCategoryCard = ({
   category,
+  onPressDislikeReaction,
+  onPressLikeReaction,
+  pendingReactionMenuId,
 }: CafeteriaCategoryCardProps) => {
   const categoryColors = getCafeteriaCategoryColors(category.id);
+  const headerTitleStyle = [
+    styles.headerTitle,
+    {color: categoryColors.headerTextColor},
+  ];
 
   return (
     <View style={styles.card}>
@@ -24,18 +34,15 @@ export const CafeteriaCategoryCard = ({
         end={{x: 1, y: 1}}
         start={{x: 0, y: 0}}
         style={styles.header}>
-        <Text
-          style={[
-            styles.headerTitle,
-            {color: categoryColors.headerTextColor},
-          ]}>
-          {category.title}
-        </Text>
+        <Text style={headerTitleStyle}>{category.title}</Text>
       </LinearGradient>
 
       <View style={styles.body}>
-        {category.items.map((item, index) => (
-          <View key={item.id}>
+        {category.items.map((item, index) => {
+          const isReactionPending = pendingReactionMenuId === item.id;
+
+          return (
+            <View key={item.id}>
             <View
               style={[
                 styles.itemRow,
@@ -55,16 +62,23 @@ export const CafeteriaCategoryCard = ({
               <View style={styles.reactionRow}>
                 <CafeteriaReactionChip
                   countLabel={item.primaryReaction.countLabel}
+                  disabled={isReactionPending}
                   iconName={item.primaryReaction.iconName}
+                  isSelected={item.primaryReaction.isSelected}
+                  onPress={() => onPressLikeReaction?.(item.id)}
                 />
                 <CafeteriaReactionChip
                   countLabel={item.negativeReaction.countLabel}
+                  disabled={isReactionPending}
                   iconName={item.negativeReaction.iconName}
+                  isSelected={item.negativeReaction.isSelected}
+                  onPress={() => onPressDislikeReaction?.(item.id)}
                 />
               </View>
             </View>
-          </View>
-        ))}
+            </View>
+          );
+        })}
       </View>
     </View>
   );

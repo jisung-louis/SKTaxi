@@ -58,6 +58,8 @@ export type {
   CafeteriaMenuBadge,
   CafeteriaMenuCategoryDefinition,
   CafeteriaMenuEntry,
+  CafeteriaMenuReactionSummary,
+  CafeteriaMenuReactionType,
   DailyMenu,
   MenuCategory,
   MenuItems,

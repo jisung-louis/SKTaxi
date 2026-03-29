@@ -8,6 +8,7 @@ export interface CafeteriaMenuBadgeViewData {
 export interface CafeteriaReactionChipViewData {
   countLabel: string;
   iconName: string;
+  isSelected: boolean;
 }
 
 export interface CafeteriaMenuItemViewData {

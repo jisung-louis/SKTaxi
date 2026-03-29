@@ -8,12 +8,16 @@ import type {
   CafeteriaMenuCategoryDto,
   CafeteriaMenuDto,
   CafeteriaMenuEntryDto,
+  CafeteriaMenuReactionResponseDto,
+  CafeteriaMenuReactionTypeDto,
 } from '../dto/campusDto';
 import type {AcademicSchedule} from '../../model/academic';
 import {
   CAFETERIA_CATEGORIES,
   type CafeteriaMenuCategoryDefinition,
   type CafeteriaMenuEntry,
+  type CafeteriaMenuReactionSummary,
+  type CafeteriaMenuReactionType,
   type StructuredMenuEntries,
   type WeeklyMenu,
 } from '../../model/cafeteria';
@@ -52,6 +56,16 @@ const normalizeOptionalText = (value?: string | null) => {
   const trimmed = value?.trim();
 
   return trimmed ? trimmed : undefined;
+};
+
+const mapReactionType = (
+  reaction?: CafeteriaMenuReactionTypeDto | null,
+): CafeteriaMenuReactionType | null => {
+  if (reaction === 'LIKE' || reaction === 'DISLIKE') {
+    return reaction;
+  }
+
+  return null;
 };
 
 const buildFallbackCategories = (): CafeteriaMenuCategoryDefinition[] =>
@@ -98,6 +112,7 @@ const synthesizeStructuredMenuEntries = (
               dislikeCount: 0,
               id: `${date}-${category.code}-${index + 1}`,
               likeCount: 0,
+              myReaction: null,
               title,
             }));
           return categoryAccumulator;
@@ -201,6 +216,7 @@ const mapStructuredMenuEntry = (
     id:
       normalizeOptionalText(entry.id) ?? `${date}-${categoryCode}-${index + 1}`,
     likeCount,
+    myReaction: mapReactionType(entry.myReaction),
     title,
   };
 };
@@ -221,6 +237,19 @@ export const mapCafeteriaMenuDto = (dto: CafeteriaMenuDto): WeeklyMenu => {
     weekStart: dto.weekStart,
   };
 };
+
+export const mapCafeteriaMenuReactionResponseDto = (
+  dto: CafeteriaMenuReactionResponseDto,
+): CafeteriaMenuReactionSummary => ({
+  dislikeCount:
+    typeof dto.dislikeCount === 'number' && dto.dislikeCount >= 0
+      ? dto.dislikeCount
+      : 0,
+  likeCount:
+    typeof dto.likeCount === 'number' && dto.likeCount >= 0 ? dto.likeCount : 0,
+  menuId: dto.menuId,
+  myReaction: mapReactionType(dto.myReaction),
+});
 
 const trimToNull = (value?: string | null) => {
   const trimmed = value?.trim();

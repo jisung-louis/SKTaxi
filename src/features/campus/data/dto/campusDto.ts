@@ -15,12 +15,15 @@ export interface CafeteriaMenuBadgeDto {
   label: string;
 }
 
+export type CafeteriaMenuReactionTypeDto = 'LIKE' | 'DISLIKE';
+
 export interface CafeteriaMenuEntryDto {
   id: string;
   title: string;
   badges: CafeteriaMenuBadgeDto[];
   likeCount: number;
   dislikeCount: number;
+  myReaction?: CafeteriaMenuReactionTypeDto | null;
 }
 
 export interface CafeteriaMenuCategoryDto {
@@ -35,6 +38,17 @@ export interface CafeteriaMenuDto {
   menus: Record<string, Record<string, string[]>>;
   categories?: CafeteriaMenuCategoryDto[];
   menuEntries?: Record<string, Record<string, CafeteriaMenuEntryDto[]>>;
+}
+
+export interface UpsertCafeteriaMenuReactionRequestDto {
+  reaction: CafeteriaMenuReactionTypeDto | null;
+}
+
+export interface CafeteriaMenuReactionResponseDto {
+  menuId: string;
+  myReaction: CafeteriaMenuReactionTypeDto | null;
+  likeCount: number;
+  dislikeCount: number;
 }
 
 export type CampusBannerPaletteKeyDto =

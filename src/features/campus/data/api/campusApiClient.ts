@@ -3,7 +3,10 @@ import {httpClient, type ApiSuccessResponse} from '@/shared/api';
 import type {
   AcademicScheduleDto,
   CampusBannerResponseDto,
+  CafeteriaMenuReactionResponseDto,
+  CafeteriaMenuReactionTypeDto,
   CafeteriaMenuDto,
+  UpsertCafeteriaMenuReactionRequestDto,
 } from '../dto/campusDto';
 
 interface GetAcademicSchedulesParams {
@@ -44,6 +47,18 @@ export class CampusApiClient {
     return httpClient.get<ApiSuccessResponse<CafeteriaMenuDto>>(
       `/v1/cafeteria-menus/${weekId}`,
     );
+  }
+
+  upsertCafeteriaMenuReaction(
+    menuId: string,
+    reaction: CafeteriaMenuReactionTypeDto | null,
+  ) {
+    return httpClient.put<
+      ApiSuccessResponse<CafeteriaMenuReactionResponseDto>,
+      UpsertCafeteriaMenuReactionRequestDto
+    >(`/v1/cafeteria-menu-reactions/${menuId}`, {
+      reaction,
+    });
   }
 }
 

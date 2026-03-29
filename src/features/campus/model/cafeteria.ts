@@ -9,12 +9,15 @@ export interface CafeteriaMenuBadge {
   label: string;
 }
 
+export type CafeteriaMenuReactionType = 'LIKE' | 'DISLIKE';
+
 export interface CafeteriaMenuEntry {
   id: string;
   title: string;
   badges: CafeteriaMenuBadge[];
   likeCount: number;
   dislikeCount: number;
+  myReaction: CafeteriaMenuReactionType | null;
 }
 
 export interface CafeteriaMenuCategoryDefinition {
@@ -24,6 +27,13 @@ export interface CafeteriaMenuCategoryDefinition {
 
 export type StructuredMenuItems = Record<string, CafeteriaMenuEntry[]>;
 export type StructuredMenuEntries = Record<string, StructuredMenuItems>;
+
+export interface CafeteriaMenuReactionSummary {
+  dislikeCount: number;
+  likeCount: number;
+  menuId: string;
+  myReaction: CafeteriaMenuReactionType | null;
+}
 
 export interface WeeklyMenu {
   id: string; // "2024-W42"
