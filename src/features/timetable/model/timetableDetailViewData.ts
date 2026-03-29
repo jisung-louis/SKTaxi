@@ -75,6 +75,11 @@ export interface TimetableTodayRowViewData {
   visiblePeriodSpan: number;
 }
 
+export interface TimetableTodayEmptyStateViewData {
+  description: string;
+  title: string;
+}
+
 export interface TimetableCourseDetailRowViewData {
   iconName: string;
   id: string;
@@ -93,9 +98,12 @@ export interface TimetableCourseDetailViewData {
 
 export interface TimetableCatalogCourseViewData {
   alreadyAdded?: boolean;
+  categoryLabel?: string;
   courseId: string;
   codeLabel: string;
+  gradeLabel?: string;
   metaLabel: string;
+  scheduleLabel?: string;
   title: string;
 }
 
@@ -162,6 +170,7 @@ export interface TimetableAllViewData {
 
 export interface TimetableTodayViewData {
   collapsed: boolean;
+  emptyState?: TimetableTodayEmptyStateViewData;
   hasNightClasses: boolean;
   nightToggleLabel: string;
   rows: TimetableTodayRowViewData[];

@@ -90,6 +90,10 @@ describe('buildTimetableSemesterRecord', () => {
       startPeriod: 3,
       endPeriod: 4,
     });
+    expect(record.catalogCourses[0]).toMatchObject({
+      category: '전공선택',
+      grade: 2,
+    });
     expect(record.courses[0]).toMatchObject({
       id: 'catalog-course',
       name: '민법총칙',

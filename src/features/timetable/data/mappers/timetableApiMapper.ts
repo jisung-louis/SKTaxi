@@ -90,7 +90,7 @@ const mapTimetableCourseDto = ({
   isOnline: course.isOnline,
   locationLabel: course.location ?? undefined,
   name: course.name,
-  professor: course.professor?.trim() || '미정',
+  professor: course.professor?.trim() || '-',
   schedules: course.schedule.map(mapScheduleRecord),
   toneId: toToneId({
     courseId: course.id,
@@ -105,13 +105,15 @@ export const mapCourseSummaryDtoToCatalogCourseRecord = ({
   course: CourseSummaryDto;
   toneMap: Record<string, TimetableCourseToneId>;
 }): TimetableCatalogCourseRecord => ({
+  category: course.category || undefined,
   code: course.code,
   credits: course.credits,
+  grade: course.grade,
   id: course.id,
   isOnline: course.isOnline,
   locationLabel: course.location ?? undefined,
   name: course.name,
-  professor: course.professor?.trim() || '미정',
+  professor: course.professor?.trim() || '-',
   schedules: course.schedule.map(mapScheduleRecord),
   toneId: toToneId({
     courseId: course.id,

@@ -21,7 +21,10 @@ export interface TimetableCourseRecord {
   toneId: TimetableCourseToneId;
 }
 
-export interface TimetableCatalogCourseRecord extends TimetableCourseRecord {}
+export interface TimetableCatalogCourseRecord extends TimetableCourseRecord {
+  category?: string;
+  grade?: number;
+}
 
 export interface TimetableSemesterRecord {
   catalogCourses: TimetableCatalogCourseRecord[];

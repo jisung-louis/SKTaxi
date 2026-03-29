@@ -1,6 +1,8 @@
 import React from 'react';
 import {Alert, Share} from 'react-native';
 
+import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
+
 import {getPeriodTimeInfo} from '../services/timetableUtils';
 import type {
   TimetableCatalogCourseRecord,
@@ -37,6 +39,16 @@ const DAY_LABELS: Record<TimetableWeekdayId, string> = {
   thu: '목',
   fri: '금',
   sat: '토',
+};
+const TIMETABLE_TONE_ORDER = Object.keys(
+  TIMETABLE_COURSE_TONES,
+) as TimetableCourseToneId[];
+
+const CATEGORY_SHORT_LABELS: Record<string, string> = {
+  전공필수: '전필',
+  전공선택: '전선',
+  교양필수: '교필',
+  교양선택: '교선',
 };
 
 const DEFAULT_MANUAL_DRAFT: TimetableManualCourseDraft = {
@@ -133,6 +145,80 @@ const formatCatalogCourseMetaLabel = (
   return `${course.professor} · ${
     course.isOnline ? '온라인' : course.locationLabel ?? '미정'
   } · ${course.credits}학점`;
+};
+
+const formatCompactScheduleLabel = (
+  schedule: TimetableCourseScheduleRecord,
+) => {
+  return `${DAY_LABELS[schedule.day]}${
+    schedule.startPeriod === schedule.endPeriod
+      ? schedule.startPeriod
+      : `${schedule.startPeriod}-${schedule.endPeriod}`
+  }`;
+};
+
+const formatCatalogCourseScheduleLabel = (
+  course: TimetableCatalogCourseRecord,
+) => {
+  if (course.isOnline) {
+    return '온라인';
+  }
+
+  if (course.schedules.length === 0) {
+    return '시간 미정';
+  }
+
+  return course.schedules.map(formatCompactScheduleLabel).join(', ');
+};
+
+const formatCatalogCourseCategoryLabel = (
+  course: TimetableCatalogCourseRecord,
+) => {
+  const normalizedCategory = course.category?.trim();
+
+  if (!normalizedCategory) {
+    return undefined;
+  }
+
+  return CATEGORY_SHORT_LABELS[normalizedCategory] ?? normalizedCategory;
+};
+
+const formatCatalogCourseGradeLabel = (
+  course: TimetableCatalogCourseRecord,
+) => {
+  if (typeof course.grade !== 'number') {
+    return undefined;
+  }
+
+  return `${course.grade}학년`;
+};
+
+const isAlreadyExistsError = (error: unknown) =>
+  error instanceof RepositoryError &&
+  error.code === RepositoryErrorCode.ALREADY_EXISTS;
+
+const getLeastUsedToneId = (courses: TimetableCourseRecord[]) => {
+  const toneUsage = TIMETABLE_TONE_ORDER.reduce<
+    Record<TimetableCourseToneId, number>
+  >(
+    (counts, toneId) => {
+      counts[toneId] = 0;
+      return counts;
+    },
+    {} as Record<TimetableCourseToneId, number>,
+  );
+
+  courses.forEach(course => {
+    if (course.toneId in toneUsage) {
+      toneUsage[course.toneId] += 1;
+    }
+  });
+
+  return TIMETABLE_TONE_ORDER.reduce((leastUsedToneId, toneId) => {
+    return toneUsage[toneId] < toneUsage[leastUsedToneId]
+      ? toneId
+      : leastUsedToneId;
+  }, TIMETABLE_TONE_ORDER[0]);
 };
 
 const buildSelectedCourseDetail = (
@@ -256,13 +342,22 @@ const buildAddCourseSheetViewData = ({
     },
     search: {
       emptyLabel: filteredCatalogCourses.length === 0 ? '검색 결과가 없습니다.' : undefined,
-      items: filteredCatalogCourses.map(course => ({
-        alreadyAdded: addedCourseIds.has(course.id),
-        codeLabel: course.code,
-        courseId: course.id,
-        metaLabel: formatCatalogCourseMetaLabel(course),
-        title: course.name,
-      })),
+      items: filteredCatalogCourses.map(course => {
+        const categoryLabel = formatCatalogCourseCategoryLabel(course);
+        const gradeLabel = formatCatalogCourseGradeLabel(course);
+        const scheduleLabel = formatCatalogCourseScheduleLabel(course);
+
+        return {
+          alreadyAdded: addedCourseIds.has(course.id),
+          categoryLabel,
+          codeLabel: course.code,
+          courseId: course.id,
+          gradeLabel,
+          metaLabel: formatCatalogCourseMetaLabel(course),
+          scheduleLabel,
+          title: course.name,
+        };
+      }),
       placeholder: '강의명, 교수명, 강의코드 검색',
       query,
     },
@@ -292,6 +387,7 @@ const buildScreenViewData = ({
   selectedToneId: TimetableCourseToneId;
   showNightClasses: boolean;
 }): TimetableDetailScreenViewData => {
+  const isSunday = new Date().getDay() === 0;
   const periods = PERIOD_VIEW_DATA;
   const allViewPeriods = periods.filter(period => period.periodNumber <= 9);
   const columns = toDayColumns();
@@ -484,11 +580,17 @@ const buildScreenViewData = ({
     totalCreditsLabel: `총 ${courses.reduce((sum, course) => sum + course.credits, 0)}학점`,
     todayView: {
       collapsed: !showExpandedToday,
+      emptyState: isSunday
+        ? {
+            title: '오늘은 일요일이에요',
+            description: '일요일엔 휴식을 취하세요',
+          }
+        : undefined,
       hasNightClasses: hasCurrentDayNightClasses,
       nightToggleLabel: showExpandedToday
         ? '야간 수업 접기'
         : '야간 수업 펼치기',
-      rows: todayRows,
+      rows: isSunday ? [] : todayRows,
     },
   };
 };
@@ -578,9 +680,16 @@ export const useTimetableDetailData = (
   }, [resetManualDraft]);
 
   const openAddSheet = React.useCallback(() => {
+    const defaultToneId = getLeastUsedToneId(record?.courses ?? []);
+
+    setSelectedToneId(defaultToneId);
+    setManualDraft({
+      ...DEFAULT_MANUAL_DRAFT,
+      toneId: defaultToneId,
+    });
     setSelectedCourseId(undefined);
     setAddSheetVisible(true);
-  }, []);
+  }, [record]);
 
   const closeCourseDetail = React.useCallback(() => {
     setSelectedCourseId(undefined);
@@ -616,35 +725,68 @@ export const useTimetableDetailData = (
       if (conflictIds.length > 0) {
         Alert.alert(
           '시간이 겹치는 강의가 있습니다',
-          '현재 API에서는 겹치는 강의를 자동 대체하지 않습니다. 기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
+          '기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
         );
         return;
       }
 
-      try {
-        await setTimetableCourseTone(
-          selectedSemesterId,
-          courseId,
-          selectedToneId,
-        );
-      } catch (toneError) {
-        console.warn('시간표 색상을 저장하지 못했습니다.', toneError);
-      }
-
-      const nextRecord = await timetableDetailRepository.addCatalogCourse({
-        courseId,
-        semesterId: selectedSemesterId,
+      const previousRecord = record;
+      const optimisticCourse: TimetableCourseRecord = {
+        ...targetCourse,
         toneId: selectedToneId,
+      };
+
+      refreshRecord({
+        ...previousRecord,
+        courses: [...previousRecord.courses, optimisticCourse],
+      });
+      closeAddSheet();
+
+      setTimetableCourseTone(
+        selectedSemesterId,
+        courseId,
+        selectedToneId,
+      ).catch(toneError => {
+        console.warn('시간표 색상을 저장하지 못했습니다.', toneError);
       });
 
-      if (!nextRecord) {
-        await loadSemester(selectedSemesterId);
-        closeAddSheet();
-        return;
-      }
+      try {
+        const nextRecord = await timetableDetailRepository.addCatalogCourse({
+          courseId,
+          semesterId: selectedSemesterId,
+          toneId: selectedToneId,
+        });
 
-      refreshRecord(nextRecord);
-      closeAddSheet();
+        if (!nextRecord) {
+          await loadSemester(selectedSemesterId);
+          return;
+        }
+
+        refreshRecord({
+          ...nextRecord,
+          courses: nextRecord.courses.map(course =>
+            course.id === courseId
+              ? {...course, toneId: selectedToneId}
+              : course,
+          ),
+        });
+      } catch (addError) {
+        refreshRecord(previousRecord);
+
+        if (isAlreadyExistsError(addError)) {
+          Alert.alert(
+            '시간이 겹치는 강의가 있습니다',
+            '기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
+          );
+          return;
+        }
+
+        loadSemester(selectedSemesterId).catch(() => undefined);
+        Alert.alert(
+          '강의를 추가하지 못했습니다',
+          '잠시 후 다시 시도해주세요.',
+        );
+      }
     },
     [
       closeAddSheet,
@@ -692,7 +834,7 @@ export const useTimetableDetailData = (
     if (conflictIds.length > 0) {
       Alert.alert(
         '시간이 겹치는 강의가 있습니다',
-        '현재 API에서는 겹치는 강의를 자동 대체하지 않습니다. 기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
+        '기존 강의를 먼저 삭제한 뒤 다시 추가해주세요.',
       );
       return;
     }
@@ -760,34 +902,60 @@ export const useTimetableDetailData = (
       return;
     }
 
+    const removedCourseId = selectedCourseId;
+    setSelectedCourseId(undefined);
+
     Alert.alert('강의 삭제', `"${course.name}" 강의를 삭제할까요?`, [
-      {text: '취소', style: 'cancel'},
+      {
+        text: '취소',
+        style: 'cancel',
+        onPress: () => {
+          setSelectedCourseId(removedCourseId);
+        },
+      },
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => {
-          timetableDetailRepository
-            .removeCourse({
-              courseId: selectedCourseId,
+        onPress: async () => {
+          const previousRecord = record;
+
+          refreshRecord({
+            ...previousRecord,
+            courses: previousRecord.courses.filter(
+              item => item.id !== removedCourseId,
+            ),
+          });
+
+          try {
+            const nextRecord = await timetableDetailRepository.removeCourse({
+              courseId: removedCourseId,
               semesterId: selectedSemesterId,
-            })
-            .then(async nextRecord => {
-              try {
-                await removeTimetableCourseTone(
-                  selectedSemesterId,
-                  selectedCourseId,
-                );
-              } catch (toneError) {
-                console.warn('시간표 색상을 삭제하지 못했습니다.', toneError);
-              }
-              if (nextRecord) {
-                refreshRecord(nextRecord);
-              } else {
-                await loadSemester();
-              }
-              setSelectedCourseId(undefined);
-            })
-            .catch(() => undefined);
+            });
+
+            try {
+              await removeTimetableCourseTone(
+                selectedSemesterId,
+                removedCourseId,
+              );
+            } catch (toneError) {
+              console.warn('시간표 색상을 삭제하지 못했습니다.', toneError);
+            }
+
+            if (nextRecord) {
+              refreshRecord(nextRecord);
+            } else {
+              await loadSemester(selectedSemesterId);
+            }
+          } catch (removeError) {
+            refreshRecord(previousRecord);
+            setSelectedCourseId(removedCourseId);
+            Alert.alert(
+              '강의를 삭제하지 못했습니다',
+              removeError instanceof RepositoryError
+                ? removeError.getUserMessage()
+                : '잠시 후 다시 시도해주세요.',
+            );
+          }
         },
       },
     ]);

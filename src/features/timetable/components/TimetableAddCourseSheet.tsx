@@ -52,6 +52,16 @@ interface TimetableAddCourseSheetProps {
 type TimetableCatalogCourseItem =
   TimetableAddCourseSheetViewData['search']['items'][number];
 
+const CATEGORY_BADGE_TONES: Record<
+  string,
+  {backgroundColor: string; color: string}
+> = {
+  전필: {backgroundColor: '#EEF2FF', color: '#4338CA'},
+  전선: {backgroundColor: '#ECFDF5', color: '#047857'},
+  교필: {backgroundColor: '#FFF7ED', color: '#C2410C'},
+  교선: {backgroundColor: '#FDF2F8', color: '#BE185D'},
+};
+
 const CatalogCourseListItem = React.memo(
   ({
     item,
@@ -60,12 +70,44 @@ const CatalogCourseListItem = React.memo(
     item: TimetableCatalogCourseItem;
     onAddCatalogCourse: (courseId: string) => void;
   }) => {
+    const categoryBadgeTone = item.categoryLabel
+      ? CATEGORY_BADGE_TONES[item.categoryLabel] ?? {
+          backgroundColor: COLORS.background.subtle,
+          color: COLORS.text.secondary,
+        }
+      : undefined;
+    const gradeAndScheduleLabel = [item.gradeLabel, item.scheduleLabel]
+      .filter(Boolean)
+      .join(' · ');
+
     return (
       <View style={styles.catalogCard}>
         <View style={styles.catalogCopy}>
-          <Text numberOfLines={1} style={styles.catalogTitle}>
-            {item.title}
-          </Text>
+          <View style={styles.catalogTitleRow}>
+            <Text numberOfLines={1} style={styles.catalogTitle}>
+              {item.title}
+            </Text>
+            {item.categoryLabel && categoryBadgeTone ? (
+              <View
+                style={[
+                  styles.catalogCategoryBadge,
+                  {backgroundColor: categoryBadgeTone.backgroundColor},
+                ]}>
+                <Text
+                  style={[
+                    styles.catalogCategoryBadgeLabel,
+                    {color: categoryBadgeTone.color},
+                  ]}>
+                  {item.categoryLabel}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          {gradeAndScheduleLabel ? (
+            <Text numberOfLines={1} style={styles.catalogSupplementary}>
+              {gradeAndScheduleLabel}
+            </Text>
+          ) : null}
           <Text numberOfLines={1} style={styles.catalogMeta}>
             {item.metaLabel}
           </Text>
@@ -117,12 +159,23 @@ export const TimetableAddCourseSheet = ({
   const [searchInputValue, setSearchInputValue] = React.useState(
     data.search.query,
   );
+  const searchInputRef =
+    React.useRef<React.ElementRef<typeof BottomSheetTextInput>>(null);
 
   React.useEffect(() => {
-    setSearchInputValue(data.search.query);
-  }, [data.search.query]);
+    if (!visible && searchInputValue !== data.search.query) {
+      setSearchInputValue(data.search.query);
+      searchInputRef.current?.setNativeProps({
+        text: data.search.query,
+      });
+    }
+  }, [data.search.query, searchInputValue, visible]);
 
   React.useEffect(() => {
+    if (!visible || data.activeTab !== 'search') {
+      return;
+    }
+
     if (searchInputValue === data.search.query) {
       return;
     }
@@ -132,7 +185,13 @@ export const TimetableAddCourseSheet = ({
     }, 180);
 
     return () => clearTimeout(timeoutId);
-  }, [data.search.query, onUpdateQuery, searchInputValue]);
+  }, [
+    data.activeTab,
+    data.search.query,
+    onUpdateQuery,
+    searchInputValue,
+    visible,
+  ]);
 
   const renderCatalogCourseItem = React.useCallback<
     ListRenderItem<TimetableCatalogCourseItem>
@@ -144,26 +203,6 @@ export const TimetableAddCourseSheet = ({
       />
     ),
     [onAddCatalogCourse],
-  );
-
-  const renderSearchHeader = React.useCallback(
-    () => (
-      <View style={styles.searchField}>
-        <Icon
-          color={COLORS.text.muted}
-          name="search-outline"
-          size={16}
-        />
-        <BottomSheetTextInput
-          onChangeText={setSearchInputValue}
-          placeholder={data.search.placeholder}
-          placeholderTextColor={COLORS.text.muted}
-          style={styles.searchInput}
-          value={searchInputValue}
-        />
-      </View>
-    ),
-    [data.search.placeholder, searchInputValue],
   );
 
   const renderSearchEmpty = React.useCallback(
@@ -210,22 +249,38 @@ export const TimetableAddCourseSheet = ({
       />
 
       {data.activeTab === 'search' ? (
-        <BottomSheetFlatList
-          contentContainerStyle={styles.searchContent}
-          data={data.search.items}
-          initialNumToRender={12}
-          ItemSeparatorComponent={renderCatalogCourseSeparator}
-          keyboardShouldPersistTaps="handled"
-          keyExtractor={item => item.courseId}
-          ListEmptyComponent={renderSearchEmpty}
-          ListHeaderComponent={renderSearchHeader}
-          maxToRenderPerBatch={16}
-          removeClippedSubviews
-          renderItem={renderCatalogCourseItem}
-          showsVerticalScrollIndicator={false}
-          updateCellsBatchingPeriod={50}
-          windowSize={8}
-        />
+        <View style={styles.searchSection}>
+          <View style={styles.searchField}>
+            <Icon
+              color={COLORS.text.muted}
+              name="search-outline"
+              size={16}
+            />
+            <BottomSheetTextInput
+              onChangeText={setSearchInputValue}
+              placeholder={data.search.placeholder}
+              placeholderTextColor={COLORS.text.muted}
+              ref={searchInputRef}
+              style={styles.searchInput}
+            />
+          </View>
+
+          <BottomSheetFlatList
+            contentContainerStyle={styles.searchContent}
+            data={data.search.items}
+            initialNumToRender={12}
+            ItemSeparatorComponent={renderCatalogCourseSeparator}
+            keyboardShouldPersistTaps="handled"
+            keyExtractor={item => item.courseId}
+            ListEmptyComponent={renderSearchEmpty}
+            maxToRenderPerBatch={16}
+            removeClippedSubviews
+            renderItem={renderCatalogCourseItem}
+            showsVerticalScrollIndicator={false}
+            updateCellsBatchingPeriod={50}
+            windowSize={8}
+          />
+        </View>
       ) : (
         <BottomSheetScrollView
           contentContainerStyle={styles.manualContent}
@@ -604,6 +659,9 @@ const styles = StyleSheet.create({
   searchContent: {
     paddingBottom: 8,
   },
+  searchSection: {
+    flex: 1,
+  },
   searchField: {
     alignItems: 'center',
     backgroundColor: COLORS.background.page,
@@ -628,7 +686,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background.page,
     borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    minHeight: 79,
+    minHeight: 94,
     padding: 12,
   },
   catalogSeparator: {
@@ -640,9 +698,31 @@ const styles = StyleSheet.create({
   },
   catalogTitle: {
     color: COLORS.text.primary,
+    flexShrink: 1,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
+  },
+  catalogTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  catalogCategoryBadge: {
+    borderRadius: RADIUS.pill,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  catalogCategoryBadgeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  catalogSupplementary: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    lineHeight: 16,
+    marginTop: 3,
   },
   catalogMeta: {
     color: COLORS.text.muted,

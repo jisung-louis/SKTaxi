@@ -8,13 +8,17 @@ import {
   TIMETABLE_COURSE_TONES,
   TIMETABLE_TODAY_EMPTY_DOT_COLOR,
 } from '../model/timetableCourseTones';
-import type {TimetableTodayRowViewData} from '../model/timetableDetailViewData';
+import type {
+  TimetableTodayEmptyStateViewData,
+  TimetableTodayRowViewData,
+} from '../model/timetableDetailViewData';
 
 const TODAY_ROW_HEIGHT = 60;
 const TODAY_ROW_GAP = 8;
 
 interface TimetableTodayViewCardProps {
   collapsed: boolean;
+  emptyState?: TimetableTodayEmptyStateViewData;
   onPressCourse: (courseId: string) => void;
   onToggleNightClasses: () => void;
   rows: TimetableTodayRowViewData[];
@@ -25,6 +29,7 @@ interface TimetableTodayViewCardProps {
 
 export const TimetableTodayViewCard = ({
   collapsed,
+  emptyState,
   onPressCourse,
   onToggleNightClasses,
   rows,
@@ -32,6 +37,20 @@ export const TimetableTodayViewCard = ({
   showNightToggle,
   toggleLabel,
 }: TimetableTodayViewCardProps) => {
+  if (emptyState || rows.length === 0) {
+    return (
+      <View style={[styles.card, styles.emptyStateCard]}>
+        <Icon color={COLORS.accent.orange} name="sunny-outline" size={34} />
+        <Text style={styles.emptyStateTitle}>
+          {emptyState?.title ?? '오늘 시간표가 없습니다'}
+        </Text>
+        <Text style={styles.emptyStateDescription}>
+          {emptyState?.description ?? '등록된 시간표 정보가 없습니다.'}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.card}>
       {rows.map(row => {
@@ -119,6 +138,13 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     ...SHADOWS.card,
   },
+  emptyStateCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 220,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
+  },
   row: {
     alignItems: 'stretch',
     flexDirection: 'row',
@@ -198,6 +224,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
+  },
+  emptyStateTitle: {
+    color: COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 28,
+    marginTop: SPACING.md,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: COLORS.text.secondary,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: SPACING.xs,
+    textAlign: 'center',
   },
   toggleButton: {
     alignItems: 'center',
