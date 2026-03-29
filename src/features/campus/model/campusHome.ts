@@ -46,10 +46,10 @@ export interface CampusTimetableEmptyStateViewData {
 }
 
 export interface CampusCafeteriaRecommendedMenuViewData {
+  categoryCode: string;
   categoryLabel: string;
   id: string;
   likeCountLabel: string;
-  priceLabel: string;
   title: string;
 }
 

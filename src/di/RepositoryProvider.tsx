@@ -22,7 +22,7 @@ interface RepositoryProviderProps {
   children: ReactNode;
   /**
    * 커스텀 Repository 컨테이너 주입 (테스트용)
-   * 제공되지 않으면 기본 mock 구현체 사용
+   * 제공되지 않으면 기본 Spring 구현체 사용
    */
   customRepositories?: Partial<RepositoryContainer>;
 }

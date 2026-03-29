@@ -113,6 +113,12 @@ const createTimetableEmptyState = (
   title: emptyState?.title ?? '오늘은 수업이 없어요',
 });
 
+const createSundayTimetableEmptyState = (): CampusTimetableEmptyStateViewData =>
+  createTimetableEmptyState({
+    description: '일요일엔 휴식을 취하세요.',
+    title: '오늘은 일요일이에요',
+  });
+
 const getMinutesFromTimeLabel = (value: string) => {
   const [hour, minute] = value.split(':').map(Number);
 
@@ -307,9 +313,11 @@ const loadTimetablePreview = async ({
     emptyState:
       sessions.length > 0
         ? undefined
-        : createTimetableEmptyState({
-            description: '등록된 시간표 기준으로 오늘 일정이 없습니다.',
-          }),
+        : currentDayOfWeek === 0
+          ? createSundayTimetableEmptyState()
+          : createTimetableEmptyState({
+              description: '등록된 시간표 기준으로 오늘 일정이 없습니다.',
+            }),
     periods,
     sessions,
   };

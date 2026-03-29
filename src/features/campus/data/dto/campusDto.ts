@@ -10,11 +10,31 @@ export interface AcademicScheduleDto {
   description?: string | null;
 }
 
+export interface CafeteriaMenuBadgeDto {
+  code: string;
+  label: string;
+}
+
+export interface CafeteriaMenuEntryDto {
+  id: string;
+  title: string;
+  badges: CafeteriaMenuBadgeDto[];
+  likeCount: number;
+  dislikeCount: number;
+}
+
+export interface CafeteriaMenuCategoryDto {
+  code: string;
+  label: string;
+}
+
 export interface CafeteriaMenuDto {
   weekId: string;
   weekStart: string;
   weekEnd: string;
   menus: Record<string, Record<string, string[]>>;
+  categories?: CafeteriaMenuCategoryDto[];
+  menuEntries?: Record<string, Record<string, CafeteriaMenuEntryDto[]>>;
 }
 
 export type CampusBannerPaletteKeyDto =

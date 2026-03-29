@@ -5,10 +5,18 @@ import type {
   AcademicScheduleDto,
   CampusBannerActionTargetDto,
   CampusBannerResponseDto,
+  CafeteriaMenuCategoryDto,
   CafeteriaMenuDto,
+  CafeteriaMenuEntryDto,
 } from '../dto/campusDto';
 import type {AcademicSchedule} from '../../model/academic';
-import type {WeeklyMenu} from '../../model/cafeteria';
+import {
+  CAFETERIA_CATEGORIES,
+  type CafeteriaMenuCategoryDefinition,
+  type CafeteriaMenuEntry,
+  type StructuredMenuEntries,
+  type WeeklyMenu,
+} from '../../model/cafeteria';
 import type {
   CampusBannerInAppAction,
   CampusBannerSourceData,
@@ -40,16 +48,179 @@ const getCategoryMenus = (
     {},
   );
 
-export const mapCafeteriaMenuDto = (dto: CafeteriaMenuDto): WeeklyMenu => ({
-  createdAt: new Date(dto.weekStart),
-  fryRice: getCategoryMenus(dto.menus, 'fryRice'),
-  id: dto.weekId,
-  rollNoodles: getCategoryMenus(dto.menus, 'rollNoodles'),
-  theBab: getCategoryMenus(dto.menus, 'theBab'),
-  updatedAt: new Date(dto.weekEnd),
-  weekEnd: dto.weekEnd,
-  weekStart: dto.weekStart,
-});
+const normalizeOptionalText = (value?: string | null) => {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : undefined;
+};
+
+const buildFallbackCategories = (): CafeteriaMenuCategoryDefinition[] =>
+  CAFETERIA_CATEGORIES.map(category => ({
+    code: category.id,
+    label: category.name,
+  }));
+
+const mapCategories = (
+  categories?: CafeteriaMenuCategoryDto[],
+): CafeteriaMenuCategoryDefinition[] => {
+  const mappedCategories =
+    categories?.flatMap(category => {
+      const code = normalizeOptionalText(category.code);
+      const label = normalizeOptionalText(category.label);
+
+      if (!code || !label) {
+        return [];
+      }
+
+      return [{code, label}];
+    }) ?? [];
+
+  if (mappedCategories.length === 0) {
+    return buildFallbackCategories();
+  }
+
+  return mappedCategories;
+};
+
+const synthesizeStructuredMenuEntries = (
+  menus: CafeteriaMenuDto['menus'],
+  categories: CafeteriaMenuCategoryDefinition[],
+): StructuredMenuEntries =>
+  Object.entries(menus).reduce<StructuredMenuEntries>(
+    (result, [date, values]) => {
+      result[date] = categories.reduce<Record<string, CafeteriaMenuEntry[]>>(
+        (categoryAccumulator, category) => {
+          categoryAccumulator[category.code] = (values[category.code] ?? [])
+            .map(title => title.trim())
+            .filter(Boolean)
+            .map((title, index) => ({
+              badges: [],
+              dislikeCount: 0,
+              id: `${date}-${category.code}-${index + 1}`,
+              likeCount: 0,
+              title,
+            }));
+          return categoryAccumulator;
+        },
+        {},
+      );
+      return result;
+    },
+    {},
+  );
+
+const mapStructuredMenuEntries = (
+  dto: CafeteriaMenuDto,
+  categories: CafeteriaMenuCategoryDefinition[],
+): StructuredMenuEntries => {
+  if (!dto.menuEntries) {
+    return synthesizeStructuredMenuEntries(dto.menus, categories);
+  }
+
+  return Object.entries(dto.menuEntries).reduce<StructuredMenuEntries>(
+    (result, [date, categoryEntries]) => {
+      result[date] = categories.reduce<Record<string, CafeteriaMenuEntry[]>>(
+        (categoryAccumulator, category) => {
+          categoryAccumulator[category.code] = (
+            categoryEntries[category.code] ?? []
+          ).flatMap((entry, index) => {
+            const mappedEntry = mapStructuredMenuEntry(
+              date,
+              category.code,
+              entry,
+              index,
+            );
+
+            return mappedEntry ? [mappedEntry] : [];
+          });
+          return categoryAccumulator;
+        },
+        {},
+      );
+
+      Object.entries(categoryEntries).forEach(([categoryCode, entries]) => {
+        if (result[date][categoryCode]) {
+          return;
+        }
+
+        result[date][categoryCode] = entries.flatMap((entry, index) => {
+          const mappedEntry = mapStructuredMenuEntry(
+            date,
+            categoryCode,
+            entry,
+            index,
+          );
+
+          return mappedEntry ? [mappedEntry] : [];
+        });
+      });
+
+      return result;
+    },
+    {},
+  );
+};
+
+const mapStructuredMenuEntry = (
+  date: string,
+  categoryCode: string,
+  entry: CafeteriaMenuEntryDto,
+  index: number,
+): CafeteriaMenuEntry | null => {
+  const title = normalizeOptionalText(entry.title);
+
+  if (!title) {
+    return null;
+  }
+
+  const likeCount =
+    typeof entry.likeCount === 'number' && entry.likeCount >= 0
+      ? entry.likeCount
+      : 0;
+  const dislikeCount =
+    typeof entry.dislikeCount === 'number' && entry.dislikeCount >= 0
+      ? entry.dislikeCount
+      : 0;
+
+  return {
+    badges: (entry.badges ?? []).flatMap(badge => {
+      const label = normalizeOptionalText(badge.label);
+
+      if (!label) {
+        return [];
+      }
+
+      return [
+        {
+          code: normalizeOptionalText(badge.code) ?? label,
+          label,
+        },
+      ];
+    }),
+    dislikeCount,
+    id:
+      normalizeOptionalText(entry.id) ?? `${date}-${categoryCode}-${index + 1}`,
+    likeCount,
+    title,
+  };
+};
+
+export const mapCafeteriaMenuDto = (dto: CafeteriaMenuDto): WeeklyMenu => {
+  const categories = mapCategories(dto.categories);
+
+  return {
+    categories,
+    createdAt: new Date(dto.weekStart),
+    fryRice: getCategoryMenus(dto.menus, 'fryRice'),
+    id: dto.weekId,
+    menuEntries: mapStructuredMenuEntries(dto, categories),
+    rollNoodles: getCategoryMenus(dto.menus, 'rollNoodles'),
+    theBab: getCategoryMenus(dto.menus, 'theBab'),
+    updatedAt: new Date(dto.weekEnd),
+    weekEnd: dto.weekEnd,
+    weekStart: dto.weekStart,
+  };
+};
 
 const trimToNull = (value?: string | null) => {
   const trimmed = value?.trim();

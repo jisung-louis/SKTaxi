@@ -1,22 +1,12 @@
 import React from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {
-  COLORS,
-  RADIUS,
-  SHADOWS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CampusCafeteriaRecommendedMenuViewData} from '../model/campusHome';
+import {getCafeteriaCategoryColors} from '../utils/cafeteriaCategoryColors';
 import {CampusEmptyCard} from './CampusEmptyCard';
 
 type CampusCafeteriaPreviewCarouselProps = {
@@ -24,7 +14,7 @@ type CampusCafeteriaPreviewCarouselProps = {
   onPressItem: () => void;
 };
 
-const AUTO_SCROLL_INTERVAL_MS = 3000;
+const AUTO_SCROLL_INTERVAL_MS = 5000;
 const CARD_WIDTH = 280;
 const CARD_GAP = SPACING.md;
 
@@ -112,11 +102,13 @@ export const CampusCafeteriaPreviewCarousel = ({
       pagingEnabled={false}
       ref={flatListRef}
       renderItem={({item}) => {
-        const hasLikeCount = item.likeCountLabel.trim().length > 0;
+        const categoryColors = getCafeteriaCategoryColors(item.categoryCode);
 
         return (
           <TouchableOpacity
             activeOpacity={0.82}
+            accessibilityLabel={`${item.categoryLabel} 대표 메뉴 ${item.title}`}
+            accessibilityRole="button"
             onPress={onPressItem}
             style={styles.card}>
             <View style={styles.cardContent}>
@@ -133,27 +125,35 @@ export const CampusCafeteriaPreviewCarousel = ({
               </LinearGradient>
 
               <View style={styles.textGroup}>
-                <View style={styles.categoryPill}>
-                  <Text numberOfLines={1} style={styles.categoryLabel}>
-                    {item.categoryLabel}
+                <View style={styles.textContent}>
+                  <View
+                    style={[
+                      styles.categoryPill,
+                      {backgroundColor: categoryColors.pillBackgroundColor},
+                    ]}>
+                    <Text
+                      numberOfLines={1}
+                      style={[
+                        styles.categoryLabel,
+                        {color: categoryColors.pillTextColor},
+                      ]}>
+                      {item.categoryLabel}
+                    </Text>
+                  </View>
+
+                  <Text numberOfLines={1} style={styles.title}>
+                    {item.title}
                   </Text>
                 </View>
 
-                <Text numberOfLines={1} style={styles.title}>
-                  {item.title}
-                </Text>
-                <Text style={styles.price}>{item.priceLabel}</Text>
-
-                {hasLikeCount ? (
-                  <View style={styles.likeRow}>
-                    <Icon
-                      color={COLORS.text.muted}
-                      name="thumbs-up-outline"
-                      size={12}
-                    />
-                    <Text style={styles.likeCount}>{item.likeCountLabel}</Text>
-                  </View>
-                ) : null}
+                <View style={styles.likeRow}>
+                  <Icon
+                    color={COLORS.text.tertiary}
+                    name="thumbs-up-outline"
+                    size={12}
+                  />
+                  <Text style={styles.likeCount}>{item.likeCountLabel}</Text>
+                </View>
               </View>
             </View>
           </TouchableOpacity>
@@ -181,7 +181,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border.subtle,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    minHeight: 125,
     width: CARD_WIDTH,
     ...SHADOWS.card,
   },
@@ -199,17 +198,19 @@ const styles = StyleSheet.create({
   },
   textGroup: {
     flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: SPACING.xs,
+  },
+  textContent: {
+    gap: SPACING.xs,
   },
   categoryPill: {
     alignSelf: 'flex-start',
-    backgroundColor: COLORS.accent.orangeSoft,
     borderRadius: RADIUS.pill,
-    marginBottom: SPACING.xs,
     paddingHorizontal: SPACING.sm,
     paddingVertical: 2,
   },
   categoryLabel: {
-    color: COLORS.accent.orange,
     fontSize: 12,
     fontWeight: '500',
     lineHeight: 16,
@@ -219,14 +220,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
-    marginBottom: SPACING.xs,
-  },
-  price: {
-    color: COLORS.accent.orange,
-    fontSize: 14,
-    fontWeight: '700',
-    lineHeight: 20,
-    marginBottom: SPACING.sm,
   },
   likeRow: {
     alignItems: 'center',

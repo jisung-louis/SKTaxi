@@ -1,8 +1,29 @@
 // 날짜별 메뉴 타입 (YYYY-MM-DD 형식의 날짜를 키로 사용)
-export type DailyMenu = { [date: string]: string[] };
+export type DailyMenu = {[date: string]: string[]};
 
 // 메뉴 항목 타입 (날짜별 객체 형태만 사용)
 export type MenuItems = DailyMenu;
+
+export interface CafeteriaMenuBadge {
+  code: string;
+  label: string;
+}
+
+export interface CafeteriaMenuEntry {
+  id: string;
+  title: string;
+  badges: CafeteriaMenuBadge[];
+  likeCount: number;
+  dislikeCount: number;
+}
+
+export interface CafeteriaMenuCategoryDefinition {
+  code: string;
+  label: string;
+}
+
+export type StructuredMenuItems = Record<string, CafeteriaMenuEntry[]>;
+export type StructuredMenuEntries = Record<string, StructuredMenuItems>;
 
 export interface WeeklyMenu {
   id: string; // "2024-W42"
@@ -11,6 +32,8 @@ export interface WeeklyMenu {
   rollNoodles: MenuItems; // { [date: string]: string[] }
   theBab: MenuItems; // { [date: string]: string[] }
   fryRice: MenuItems; // { [date: string]: string[] }
+  categories: CafeteriaMenuCategoryDefinition[];
+  menuEntries: StructuredMenuEntries;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,7 +49,7 @@ export const formatLocalDateKey = (date: Date) => {
 // 특정 날짜의 메뉴를 가져오는 헬퍼 함수
 export const getMenuForDate = (
   menuItems: MenuItems,
-  date: string
+  date: string,
 ): string[] => {
   if (typeof menuItems === 'object' && menuItems !== null) {
     return menuItems[date] || [];

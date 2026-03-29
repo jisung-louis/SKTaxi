@@ -1,28 +1,9 @@
 import React from 'react';
 
 import {useCafeteriaRepository} from '@/di/useRepository';
-import {COLORS} from '@/shared/design-system/tokens';
 
 import {buildCafeteriaDetailSections} from '../application/cafeteriaMenuAssembler';
-import type {
-  CafeteriaMenuBadgeTone,
-} from '../model/cafeteriaDetailSource';
-import {formatLocalDateKey} from '../model/cafeteria';
 import type {CafeteriaDetailScreenViewData} from '../model/cafeteriaDetailViewData';
-
-const getBadgeToneColors = (tone: CafeteriaMenuBadgeTone) => {
-  if (tone === 'blue') {
-    return {
-      backgroundColor: COLORS.accent.blueSoft,
-      textColor: COLORS.accent.blue,
-    };
-  }
-
-  return {
-    backgroundColor: COLORS.brand.primaryTint,
-    textColor: COLORS.brand.primaryStrong,
-  };
-};
 
 const toScreenViewData = (
   sections: ReturnType<typeof buildCafeteriaDetailSections>,
@@ -30,24 +11,17 @@ const toScreenViewData = (
   categories: sections.map(category => ({
     id: category.id,
     items: category.items.map(item => ({
-      badges: item.badges.map(badge => {
-        const colors = getBadgeToneColors(badge.tone);
-
-        return {
-          backgroundColor: colors.backgroundColor,
-          id: badge.id,
-          label: badge.label,
-          textColor: colors.textColor,
-        };
-      }),
+      badges: item.badges.map(badge => ({
+        id: badge.id,
+        label: badge.label,
+      })),
       id: item.id,
       negativeReaction: {
-        countLabel: '',
+        countLabel: String(item.dislikeCount),
         iconName: 'thumbs-down-outline',
       },
-      priceLabel: item.metaLabel,
       primaryReaction: {
-        countLabel: '',
+        countLabel: String(item.likeCount),
         iconName: 'thumbs-up-outline',
       },
       title: item.title,
@@ -78,7 +52,6 @@ export const useCafeteriaDetailData = () => {
       }
 
       const sections = buildCafeteriaDetailSections({
-        currentDate: formatLocalDateKey(new Date()),
         menu,
       });
 

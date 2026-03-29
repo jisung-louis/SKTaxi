@@ -1,25 +1,23 @@
 import type {CampusCafeteriaRecommendedMenuViewData} from '../model/campusHome';
 import {
   CAFETERIA_CATEGORIES,
-  getMenuForDate,
-  type MenuItems,
+  type CafeteriaMenuBadge,
+  type CafeteriaMenuCategoryDefinition,
+  type CafeteriaMenuEntry,
   type WeeklyMenu,
 } from '../model/cafeteria';
-import type {
-  CafeteriaMenuBadgeTone,
-  CafeteriaCategoryId,
-} from '../model/cafeteriaDetailSource';
+import type {CafeteriaCategoryId} from '../model/cafeteriaDetailSource';
 
 export interface CafeteriaMenuSummaryBadge {
   id: string;
   label: string;
-  tone: CafeteriaMenuBadgeTone;
 }
 
 export interface CafeteriaMenuSummaryItem {
   badges: CafeteriaMenuSummaryBadge[];
+  dislikeCount: number;
   id: string;
-  metaLabel: string;
+  likeCount: number;
   title: string;
 }
 
@@ -29,140 +27,99 @@ export interface CafeteriaMenuSummarySection {
   title: string;
 }
 
-interface MenuFrequency {
-  count: number;
-  servedToday: boolean;
-  title: string;
-}
+const formatCountLabel = (count: number) =>
+  new Intl.NumberFormat('ko-KR').format(count);
 
-const CATEGORY_IDS = CAFETERIA_CATEGORIES.map(
-  category => category.id as CafeteriaCategoryId,
-);
+const getFallbackCategories = (): CafeteriaMenuCategoryDefinition[] =>
+  CAFETERIA_CATEGORIES.map(category => ({
+    code: category.id,
+    label: category.name,
+  }));
 
-const CATEGORY_TITLE_MAP = CAFETERIA_CATEGORIES.reduce<
-  Record<CafeteriaCategoryId, string>
->((accumulator, category) => {
-  accumulator[category.id as CafeteriaCategoryId] = category.name;
-  return accumulator;
-}, {} as Record<CafeteriaCategoryId, string>);
+const getOrderedCategories = (
+  menu: WeeklyMenu,
+): CafeteriaMenuCategoryDefinition[] =>
+  menu.categories.length > 0 ? menu.categories : getFallbackCategories();
 
-const normalizeMenuItemId = (categoryId: CafeteriaCategoryId, title: string) =>
-  `${categoryId}-${title
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9가-힣-]/g, '')}`;
+const dedupeEntriesByTitle = (entries: CafeteriaMenuEntry[]) => {
+  const entryByTitle = new Map<string, CafeteriaMenuEntry>();
 
-const buildMenuFrequencies = (
-  menuItems: MenuItems,
-  currentDate: string,
-): MenuFrequency[] => {
-  const frequencyByTitle = new Map<string, MenuFrequency>();
+  entries.forEach(entry => {
+    const key = entry.title.trim();
 
-  Object.entries(menuItems).forEach(([dateKey, titles]) => {
-    titles.forEach(rawTitle => {
-      const title = rawTitle.trim();
+    if (!key || entryByTitle.has(key)) {
+      return;
+    }
 
-      if (!title) {
-        return;
-      }
-
-      const current = frequencyByTitle.get(title) ?? {
-        count: 0,
-        servedToday: false,
-        title,
-      };
-
-      current.count += 1;
-      current.servedToday ||= dateKey === currentDate;
-      frequencyByTitle.set(title, current);
-    });
+    entryByTitle.set(key, entry);
   });
 
-  return [...frequencyByTitle.values()].sort(
-    (left, right) =>
-      Number(right.servedToday) - Number(left.servedToday) ||
-      right.count - left.count ||
-      left.title.localeCompare(right.title, 'ko-KR'),
+  return [...entryByTitle.values()];
+};
+
+const collectCategoryEntries = (
+  menu: WeeklyMenu,
+  categoryCode: string,
+): CafeteriaMenuEntry[] =>
+  dedupeEntriesByTitle(
+    Object.values(menu.menuEntries).flatMap(
+      categories => categories[categoryCode] ?? [],
+    ),
+  );
+
+const toSummaryBadges = (itemId: string, badges: CafeteriaMenuBadge[]) =>
+  badges.map((badge, index) => ({
+    id: `${itemId}-badge-${badge.code || index}`,
+    label: badge.label,
+  }));
+
+const pickRepresentativeEntriesForDate = (
+  menu: WeeklyMenu,
+  dateKey: string,
+  categoryCode: string,
+) => {
+  const entriesForDate = menu.menuEntries[dateKey]?.[categoryCode] ?? [];
+
+  if (entriesForDate.length > 0) {
+    return entriesForDate;
+  }
+
+  return (
+    Object.values(menu.menuEntries).find(
+      categories => (categories[categoryCode] ?? []).length > 0,
+    )?.[categoryCode] ?? []
   );
 };
 
-const buildMenuBadges = (
-  itemId: string,
-  frequency: MenuFrequency,
-): CafeteriaMenuSummaryBadge[] => {
-  const badges: CafeteriaMenuSummaryBadge[] = [];
-
-  if (frequency.servedToday) {
-    badges.push({
-      id: `${itemId}-today`,
-      label: '오늘',
-      tone: 'blue',
-    });
-  }
-
-  if (frequency.count > 1) {
-    badges.push({
-      id: `${itemId}-weekly`,
-      label: `주간 ${frequency.count}회`,
-      tone: 'brand',
-    });
-  }
-
-  return badges;
-};
-
-const buildMenuMetaLabel = (frequency: MenuFrequency) => {
-  if (frequency.servedToday) {
-    return frequency.count > 1
-      ? `오늘 포함 주간 ${frequency.count}회 제공`
-      : '오늘 제공';
-  }
-
-  return `이번 주 ${frequency.count}회 제공`;
-};
-
-const getCategoryMenuItems = (
-  menu: WeeklyMenu,
-  categoryId: CafeteriaCategoryId,
-) => {
-  switch (categoryId) {
-    case 'rollNoodles':
-      return menu.rollNoodles;
-    case 'theBab':
-      return menu.theBab;
-    case 'fryRice':
-    default:
-      return menu.fryRice;
-  }
-};
+const compareRecommendedEntries = (
+  left: CafeteriaMenuEntry,
+  right: CafeteriaMenuEntry,
+) =>
+  right.likeCount - left.likeCount ||
+  left.title.localeCompare(right.title, 'ko-KR');
 
 export const buildCafeteriaDetailSections = ({
   menu,
-  currentDate,
 }: {
-  currentDate: string;
   menu: WeeklyMenu;
 }): CafeteriaMenuSummarySection[] =>
-  CATEGORY_IDS.map(categoryId => {
-    const menuItems = getCategoryMenuItems(menu, categoryId);
-    const frequencies = buildMenuFrequencies(menuItems, currentDate);
+  getOrderedCategories(menu)
+    .map(category => {
+      const items = collectCategoryEntries(menu, category.code);
 
-    return {
-      id: categoryId,
-      items: frequencies.map(frequency => {
-        const itemId = normalizeMenuItemId(categoryId, frequency.title);
-
-        return {
-          badges: buildMenuBadges(itemId, frequency),
-          id: itemId,
-          metaLabel: buildMenuMetaLabel(frequency),
-          title: frequency.title,
-        };
-      }),
-      title: CATEGORY_TITLE_MAP[categoryId],
-    };
-  }).filter(section => section.items.length > 0);
+      return {
+        id: category.code,
+        items: items.map(item => ({
+          badges: toSummaryBadges(item.id, item.badges),
+          dislikeCount: item.dislikeCount,
+          id: item.id,
+          likeCount: item.likeCount,
+          title: item.title,
+        })),
+        title: category.label,
+      };
+    })
+    .filter(section => section.items.length > 0);
 
 export const buildCampusRecommendedMenus = ({
   menu,
@@ -171,31 +128,27 @@ export const buildCampusRecommendedMenus = ({
   currentDate: string;
   menu: WeeklyMenu;
 }): CampusCafeteriaRecommendedMenuViewData[] =>
-  CATEGORY_IDS.map(categoryId => {
-    const menuItems = getCategoryMenuItems(menu, categoryId);
-    const todayTitles = getMenuForDate(menuItems, currentDate)
-      .map(title => title.trim())
-      .filter(Boolean);
-    const frequencies = buildMenuFrequencies(menuItems, currentDate);
-    const selectedFrequency =
-      frequencies.find(frequency => todayTitles.includes(frequency.title)) ??
-      frequencies[0];
+  getOrderedCategories(menu)
+    .map(category => {
+      const entries = pickRepresentativeEntriesForDate(
+        menu,
+        currentDate,
+        category.code,
+      );
+      const selectedEntry = [...entries].sort(compareRecommendedEntries)[0];
 
-    if (!selectedFrequency) {
-      return null;
-    }
+      if (!selectedEntry) {
+        return null;
+      }
 
-    return {
-      categoryLabel: CATEGORY_TITLE_MAP[categoryId],
-      id: normalizeMenuItemId(categoryId, selectedFrequency.title),
-      likeCountLabel: '',
-      priceLabel: selectedFrequency.servedToday
-        ? '오늘 제공'
-        : `이번 주 ${selectedFrequency.count}회 제공`,
-      title: selectedFrequency.title,
-    };
-  }).filter(
-    (
-      item,
-    ): item is CampusCafeteriaRecommendedMenuViewData => item !== null,
-  );
+      return {
+        categoryCode: category.code,
+        categoryLabel: category.label,
+        id: selectedEntry.id,
+        likeCountLabel: formatCountLabel(selectedEntry.likeCount),
+        title: selectedEntry.title,
+      };
+    })
+    .filter(
+      (item): item is CampusCafeteriaRecommendedMenuViewData => item !== null,
+    );

@@ -1,14 +1,11 @@
 import React from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
-import {
-  COLORS,
-  RADIUS,
-  SHADOWS,
-  SPACING,
-} from '@/shared/design-system/tokens';
+import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
 
 import type {CafeteriaCategorySectionViewData} from '../model/cafeteriaDetailViewData';
+import {getCafeteriaCategoryColors} from '../utils/cafeteriaCategoryColors';
 import {CafeteriaReactionChip} from './CafeteriaReactionChip';
 
 interface CafeteriaCategoryCardProps {
@@ -18,11 +15,23 @@ interface CafeteriaCategoryCardProps {
 export const CafeteriaCategoryCard = ({
   category,
 }: CafeteriaCategoryCardProps) => {
+  const categoryColors = getCafeteriaCategoryColors(category.id);
+
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{category.title}</Text>
-      </View>
+      <LinearGradient
+        colors={categoryColors.headerGradientColors}
+        end={{x: 1, y: 1}}
+        start={{x: 0, y: 0}}
+        style={styles.header}>
+        <Text
+          style={[
+            styles.headerTitle,
+            {color: categoryColors.headerTextColor},
+          ]}>
+          {category.title}
+        </Text>
+      </LinearGradient>
 
       <View style={styles.body}>
         {category.items.map((item, index) => (
@@ -36,36 +45,23 @@ export const CafeteriaCategoryCard = ({
                 <View style={styles.titleRow}>
                   <Text style={styles.itemTitle}>{item.title}</Text>
                   {item.badges.map(badge => (
-                    <View
-                      key={badge.id}
-                      style={[
-                        styles.badge,
-                        {backgroundColor: badge.backgroundColor},
-                      ]}>
-                      <Text
-                        style={[styles.badgeLabel, {color: badge.textColor}]}>
-                        {badge.label}
-                      </Text>
+                    <View key={badge.id} style={styles.badge}>
+                      <Text style={styles.badgeLabel}>{badge.label}</Text>
                     </View>
                   ))}
                 </View>
-
-                <Text style={styles.priceLabel}>{item.priceLabel}</Text>
               </View>
 
-              {item.primaryReaction.countLabel.trim().length > 0 ||
-              item.negativeReaction.countLabel.trim().length > 0 ? (
-                <View style={styles.reactionRow}>
-                  <CafeteriaReactionChip
-                    countLabel={item.primaryReaction.countLabel}
-                    iconName={item.primaryReaction.iconName}
-                  />
-                  <CafeteriaReactionChip
-                    countLabel={item.negativeReaction.countLabel}
-                    iconName={item.negativeReaction.iconName}
-                  />
-                </View>
-              ) : null}
+              <View style={styles.reactionRow}>
+                <CafeteriaReactionChip
+                  countLabel={item.primaryReaction.countLabel}
+                  iconName={item.primaryReaction.iconName}
+                />
+                <CafeteriaReactionChip
+                  countLabel={item.negativeReaction.countLabel}
+                  iconName={item.negativeReaction.iconName}
+                />
+              </View>
             </View>
           </View>
         ))}
@@ -82,17 +78,17 @@ const styles = StyleSheet.create({
     ...SHADOWS.card,
   },
   header: {
-    backgroundColor: COLORS.brand.logo,
+    borderBottomColor: COLORS.background.pageHeader,
+    borderBottomWidth: 1,
     justifyContent: 'center',
     minHeight: 44,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
   },
   headerTitle: {
-    color: COLORS.text.inverse,
     fontSize: 14,
     fontWeight: '700',
     lineHeight: 20,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
   },
   body: {
     backgroundColor: COLORS.background.surface,
@@ -101,9 +97,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 12,
-    minHeight: 58,
+    minHeight: 56,
     paddingHorizontal: SPACING.lg,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   itemRowBorder: {
     borderTopColor: COLORS.border.subtle,
@@ -128,24 +124,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   badge: {
-    borderRadius: RADIUS.pill,
+    backgroundColor: COLORS.brand.primaryTint,
+    borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
   badgeLabel: {
+    color: COLORS.brand.primaryStrong,
     fontSize: 10,
     fontWeight: '600',
     lineHeight: 15,
   },
-  priceLabel: {
-    color: COLORS.brand.primaryStrong,
-    fontSize: 12,
-    fontWeight: '600',
-    lineHeight: 16,
-    marginTop: 2,
-  },
   reactionRow: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
   },

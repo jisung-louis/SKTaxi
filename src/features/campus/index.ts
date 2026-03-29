@@ -48,19 +48,21 @@ export {
   getAllMenuItems,
   getMenuForDate,
 } from './model/cafeteria';
-export type {
-  CafeteriaCategoryId,
-  CafeteriaMenuBadgeTone,
-} from './model/cafeteriaDetailSource';
+export type {CafeteriaCategoryId} from './model/cafeteriaDetailSource';
 export type {
   CafeteriaCategorySectionViewData,
   CafeteriaDetailScreenViewData,
   CafeteriaMenuItemViewData,
 } from './model/cafeteriaDetailViewData';
 export type {
+  CafeteriaMenuBadge,
+  CafeteriaMenuCategoryDefinition,
+  CafeteriaMenuEntry,
   DailyMenu,
   MenuCategory,
   MenuItems,
+  StructuredMenuEntries,
+  StructuredMenuItems,
   WeeklyMenu,
 } from './model/cafeteria';
 
