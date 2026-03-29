@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-24
+> 최종 수정일: 2026-03-29
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md)
 
 ---
@@ -16,7 +16,9 @@
 - 다음 Codex 스레드가 어디서부터 이어야 하는지 즉시 판단
 - 이미 합의된 아키텍처/실행 규칙을 다시 뒤흔들지 않도록 기준 고정
 - 참고: 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`와 목록용 `GET /v1/admin/members` 확장 계약(`realname`, `lastLoginOs`, `currentAppVersion`, `sortBy/sortDirection`)은 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다. `currentAppVersion`은 최근 활성 FCM 토큰의 `app_version` 기준으로 제공된다.
+- 참고: 관리자 웹 `/dashboard`용 `GET /v1/admin/dashboard/summary`, `GET /v1/admin/dashboard/activity`, `GET /v1/admin/dashboard/recent-items`도 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다. 일자 버킷은 `Asia/Seoul`, `totalMembers`는 `members` 전체 row 기준이다.
 - 참고: 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`, `DELETE /v1/admin/parties/{partyId}/members/{memberId}`, `POST /v1/admin/parties/{partyId}/messages/system`, `GET /v1/admin/parties/{partyId}/join-requests`는 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다.
+- 참고: 관리자 웹 `/boards`용 `GET /v1/admin/posts`, `GET /v1/admin/posts/{postId}`, `PATCH /v1/admin/posts/{postId}/moderation`, `GET /v1/admin/comments`, `PATCH /v1/admin/comments/{commentId}/moderation`는 backend에 존재하지만, 본 문서는 RN 앱 마이그레이션 상태만 추적한다.
 
 ---
 
@@ -38,6 +40,7 @@
 - Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 수렴했고, legacy Firebase/detail entrypoint dead path는 제거됐다.
 - Board / Notice / Campus central repository는 이제 mock이 아니라 Spring concrete repository를 기본 source of truth로 사용한다.
 - Community board 탭은 중앙 DI `boardRepository`의 Spring 응답을 기준으로 목록/featured post를 조합한다.
+- Board public contract는 관리자 moderation을 반영해 `HIDDEN` 게시글을 목록/상세에서 제외하고, `HIDDEN` 댓글은 placeholder로 마스킹한다.
 - Phase H follow-up까지 반영되어 Board / Notice / Campus 본체 이전과 남아 있던 backend contract gap 3개 정리가 완료됐다.
 - 공개 일반 채팅방은 joined/not joined를 함께 표시하고, 미참여 room detail preview + 참여하기 CTA + leave 후 not joined 복귀 정책까지 프론트에 반영됐다.
 - 전역 DI와 feature-local entrypoint의 혼재는 줄었고, Taxi Home screen chain의 mock singleton도 제거됨

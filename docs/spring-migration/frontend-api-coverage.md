@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-24
+> 최종 수정일: 2026-03-29
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -17,7 +17,9 @@
 - “완료/부분 연결/미연결”은 backend 전체가 아니라 **앱 사용자 기능 기준**으로 판단한다.
 - 실서버 연동 디버깅을 위해 로깅은 허용하되, 인증 정보와 민감 데이터는 반드시 마스킹한다.
 - 참고: 관리자 웹 `/users` 상세용 `GET /v1/admin/members/{memberId}/activity`와 목록용 `GET /v1/admin/members` 확장 계약(`realname`, `lastLoginOs`, `currentAppVersion`, `sortBy/sortDirection`)은 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다. `currentAppVersion`은 최근 활성 FCM 토큰의 `app_version` 기준으로 제공된다.
+- 참고: 관리자 웹 `/dashboard`용 `GET /v1/admin/dashboard/summary`, `GET /v1/admin/dashboard/activity`, `GET /v1/admin/dashboard/recent-items`도 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다. 일자 버킷은 `Asia/Seoul`, `totalMembers`는 `members` 전체 row 기준이다.
 - 참고: 관리자 웹 `/parties`용 `GET /v1/admin/parties`, `GET /v1/admin/parties/{partyId}`, `PATCH /v1/admin/parties/{partyId}/status`, `DELETE /v1/admin/parties/{partyId}/members/{memberId}`, `POST /v1/admin/parties/{partyId}/messages/system`, `GET /v1/admin/parties/{partyId}/join-requests`도 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다.
+- 참고: 관리자 웹 `/boards`용 `GET /v1/admin/posts`, `GET /v1/admin/posts/{postId}`, `PATCH /v1/admin/posts/{postId}/moderation`, `GET /v1/admin/comments`, `PATCH /v1/admin/comments/{commentId}/moderation`도 2026-03-29 기준 backend에 존재하지만, 현재 RN 앱 커버리지 범위에는 포함되지 않는다.
 
 ---
 
@@ -385,6 +387,8 @@ runtime note:
 - Community board도 중앙 DI `boardRepository`를 그대로 사용하므로 mock board source와 분기되지 않는다.
 - `GET /v1/posts` summary contract에 `bookmarkCount`가 추가되어 Board list / Community featured popularity를 서버 누적 수치로 계산할 수 있다.
 - `PATCH /v1/posts/{postId}`는 `title/content/category/isAnonymous/images`를 지원한다. `images`를 보내면 전체 목록 교체, `[]`면 전체 제거, 생략/null이면 기존 유지 semantics를 따른다.
+- 관리자 moderation으로 `HIDDEN` 처리된 게시글은 public `GET /v1/posts`, `GET /v1/posts/{postId}`, `GET /v1/members/me/posts`, `GET /v1/members/me/bookmarks`에서 제외된다.
+- 관리자 moderation으로 `HIDDEN` 처리된 댓글은 public `GET /v1/posts/{postId}/comments`에서 thread 구조 유지를 위해 placeholder 댓글처럼 마스킹된다.
 
 ### 3.8 Notice 본체
 
