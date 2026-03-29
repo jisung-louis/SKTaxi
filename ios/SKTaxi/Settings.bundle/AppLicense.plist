@@ -10,9 +10,9 @@
 			<key>Type</key>
 			<string>PSGroupSpecifier</string>
 			<key>Title</key>
-			<string>SKURI Taxi</string>
+			<string>SKURI</string>
 			<key>FooterText</key>
-			<string>Copyright © 2025 SKURI Taxi. All rights reserved.
+			<string>Copyright © 2025 SKURI. All rights reserved.
 
 이 소프트웨어 및 관련 문서 파일(이하 "소프트웨어")의 사본을 취득하는 모든 사람은 소프트웨어를 제한 없이 다룰 수 있는 권한이 무료로 부여됩니다. 여기에는 소프트웨어를 사용, 복사, 수정, 병합, 게시, 배포 및/또는 판매할 권리와 소프트웨어를 제공받은 사람이 그렇게 할 수 있도록 권한을 부여하는 권리가 포함되며, 다음 조건에 따릅니다:
 
@@ -23,4 +23,3 @@
 	</array>
 </dict>
 </plist>
-
