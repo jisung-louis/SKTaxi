@@ -1,5 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - JS-only 라이브러리 (타입 선언 없음)
 import Sound from 'react-native-sound';
 
 // SKTaxi: 채팅 인앱 사운드 유틸
@@ -7,30 +5,14 @@ import Sound from 'react-native-sound';
 Sound.setCategory('Ambient', true);
 
 let chatSound: any | null = null;
+let isChatSoundLoaded = false;
+let isChatSoundLoading = false;
+let shouldPlayWhenLoaded = false;
 
-export const loadChatSound = () => {
-  if (chatSound) return;
-
-  chatSound = new Sound(
-    // SKTaxi: 인앱 채팅 사운드 파일 이름 (iOS: 메인 번들, Android: res/raw)
-    'new_chat_inapp.wav',
-    // iOS: Xcode에 추가된 리소스, Android: android/app/src/main/res/raw
-    Sound.MAIN_BUNDLE,
-    (error: any) => {
-      if (error) {
-        console.log('❌ 채팅 사운드 로드 실패:', error);
-        chatSound = null;
-      }
-    }
-  );
-};
-
-export const playChatSound = () => {
-  if (!chatSound) {
-    loadChatSound();
+const playLoadedChatSound = () => {
+  if (!chatSound || !isChatSoundLoaded) {
+    return;
   }
-
-  if (!chatSound) return;
 
   // 이전 재생이 남아있다면 정지 후 다시 재생
   chatSound.stop(() => {
@@ -42,4 +24,53 @@ export const playChatSound = () => {
   });
 };
 
+export const loadChatSound = () => {
+  if (chatSound || isChatSoundLoading) {
+    return;
+  }
 
+  isChatSoundLoading = true;
+
+  chatSound = new Sound(
+    // SKTaxi: 인앱 채팅 사운드 파일 이름 (iOS: 메인 번들, Android: res/raw)
+    'new_chat_inapp.wav',
+    // iOS: Xcode에 추가된 리소스, Android: android/app/src/main/res/raw
+    Sound.MAIN_BUNDLE,
+    (error: any) => {
+      isChatSoundLoading = false;
+
+      if (error) {
+        console.log('❌ 채팅 사운드 로드 실패:', error);
+        chatSound?.release?.();
+        chatSound = null;
+        isChatSoundLoaded = false;
+        shouldPlayWhenLoaded = false;
+        return;
+      }
+
+      isChatSoundLoaded = true;
+
+      if (shouldPlayWhenLoaded) {
+        shouldPlayWhenLoaded = false;
+        playLoadedChatSound();
+      }
+    },
+  );
+};
+
+export const playChatSound = () => {
+  if (!chatSound) {
+    loadChatSound();
+  }
+
+  if (!chatSound) {
+    return;
+  }
+
+  if (!isChatSoundLoaded) {
+    shouldPlayWhenLoaded = true;
+    return;
+  }
+
+  playLoadedChatSound();
+};

@@ -4,3 +4,4 @@ export * from './useCurrentLocation';
 export * from './useKeyboardInset';
 export * from './useScreenView';
 export * from './useScreenEnterAnimation';
+export * from './usePlayChatSoundOnNewMessage';

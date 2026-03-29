@@ -21,6 +21,7 @@ import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
   useKeyboardInset,
+  usePlayChatSoundOnNewMessage,
   useScreenEnterAnimation,
   useScreenView,
 } from '@/shared/hooks';
@@ -55,6 +56,7 @@ import type {TaxiStackParamList} from '../model/navigation';
 import type {
   TaxiChatAccountMessageViewData,
   TaxiChatActionTrayActionId,
+  TaxiChatThreadItemViewData,
   TaxiChatTextMessageViewData,
 } from '../model/taxiChatViewData';
 import {
@@ -122,6 +124,28 @@ const getTaxiCallProviderLabel = (provider: TaxiCallProvider) => {
   }
 };
 
+const getLatestPlayableMessageId = (
+  items: TaxiChatThreadItemViewData[] | undefined,
+) => {
+  if (!items) {
+    return null;
+  }
+
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+
+    if (
+      item.type === 'text-message' ||
+      item.type === 'account-message' ||
+      item.type === 'arrived-message'
+    ) {
+      return item.id;
+    }
+  }
+
+  return null;
+};
+
 export const ChatScreen = () => {
   useScreenView();
 
@@ -181,6 +205,12 @@ export const ChatScreen = () => {
     | null
   >(null);
   const accountInfo = user?.accountInfo ?? user?.account ?? null;
+  const latestPlayableMessageId = React.useMemo(
+    () => getLatestPlayableMessageId(data?.items),
+    [data?.items],
+  );
+
+  usePlayChatSoundOnNewMessage(data?.roomId, latestPlayableMessageId);
 
   const snapshotAccountInfo = React.useMemo<AccountInfo | null>(() => {
     const nextAccountInfo = data?.summary.settlementNotice?.accountData;

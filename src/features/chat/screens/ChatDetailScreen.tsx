@@ -22,7 +22,11 @@ import {
   StateCard,
 } from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
-import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
+import {
+  usePlayChatSoundOnNewMessage,
+  useScreenEnterAnimation,
+  useScreenView,
+} from '@/shared/hooks';
 import {pickImageAsset} from '@/shared/lib/media/pickImageAsset';
 import Button from '@/shared/ui/Button';
 import {
@@ -32,6 +36,7 @@ import {
   ChatMessageList,
   ChatPopupMenu,
   resolveChatMenuPosition,
+  type ChatThreadItemViewData,
   type ChatThreadMessageViewData,
 } from '@/shared/ui/chat';
 import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
@@ -49,6 +54,24 @@ type ChatDetailNavigationProp = NativeStackNavigationProp<
   CommunityStackParamList,
   'ChatDetail'
 >
+
+const getLatestPlayableMessageId = (
+  items: ChatThreadItemViewData[] | undefined,
+) => {
+  if (!items) {
+    return null;
+  }
+
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+
+    if (item.type === 'text-message') {
+      return item.id;
+    }
+  }
+
+  return null;
+};
 
 export const ChatDetailScreen = () => {
   useScreenView();
@@ -92,6 +115,12 @@ export const ChatDetailScreen = () => {
     | {id: string; type: 'room'}
     | null
   >(null);
+  const latestPlayableMessageId = React.useMemo(
+    () => getLatestPlayableMessageId(data?.items),
+    [data?.items],
+  );
+
+  usePlayChatSoundOnNewMessage(data?.roomId, latestPlayableMessageId);
 
   const navigateToCommunityChat = React.useCallback(() => {
     if (navigation.canGoBack()) {
