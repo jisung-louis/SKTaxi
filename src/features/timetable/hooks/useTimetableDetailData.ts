@@ -127,6 +127,14 @@ const formatTodayMetaLabel = (course: TimetableCourseRecord) => {
   return `${course.professor} 교수님 · ${course.locationLabel ?? '미정'}`;
 };
 
+const formatCatalogCourseMetaLabel = (
+  course: TimetableCatalogCourseRecord,
+) => {
+  return `${course.professor} · ${
+    course.isOnline ? '온라인' : course.locationLabel ?? '미정'
+  } · ${course.credits}학점`;
+};
+
 const buildSelectedCourseDetail = (
   course?: TimetableCourseRecord,
 ): TimetableCourseDetailViewData | undefined => {
@@ -194,6 +202,7 @@ const buildAddCourseSheetViewData = ({
   selectedToneId: TimetableCourseToneId;
 }): TimetableAddCourseSheetViewData => {
   const normalizedQuery = query.trim().toLowerCase();
+  const addedCourseIds = new Set(courses.map(course => course.id));
 
   const filteredCatalogCourses = normalizedQuery
     ? catalogCourses.filter(course =>
@@ -248,10 +257,10 @@ const buildAddCourseSheetViewData = ({
     search: {
       emptyLabel: filteredCatalogCourses.length === 0 ? '검색 결과가 없습니다.' : undefined,
       items: filteredCatalogCourses.map(course => ({
-        alreadyAdded: courses.some(existingCourse => existingCourse.id === course.id),
+        alreadyAdded: addedCourseIds.has(course.id),
         codeLabel: course.code,
         courseId: course.id,
-        metaLabel: `${course.professor} · ${course.locationLabel ?? '온라인'} · ${course.credits}학점`,
+        metaLabel: formatCatalogCourseMetaLabel(course),
         title: course.name,
       })),
       placeholder: '강의명, 교수명, 강의코드 검색',

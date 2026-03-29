@@ -1,9 +1,11 @@
 import React from 'react';
 import {
+  BottomSheetFlatList,
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
 import {
+  ListRenderItem,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -47,6 +49,55 @@ interface TimetableAddCourseSheetProps {
   visible: boolean;
 }
 
+type TimetableCatalogCourseItem =
+  TimetableAddCourseSheetViewData['search']['items'][number];
+
+const CatalogCourseListItem = React.memo(
+  ({
+    item,
+    onAddCatalogCourse,
+  }: {
+    item: TimetableCatalogCourseItem;
+    onAddCatalogCourse: (courseId: string) => void;
+  }) => {
+    return (
+      <View style={styles.catalogCard}>
+        <View style={styles.catalogCopy}>
+          <Text numberOfLines={1} style={styles.catalogTitle}>
+            {item.title}
+          </Text>
+          <Text numberOfLines={1} style={styles.catalogMeta}>
+            {item.metaLabel}
+          </Text>
+          <Text numberOfLines={1} style={styles.catalogCode}>
+            {item.codeLabel}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          activeOpacity={0.88}
+          disabled={item.alreadyAdded}
+          onPress={() => onAddCatalogCourse(item.courseId)}
+          style={[
+            styles.catalogAction,
+            item.alreadyAdded
+              ? styles.catalogActionDisabled
+              : styles.catalogActionEnabled,
+          ]}>
+          <Icon
+            color={
+              item.alreadyAdded ? COLORS.text.muted : COLORS.text.inverse
+            }
+            name={item.alreadyAdded ? 'checkmark' : 'add'}
+            size={18}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  },
+);
+
 export const TimetableAddCourseSheet = ({
   data,
   onAddCatalogCourse,
@@ -63,6 +114,72 @@ export const TimetableAddCourseSheet = ({
   onUpdateQuery,
   visible,
 }: TimetableAddCourseSheetProps) => {
+  const [searchInputValue, setSearchInputValue] = React.useState(
+    data.search.query,
+  );
+
+  React.useEffect(() => {
+    setSearchInputValue(data.search.query);
+  }, [data.search.query]);
+
+  React.useEffect(() => {
+    if (searchInputValue === data.search.query) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      onUpdateQuery(searchInputValue);
+    }, 180);
+
+    return () => clearTimeout(timeoutId);
+  }, [data.search.query, onUpdateQuery, searchInputValue]);
+
+  const renderCatalogCourseItem = React.useCallback<
+    ListRenderItem<TimetableCatalogCourseItem>
+  >(
+    ({item}) => (
+      <CatalogCourseListItem
+        item={item}
+        onAddCatalogCourse={onAddCatalogCourse}
+      />
+    ),
+    [onAddCatalogCourse],
+  );
+
+  const renderSearchHeader = React.useCallback(
+    () => (
+      <View style={styles.searchField}>
+        <Icon
+          color={COLORS.text.muted}
+          name="search-outline"
+          size={16}
+        />
+        <BottomSheetTextInput
+          onChangeText={setSearchInputValue}
+          placeholder={data.search.placeholder}
+          placeholderTextColor={COLORS.text.muted}
+          style={styles.searchInput}
+          value={searchInputValue}
+        />
+      </View>
+    ),
+    [data.search.placeholder, searchInputValue],
+  );
+
+  const renderSearchEmpty = React.useCallback(
+    () =>
+      data.search.emptyLabel ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyLabel}>{data.search.emptyLabel}</Text>
+        </View>
+      ) : null,
+    [data.search.emptyLabel],
+  );
+
+  const renderCatalogCourseSeparator = React.useCallback(
+    () => <View style={styles.catalogSeparator} />,
+    [],
+  );
 
   return (
     <TimetableBottomSheet
@@ -93,71 +210,22 @@ export const TimetableAddCourseSheet = ({
       />
 
       {data.activeTab === 'search' ? (
-        <BottomSheetScrollView
+        <BottomSheetFlatList
           contentContainerStyle={styles.searchContent}
+          data={data.search.items}
+          initialNumToRender={12}
+          ItemSeparatorComponent={renderCatalogCourseSeparator}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.searchField}>
-            <Icon
-              color={COLORS.text.muted}
-              name="search-outline"
-              size={16}
-            />
-            <BottomSheetTextInput
-              onChangeText={onUpdateQuery}
-              placeholder={data.search.placeholder}
-              placeholderTextColor={COLORS.text.muted}
-              style={styles.searchInput}
-              value={data.search.query}
-            />
-          </View>
-
-          <View style={styles.searchList}>
-            {data.search.items.map(item => (
-              <View key={item.courseId} style={styles.catalogCard}>
-                <View style={styles.catalogCopy}>
-                  <Text numberOfLines={1} style={styles.catalogTitle}>
-                    {item.title}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.catalogMeta}>
-                    {item.metaLabel}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.catalogCode}>
-                    {item.codeLabel}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  activeOpacity={0.88}
-                  disabled={item.alreadyAdded}
-                  onPress={() => onAddCatalogCourse(item.courseId)}
-                  style={[
-                    styles.catalogAction,
-                    item.alreadyAdded
-                      ? styles.catalogActionDisabled
-                      : styles.catalogActionEnabled,
-                  ]}>
-                  <Icon
-                    color={
-                      item.alreadyAdded
-                        ? COLORS.text.muted
-                        : COLORS.text.inverse
-                    }
-                    name={item.alreadyAdded ? 'checkmark' : 'add'}
-                    size={18}
-                  />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-
-          {data.search.emptyLabel ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyLabel}>{data.search.emptyLabel}</Text>
-            </View>
-          ) : null}
-        </BottomSheetScrollView>
+          keyExtractor={item => item.courseId}
+          ListEmptyComponent={renderSearchEmpty}
+          ListHeaderComponent={renderSearchHeader}
+          maxToRenderPerBatch={16}
+          removeClippedSubviews
+          renderItem={renderCatalogCourseItem}
+          showsVerticalScrollIndicator={false}
+          updateCellsBatchingPeriod={50}
+          windowSize={8}
+        />
       ) : (
         <BottomSheetScrollView
           contentContainerStyle={styles.manualContent}
@@ -555,9 +623,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     paddingVertical: 0,
   },
-  searchList: {
-    rowGap: 8,
-  },
   catalogCard: {
     alignItems: 'center',
     backgroundColor: COLORS.background.page,
@@ -565,6 +630,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     minHeight: 79,
     padding: 12,
+  },
+  catalogSeparator: {
+    height: 8,
   },
   catalogCopy: {
     flex: 1,
