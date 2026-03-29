@@ -1,10 +1,11 @@
 import React from 'react';
 
-import {userActivityRepository} from '../data/repositories/userActivityRepository';
+import {useUserActivityRepository} from '@/di';
 import {toBookmarksViewData} from '../model/userActivityMappers';
 import type {BookmarksScreenViewData} from '../model/userActivityViewData';
 
 export const useBookmarksScreenData = () => {
+  const userActivityRepository = useUserActivityRepository();
   const [data, setData] = React.useState<BookmarksScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -22,7 +23,7 @@ export const useBookmarksScreenData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userActivityRepository]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

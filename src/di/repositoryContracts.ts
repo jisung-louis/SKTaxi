@@ -6,14 +6,33 @@ export type {
 } from '@/features/campus';
 export type {IBoardRepository} from '@/features/board';
 export type {IChatRepository} from '@/features/chat';
-export type {IMemberRepository} from '@/features/member';
+export type {IMemberDirectoryRepository, IMemberRepository} from '@/features/member';
 export type {INoticeRepository} from '@/features/notice';
 export type {
+  IAppConfigRepository,
   IAppNoticeRepository,
+  IInquiryFormRepository,
+  ILegalDocumentRepository,
 } from '@/features/settings';
 export type {
   INotificationActionRepository,
   IPartyRepository,
   ITaxiChatRepository,
 } from '@/features/taxi';
-export type {INotificationRepository} from '@/features/user';
+export type {ITimetableDetailRepository} from '@/features/timetable/data/repositories/ITimetableDetailRepository';
+export type {
+  IAccountManagementRepository,
+} from '@/features/user/data/repositories/IAccountManagementRepository';
+export type {IMyPageRepository} from '@/features/user';
+export type {
+  INotificationSettingsScreenRepository,
+} from '@/features/user/data/repositories/INotificationSettingsScreenRepository';
+export type {
+  INotificationRepository,
+} from '@/features/user';
+export type {
+  IProfileEditRepository,
+} from '@/features/user/data/repositories/IProfileEditRepository';
+export type {
+  IUserActivityRepository,
+} from '@/features/user/data/repositories/IUserActivityRepository';

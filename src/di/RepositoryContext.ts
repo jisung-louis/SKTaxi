@@ -4,18 +4,28 @@
 import {createContext} from 'react';
 import type {
   IAcademicRepository,
+  IAccountManagementRepository,
+  IAppConfigRepository,
   IAppNoticeRepository,
   IAuthRepository,
   IBoardRepository,
   ICampusBannerRepository,
   ICafeteriaRepository,
   IChatRepository,
+  IInquiryFormRepository,
+  ILegalDocumentRepository,
+  IMemberDirectoryRepository,
   IMemberRepository,
+  IMyPageRepository,
   INotificationActionRepository,
   INotificationRepository,
+  INotificationSettingsScreenRepository,
   INoticeRepository,
   IPartyRepository,
+  IProfileEditRepository,
   ITaxiChatRepository,
+  ITimetableDetailRepository,
+  IUserActivityRepository,
 } from './repositoryContracts';
 
 /**
@@ -33,6 +43,16 @@ export interface RepositoryContainer {
   campusBannerRepository: ICampusBannerRepository;
   authRepository: IAuthRepository;
   memberRepository: IMemberRepository;
+  memberDirectoryRepository: IMemberDirectoryRepository;
+  myPageRepository: IMyPageRepository;
+  profileEditRepository: IProfileEditRepository;
+  userActivityRepository: IUserActivityRepository;
+  notificationSettingsScreenRepository: INotificationSettingsScreenRepository;
+  accountManagementRepository: IAccountManagementRepository;
+  appConfigRepository: IAppConfigRepository;
+  inquiryFormRepository: IInquiryFormRepository;
+  legalDocumentRepository: ILegalDocumentRepository;
+  timetableDetailRepository: ITimetableDetailRepository;
   notificationActionRepository: INotificationActionRepository;
   taxiChatRepository: ITaxiChatRepository;
 }

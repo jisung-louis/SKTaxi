@@ -1,10 +1,11 @@
 import React from 'react';
 
-import {userActivityRepository} from '../data/repositories/userActivityRepository';
+import {useUserActivityRepository} from '@/di';
 import {toMyPostsViewData} from '../model/userActivityMappers';
 import type {MyPostsScreenViewData} from '../model/userActivityViewData';
 
 export const useMyPostsScreenData = () => {
+  const userActivityRepository = useUserActivityRepository();
   const [data, setData] = React.useState<MyPostsScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -22,7 +23,7 @@ export const useMyPostsScreenData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userActivityRepository]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

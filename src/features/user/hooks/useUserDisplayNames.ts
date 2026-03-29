@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from 'react';
 
-import {memberDirectoryRepository} from '@/features/member';
+import {useMemberDirectoryRepository} from '@/di';
 
 import {UserDisplayNameMap} from '../model/types';
 
@@ -11,6 +11,7 @@ export interface UseUserDisplayNamesResult {
 }
 
 export function useUserDisplayNames(uids: string[]): UseUserDisplayNamesResult {
+  const memberDirectoryRepository = useMemberDirectoryRepository();
   const [displayNameMap, setDisplayNameMap] = useState<UserDisplayNameMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +61,7 @@ export function useUserDisplayNames(uids: string[]): UseUserDisplayNamesResult {
     return () => {
       cancelled = true;
     };
-  }, [uniqueUids]);
+  }, [memberDirectoryRepository, uniqueUids]);
 
   return {
     displayNameMap,

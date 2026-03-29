@@ -1,8 +1,7 @@
 import React from 'react';
 
+import {useMyPageRepository} from '@/di';
 import {COLORS} from '@/shared/design-system/tokens';
-
-import {myPageRepository} from '../data/repositories/myPageRepository';
 import type {MyPageSource} from '../model/myPageSource';
 import type {
   MyPageMenuActionKey,
@@ -212,6 +211,7 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
 });
 
 export const useMyPageData = () => {
+  const myPageRepository = useMyPageRepository();
   const [data, setData] = React.useState<MyPageScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -229,7 +229,7 @@ export const useMyPageData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [myPageRepository]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

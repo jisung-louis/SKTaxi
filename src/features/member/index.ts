@@ -1,5 +1,4 @@
 export {SpringMemberRepository} from './data/repositories/SpringMemberRepository';
-export {memberDirectoryRepository} from './data/repositories/memberDirectoryRepository';
 export {SpringMemberDirectoryRepository} from './data/repositories/SpringMemberDirectoryRepository';
 export type {
   IMemberDirectoryRepository,

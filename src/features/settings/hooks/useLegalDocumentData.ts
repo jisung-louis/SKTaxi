@@ -1,9 +1,8 @@
 import React from 'react';
 
+import {useLegalDocumentRepository} from '@/di';
 import {COLORS} from '@/shared/design-system/tokens';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
-
-import {legalDocumentRepository} from '../data/repositories/legalDocumentRepository';
 import type {
   LegalDocumentBannerIconKey,
   LegalDocumentBannerLineSource,
@@ -73,6 +72,7 @@ const mapScreen = (
 };
 
 export const useLegalDocumentData = (documentKey: LegalDocumentKey) => {
+  const legalDocumentRepository = useLegalDocumentRepository();
   const [data, setData] = React.useState<LegalDocumentScreenViewData | null>(
     null,
   );
@@ -99,7 +99,7 @@ export const useLegalDocumentData = (documentKey: LegalDocumentKey) => {
     } finally {
       setLoading(false);
     }
-  }, [documentKey]);
+  }, [documentKey, legalDocumentRepository]);
 
   React.useEffect(() => {
     load().catch(() => undefined);

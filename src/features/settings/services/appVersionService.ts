@@ -1,8 +1,7 @@
 import { Platform } from 'react-native';
 
 import type { VersionModalConfig } from '@/shared/types/version';
-
-import { appConfigRepository } from '../data/composition/settingsRuntime';
+import type {IAppConfigRepository} from '../data/repositories/IAppConfigRepository';
 
 export type { VersionModalConfig } from '@/shared/types/version';
 
@@ -69,7 +68,9 @@ function isVersionLessThan(v1: string, v2: string): boolean {
   return false;
 }
 
-export async function getMinimumRequiredVersion(): Promise<{
+export async function getMinimumRequiredVersion(
+  appConfigRepository: IAppConfigRepository,
+): Promise<{
   version: string;
   forceUpdate: boolean;
   modalConfig?: VersionModalConfig;
@@ -88,10 +89,12 @@ export async function getMinimumRequiredVersion(): Promise<{
   };
 }
 
-export async function checkVersionUpdate(): Promise<VersionCheckResult> {
+export async function checkVersionUpdate(
+  appConfigRepository: IAppConfigRepository,
+): Promise<VersionCheckResult> {
   try {
     const currentVersion = getCurrentAppVersion();
-    const versionInfo = await getMinimumRequiredVersion();
+    const versionInfo = await getMinimumRequiredVersion(appConfigRepository);
 
     if (!versionInfo) {
       return {

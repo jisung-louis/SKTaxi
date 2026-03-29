@@ -1,10 +1,11 @@
 import React from 'react';
 
-import {userActivityRepository} from '../data/repositories/userActivityRepository';
+import {useUserActivityRepository} from '@/di';
 import {toTaxiHistoryViewData} from '../model/userActivityMappers';
 import type {TaxiHistoryScreenViewData} from '../model/userActivityViewData';
 
 export const useTaxiHistoryScreenData = () => {
+  const userActivityRepository = useUserActivityRepository();
   const [data, setData] = React.useState<TaxiHistoryScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -22,7 +23,7 @@ export const useTaxiHistoryScreenData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userActivityRepository]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

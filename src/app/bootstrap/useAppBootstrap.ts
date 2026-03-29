@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import ImmersiveMode from 'react-native-immersive-mode';
 
+import {useAppConfigRepository} from '@/di';
 import { logCrashlyticsMessage, subscribeAuthStateChange } from '@/shared/lib/firebase';
 import type {
   StartupModalMode,
@@ -20,6 +21,7 @@ export interface AppBootstrapState {
 }
 
 export const useAppBootstrap = (): AppBootstrapState => {
+  const appConfigRepository = useAppConfigRepository();
   const [checkingVersion, setCheckingVersion] = useState(true);
   const [modalConfig, setModalConfig] = useState<VersionModalConfig | undefined>();
   const [retryKey, setRetryKey] = useState(0);
@@ -46,7 +48,7 @@ export const useAppBootstrap = (): AppBootstrapState => {
 
     setCheckingVersion(true);
 
-    checkVersionUpdate()
+    checkVersionUpdate(appConfigRepository)
       .then(result => {
         if (!isMounted) {
           return;
@@ -86,7 +88,7 @@ export const useAppBootstrap = (): AppBootstrapState => {
     return () => {
       isMounted = false;
     };
-  }, [retryKey]);
+  }, [appConfigRepository, retryKey]);
 
   return {
     checkingVersion,

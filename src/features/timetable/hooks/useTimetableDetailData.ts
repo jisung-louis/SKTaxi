@@ -1,6 +1,7 @@
 import React from 'react';
 import {Alert, Share} from 'react-native';
 
+import {useTimetableDetailRepository} from '@/di';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {getPeriodTimeInfo} from '../services/timetableUtils';
@@ -27,7 +28,6 @@ import {
   removeTimetableCourseTone,
   setTimetableCourseTone,
 } from '../services/timetableToneStorage';
-import {timetableDetailRepository} from '../data/repositories/timetableDetailRepository';
 
 const PERIOD_NUMBERS = Array.from({length: 15}, (_, index) => index + 1);
 const DAY_ORDER: TimetableWeekdayId[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -598,6 +598,7 @@ const buildScreenViewData = ({
 export const useTimetableDetailData = (
   initialMode: TimetableDetailViewMode = 'all',
 ) => {
+  const timetableDetailRepository = useTimetableDetailRepository();
   const [activeMode, setActiveMode] =
     React.useState<TimetableDetailViewMode>(initialMode);
   const [activeTab, setActiveTab] = React.useState<'manual' | 'search'>('search');
@@ -659,7 +660,7 @@ export const useTimetableDetailData = (
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timetableDetailRepository]);
 
   React.useEffect(() => {
     loadSemester().catch(() => undefined);
@@ -795,6 +796,7 @@ export const useTimetableDetailData = (
       refreshRecord,
       selectedSemesterId,
       selectedToneId,
+      timetableDetailRepository,
     ],
   );
 
@@ -889,6 +891,7 @@ export const useTimetableDetailData = (
     record,
     refreshRecord,
     selectedSemesterId,
+    timetableDetailRepository,
   ]);
 
   const removeSelectedCourse = React.useCallback(() => {
@@ -959,7 +962,14 @@ export const useTimetableDetailData = (
         },
       },
     ]);
-  }, [loadSemester, record, refreshRecord, selectedCourseId, selectedSemesterId]);
+  }, [
+    loadSemester,
+    record,
+    refreshRecord,
+    selectedCourseId,
+    selectedSemesterId,
+    timetableDetailRepository,
+  ]);
 
   const shareTimetable = React.useCallback(async () => {
     if (!record) {

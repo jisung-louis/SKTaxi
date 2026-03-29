@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useState} from 'react';
 
-import {memberDirectoryRepository} from '@/features/member';
+import {useMemberDirectoryRepository} from '@/di';
 
 import type {MinecraftWhitelistPlayer} from '../model/types';
 import {subscribeToMinecraftWhitelistPlayers} from '../services/minecraftRealtimeService';
@@ -18,6 +18,7 @@ export interface UseMinecraftWhitelistPlayersResult {
 
 export const useMinecraftWhitelistPlayers =
   (): UseMinecraftWhitelistPlayersResult => {
+    const memberDirectoryRepository = useMemberDirectoryRepository();
     const [rawPlayers, setRawPlayers] = useState<MinecraftWhitelistPlayer[]>(
       [],
     );
@@ -67,7 +68,7 @@ export const useMinecraftWhitelistPlayers =
           console.error('마인크래프트 멤버 표시 이름 조회 실패:', nextError);
         })
         .finally(() => setFetchingUsers(false));
-    }, [rawPlayers, userCache]);
+    }, [memberDirectoryRepository, rawPlayers, userCache]);
 
     const players = useMemo(() => {
       return rawPlayers.map(player => ({

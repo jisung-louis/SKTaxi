@@ -6,18 +6,28 @@ import {useContext} from 'react';
 import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
 import type {
   IAcademicRepository,
+  IAccountManagementRepository,
+  IAppConfigRepository,
   IAppNoticeRepository,
   IAuthRepository,
   IBoardRepository,
   ICampusBannerRepository,
   ICafeteriaRepository,
   IChatRepository,
+  IInquiryFormRepository,
+  ILegalDocumentRepository,
+  IMemberDirectoryRepository,
   IMemberRepository,
+  IMyPageRepository,
   INotificationActionRepository,
   INotificationRepository,
+  INotificationSettingsScreenRepository,
   INoticeRepository,
   IPartyRepository,
+  IProfileEditRepository,
   ITaxiChatRepository,
+  ITimetableDetailRepository,
+  IUserActivityRepository,
 } from './repositoryContracts';
 
 /**
@@ -118,6 +128,56 @@ export function useAuthRepository(): IAuthRepository {
 export function useMemberRepository(): IMemberRepository {
   const {memberRepository} = useRepositories();
   return memberRepository;
+}
+
+export function useMemberDirectoryRepository(): IMemberDirectoryRepository {
+  const {memberDirectoryRepository} = useRepositories();
+  return memberDirectoryRepository;
+}
+
+export function useMyPageRepository(): IMyPageRepository {
+  const {myPageRepository} = useRepositories();
+  return myPageRepository;
+}
+
+export function useProfileEditRepository(): IProfileEditRepository {
+  const {profileEditRepository} = useRepositories();
+  return profileEditRepository;
+}
+
+export function useUserActivityRepository(): IUserActivityRepository {
+  const {userActivityRepository} = useRepositories();
+  return userActivityRepository;
+}
+
+export function useNotificationSettingsScreenRepository(): INotificationSettingsScreenRepository {
+  const {notificationSettingsScreenRepository} = useRepositories();
+  return notificationSettingsScreenRepository;
+}
+
+export function useAccountManagementRepository(): IAccountManagementRepository {
+  const {accountManagementRepository} = useRepositories();
+  return accountManagementRepository;
+}
+
+export function useAppConfigRepository(): IAppConfigRepository {
+  const {appConfigRepository} = useRepositories();
+  return appConfigRepository;
+}
+
+export function useInquiryFormRepository(): IInquiryFormRepository {
+  const {inquiryFormRepository} = useRepositories();
+  return inquiryFormRepository;
+}
+
+export function useLegalDocumentRepository(): ILegalDocumentRepository {
+  const {legalDocumentRepository} = useRepositories();
+  return legalDocumentRepository;
+}
+
+export function useTimetableDetailRepository(): ITimetableDetailRepository {
+  const {timetableDetailRepository} = useRepositories();
+  return timetableDetailRepository;
 }
 
 /**

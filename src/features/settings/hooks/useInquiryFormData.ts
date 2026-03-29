@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {inquiryFormRepository} from '../data/repositories/inquiryFormRepository';
+import {useInquiryFormRepository} from '@/di';
 import type {SubmitInquiryFormAttachmentPayload} from '../data/repositories/IInquiryFormRepository';
 import type {InquiryFormTypeKey} from '../model/inquiryFormSource';
 import type {
@@ -100,6 +100,7 @@ const mapViewData = ({
 };
 
 export const useInquiryFormData = (initialType?: string) => {
+  const inquiryFormRepository = useInquiryFormRepository();
   const [attachments, setAttachments] = React.useState<InquiryFormAttachmentItem[]>(
     [],
   );
@@ -172,7 +173,7 @@ export const useInquiryFormData = (initialType?: string) => {
     } finally {
       setSubmitting(false);
     }
-  }, [attachments, content, selectedType, title]);
+  }, [attachments, content, inquiryFormRepository, selectedType, title]);
 
   const reset = React.useCallback(() => {
     setAttachments([]);

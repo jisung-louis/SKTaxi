@@ -1,8 +1,7 @@
 import React from 'react';
 
+import {useProfileEditRepository} from '@/di';
 import {useAuth} from '@/features/auth';
-
-import {profileEditRepository} from '../data/repositories/profileEditRepository';
 import type {ProfileEditDraft} from '../model/profileEditSource';
 import type {ProfilePhotoUploadInput} from '../model/profileEditSource';
 import type {ProfileEditSource} from '../model/profileEditSource';
@@ -20,6 +19,7 @@ const toViewData = (source: ProfileEditSource): ProfileEditScreenViewData => ({
 
 export const useProfileEditScreenData = () => {
   const {refreshCurrentUser} = useAuth();
+  const profileEditRepository = useProfileEditRepository();
   const [data, setData] = React.useState<ProfileEditScreenViewData>();
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(true);
@@ -42,7 +42,7 @@ export const useProfileEditScreenData = () => {
     } finally {
       setLoading(false);
     }
-  }, [applySource]);
+  }, [applySource, profileEditRepository]);
 
   const saveChanges = React.useCallback(
     async (draft: ProfileEditDraft) => {
@@ -56,7 +56,7 @@ export const useProfileEditScreenData = () => {
         setSaving(false);
       }
     },
-    [applySource, refreshCurrentUser],
+    [applySource, profileEditRepository, refreshCurrentUser],
   );
 
   const uploadPhoto = React.useCallback(
@@ -71,7 +71,7 @@ export const useProfileEditScreenData = () => {
         setSaving(false);
       }
     },
-    [applySource, refreshCurrentUser],
+    [applySource, profileEditRepository, refreshCurrentUser],
   );
 
   const removePhoto = React.useCallback(async () => {
@@ -84,7 +84,7 @@ export const useProfileEditScreenData = () => {
     } finally {
       setSaving(false);
     }
-  }, [applySource, refreshCurrentUser]);
+  }, [applySource, profileEditRepository, refreshCurrentUser]);
 
   React.useEffect(() => {
     reload().catch(() => undefined);

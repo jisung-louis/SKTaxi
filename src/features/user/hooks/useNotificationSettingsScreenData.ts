@@ -1,8 +1,7 @@
 import React from 'react';
 
+import {useNotificationSettingsScreenRepository} from '@/di';
 import {COLORS} from '@/shared/design-system/tokens';
-
-import {notificationSettingsScreenRepository} from '../data/repositories/notificationSettingsScreenRepository';
 import type {
   NotificationSettingKey,
   NotificationSettingsScreenSource,
@@ -201,6 +200,8 @@ const applyToggleItemOptimistically = (
 };
 
 export const useNotificationSettingsScreenData = () => {
+  const notificationSettingsScreenRepository =
+    useNotificationSettingsScreenRepository();
   const [data, setData] =
     React.useState<NotificationSettingsScreenViewData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -231,7 +232,7 @@ export const useNotificationSettingsScreenData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [notificationSettingsScreenRepository]);
 
   React.useEffect(() => {
     load().catch(() => undefined);
@@ -266,7 +267,7 @@ export const useNotificationSettingsScreenData = () => {
       savingRef.current = false;
       setSaving(false);
     }
-  }, []);
+  }, [notificationSettingsScreenRepository]);
 
   const toggleItem = React.useCallback(
     async (key: NotificationSettingKey, enabled: boolean) => {
@@ -304,7 +305,7 @@ export const useNotificationSettingsScreenData = () => {
         setSaving(false);
       }
     },
-    [],
+    [notificationSettingsScreenRepository],
   );
 
   return {

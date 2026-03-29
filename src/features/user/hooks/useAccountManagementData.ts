@@ -1,8 +1,7 @@
 import React from 'react';
 
+import {useAccountManagementRepository} from '@/di';
 import {useAuth} from '@/features/auth';
-
-import {accountManagementRepository} from '../data/repositories/accountManagementRepository';
 import type {AccountManagementScreenViewData} from '../model/accountManagementViewData';
 
 const mapViewData = ({
@@ -31,6 +30,7 @@ const mapViewData = ({
 
 export const useAccountManagementData = () => {
   const {refreshCurrentUser} = useAuth();
+  const accountManagementRepository = useAccountManagementRepository();
   const [accountHolder, setAccountHolder] = React.useState('');
   const [accountNumber, setAccountNumber] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
@@ -56,7 +56,7 @@ export const useAccountManagementData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [accountManagementRepository]);
 
   React.useEffect(() => {
     load().catch(() => undefined);
@@ -90,6 +90,7 @@ export const useAccountManagementData = () => {
     accountNumber,
     hideName,
     refreshCurrentUser,
+    accountManagementRepository,
     selectedBankName,
   ]);
 

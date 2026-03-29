@@ -4,7 +4,10 @@
 import React, {useMemo, type ReactNode} from 'react';
 
 import {SpringBoardRepository} from '@/features/board/data/repositories/SpringBoardRepository';
-import {SpringMemberRepository} from '@/features/member';
+import {
+  SpringMemberDirectoryRepository,
+  SpringMemberRepository,
+} from '@/features/member';
 import {RepositoryContext, RepositoryContainer} from './RepositoryContext';
 import {FirebaseAuthRepository} from '@/features/auth';
 import {SpringAcademicRepository} from '@/features/campus/data/repositories/SpringAcademicRepository';
@@ -12,11 +15,20 @@ import {SpringCampusBannerRepository} from '@/features/campus/data/repositories/
 import {SpringCafeteriaRepository} from '@/features/campus/data/repositories/SpringCafeteriaRepository';
 import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
 import {SpringNoticeRepository} from '@/features/notice/data/repositories/SpringNoticeRepository';
+import {SpringAppConfigRepository} from '@/features/settings/data/repositories/SpringAppConfigRepository';
 import {SpringAppNoticeRepository} from '@/features/settings/data/repositories/SpringAppNoticeRepository';
+import {SpringInquiryFormRepository} from '@/features/settings/data/repositories/SpringInquiryFormRepository';
+import {SpringLegalDocumentRepository} from '@/features/settings/data/repositories/SpringLegalDocumentRepository';
 import {SpringPartyRepository} from '@/features/taxi/data/repositories/SpringPartyRepository';
 import {SpringNotificationActionRepository} from '@/features/taxi/data/repositories/SpringNotificationActionRepository';
 import {SpringTaxiChatRepository} from '@/features/taxi/data/repositories/SpringTaxiChatRepository';
+import {SpringTimetableDetailRepository} from '@/features/timetable/data/repositories/SpringTimetableDetailRepository';
+import {SpringAccountManagementRepository} from '@/features/user/data/repositories/SpringAccountManagementRepository';
+import {SpringMyPageRepository} from '@/features/user/data/repositories/SpringMyPageRepository';
 import {SpringNotificationRepository} from '@/features/user/data/repositories/SpringNotificationRepository';
+import {SpringNotificationSettingsScreenRepository} from '@/features/user/data/repositories/SpringNotificationSettingsScreenRepository';
+import {SpringProfileEditRepository} from '@/features/user/data/repositories/SpringProfileEditRepository';
+import {SpringUserActivityRepository} from '@/features/user/data/repositories/SpringUserActivityRepository';
 
 interface RepositoryProviderProps {
   children: ReactNode;
@@ -38,6 +50,7 @@ export function RepositoryProvider({
   // Repository 인스턴스를 메모이제이션하여 불필요한 재생성 방지
   // 이는 Context re-render 문제를 방지
   const repositories = useMemo<RepositoryContainer>(() => {
+    const memberRepository = new SpringMemberRepository();
     const defaultRepositories: RepositoryContainer = {
       partyRepository: new SpringPartyRepository(),
       chatRepository: new SpringChatRepository(),
@@ -49,7 +62,18 @@ export function RepositoryProvider({
       academicRepository: new SpringAcademicRepository(),
       campusBannerRepository: new SpringCampusBannerRepository(),
       authRepository: new FirebaseAuthRepository(),
-      memberRepository: new SpringMemberRepository(),
+      memberRepository,
+      memberDirectoryRepository: new SpringMemberDirectoryRepository(),
+      myPageRepository: new SpringMyPageRepository(),
+      profileEditRepository: new SpringProfileEditRepository(memberRepository),
+      userActivityRepository: new SpringUserActivityRepository(),
+      notificationSettingsScreenRepository:
+        new SpringNotificationSettingsScreenRepository(memberRepository),
+      accountManagementRepository: new SpringAccountManagementRepository(),
+      appConfigRepository: new SpringAppConfigRepository(),
+      inquiryFormRepository: new SpringInquiryFormRepository(),
+      legalDocumentRepository: new SpringLegalDocumentRepository(),
+      timetableDetailRepository: new SpringTimetableDetailRepository(),
       notificationActionRepository: new SpringNotificationActionRepository(),
       taxiChatRepository: new SpringTaxiChatRepository(),
     };
