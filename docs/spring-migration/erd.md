@@ -205,6 +205,7 @@ erDiagram
         int comment_count "DEFAULT 0"
         int bookmark_count "DEFAULT 0"
         boolean is_pinned "DEFAULT false"
+        boolean is_hidden "DEFAULT false"
         boolean is_deleted "DEFAULT false"
         datetime last_comment_at
         datetime created_at
@@ -235,6 +236,7 @@ erDiagram
         int anonymous_order "익명1, 익명2..."
         varchar(36) parent_id FK "무제한 self-reference"
         int like_count "DEFAULT 0"
+        boolean is_hidden "DEFAULT false"
         boolean is_deleted "DEFAULT false"
         datetime created_at
         datetime updated_at
@@ -389,6 +391,7 @@ erDiagram
         varchar(50) professor
         varchar(100) location
         varchar(500) note
+        boolean is_online "NOT NULL DEFAULT false"
         varchar(10) semester "2024-2"
         varchar(50) department
         datetime created_at
@@ -449,6 +452,7 @@ erDiagram
     %% runtime contract note:
     %% 강의 일괄 등록 계약은 credits + 강의 단위 location을 사용하며,
     %% 개별 course_schedules에는 강의실 컬럼을 두지 않는다.
+    %% 공식 온라인 강의는 courses.is_online=true 이고 course_schedules row 없이 운영한다.
 
     %% ===== SUPPORT 도메인 =====
     inquiries {
@@ -514,6 +518,7 @@ erDiagram
         date week_start "NOT NULL"
         date week_end "NOT NULL"
         json menus "Map<date, Map<restaurant, items[]>>"
+        json menu_entries "Map<date, Map<category, entry[]>>"
         datetime created_at
         datetime updated_at
     }
@@ -542,6 +547,7 @@ erDiagram
         varchar(36) user_id FK "NOT NULL"
         varchar(500) token UK "NOT NULL"
         varchar(10) platform "ios,android"
+        varchar(32) app_version "nullable"
         datetime created_at
         datetime last_used_at
     }
@@ -822,8 +828,13 @@ Taxi history 계약 메모:
 | user_id | VARCHAR(36) | FK, NOT NULL | 소유 회원 ID |
 | token | VARCHAR(500) | UK, NOT NULL | FCM 디바이스 토큰 |
 | platform | VARCHAR(10) | NOT NULL | `ios` 또는 `android` |
+| app_version | VARCHAR(32) | | 토큰이 대표하는 앱 버전 (`null` 허용) |
 | created_at | DATETIME | NOT NULL | 최초 등록 시각 |
 | last_used_at | DATETIME | | 마지막 성공 사용 시각 |
+
+- `app_version`은 디바이스/토큰 메타데이터로 저장하며, 신규 토큰 등록 시 미전송하면 `null`을 허용한다.
+- 같은 토큰 재등록 시 `appVersion`이 `null` 또는 빈 문자열이면 기존 `app_version`을 유지한다.
+- 관리자 회원 목록의 `lastLoginOs`, `currentAppVersion`은 동일한 대표 토큰(`coalesce(last_used_at, created_at)` 최신) 기준으로 계산한다.
 
 **admin_audit_logs 주요 컬럼**
 

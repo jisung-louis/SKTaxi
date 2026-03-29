@@ -470,6 +470,8 @@ endpoint:
 runtime note:
 
 - Campus home은 academic / cafeteria를 query layer에서 조합하고, central mock repository를 더 이상 기본값으로 사용하지 않는다.
+- 2026-03-29 기준 backend 학식 계약은 기존 `menus`를 유지하면서 `categories`와 `menuEntries`(title, badges, likeCount, dislikeCount)를 함께 제공한다.
+- Cafeteria detail / campus home preview는 더 이상 `오늘 제공`, `오늘`, `주간 n회` 같은 frequency badge를 source of truth로 쓰지 않고, Figma 구현 시 `menuEntries` 메타데이터를 직접 사용해야 한다.
 - 현재 campus domain에서 Spring source of truth로 남지 않은 것은 course/timetable/user preview 조합용 기존 mock repository뿐이며, 이번 Phase H 범위 밖이다.
 
 ---
