@@ -8,8 +8,8 @@ import {
   CampusScreen,
 } from '@/features/campus';
 import {
+  MinecraftAccountScreen,
   MinecraftDetailScreen,
-  MinecraftMapDetailScreen,
 } from '@/features/minecraft';
 import { TimetableDetailScreen } from '@/features/timetable';
 import {
@@ -79,12 +79,12 @@ export const CampusStackNavigator = () => {
         component={TimetableDetailScreen}
       />
       <CampusStack.Screen
-        name="MinecraftDetail"
-        component={MinecraftDetailScreen}
+        name="MinecraftAccount"
+        component={MinecraftAccountScreen}
       />
       <CampusStack.Screen
-        name="MinecraftMapDetail"
-        component={MinecraftMapDetailScreen}
+        name="MinecraftDetail"
+        component={MinecraftDetailScreen}
       />
     </CampusStack.Navigator>
   );

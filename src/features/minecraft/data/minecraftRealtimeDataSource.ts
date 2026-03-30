@@ -70,18 +70,21 @@ export const upsertMockMinecraftWhitelistEntry = ({
   storedName,
   edition,
   addedBy,
+  whoseFriend,
 }: {
   uuid: string;
   nickname: string;
   storedName?: string;
   edition: MinecraftEdition;
   addedBy: string;
+  whoseFriend?: string;
 }) => {
   const baseRecord = {
     nickname,
     edition,
     addedBy,
     addedAt: Date.now(),
+    whoseFriend,
   };
 
   if (edition === 'BE' && storedName) {

@@ -17,6 +17,7 @@ export interface UseMinecraftAccountsResult {
   registerAccount: (
     nickname: string,
     edition: MinecraftEdition,
+    whoseFriend?: string,
   ) => Promise<void>;
   deleteAccount: (uuid: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -57,7 +58,11 @@ export const useMinecraftAccounts = (): UseMinecraftAccountsResult => {
   }, [loadAccounts]);
 
   const registerAccount = useCallback(
-    async (nickname: string, edition: MinecraftEdition) => {
+    async (
+      nickname: string,
+      edition: MinecraftEdition,
+      whoseFriend?: string,
+    ) => {
       if (!user?.uid) {
         throw new Error('로그인이 필요합니다.');
       }
@@ -69,6 +74,7 @@ export const useMinecraftAccounts = (): UseMinecraftAccountsResult => {
           uid: user.uid,
           nickname,
           edition,
+          whoseFriend,
         });
         await loadAccounts();
       } catch (nextError: any) {

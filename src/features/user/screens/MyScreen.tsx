@@ -62,16 +62,10 @@ export const MyScreen = () => {
           navigation.navigate('ProfileEdit');
           return;
         case 'minecraftAccount':
-          Alert.alert(
-            '구현 예정',
-            '마인크래프트 계정 등록 기능은 추후 제공될 예정입니다.',
-          );
+          navigation.navigate('MinecraftAccount');
           return;
         case 'minecraftServer':
-          Alert.alert(
-            '구현 예정',
-            '마인크래프트 서버 정보 기능은 추후 제공될 예정입니다.',
-          );
+          navigation.navigate('MinecraftDetail');
           return;
         case 'myPosts':
           navigation.navigate('MyPosts');

@@ -28,6 +28,9 @@ const cloneAccount = (account: MinecraftAccountEntry): MinecraftAccountEntry => 
   ...account,
 });
 
+const MAX_TOTAL_ACCOUNTS = 4;
+const MAX_FRIEND_ACCOUNTS = 3;
+
 export class MockMinecraftRepository implements IMinecraftRepository {
   async getUserMinecraftAccounts(uid: string): Promise<MinecraftAccountEntry[]> {
     return (accountsByUser.get(uid) ?? []).map(cloneAccount);
@@ -37,6 +40,7 @@ export class MockMinecraftRepository implements IMinecraftRepository {
     params: RegisterAccountParams,
   ): Promise<RegisterAccountResult> {
     const nickname = normalizeNickname(params.nickname);
+    const whoseFriend = normalizeNickname(params.whoseFriend ?? '') || undefined;
     const storedName = params.edition === 'BE' ? toStoredName(nickname) : undefined;
     const uuid = toUuid(nickname, params.edition);
 
@@ -46,12 +50,37 @@ export class MockMinecraftRepository implements IMinecraftRepository {
     }
 
     const currentAccounts = accountsByUser.get(params.uid) ?? [];
+    const parentAccount =
+      currentAccounts.find(account => !account.whoseFriend) ?? null;
+    const friendAccounts = currentAccounts.filter(account => !!account.whoseFriend);
+
+    if (currentAccounts.length >= MAX_TOTAL_ACCOUNTS) {
+      throw new Error('최대 4개의 계정만 등록할 수 있습니다.');
+    }
+
+    if (parentAccount && !whoseFriend) {
+      throw new Error('본인 계정은 하나만 등록할 수 있습니다.');
+    }
+
+    if (!parentAccount && whoseFriend) {
+      throw new Error('본인 계정을 먼저 등록해주세요.');
+    }
+
+    if (whoseFriend && parentAccount && whoseFriend !== parentAccount.nickname) {
+      throw new Error('친구 계정은 등록된 본인 계정에만 연결할 수 있습니다.');
+    }
+
+    if (whoseFriend && friendAccounts.length >= MAX_FRIEND_ACCOUNTS) {
+      throw new Error('친구 계정은 최대 3개까지 등록할 수 있습니다.');
+    }
+
     const nextAccount: MinecraftAccountEntry = {
       nickname,
       uuid,
       storedName,
       edition: params.edition,
       linkedAt: Date.now(),
+      whoseFriend,
     };
     accountsByUser.set(params.uid, [...currentAccounts, nextAccount]);
 
@@ -61,12 +90,14 @@ export class MockMinecraftRepository implements IMinecraftRepository {
       storedName,
       edition: params.edition,
       addedBy: params.uid,
+      whoseFriend,
     });
 
     return {
       uuid,
       nickname,
       storedName,
+      whoseFriend,
     };
   }
 
@@ -80,6 +111,18 @@ export class MockMinecraftRepository implements IMinecraftRepository {
       throw new Error('등록된 계정을 찾을 수 없습니다.');
     }
 
+    if (!targetAccount.whoseFriend) {
+      const hasFriendAccounts = currentAccounts.some(
+        account => account.whoseFriend === targetAccount.nickname,
+      );
+
+      if (hasFriendAccounts) {
+        throw new Error(
+          '친구 계정이 연결되어 있어 본인 계정을 삭제할 수 없습니다.',
+        );
+      }
+    }
+
     accountsByUser.set(
       params.uid,
       currentAccounts.filter(account => account.uuid !== params.uuid),
@@ -90,6 +133,7 @@ export class MockMinecraftRepository implements IMinecraftRepository {
       uuid: targetAccount.uuid,
       nickname: targetAccount.nickname,
       storedName: targetAccount.storedName,
+      whoseFriend: targetAccount.whoseFriend,
     };
   }
 

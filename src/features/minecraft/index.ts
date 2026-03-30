@@ -31,8 +31,8 @@ export type {
   UserMinecraftAccount,
 } from './model/types';
 
+export { MinecraftAccountScreen } from './screens/MinecraftAccountScreen';
 export { MinecraftDetailScreen } from './screens/MinecraftDetailScreen';
-export { MinecraftMapDetailScreen } from './screens/MinecraftMapDetailScreen';
 
 export {
   deleteMinecraftAccount,

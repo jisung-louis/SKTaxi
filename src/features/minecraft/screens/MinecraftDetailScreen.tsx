@@ -1,16 +1,4 @@
-// SKTaxi: Minecraft 서버 상세 화면
-//
-// ⚠️ 특수 케이스 - Firebase Realtime Database 사용:
-// 이 화면은 마인크래프트 서버 상태를 실시간으로 모니터링합니다.
-// - 서버 상태 (online/offline, 접속자 수)
-// - 화이트리스트 플레이어 목록
-// - 서버 주소 및 버전 정보
-//
-// Firebase Realtime Database는 마인크래프트 서버와의 실시간 연동에 특화된
-// 별도의 시스템으로, Spring 마이그레이션 대상이 아닙니다.
-// (마인크래프트 서버 플러그인이 RTDB에 직접 데이터를 쓰는 구조)
-
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -22,856 +10,774 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useScreenView } from '@/shared/hooks/useScreenView';
 
+import {navigateToChatRoom} from '@/app/navigation/services/communityNavigation';
+import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  MINECRAFT_COLORS as COLORS,
-  MINECRAFT_TYPOGRAPHY as TYPOGRAPHY,
-} from '../constants/minecraftDesignTokens';
-import { useMinecraftServerOverview } from '../hooks/useMinecraftServerOverview';
-import { useMinecraftWhitelistPlayers } from '../hooks/useMinecraftWhitelistPlayers';
+  StackHeader,
+  StateCard,
+  ToneBadge,
+} from '@/shared/design-system/components';
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+} from '@/shared/design-system/tokens';
+import {useScreenView} from '@/shared/hooks/useScreenView';
+
+import {MinecraftServerGuideModal} from '../components/MinecraftServerGuideModal';
+import {
+  GUIDE_SERVER_ADDRESS_FALLBACK,
+  MINECRAFT_CHAT_ROOM_ID,
+} from '../constants/minecraftGuide';
+import {useMinecraftServerOverview} from '../hooks/useMinecraftServerOverview';
+import {useMinecraftWhitelistPlayers} from '../hooks/useMinecraftWhitelistPlayers';
+import type {MinecraftWhitelistPlayer} from '../model/types';
+
+const getAvatarUri = (uuid?: string) => {
+  const avatarKey =
+    uuid && !uuid.startsWith('be:')
+      ? uuid
+      : '8667ba71b85a4004af54457a9734eed7';
+
+  return `https://minotar.net/avatar/${avatarKey}/48`;
+};
+
+const formatDateTime = (timestamp?: number) => {
+  if (!timestamp) {
+    return '-';
+  }
+
+  try {
+    const date = new Date(timestamp);
+    return `${date.toLocaleDateString('ko-KR')} ${date.toLocaleTimeString(
+      'ko-KR',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+      },
+    )}`;
+  } catch {
+    return '-';
+  }
+};
+
+const sortWhitelistPlayers = <T extends MinecraftWhitelistPlayer>(
+  players: T[],
+) => {
+  const parents = players
+    .filter(player => !player.whoseFriend)
+    .sort((left, right) => left.username.localeCompare(right.username, 'ko'));
+  const friends = players
+    .filter(player => !!player.whoseFriend)
+    .sort((left, right) => {
+      const ownerCompare = (left.whoseFriend ?? '').localeCompare(
+        right.whoseFriend ?? '',
+        'ko',
+      );
+
+      if (ownerCompare !== 0) {
+        return ownerCompare;
+      }
+
+      return left.username.localeCompare(right.username, 'ko');
+    });
+
+  return [...parents, ...friends];
+};
 
 export const MinecraftDetailScreen = () => {
   useScreenView();
-  const navigation = useNavigation();
-  const { mapUri, serverStatus, serverUrl, serverVersion } =
+
+  const navigation =
+    useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
+  const {error, loading, serverStatus, serverUrl, serverVersion} =
     useMinecraftServerOverview();
   const {
     fetchingUsers,
     loading: loadingPlayers,
     players,
   } = useMinecraftWhitelistPlayers();
+  const [isGuideModalVisible, setGuideModalVisible] = React.useState(false);
 
-  // 온라인 플레이어 Set 생성 (UUID와 username으로 빠른 조회)
-  const onlinePlayerSet = useMemo(() => {
-    if (!serverStatus?.players) {return new Set<string>();}
-    const onlineSet = new Set<string>();
-    serverStatus.players.forEach((p) => {
-      if (p.uuid) {onlineSet.add(p.uuid);}
-      if (p.username) {onlineSet.add(p.username);}
-    });
-    return onlineSet;
+  const onlinePlayerSet = React.useMemo(() => {
+    if (!serverStatus?.players?.length) {
+      return new Set<string>();
+    }
+
+    return new Set(
+      serverStatus.players.flatMap(player =>
+        [player.uuid, player.username].filter(Boolean) as string[],
+      ),
+    );
   }, [serverStatus?.players]);
 
-  const sortedPlayers = useMemo(() => {
-    // whoseFriend가 없는 플레이어(부모 계정)를 먼저 abc순으로 정렬
-    const parentPlayers = players
-      .filter((p) => !p.whoseFriend)
-      .sort((a, b) => a.username.localeCompare(b.username, 'ko'));
+  const sortedPlayers = React.useMemo(
+    () => sortWhitelistPlayers(players),
+    [players],
+  );
 
-    // 각 부모 계정의 친구들을 그룹화
-    const friendsByParent = new Map<string, typeof players>();
-    players
-      .filter((p) => p.whoseFriend)
-      .forEach((friend) => {
-        const parent = friend.whoseFriend!;
-        if (!friendsByParent.has(parent)) {
-          friendsByParent.set(parent, []);
-        }
-        friendsByParent.get(parent)!.push(friend);
-      });
+  const onlinePlayers = serverStatus?.players ?? [];
+  const isServerOnline = Boolean(serverStatus?.online);
+  const hasOverviewData = Boolean(serverStatus || serverUrl || serverVersion);
+  const guideServerAddress = serverUrl || GUIDE_SERVER_ADDRESS_FALLBACK;
 
-    // 각 부모의 친구들을 abc순으로 정렬
-    friendsByParent.forEach((friends) => {
-      friends.sort((a, b) => a.username.localeCompare(b.username, 'ko'));
-    });
-
-    // 부모 계정과 그 친구들을 순서대로 배치
-    const result: typeof players = [];
-    parentPlayers.forEach((parent) => {
-      result.push(parent);
-      const friends = friendsByParent.get(parent.username) || [];
-      result.push(...friends);
-    });
-
-    return result;
-  }, [players]);
-
-  const formatDateTime = (ts?: number) => {
-    if (!ts) {return '-';}
-    try {
-      const date = new Date(ts);
-      return `${date.toLocaleDateString('ko-KR')} ${date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}`;
-    } catch {
-      return '-';
+  const handleCopyServerUrl = React.useCallback(() => {
+    if (!serverUrl) {
+      Alert.alert('알림', '서버 주소를 아직 불러오지 못했습니다.');
+      return;
     }
-  };
+
+    Clipboard.setString(serverUrl);
+    Alert.alert('복사 완료', '서버 주소를 복사했습니다.');
+  }, [serverUrl]);
+
+  const handleOpenGuideModal = React.useCallback(() => {
+    setGuideModalVisible(true);
+  }, []);
+
+  const handleCloseGuideModal = React.useCallback(() => {
+    setGuideModalVisible(false);
+  }, []);
+
+  const handlePressGoToAccountRegistration = React.useCallback(() => {
+    setGuideModalVisible(false);
+    navigation.navigate('MinecraftAccount');
+  }, [navigation]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
-          <Icon name="arrow-back" size={22} color={COLORS.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>마인크래프트 서버 정보</Text>
-        <View style={styles.headerRightPlaceholder} />
-      </View>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRowSpaced}>
-            <View style={styles.cardHeaderLeftContainer}>
-                <Icon name="globe" size={20} color={COLORS.accent.blue} />
-                <Text style={styles.cardTitle}>서버 정보</Text>
-            </View>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <StackHeader
+        onPressBack={() => navigation.goBack()}
+        title="마인크래프트 서버 정보"
+      />
 
-            {/* 서버 상태 배지 */}
-            {serverStatus && (
-              <View style={styles.serverStatusBadgeContainer}>
-                <View style={[styles.serverStatusBadge, serverStatus.online ? styles.serverStatusBadgeOnline : styles.serverStatusBadgeOffline]}>
-                  <View style={[styles.serverStatusDot, serverStatus.online ? styles.serverStatusDotOnline : styles.serverStatusDotOffline]} />
-                  <Text style={[styles.serverStatusBadgeText, serverStatus.online ? styles.serverStatusBadgeTextOnline : styles.serverStatusBadgeTextOffline]}>
-                    {serverStatus.online ? '서버 켜짐' : '서버 꺼짐'}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}>
+        {loading && !hasOverviewData ? (
+          <StateCard
+            description="서버 상태와 접속 정보를 준비하고 있습니다."
+            icon={<ActivityIndicator color={COLORS.brand.primary} />}
+            title="서버 정보를 불러오는 중"
+          />
+        ) : null}
+
+        {!loading && error && !hasOverviewData ? (
+          <StateCard
+            description={error}
+            icon={
+              <Icon
+                color={COLORS.accent.orange}
+                name="alert-circle-outline"
+                size={28}
+              />
+            }
+            title="서버 정보를 불러오지 못했습니다"
+          />
+        ) : null}
+
+        {!loading || hasOverviewData ? (
+          <>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryHeader}>
+                <View>
+                  <Text style={styles.summaryTitle}>서버 상태</Text>
+                  <Text style={styles.summarySubtitle}>
+                    마지막 업데이트 {formatDateTime(serverStatus?.updatedAt)}
+                  </Text>
+                </View>
+
+                <ToneBadge
+                  label={isServerOnline ? '온라인' : '오프라인'}
+                  tone={isServerOnline ? 'green' : 'orange'}
+                />
+              </View>
+
+              <View style={styles.summaryMetrics}>
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricLabel}>현재 접속 인원</Text>
+                  <Text style={styles.metricValue}>
+                    {serverStatus
+                      ? `${serverStatus.currentPlayers ?? 0}/${
+                          serverStatus.maxPlayers ??
+                          serverStatus.currentPlayers ??
+                          0
+                        }`
+                      : '-'}
+                  </Text>
+                </View>
+
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricLabel}>서버 버전</Text>
+                  <Text style={styles.metricValue}>
+                    {serverVersion || '확인 중'}
                   </Text>
                 </View>
               </View>
-            )}
-          </View>
-
-          <View style={styles.serverInfoContent}>
-
-            {/* 서버 주소 섹션 */}
-            <View style={styles.serverAddressSection}>
-              <View style={styles.serverInfoLabelRow}>
-                <Icon name="server" size={16} color={COLORS.text.secondary} />
-                <Text style={styles.serverInfoLabel}>서버 주소</Text>
-              </View>
-              <View style={styles.serverAddressRow}>
-                <View style={styles.serverAddressContainer}>
-                  <Text style={styles.serverAddressText}>{serverUrl || '서버 주소를 불러오는 중...'}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.copyButton}
-                  onPress={async () => {
-                    if (!serverUrl) {
-                      Alert.alert('알림', '서버 주소를 불러올 수 없습니다.');
-                      return;
-                    }
-                    try {
-                      await Clipboard.setString(serverUrl);
-                      Alert.alert('복사 완료', '서버 주소가 클립보드에 복사되었습니다.');
-                    } catch (error) {
-                      Alert.alert('오류', '클립보드 복사에 실패했습니다.');
-                    }
-                  }}
-                  disabled={!serverUrl}
-                >
-                  <Icon name="copy-outline" size={18} color={COLORS.accent.blue} />
-                  <Text style={styles.copyButtonText}>복사</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* 서버 버전 정보 */}
-            {serverVersion && (
-              <>
-                <View style={styles.serverInfoDivider} />
-                <View style={styles.serverInfoRow}>
-                  <View style={styles.serverInfoLabelRow}>
-                    <Icon name="code" size={16} color={COLORS.text.secondary} />
-                    <Text style={styles.serverInfoLabel}>버전</Text>
-                  </View>
-                  <Text style={styles.serverInfoValue}>{serverVersion}</Text>
-                </View>
-              </>
-            )}
-
-            {/* 도움말 및 채팅방 바로가기 */}
-            <View style={styles.serverInfoDivider} />
-
-            <View style={styles.serverInfoHelp}>
-              <Icon name="information-circle-outline" size={16} color={COLORS.accent.blue} />
-              <Text style={styles.serverInfoHelpText}>
-                JE: 멀티플레이어 → 서버 추가 → 주소 입력{'\n'}
-                BE: 서버 → 서버 추가 → 주소 입력
-              </Text>
             </View>
 
             <TouchableOpacity
-              style={styles.chatRoomButton}
-              onPress={() => {
-                (navigation as any).navigate('Main', {
-                  screen: 'CommunityTab',
-                  params: {
-                    screen: 'ChatDetail',
-                    params: { chatRoomId: 'game-minecraft' },
-                  },
-                });
-              }}
-            >
-              <View style={styles.chatRoomButtonContent}>
-                <Icon name="chatbubbles" size={20} color={COLORS.accent.orange} />
-                <Text style={styles.chatRoomButtonText}>마인크래프트 채팅방</Text>
-                <Icon name="chevron-forward" size={18} color={COLORS.text.secondary} />
+              accessibilityRole="button"
+              activeOpacity={0.88}
+              onPress={handleOpenGuideModal}
+              style={styles.guideShortcutButton}>
+              <View style={styles.guideShortcutLeft}>
+                <View style={styles.guideShortcutIconWrap}>
+                  <Icon
+                    color={COLORS.brand.primaryStrong}
+                    name="compass-outline"
+                    size={20}
+                  />
+                </View>
+                <View style={styles.guideShortcutTextWrap}>
+                  <Text style={styles.guideShortcutTitle}>
+                    마인크래프트 스쿠리 서버에 접속하는 법
+                  </Text>
+                  <Text style={styles.guideShortcutSubtitle}>
+                    계정 등록부터 멀티플레이 접속 방법까지 한 번에 확인할 수 있어요.
+                  </Text>
+                </View>
               </View>
+              <Icon
+                color={COLORS.text.inverse}
+                name="chevron-forward"
+                size={18}
+              />
             </TouchableOpacity>
-          </View>
-        </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRowSpaced}>
-            <View style={styles.cardHeaderLeftContainer}>
-                <Icon name="people" size={20} color={COLORS.accent.orange} />
-                <Text style={styles.cardTitle}>현재 서버 접속자</Text>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderTitleWrap}>
+                  <Icon color={COLORS.accent.blue} name="server-outline" size={18} />
+                  <Text style={styles.cardTitle}>접속 정보</Text>
+                </View>
+              </View>
+
+              <View style={styles.serverAddressCard}>
+                <Text style={styles.serverAddressLabel}>서버 주소</Text>
+                <Text style={styles.serverAddressValue}>
+                  {serverUrl || '서버 주소를 확인하고 있습니다.'}
+                </Text>
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  activeOpacity={0.88}
+                  disabled={!serverUrl}
+                  onPress={handleCopyServerUrl}
+                  style={[
+                    styles.copyButton,
+                    serverUrl ? styles.copyButtonEnabled : undefined,
+                  ]}>
+                  <Icon
+                    color={serverUrl ? COLORS.text.inverse : COLORS.text.muted}
+                    name="copy-outline"
+                    size={18}
+                  />
+                  <Text
+                    style={[
+                      styles.copyButtonText,
+                      serverUrl ? styles.copyButtonTextEnabled : undefined,
+                    ]}>
+                    주소 복사
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.infoBanner}>
+                <Icon
+                  color={COLORS.accent.blue}
+                  name="information-circle-outline"
+                  size={16}
+                />
+                <View style={styles.infoBannerBody}>
+                  <Text style={styles.infoBannerText}>
+                    JE: 멀티플레이어에서 서버 추가 후 주소를 입력하세요.
+                  </Text>
+                  <Text style={styles.infoBannerText}>
+                    BE: 서버 목록에서 서버 추가 후 주소를 입력하세요.
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                accessibilityRole="button"
+                activeOpacity={0.86}
+                onPress={() => {
+                  navigateToChatRoom(
+                    navigation as unknown as {navigate: (...args: any[]) => void},
+                    MINECRAFT_CHAT_ROOM_ID,
+                  );
+                }}
+                style={styles.secondaryAction}>
+                <View style={styles.secondaryActionLeft}>
+                  <Icon
+                    color={COLORS.accent.orange}
+                    name="chatbubbles-outline"
+                    size={20}
+                  />
+                  <View>
+                    <Text style={styles.secondaryActionTitle}>
+                      스쿠리 서버 채팅방
+                    </Text>
+                    <Text style={styles.secondaryActionSubtitle}>
+                      스쿠리 앱에서 서버 내로 채팅을 보낼 수 있어요.
+                    </Text>
+                  </View>
+                </View>
+                <Icon
+                  color={COLORS.text.muted}
+                  name="chevron-forward"
+                  size={18}
+                />
+              </TouchableOpacity>
             </View>
-            {serverStatus && (
-              <View style={styles.serverPlayerCountBadge}>
-                <Icon name="people" size={16} color={COLORS.text.secondary} />
-                <Text style={styles.serverPlayerCountText}>
-                    {serverStatus?.currentPlayers || 0}/{serverStatus?.maxPlayers || serverStatus?.currentPlayers || 0}
+
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderTitleWrap}>
+                  <Icon color={COLORS.brand.primary} name="pulse-outline" size={18} />
+                  <Text style={styles.cardTitle}>현재 접속자</Text>
+                </View>
+                <Text style={styles.headerMeta}>
+                  {serverStatus
+                    ? `${serverStatus.currentPlayers ?? 0}명 접속 중`
+                    : '상태 확인 중'}
                 </Text>
               </View>
-            )}
-          </View>
-          {serverStatus ? (
-            <>
-              <View style={styles.serverStatusHeader}>
-                <View style={styles.serverUpdatedAt}>
-                  <Icon name="time-outline" size={12} color={COLORS.text.secondary} />
-                  <Text style={styles.serverUpdatedAtText}>{formatDateTime(serverStatus.updatedAt)}</Text>
-                </View>
-              </View>
-              {serverStatus.players && serverStatus.players.length > 0 ? (
-                <View style={styles.playersList}>
-                  {serverStatus.players.map((p) => {
-                    const avatarUrl = p.uuid && !p.uuid.startsWith('be:') ? p.uuid : '8667ba71b85a4004af54457a9734eed7';
-                    return (
-                    <View key={`${p.uuid || p.username}`} style={styles.playerRow}>
-                      <Image
-                        source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
-                        style={styles.playerAvatar}
-                      />
-                      <View style={styles.playerInfo}>
-                        <Text style={styles.playerName}>{p.username}</Text>
-                      </View>
 
-                      <View style={styles.onlineBadge}>
-                        <View style={styles.onlineIndicator} />
-                        <Text style={styles.onlineText}>온라인</Text>
-                      </View>
-                      {/* <View style={styles.playerMeta}>
-                        TODO: 레벨, 현재 체력, 위치(오버월드,네더 등) 표시 예정
-                      </View> */}
-                      <TouchableOpacity
-                        style={styles.playerActionButton}
-                        onPress={() => {
-                          // TODO: 추후 귓말 보내기 등 기능 확장
-                        }}
-                      >
-                        <Icon name="ellipsis-horizontal" size={18} color={COLORS.text.secondary} />
-                      </TouchableOpacity>
-                    </View>
-                  );})}
+              {loading && !serverStatus ? (
+                <View style={styles.centerState}>
+                  <ActivityIndicator color={COLORS.brand.primary} />
+                  <Text style={styles.centerStateText}>
+                    접속자 정보를 불러오고 있습니다.
+                  </Text>
+                </View>
+              ) : onlinePlayers.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Icon color={COLORS.text.muted} name="people-outline" size={28} />
+                  <Text style={styles.emptyStateTitle}>
+                    현재 접속 중인 플레이어가 없습니다
+                  </Text>
+                  <Text style={styles.emptyStateDescription}>
+                    서버가 켜져 있어도 접속자가 없으면 이 영역은 비어 있습니다.
+                  </Text>
                 </View>
               ) : (
-                <View style={styles.emptyPlayersState}>
-                  <Icon name="people-outline" size={32} color={COLORS.text.disabled} />
-                  <Text style={styles.emptyPlayersText}>현재 접속 중인 플레이어가 없습니다</Text>
-                </View>
+                onlinePlayers.map((player, index) => (
+                  <View
+                    key={`${player.uuid ?? player.username}-${index}`}
+                    style={[
+                      styles.playerRow,
+                      index < onlinePlayers.length - 1
+                        ? styles.playerRowDivider
+                        : undefined,
+                    ]}>
+                    <Image
+                      source={{uri: getAvatarUri(player.uuid)}}
+                      style={styles.avatar}
+                    />
+
+                    <View style={styles.playerBody}>
+                      <Text style={styles.playerName}>{player.username}</Text>
+                      <Text style={styles.playerMeta}>실시간 서버 접속 중</Text>
+                    </View>
+
+                    <ToneBadge label="온라인" tone="green" />
+                  </View>
+                ))
               )}
-            </>
-          ) : (
-            <View style={styles.emptyServerState}>
-              <Icon name="server-outline" size={32} color={COLORS.text.disabled} />
-              <Text style={styles.emptyServerText}>서버 상태 정보를 불러오는 중이거나{'\n'}아직 설정되지 않았어요</Text>
             </View>
-          )}
-        </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRowSpaced}>
-            <View style={styles.cardHeaderLeftContainer}>
-              <Icon name="map-outline" size={20} color={COLORS.accent.blue} />
-              <Text style={styles.cardTitle}>서버 지도</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.mapExpandButton}
-              onPress={() => {
-                // 전체 화면 서버 지도 화면으로 이동
-                // HomeStack 안에서 사용되므로 단순 name 네비게이션 사용
-
-                (navigation as any).navigate('MinecraftMapDetail');
-              }}
-            >
-              <Icon name="expand-outline" size={16} color={COLORS.text.secondary} />
-              <Text style={styles.mapExpandButtonText}>크게 보기</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.mapWebViewContainer}>
-            {mapUri && mapUri !== 'null' ? (
-              <WebView
-                source={{ uri: mapUri }}
-                style={styles.mapWebView}
-                // 성능/UX를 위한 기본 설정
-                startInLoadingState
-                javaScriptEnabled
-                domStorageEnabled
-              />
-            ) : (
-              <View style={styles.mapLoadingContainer}>
-                <Icon name="map-outline" size={48} color={COLORS.text.disabled} />
-                <Text style={styles.mapLoadingText}>지도가 준비중이에요{'\n'}조금만 기다려주세요!</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
-            <Icon name="list-circle" size={20} color={COLORS.accent.blue} />
-            <Text style={styles.cardTitle}>서버 멤버 목록</Text>
-            {fetchingUsers && (
-              <ActivityIndicator
-                color={COLORS.text.secondary}
-                size="small"
-                style={styles.fetchingUsersIndicator}
-              />
-            )}
-          </View>
-          {loadingPlayers ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator color={COLORS.accent.blue} />
-              <Text style={styles.loadingText}>서버 멤버 목록을 불러오는 중...</Text>
-            </View>
-          ) : sortedPlayers.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Icon name="shield-outline" size={40} color={COLORS.text.disabled} />
-              <Text style={styles.emptyStateTitle}>서버 멤버가 없어요</Text>
-              <Text style={styles.emptyStateDesc}>홈 탭에서 닉네임을 등록해서{'\n'}마인크래프트 서버에 참여해보세요!</Text>
-            </View>
-          ) : (
-            sortedPlayers.map((player) => {
-              const avatarUrl = player.uuid && !player.uuid.startsWith('be:') ? player.uuid : '8667ba71b85a4004af54457a9734eed7';
-              // 온라인 여부 확인 (UUID 또는 username으로 매칭)
-              const isOnline = onlinePlayerSet.has(player.uuid) || onlinePlayerSet.has(player.username);
-              return (
-              <View key={player.uuid} style={styles.playerRow}>
-                <Image
-                    source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
-                    style={styles.playerAvatar}
-                />
-                <View style={styles.playerInfo}>
-                  <View style={styles.playerNameRow}>
-                    <Text style={styles.playerName}>{player.username}</Text>
-                    {player.whoseFriend && (
-                      <View style={[styles.playerTypeBadge, styles.playerTypeBadgeFriend]}>
-                        <Text style={[styles.playerTypeText, styles.playerTypeTextFriend]}>
-                          {player.whoseFriend}님의 친구
-                        </Text>
-                      </View>
-                    )}
-
-                  {isOnline && (
-                    <View style={styles.onlineBadgeSmall}>
-                      <View style={styles.onlineIndicatorSmall} />
-                      <Text style={styles.onlineTextSmall}>온라인</Text>
-                    </View>
-                  )}
-                  {!isOnline && <View style={styles.offlinePlaceholder} />}
-                  </View>
-                  <View style={styles.playerMetaRow}>
-                    <Text style={[styles.playerMetaEdition, player.edition === 'BE' ? styles.playerMetaEditionBedrock : styles.playerMetaEditionJava]}>
-                      {player.edition}
-                    </Text>
-                    <View style={styles.playerMetaLastSeenRow}>
-                      <Icon name="time-outline" size={10} color={COLORS.text.secondary} />
-                      <Text style={styles.playerMetaLastSeenText}>
-                        {player.lastSeenAt
-                          ? `최근 접속 : ${formatDateTime(player.lastSeenAt)}`
-                          : '최근 접속 정보 없음'}
-                      </Text>
-                    </View>
-                  </View>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <View style={styles.cardHeaderTitleWrap}>
+                  <Icon color={COLORS.accent.purple} name="shield-outline" size={18} />
+                  <Text style={styles.cardTitle}>서버 멤버 목록</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.playerActionButton}
-                  onPress={() => {
-                    // TODO: 추후 귓말 보내기 등 기능 확장
-                  }}
-                >
-                  <Icon name="ellipsis-horizontal" size={18} color={COLORS.text.secondary} />
-                </TouchableOpacity>
+
+                {fetchingUsers ? (
+                  <ActivityIndicator color={COLORS.text.muted} size="small" />
+                ) : null}
               </View>
-            );})
-          )}
-        </View>
+
+              {loadingPlayers ? (
+                <View style={styles.centerState}>
+                  <ActivityIndicator color={COLORS.accent.purple} />
+                  <Text style={styles.centerStateText}>
+                    화이트리스트 멤버를 불러오고 있습니다.
+                  </Text>
+                </View>
+              ) : sortedPlayers.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Icon
+                    color={COLORS.text.muted}
+                    name="list-circle-outline"
+                    size={28}
+                  />
+                  <Text style={styles.emptyStateTitle}>등록된 멤버가 없습니다</Text>
+                  <Text style={styles.emptyStateDescription}>
+                    계정 등록 화면에서 대표 계정과 친구 계정을 추가할 수 있습니다.
+                  </Text>
+                </View>
+              ) : (
+                sortedPlayers.map((player, index) => {
+                  const isOnline =
+                    onlinePlayerSet.has(player.uuid) ||
+                    onlinePlayerSet.has(player.username);
+
+                  return (
+                    <View
+                      key={player.uuid}
+                      style={[
+                        styles.playerRow,
+                        index < sortedPlayers.length - 1
+                          ? styles.playerRowDivider
+                          : undefined,
+                      ]}>
+                      <Image
+                        source={{uri: getAvatarUri(player.uuid)}}
+                        style={styles.avatar}
+                      />
+
+                      <View style={styles.playerBody}>
+                        <View style={styles.memberTitleRow}>
+                          <Text style={styles.playerName}>{player.username}</Text>
+                          <ToneBadge
+                            label={player.edition ?? 'JE'}
+                            tone={
+                              player.edition === 'BE' ? 'purple' : 'blue'
+                            }
+                          />
+                          <ToneBadge
+                            label={player.whoseFriend ? '친구 계정' : '대표 계정'}
+                            tone={player.whoseFriend ? 'orange' : 'green'}
+                          />
+                        </View>
+
+                        <Text style={styles.playerMeta}>
+                          등록자 {player.addedByDisplayName}
+                        </Text>
+                        <Text style={styles.playerMeta}>
+                          최근 접속 {formatDateTime(player.lastSeenAt)}
+                        </Text>
+                        {player.whoseFriend ? (
+                          <Text style={styles.playerMeta}>
+                            {player.whoseFriend} 계정에 연결됨
+                          </Text>
+                        ) : null}
+                      </View>
+
+                      <ToneBadge
+                        label={isOnline ? '온라인' : '오프라인'}
+                        tone={isOnline ? 'green' : 'gray'}
+                      />
+                    </View>
+                  );
+                })
+              )}
+            </View>
+
+          </>
+        ) : null}
       </ScrollView>
+
+      <MinecraftServerGuideModal
+        onClose={handleCloseGuideModal}
+        onPressAccountRegistration={handlePressGoToAccountRegistration}
+        serverAddress={guideServerAddress}
+        visible={isGuideModalVisible}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    backgroundColor: COLORS.background.page,
     flex: 1,
-    backgroundColor: COLORS.background.primary,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border.default,
-  },
-  headerButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    ...TYPOGRAPHY.title2,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-  },
-  headerRightPlaceholder: {
-    width: 32,
   },
   content: {
-    padding: 16,
-    paddingBottom: 32,
-    gap: 16,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: 40,
+    gap: SPACING.lg,
   },
-  fetchingUsersIndicator: {
-    marginLeft: 8,
-  },
-  card: {
-    backgroundColor: COLORS.background.secondary,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    gap: 8,
-  },
-  cardHeaderRowSpaced: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    gap: 8,
-  },
-  cardHeaderLeftContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  cardTitle: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-  },
-  statusText: {
-    ...TYPOGRAPHY.title3,
-    color: COLORS.text.primary,
-    fontWeight: '700',
-  },
-  serverStatusHeader: {
-    gap: 12,
-    marginBottom: 4,
-  },
-  serverStatusBadgeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  serverStatusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  serverStatusBadgeOnline: {
-    backgroundColor: COLORS.accent.green + '20',
-    borderColor: COLORS.accent.green + '40',
-  },
-  serverStatusBadgeOffline: {
-    backgroundColor: COLORS.accent.red + '20',
-    borderColor: COLORS.accent.red + '40',
-  },
-  serverStatusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  serverStatusDotOnline: {
-    backgroundColor: COLORS.accent.green,
-  },
-  serverStatusDotOffline: {
-    backgroundColor: COLORS.accent.red,
-  },
-  serverStatusBadgeText: {
-    ...TYPOGRAPHY.caption2,
-    fontWeight: '600',
-  },
-  serverStatusBadgeTextOnline: {
-    color: COLORS.accent.green,
-  },
-  serverStatusBadgeTextOffline: {
-    color: COLORS.accent.red,
-  },
-  serverPlayerCountBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  serverPlayerCountText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  cardDescription: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    marginTop: 16,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  loadingText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-  },
-  emptyState: {
-    paddingVertical: 24,
-    alignItems: 'center',
-    gap: 12,
-  },
-  emptyStateTitle: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  emptyStateDesc: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  emptyPlayersState: {
-    paddingVertical: 24,
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyPlayersText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-  },
-  emptyServerState: {
-    paddingVertical: 24,
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyServerText: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  playerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border.moreDark,
-  },
-  playerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-  },
-  onlineBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: COLORS.accent.green + '20',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent.green + '40',
-  },
-  onlineIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.accent.green,
-  },
-  onlineText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.accent.green,
-    fontWeight: '600',
-  },
-  onlineBadgeSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: COLORS.accent.green + '20',
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: COLORS.accent.green + '40',
-  },
-  onlineIndicatorSmall: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.accent.green,
-  },
-  onlineTextSmall: {
-    ...TYPOGRAPHY.caption3,
-    color: COLORS.accent.green,
-    fontWeight: '600',
-  },
-  offlinePlaceholder: {
-    width: 0,
-  },
-  playerInfo: {
-    flex: 1,
-  },
-  playerNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 4,
-  },
-  playerName: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  playerTypeBadge: {
-    backgroundColor: COLORS.accent.green + '20',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  playerTypeBadgeFriend: {
-    backgroundColor: COLORS.accent.blue + '20',
-  },
-  playerTypeText: {
-    ...TYPOGRAPHY.caption3,
-    color: COLORS.accent.green,
-    fontWeight: '600',
-  },
-  playerTypeTextFriend: {
-    color: COLORS.accent.blue,
-  },
-  playerMeta: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    marginTop: 2,
-  },
-  playerMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 2,
-  },
-  playerMetaEdition: {
-    ...TYPOGRAPHY.caption2,
-    fontWeight: '600',
-  },
-  playerMetaEditionJava: {
-    color: COLORS.accent.orange,
-  },
-  playerMetaEditionBedrock: {
-    color: COLORS.accent.green,
-  },
-  playerMetaLastSeenRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  playerMetaLastSeenText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.secondary,
-  },
-  playerActionButton: {
-    padding: 4,
-    marginLeft: 'auto',
-  },
-  serverInfoHeaderIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.accent.blue + '20',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  serverInfoContent: {
-    gap: 12,
-  },
-  serverAddressSection: {
-    gap: 10,
-    marginTop: 4,
-  },
-  serverInfoLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  serverInfoLabel: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    fontWeight: '600',
-  },
-  serverAddressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  serverAddressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
+  summaryCard: {
     backgroundColor: COLORS.background.surface,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
   },
-  serverAddressText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  serverPortText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    fontWeight: '400',
-  },
-  copyButton: {
-    flexDirection: 'row',
+  guideShortcutButton: {
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: COLORS.accent.blue + '20',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent.blue + '40',
-  },
-  copyButtonText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.accent.blue,
-    fontWeight: '600',
-  },
-  serverInfoDivider: {
-    height: 1,
-    backgroundColor: COLORS.border.moreDark,
-    marginVertical: 4,
-  },
-  serverInfoRow: {
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.lg,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    padding: SPACING.lg,
+    ...SHADOWS.floating,
   },
-  serverInfoValue: {
-    ...TYPOGRAPHY.body2,
-    color: COLORS.text.primary,
-    fontWeight: '600',
-  },
-  serverInfoHelp: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: COLORS.accent.blue + '10',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: COLORS.accent.blue + '20',
-  },
-  serverInfoHelpText: {
-    ...TYPOGRAPHY.caption1,
-    color: COLORS.text.secondary,
-    flex: 1,
-    lineHeight: 18,
-  },
-  chatRoomButton: {
-    backgroundColor: COLORS.accent.orange + '15',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.accent.orange + '30',
-    padding: 14,
-  },
-  chatRoomButtonContent: {
-    flexDirection: 'row',
+  guideShortcutLeft: {
     alignItems: 'center',
-    gap: 10,
-  },
-  chatRoomButtonText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.primary,
-    fontWeight: '600',
     flex: 1,
-  },
-  mapExpandButton: {
     flexDirection: 'row',
+    marginRight: SPACING.md,
+  },
+  guideShortcutIconWrap: {
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: COLORS.background.tertiary,
-    gap: 4,
-  },
-  mapExpandButtonText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.secondary,
-    fontWeight: '600',
-  },
-  mapWebViewContainer: {
-    marginTop: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: COLORS.border.default,
-    height: 260,
-  },
-  mapWebView: {
-    flex: 1,
-    backgroundColor: COLORS.background.primary,
-  },
-  mapLoadingContainer: {
-    flex: 1,
-    height: 260,
+    backgroundColor: COLORS.background.pageHeader,
+    borderRadius: RADIUS.md,
+    height: 40,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: COLORS.background.card,
-    gap: 12,
+    marginRight: SPACING.md,
+    width: 40,
   },
-  mapLoadingText: {
-    ...TYPOGRAPHY.body1,
-    color: COLORS.text.secondary,
-    textAlign: 'center',
+  guideShortcutTextWrap: {
+    flex: 1,
+  },
+  guideShortcutTitle: {
+    color: COLORS.text.inverse,
+    fontSize: 15,
+    fontWeight: '700',
     lineHeight: 22,
   },
-  playersList: {
-    marginTop: 12,
-    gap: 8,
+  guideShortcutSubtitle: {
+    color: 'rgba(255, 255, 255, 0.84)',
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
   },
-  serverUpdatedAt: {
-    flexDirection: 'row',
+  summaryHeader: {
     alignItems: 'center',
-    gap: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  serverUpdatedAtText: {
-    ...TYPOGRAPHY.caption2,
-    color: COLORS.text.secondary,
+  summaryTitle: {
+    color: COLORS.text.primary,
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 26,
+  },
+  summarySubtitle: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  summaryMetrics: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginTop: SPACING.lg,
+  },
+  metricCard: {
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    flex: 1,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+  },
+  metricLabel: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  metricValue: {
+    color: COLORS.text.primary,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 24,
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: COLORS.background.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.lg,
+    ...SHADOWS.card,
+  },
+  cardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SPACING.lg,
+  },
+  cardHeaderTitleWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: SPACING.sm,
+  },
+  cardTitle: {
+    color: COLORS.text.primary,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  headerMeta: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  serverAddressCard: {
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+  },
+  serverAddressLabel: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  serverAddressValue: {
+    color: COLORS.text.primary,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 24,
+    marginTop: 6,
+  },
+  copyButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.background.page,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    marginTop: SPACING.md,
+    minHeight: 40,
+    paddingHorizontal: SPACING.md,
+  },
+  copyButtonEnabled: {
+    backgroundColor: COLORS.accent.blue,
+  },
+  copyButtonText: {
+    color: COLORS.text.muted,
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginLeft: SPACING.xs,
+  },
+  copyButtonTextEnabled: {
+    color: COLORS.text.inverse,
+  },
+  infoBanner: {
+    backgroundColor: COLORS.accent.blueSoft,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+  },
+  infoBannerBody: {
+    flex: 1,
+    marginLeft: SPACING.sm,
+  },
+  infoBannerText: {
+    color: COLORS.accent.blue,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  secondaryAction: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+  },
+  secondaryActionLeft: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: SPACING.md,
+    marginRight: SPACING.md,
+  },
+  secondaryActionTitle: {
+    color: COLORS.text.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  secondaryActionSubtitle: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  centerState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 28,
+  },
+  centerStateText: {
+    color: COLORS.text.tertiary,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: SPACING.sm,
+    textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    justifyContent: 'center',
+    minHeight: 140,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.lg,
+  },
+  emptyStateTitle: {
+    color: COLORS.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 22,
+    marginTop: SPACING.sm,
+    textAlign: 'center',
+  },
+  emptyStateDescription: {
+    color: COLORS.text.tertiary,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  playerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    minHeight: 76,
+    paddingVertical: SPACING.sm,
+  },
+  playerRowDivider: {
+    borderBottomColor: COLORS.border.subtle,
+    borderBottomWidth: 1,
+  },
+  avatar: {
+    borderRadius: 12,
+    height: 48,
+    marginRight: SPACING.md,
+    width: 48,
+  },
+  playerBody: {
+    flex: 1,
+  },
+  playerName: {
+    color: COLORS.text.primary,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  playerMeta: {
+    color: COLORS.text.tertiary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  memberTitleRow: {
+    alignItems: 'center',
+    columnGap: SPACING.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: SPACING.xs,
   },
 });

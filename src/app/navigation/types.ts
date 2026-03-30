@@ -63,8 +63,8 @@ export type CampusStackParamList = {
         mode?: 'edit';
       }
     | undefined;
+  MinecraftAccount: undefined;
   MinecraftDetail: undefined;
-  MinecraftMapDetail: undefined;
 };
 
 export type AuthStackParamList = {
