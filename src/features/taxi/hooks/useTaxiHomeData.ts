@@ -12,6 +12,7 @@ import type {
   TaxiHomeSourceData,
   TaxiHomeViewData,
 } from '../model/taxiHomeViewData';
+import {ALL_TAXI_HOME_FILTER_ID} from '../model/taxiHomeViewData';
 
 interface UseTaxiHomeDataResult {
   activePartyId: string | null;
@@ -78,10 +79,15 @@ const buildTaxiHomeViewData = ({
   selectedSortId: TaxiHomeSortId;
   source: TaxiHomeSourceData;
 }): TaxiHomeViewData => {
+  const effectiveSelectedFilterId = source.filters.some(
+    filter => filter.id === selectedFilterId,
+  )
+    ? selectedFilterId
+    : ALL_TAXI_HOME_FILTER_ID;
   const filteredParties = source.parties.filter(party => {
     if (
-      selectedFilterId !== 'all' &&
-      !party.filterIds.includes(selectedFilterId)
+      effectiveSelectedFilterId !== ALL_TAXI_HOME_FILTER_ID &&
+      !party.filterIds.includes(effectiveSelectedFilterId)
     ) {
       return false;
     }
@@ -93,6 +99,12 @@ const buildTaxiHomeViewData = ({
   const selectedSort =
     source.sortOptions.find(sortOption => sortOption.id === selectedSortId) ??
     source.sortOptions[0];
+  const emptyState =
+    source.parties.length === 0
+      ? source.noPartiesEmptyState
+      : parties.length === 0
+        ? source.filteredEmptyState
+        : undefined;
 
   return {
     searchPlaceholder: source.searchPlaceholder,
@@ -103,7 +115,7 @@ const buildTaxiHomeViewData = ({
     visiblePartyCount: parties.length,
     filterChips: source.filters.map(filter => ({
       ...filter,
-      selected: filter.id === selectedFilterId,
+      selected: filter.id === effectiveSelectedFilterId,
     })),
     sortOptions: source.sortOptions.map(sortOption => ({
       ...sortOption,
@@ -111,7 +123,7 @@ const buildTaxiHomeViewData = ({
     })),
     selectedSortLabel: selectedSort?.label ?? '',
     parties,
-    emptyState: parties.length === 0 ? source.emptyState : undefined,
+    emptyState,
   };
 };
 
@@ -123,7 +135,7 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
   const [error, setError] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedFilterId, setSelectedFilterId] =
-    React.useState<TaxiHomeFilterId>('all');
+    React.useState<TaxiHomeFilterId>(ALL_TAXI_HOME_FILTER_ID);
   const [selectedSortId, setSelectedSortId] =
     React.useState<TaxiHomeSortId>('latest');
 
@@ -147,6 +159,19 @@ export const useTaxiHomeData = (): UseTaxiHomeDataResult => {
   React.useEffect(() => {
     load();
   }, [load]);
+
+  React.useEffect(() => {
+    if (!source?.filters.length) {
+      if (selectedFilterId !== ALL_TAXI_HOME_FILTER_ID) {
+        setSelectedFilterId(ALL_TAXI_HOME_FILTER_ID);
+      }
+      return;
+    }
+
+    if (!source.filters.some(filter => filter.id === selectedFilterId)) {
+      setSelectedFilterId(ALL_TAXI_HOME_FILTER_ID);
+    }
+  }, [selectedFilterId, source]);
 
   const data = React.useMemo(() => {
     if (!source) {

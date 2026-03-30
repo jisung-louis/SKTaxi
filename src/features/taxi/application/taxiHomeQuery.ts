@@ -16,30 +16,14 @@ import type {
   TaxiAcceptancePendingSeed,
 } from '../model/taxiAcceptancePendingViewData';
 import type {
+  TaxiHomeFilterId,
   TaxiHomeAvatarViewData,
   TaxiHomeFilterDefinition,
   TaxiHomePartyCardViewData,
   TaxiHomeSortDefinition,
   TaxiHomeSourceData,
 } from '../model/taxiHomeViewData';
-
-const TAXI_HOME_FILTERS: TaxiHomeFilterDefinition[] = [
-  {
-    id: 'all',
-    label: '전체',
-    matchKeywords: ['전체'],
-  },
-  {
-    id: 'anyang',
-    label: '안양역',
-    matchKeywords: ['안양역', 'anyang'],
-  },
-  {
-    id: 'beomgye',
-    label: '범계역',
-    matchKeywords: ['범계역', 'beomgye'],
-  },
-];
+import {ALL_TAXI_HOME_FILTER_ID} from '../model/taxiHomeViewData';
 
 const TAXI_HOME_SORTS: TaxiHomeSortDefinition[] = [
   {
@@ -123,25 +107,49 @@ const formatDepartureTimeLabel = (value: string) => {
   return format(date, 'a hh:mm', {locale: ko});
 };
 
-const buildFilterIds = (departureLabel: string) => {
-  const normalizedDeparture = departureLabel.toLowerCase();
-  const filterIds: TaxiHomePartyCardViewData['filterIds'] = ['all'];
+const buildDepartureFilterId = (departureLabel: string): TaxiHomeFilterId =>
+  departureLabel.trim();
 
-  if (
-    departureLabel.includes('안양') ||
-    normalizedDeparture.includes('anyang')
-  ) {
-    filterIds.push('anyang');
+const buildFilterIds = (departureLabel: string) => [
+  ALL_TAXI_HOME_FILTER_ID,
+  buildDepartureFilterId(departureLabel),
+];
+
+const buildTaxiHomeFilters = (
+  parties: PartySummaryResponseDto[],
+): TaxiHomeFilterDefinition[] => {
+  const uniqueDepartureLabels = new Set<string>();
+
+  const filters = parties.flatMap(party => {
+    const departureLabel = party.departure.name.trim();
+
+    if (!departureLabel || uniqueDepartureLabels.has(departureLabel)) {
+      return [];
+    }
+
+    uniqueDepartureLabels.add(departureLabel);
+
+    return [
+      {
+        id: buildDepartureFilterId(departureLabel),
+        label: departureLabel,
+        matchKeywords: [departureLabel, departureLabel.toLowerCase()],
+      },
+    ];
+  });
+
+  if (filters.length === 0) {
+    return [];
   }
 
-  if (
-    departureLabel.includes('범계') ||
-    normalizedDeparture.includes('beomgye')
-  ) {
-    filterIds.push('beomgye');
-  }
-
-  return filterIds;
+  return [
+    {
+      id: ALL_TAXI_HOME_FILTER_ID,
+      label: '전체',
+      matchKeywords: ['전체'],
+    },
+    ...filters,
+  ];
 };
 
 const buildStatusMeta = (status: PartyStatusDto) => {
@@ -407,12 +415,16 @@ const buildTaxiHomeSourceData = ({
   pendingJoinRequestsByPartyId: Map<string, JoinRequestListItemResponseDto>;
   personalStateResolved: boolean;
 }): TaxiHomeSourceData => ({
-  emptyState: {
+  filteredEmptyState: {
     description: '검색어를 지우거나 다른 출발지 필터를 선택해보세요.',
     title: '조건에 맞는 파티가 없습니다',
   },
-  filters: TAXI_HOME_FILTERS,
+  filters: buildTaxiHomeFilters(parties),
   liveChatActionLabel: '파티 채팅 가기',
+  noPartiesEmptyState: {
+    description: '새 파티를 만들어 택시 동승 파티를 모집해보세요.',
+    title: '아직 등록된 택시 파티가 없습니다',
+  },
   parties: parties.map(party =>
     buildPartyCard({
       party,

@@ -1,6 +1,8 @@
 import type {TaxiAcceptancePendingSeed} from './taxiAcceptancePendingViewData';
 
-export type TaxiHomeFilterId = 'all' | 'anyang' | 'beomgye';
+export const ALL_TAXI_HOME_FILTER_ID = 'all';
+
+export type TaxiHomeFilterId = string;
 export type TaxiHomeSortId = 'latest' | 'departureSoon';
 
 export interface TaxiHomeFilterDefinition {
@@ -91,7 +93,8 @@ export interface TaxiHomeSourceData {
   filters: TaxiHomeFilterDefinition[];
   sortOptions: TaxiHomeSortDefinition[];
   parties: TaxiHomePartyCardViewData[];
-  emptyState: TaxiHomeEmptyStateViewData;
+  noPartiesEmptyState: TaxiHomeEmptyStateViewData;
+  filteredEmptyState: TaxiHomeEmptyStateViewData;
 }
 
 export interface TaxiHomeFilterChipViewData extends TaxiHomeFilterDefinition {

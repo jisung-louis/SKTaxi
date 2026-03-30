@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import MapView, {Marker, type Region} from 'react-native-maps';
+import MapView, {Marker, type EdgePadding, type Region} from 'react-native-maps';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated from 'react-native-reanimated';
 import {
@@ -41,8 +41,9 @@ import type {TaxiHomePartyCardViewData} from '../model/taxiHomeViewData';
 import {WINDOW_HEIGHT} from '@/shared/constants/layout';
 
 type TaxiNavigationProp = NavigationProp<TaxiStackParamList>;
+type MapCoordinate = {latitude: number; longitude: number};
 type DepartureMarker = {
-  coordinate: {latitude: number; longitude: number};
+  coordinate: MapCoordinate;
   id: string;
   title: string;
 };
@@ -53,6 +54,7 @@ const DEFAULT_MAP_REGION: Region = {
   latitudeDelta: 0.035,
   longitudeDelta: 0.035,
 };
+const MAP_ANIMATION_DURATION = 250;
 
 const DEPARTURE_COORDINATES_BY_LABEL = DEPARTURE_OPTIONS.flatMap(
   (row, rowIndex) =>
@@ -121,6 +123,8 @@ export const TaxiScreen = () => {
   const [expandedPartyId, setExpandedPartyId] = React.useState<string | null>(
     null,
   );
+  const mapRef = React.useRef<MapView | null>(null);
+  const [isMapReady, setIsMapReady] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const hasFocusedRef = React.useRef(false);
 
@@ -135,19 +139,6 @@ export const TaxiScreen = () => {
     [hasActiveParty, insets.bottom],
   );
 
-  const mapRegion = React.useMemo<Region>(() => {
-    if (!location) {
-      return DEFAULT_MAP_REGION;
-    }
-
-    return {
-      latitude: location.latitude,
-      longitude: location.longitude,
-      latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
-      longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
-    };
-  }, [location]);
-
   const departureMarkers = React.useMemo(
     (): DepartureMarker[] =>
       (data?.parties ?? [])
@@ -160,6 +151,43 @@ export const TaxiScreen = () => {
           Boolean(marker.coordinate),
         ),
     [data?.parties],
+  );
+  const selectedPartyMarkerCoordinate = React.useMemo(() => {
+    if (!expandedPartyId) {
+      return null;
+    }
+
+    const selectedParty = data?.parties.find(party => party.id === expandedPartyId);
+
+    if (!selectedParty) {
+      return null;
+    }
+
+    return DEPARTURE_COORDINATES_BY_LABEL[selectedParty.departureLabel] ?? null;
+  }, [data?.parties, expandedPartyId]);
+  const fitToCoordinatesPadding = React.useMemo<EdgePadding>(
+    () => ({
+      top: insets.top + SPACING.xxl * 3,
+      bottom: SPACING.xxl * 2,
+      left: SPACING.xxl,
+      right: SPACING.xxl,
+    }),
+    [insets.top],
+  );
+
+  const moveMapToSingleCoordinate = React.useCallback(
+    (coordinate: MapCoordinate) => {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: coordinate.latitude,
+          longitude: coordinate.longitude,
+          latitudeDelta: DEFAULT_MAP_REGION.latitudeDelta,
+          longitudeDelta: DEFAULT_MAP_REGION.longitudeDelta,
+        },
+        MAP_ANIMATION_DURATION,
+      );
+    },
+    [],
   );
 
   const handlePressCreateParty = React.useCallback(() => {
@@ -207,6 +235,65 @@ export const TaxiScreen = () => {
       setExpandedPartyId(null);
     }
   }, [data?.parties, expandedPartyId]);
+
+  React.useEffect(() => {
+    if (!isMapReady || !mapRef.current) {
+      return;
+    }
+
+    const visibleMarkerCoordinates = departureMarkers.map(marker => marker.coordinate);
+
+    if (selectedPartyMarkerCoordinate) {
+      if (location) {
+        mapRef.current.fitToCoordinates(
+          [location, selectedPartyMarkerCoordinate],
+          {
+            animated: true,
+            edgePadding: fitToCoordinatesPadding,
+          },
+        );
+        return;
+      }
+
+      moveMapToSingleCoordinate(selectedPartyMarkerCoordinate);
+      return;
+    }
+
+    if (visibleMarkerCoordinates.length === 0) {
+      if (location) {
+        moveMapToSingleCoordinate(location);
+        return;
+      }
+
+      mapRef.current.animateToRegion(DEFAULT_MAP_REGION, MAP_ANIMATION_DURATION);
+      return;
+    }
+
+    if (location) {
+      mapRef.current.fitToCoordinates([location, ...visibleMarkerCoordinates], {
+        animated: true,
+        edgePadding: fitToCoordinatesPadding,
+      });
+      return;
+    }
+
+    if (visibleMarkerCoordinates.length === 1) {
+      moveMapToSingleCoordinate(visibleMarkerCoordinates[0]);
+      return;
+    }
+
+    mapRef.current.fitToCoordinates(visibleMarkerCoordinates, {
+      animated: true,
+      edgePadding: fitToCoordinatesPadding,
+    });
+  }, [
+    departureMarkers,
+    fitToCoordinatesPadding,
+    isMapReady,
+    location,
+    moveMapToSingleCoordinate,
+    selectedPartyMarkerCoordinate,
+  ]);
 
   const handlePressPartyCard = React.useCallback(
     (party: TaxiHomePartyCardViewData) => {
@@ -282,8 +369,12 @@ export const TaxiScreen = () => {
           start={{x: 0, y: 0}}
           style={[styles.hero, {height: WINDOW_HEIGHT * 0.35}]}>
           <MapView
+            initialRegion={DEFAULT_MAP_REGION}
+            onMapReady={() => {
+              setIsMapReady(true);
+            }}
             pitchEnabled={false}
-            region={mapRegion}
+            ref={mapRef}
             rotateEnabled={false}
             showsCompass={false}
             showsMyLocationButton={false}
@@ -307,12 +398,14 @@ export const TaxiScreen = () => {
             />
           </View>
         </LinearGradient>
-        <View style={styles.filterSection}>
-          <TaxiHomeFilterChips
-            filters={data?.filterChips ?? []}
-            onPressFilter={selectFilter}
-          />
-        </View>
+        {data?.filterChips.length ? (
+          <View style={styles.filterSection}>
+            <TaxiHomeFilterChips
+              filters={data.filterChips}
+              onPressFilter={selectFilter}
+            />
+          </View>
+        ) : null}
         <ScrollView
           contentContainerStyle={contentContainerStyle}
           refreshControl={
