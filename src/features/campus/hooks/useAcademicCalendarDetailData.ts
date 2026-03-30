@@ -84,7 +84,7 @@ const buildStatusMeta = (
   }
 
   const daysUntilStart =
-    Math.round((startDate.getTime() - today.getTime()) / DAY_IN_MS) + 1;
+    Math.round((startDate.getTime() - today.getTime()) / DAY_IN_MS);
 
   return {
     label: `D-${daysUntilStart}`,
