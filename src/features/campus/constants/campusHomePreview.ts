@@ -33,6 +33,13 @@ export const CAMPUS_HOME_QUICK_MENU_ITEMS: readonly CampusHomeQuickMenuItem[] =
       routeName: 'AcademicCalendarDetail',
     },
     {
+      label: '마인크래프트',
+      icon: 'game-controller-outline',
+      iconColor: COLORS.brand.primaryStrong,
+      backgroundColor: COLORS.brand.primaryTint,
+      routeName: 'MinecraftDetail',
+    },
+    {
       label: '설정',
       icon: 'settings-outline',
       iconColor: COLORS.text.secondary,

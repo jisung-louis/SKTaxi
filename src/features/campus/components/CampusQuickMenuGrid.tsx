@@ -43,11 +43,12 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: SPACING.xs,
   },
   item: {
     alignItems: 'center',
-    width: 76,
+    flex: 1,
+    minWidth: 0,
   },
   iconBox: {
     alignItems: 'center',
@@ -59,9 +60,10 @@ const styles = StyleSheet.create({
   },
   label: {
     color: COLORS.text.secondary,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    lineHeight: 16,
+    lineHeight: 14,
+    minHeight: 28,
     textAlign: 'center',
   },
 });

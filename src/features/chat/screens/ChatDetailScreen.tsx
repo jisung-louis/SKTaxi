@@ -7,6 +7,7 @@ import {
   Platform,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -16,12 +17,18 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
+import {navigateToCampusScreen} from '@/app/navigation/services/campusEntryNavigation';
 import type {CommunityStackParamList} from '@/app/navigation/types';
 import {
   DetailNotFoundState,
   StateCard,
 } from '@/shared/design-system/components';
-import {COLORS, SPACING} from '@/shared/design-system/tokens';
+import {
+  COLORS,
+  RADIUS,
+  SHADOWS,
+  SPACING,
+} from '@/shared/design-system/tokens';
 import {
   usePlayChatSoundOnNewMessage,
   useScreenEnterAnimation,
@@ -41,6 +48,12 @@ import {
 } from '@/shared/ui/chat';
 import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
 import type {ReportCategory} from '@/shared/lib/moderation';
+import {MinecraftServerGuideModal} from '@/features/minecraft/components/MinecraftServerGuideModal';
+import {
+  GUIDE_SERVER_ADDRESS_FALLBACK,
+  MINECRAFT_CHAT_ROOM_ID,
+} from '@/features/minecraft/constants/minecraftGuide';
+import {useMinecraftServerOverview} from '@/features/minecraft/hooks/useMinecraftServerOverview';
 
 import {useChatDetailData} from '../hooks/useChatDetailData';
 import type {ChatStackParamList} from '../model/navigation';
@@ -97,6 +110,7 @@ export const ChatDetailScreen = () => {
     sendImageMessage,
     toggleNotification,
   } = useChatDetailData(route.params?.chatRoomId);
+  const {serverUrl} = useMinecraftServerOverview();
   const [composerValue, setComposerValue] = React.useState('');
   const [imageSending, setImageSending] = React.useState(false);
   const [menuVisible, setMenuVisible] = React.useState(false);
@@ -110,11 +124,16 @@ export const ChatDetailScreen = () => {
   const [reportReason, setReportReason] = React.useState('');
   const [selectedReportCategory, setSelectedReportCategory] =
     React.useState<ReportCategory | null>(null);
+  const [isMinecraftGuideVisible, setMinecraftGuideVisible] =
+    React.useState(false);
   const [reportTarget, setReportTarget] = React.useState<
     | {id: string; type: 'message'}
     | {id: string; type: 'room'}
     | null
   >(null);
+  const isMinecraftChatRoom =
+    route.params?.chatRoomId === MINECRAFT_CHAT_ROOM_ID;
+  const guideServerAddress = serverUrl || GUIDE_SERVER_ADDRESS_FALLBACK;
   const latestPlayableMessageId = React.useMemo(
     () => getLatestPlayableMessageId(data?.items),
     [data?.items],
@@ -134,6 +153,19 @@ export const ChatDetailScreen = () => {
   }, [navigation]);
 
   const handlePressBack = navigateToCommunityChat;
+
+  const handleOpenMinecraftGuide = React.useCallback(() => {
+    setMinecraftGuideVisible(true);
+  }, []);
+
+  const handleCloseMinecraftGuide = React.useCallback(() => {
+    setMinecraftGuideVisible(false);
+  }, []);
+
+  const handlePressMinecraftAccountRegistration = React.useCallback(() => {
+    setMinecraftGuideVisible(false);
+    navigateToCampusScreen(navigation, 'MinecraftAccount');
+  }, [navigation]);
 
   const handleSend = React.useCallback(
     async (messageText: string) => {
@@ -412,7 +444,13 @@ export const ChatDetailScreen = () => {
           </View>
         ) : data ? (
           data.mode === 'preview' && data.preview ? (
-            <View style={styles.previewWrap}>
+            <View
+              style={[
+                styles.previewWrap,
+                isMinecraftChatRoom
+                  ? styles.previewWrapWithGuideButton
+                  : undefined,
+              ]}>
               <View style={styles.previewCard}>
                 <View style={styles.previewStatusPill}>
                   <Text style={styles.previewStatusLabel}>
@@ -470,7 +508,12 @@ export const ChatDetailScreen = () => {
             <>
               <View style={styles.threadWrap}>
                 <ChatMessageList
-                  contentContainerStyle={styles.threadContent}
+                  contentContainerStyle={[
+                    styles.threadContent,
+                    isMinecraftChatRoom
+                      ? styles.threadContentWithGuideButton
+                      : undefined,
+                  ]}
                   items={data.items}
                   onLongPressMessage={(message, event) => {
                     handleLongPressMessage(
@@ -498,6 +541,26 @@ export const ChatDetailScreen = () => {
               </KeyboardAvoidingView>
             </>
           )
+        ) : null}
+
+        {isMinecraftChatRoom ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            activeOpacity={0.88}
+            onPress={handleOpenMinecraftGuide}
+            style={[
+              styles.minecraftGuideFloatingButton,
+              {top: insets.top + 68},
+            ]}>
+            <Icon
+              color={COLORS.text.inverse}
+              name="compass-outline"
+              size={16}
+            />
+            <Text style={styles.minecraftGuideFloatingButtonText}>
+              서버 접속 방법
+            </Text>
+          </TouchableOpacity>
         ) : null}
 
         {data ? (
@@ -547,6 +610,13 @@ export const ChatDetailScreen = () => {
           submitting={isReportSubmitting}
           title={reportTarget?.type === 'message' ? '메시지 신고' : '채팅방 신고'}
           visible={isReportVisible}
+        />
+
+        <MinecraftServerGuideModal
+          onClose={handleCloseMinecraftGuide}
+          onPressAccountRegistration={handlePressMinecraftAccountRegistration}
+          serverAddress={guideServerAddress}
+          visible={isMinecraftGuideVisible}
         />
       </Animated.View>
     </SafeAreaView>
@@ -642,11 +712,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.xl,
   },
+  previewWrapWithGuideButton: {
+    paddingTop: SPACING.xxl + 40,
+  },
   screen: {
     flex: 1,
   },
+  minecraftGuideFloatingButton: {
+    alignItems: 'center',
+    backgroundColor: COLORS.brand.primary,
+    borderRadius: RADIUS.pill,
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 10,
+    position: 'absolute',
+    right: SPACING.lg,
+    zIndex: 10,
+    ...SHADOWS.floating,
+  },
+  minecraftGuideFloatingButtonText: {
+    color: COLORS.text.inverse,
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 16,
+    marginLeft: SPACING.xs,
+  },
   threadContent: {
     paddingBottom: SPACING.md,
+  },
+  threadContentWithGuideButton: {
+    paddingTop: 56,
   },
   threadWrap: {
     flex: 1,
