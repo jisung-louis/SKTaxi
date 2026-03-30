@@ -17,6 +17,7 @@ import {
   ToggleSwitch,
 } from '@/shared/design-system/components';
 import {COLORS, RADIUS} from '@/shared/design-system/tokens';
+import {playHaptic} from '@/shared/lib/haptics';
 
 import {
   TIMETABLE_COURSE_TONES,
@@ -79,6 +80,10 @@ const CatalogCourseListItem = React.memo(
     const gradeAndScheduleLabel = [item.gradeLabel, item.scheduleLabel]
       .filter(Boolean)
       .join(' · ');
+    const handlePress = () => {
+      playHaptic({type: 'selection', intensity: 0.5});
+      onAddCatalogCourse(item.courseId);
+    };
 
     return (
       <View style={styles.catalogCard}>
@@ -118,9 +123,9 @@ const CatalogCourseListItem = React.memo(
 
         <TouchableOpacity
           accessibilityRole="button"
-          activeOpacity={0.88}
+          activeOpacity={0.6}
           disabled={item.alreadyAdded}
-          onPress={() => onAddCatalogCourse(item.courseId)}
+          onPress={handlePress}
           style={[
             styles.catalogAction,
             item.alreadyAdded
