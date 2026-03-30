@@ -66,10 +66,10 @@ export const NoticeListItem = ({
       activeOpacity={0.86}
       onPress={() => onPress(item.id)}
       style={[styles.row, isLast ? styles.rowLast : null]}>
-      {item.isUnread ? <View style={styles.dot} /> : null}
       <View style={styles.content}>
         <View style={styles.metaRow}>
           <View style={styles.metaRowContent}>
+            {item.isUnread ? <View style={styles.dot} /> : null}
             <View
               style={[
                 styles.categoryPill,
@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.brand.primary,
     borderRadius: RADIUS.pill,
     height: 8,
-    marginTop: 8,
     width: 8,
   },
   dotHidden: {
@@ -164,6 +163,7 @@ const styles = StyleSheet.create({
   },
   metaRowContent: {
     alignItems: 'center',
+    justifyContent: 'flex-start',
     flex: 1,
     flexDirection: 'row',
     gap: SPACING.sm,
