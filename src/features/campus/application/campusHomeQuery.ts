@@ -342,24 +342,45 @@ const formatAcademicDateRangeLabel = (startDate: string, endDate: string) => {
   return startLabel === endLabel ? startLabel : `${startLabel} ~ ${endLabel}`;
 };
 
+const buildAcademicCountdownLabel = (
+  schedule: Awaited<ReturnType<IAcademicRepository['getSchedules']>>[number],
+  today: Date,
+) => {
+  const startDate = normalizeDate(schedule.startDate);
+  const endDate = normalizeDate(schedule.endDate);
+
+  if (endDate < today) {
+    return '종료';
+  }
+
+  if (startDate <= today && today <= endDate) {
+    return '진행중';
+  }
+
+  const daysUntilStart = Math.round(
+    (startDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+  );
+
+  return `D-${daysUntilStart}`;
+};
+
 const mapScheduleToAcademicPreviewItem = (
   schedule: Awaited<ReturnType<IAcademicRepository['getSchedules']>>[number],
   index: number,
+  today: Date,
 ): CampusAcademicEventViewData => {
-  const startDate = normalizeDate(schedule.startDate);
   const colorTone = getAcademicCalendarEventColorTone(index);
 
   return {
     badge: buildAcademicBadge(schedule.isPrimary),
+    countdownLabel: buildAcademicCountdownLabel(schedule, today),
     dateBoxBackgroundColor: colorTone.accentColor,
     dateBoxTextColor: colorTone.barTextColor,
     dateRangeLabel: formatAcademicDateRangeLabel(
       schedule.startDate,
       schedule.endDate,
     ),
-    dayLabel: `${startDate.getDate()}`,
     id: schedule.id,
-    monthLabel: `${startDate.getMonth() + 1}월`,
     title: schedule.title,
   };
 };
@@ -384,7 +405,9 @@ const loadAcademicPreviewItems = async ({
         normalizeDate(right.startDate).getTime(),
     )
     .slice(0, 3)
-    .map(mapScheduleToAcademicPreviewItem);
+    .map((schedule, index) =>
+      mapScheduleToAcademicPreviewItem(schedule, index, today),
+    );
 };
 
 export const loadCampusHomeQueryResult = async ({

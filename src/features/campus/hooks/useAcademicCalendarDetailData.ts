@@ -29,6 +29,16 @@ import {
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
+const compareAcademicEventsByDate = (
+  left: AcademicCalendarEventSource,
+  right: AcademicCalendarEventSource,
+) =>
+  normalizeDate(left.startDate).getTime() -
+    normalizeDate(right.startDate).getTime() ||
+  normalizeDate(left.endDate).getTime() -
+    normalizeDate(right.endDate).getTime() ||
+  left.title.localeCompare(right.title, 'ko-KR');
+
 const getToneByWeekday = (weekday: number) => {
   if (weekday === 0) {
     return 'sunday' as const;
@@ -95,13 +105,17 @@ const buildStatusMeta = (
 const sortAcademicEventsByVisibleOrder = (
   events: AcademicCalendarEventSource[],
 ) =>
+  [...events].sort(compareAcademicEventsByDate);
+
+const sortAcademicEventsForList = (
+  events: AcademicCalendarEventSource[],
+  today: Date,
+) =>
   [...events].sort(
     (left, right) =>
-      normalizeDate(left.startDate).getTime() -
-        normalizeDate(right.startDate).getTime() ||
-      normalizeDate(left.endDate).getTime() -
-        normalizeDate(right.endDate).getTime() ||
-      left.title.localeCompare(right.title, 'ko-KR'),
+      Number(normalizeDate(left.endDate) < today) -
+        Number(normalizeDate(right.endDate) < today) ||
+      compareAcademicEventsByDate(left, right),
   );
 
 const buildEventColorMap = (events: AcademicCalendarEventSource[]) =>
@@ -119,16 +133,19 @@ const toListItems = (
   eventColorMap: Map<string, AcademicCalendarEventColorTone>,
   today: Date,
 ): AcademicCalendarListItemViewData[] =>
-  sortAcademicEventsByVisibleOrder(events)
+  sortAcademicEventsForList(events, today)
     .map(event => {
       const status = buildStatusMeta(event, today);
       const eventTone =
         eventColorMap.get(event.id) ?? ACADEMIC_CALENDAR_EVENT_COLOR_CYCLE[0];
+      const isEnded = normalizeDate(event.endDate) < today;
 
       return {
         accentColor: eventTone.accentColor,
         dateLabel: formatEventDateLabel(event),
+        description: event.description,
         eventId: event.id,
+        isEnded,
         importantLabel: event.isImportant ? '중요' : undefined,
         statusBackgroundColor: status.backgroundColor,
         statusLabel: status.label,

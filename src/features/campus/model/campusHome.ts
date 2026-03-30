@@ -59,11 +59,10 @@ export interface CampusAcademicEventBadgeViewData {
 }
 
 export interface CampusAcademicEventViewData {
+  countdownLabel: string;
   dateBoxBackgroundColor: string;
   dateBoxTextColor: string;
   id: string;
-  monthLabel: string;
-  dayLabel: string;
   title: string;
   dateRangeLabel: string;
   badge?: CampusAcademicEventBadgeViewData;

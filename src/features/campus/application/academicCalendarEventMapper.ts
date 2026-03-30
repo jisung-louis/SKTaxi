@@ -4,6 +4,7 @@ import type {AcademicCalendarEventSource} from '../model/academicCalendarDetailS
 export const toAcademicCalendarEventSource = (
   schedule: AcademicSchedule,
 ): AcademicCalendarEventSource => ({
+  description: schedule.description,
   endDate: schedule.endDate,
   id: schedule.id,
   isImportant: Boolean(schedule.isPrimary),

@@ -48,22 +48,15 @@ export const CampusAcademicCalendarPreviewCard = ({
               ]}>
               <Text
                 style={[
-                  styles.monthText,
+                  styles.countdownLabel,
                   {color: item.dateBoxTextColor},
                 ]}>
-                {item.monthLabel}
-              </Text>
-              <Text
-                style={[
-                  styles.dayText,
-                  {color: item.dateBoxTextColor},
-                ]}>
-                {item.dayLabel}
+                {item.countdownLabel}
               </Text>
             </View>
             <View style={styles.content}>
               <View style={styles.titleRow}>
-                <Text numberOfLines={1} style={styles.title}>
+                <Text numberOfLines={2} style={styles.title}>
                   {item.title}
                 </Text>
                 {item.badge ? <EventBadge badge={item.badge} /> : null}
@@ -122,15 +115,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 48,
   },
-  monthText: {
-    fontSize: 12,
-    fontWeight: '500',
-    lineHeight: 16,
-  },
-  dayText: {
-    fontSize: 18,
+  countdownLabel: {
+    fontSize: 13,
     fontWeight: '700',
-    lineHeight: 28,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   content: {
     flex: 1,

@@ -17,17 +17,18 @@ interface AcademicCalendarEventCardProps {
 
 export const AcademicCalendarEventCard = ({item}: AcademicCalendarEventCardProps) => {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, item.isEnded ? styles.cardEnded : null]}>
       <View
         style={[
           styles.iconWrap,
           {backgroundColor: item.accentColor},
+          item.isEnded ? styles.iconWrapEnded : null,
         ]}
       />
 
-      <View style={styles.content}>
+      <View style={[styles.content, item.isEnded ? styles.contentEnded : null]}>
         <View style={styles.titleRow}>
-          <Text numberOfLines={1} style={styles.title}>
+          <Text numberOfLines={2} style={[styles.title, item.isEnded ? styles.titleEnded : null]}>
             {item.title}
           </Text>
           {item.importantLabel ? (
@@ -36,6 +37,11 @@ export const AcademicCalendarEventCard = ({item}: AcademicCalendarEventCardProps
             </View>
           ) : null}
         </View>
+        {item.description ? (
+          <Text numberOfLines={2} style={styles.description}>
+            {item.description}
+          </Text>
+        ) : null}
         <Text style={styles.dateLabel}>{item.dateLabel}</Text>
       </View>
 
@@ -43,6 +49,7 @@ export const AcademicCalendarEventCard = ({item}: AcademicCalendarEventCardProps
         style={[
           styles.statusBadge,
           {backgroundColor: item.statusBackgroundColor},
+          item.isEnded ? styles.statusBadgeEnded : null,
         ]}>
         <Text style={[styles.statusLabel, {color: item.statusTextColor}]}>
           {item.statusLabel}
@@ -65,6 +72,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     ...SHADOWS.card,
   },
+  cardEnded: {
+    backgroundColor: COLORS.background.page,
+  },
   iconWrap: {
     alignItems: 'center',
     borderRadius: RADIUS.md,
@@ -72,10 +82,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
+  iconWrapEnded: {
+    opacity: 0.72,
+  },
   content: {
     flex: 1,
     marginLeft: SPACING.md,
     marginRight: SPACING.sm,
+  },
+  contentEnded: {
+    opacity: 0.72,
   },
   titleRow: {
     alignItems: 'center',
@@ -88,6 +104,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
+  },
+  titleEnded: {
+    color: COLORS.text.muted,
   },
   importantBadge: {
     backgroundColor: ACADEMIC_CALENDAR_BADGE_TONE.backgroundColor,
@@ -102,6 +121,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 15,
   },
+  description: {
+    color: COLORS.text.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 2,
+  },
   dateLabel: {
     color: COLORS.text.muted,
     fontSize: 12,
@@ -115,6 +140,9 @@ const styles = StyleSheet.create({
     minWidth: 44,
     paddingHorizontal: 10,
     paddingVertical: 4,
+  },
+  statusBadgeEnded: {
+    opacity: 0.72,
   },
   statusLabel: {
     fontSize: 12,

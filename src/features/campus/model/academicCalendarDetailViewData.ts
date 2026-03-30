@@ -45,7 +45,9 @@ export interface AcademicCalendarWeekViewData {
 export interface AcademicCalendarListItemViewData {
   accentColor: string;
   dateLabel: string;
+  description?: string;
   eventId: string;
+  isEnded: boolean;
   importantLabel?: string;
   statusBackgroundColor: string;
   statusLabel: string;
