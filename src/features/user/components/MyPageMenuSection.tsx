@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import {
@@ -44,7 +44,11 @@ export const MyPageMenuSection = ({
                   styles.iconWrap,
                   {backgroundColor: item.iconBackgroundColor},
                 ]}>
-                <Icon color={item.iconColor} name={item.iconName} size={20} />
+                {item.imageSource ? (
+                  <Image source={item.imageSource} style={styles.iconImage} />
+                ) : (
+                  <Icon color={item.iconColor} name={item.iconName} size={20} />
+                )}
               </View>
 
               <Text style={styles.label}>{item.label}</Text>
@@ -103,6 +107,11 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
+  },
+  iconImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
   label: {
     color: COLORS.text.primary,

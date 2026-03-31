@@ -39,6 +39,7 @@ import type {
   MinecraftAccountEntry,
   MinecraftEdition,
 } from '../model/types';
+import { MinecraftStackHeader } from '../components/MinecraftStackHeader';
 
 const MAX_TOTAL_ACCOUNTS = 4;
 const AVATAR_SIZE = 48;
@@ -232,7 +233,7 @@ export const MinecraftAccountScreen = () => {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.safeArea}>
-        <StackHeader
+        <MinecraftStackHeader
           onPressBack={() => navigation.goBack()}
           title="마인크래프트 계정 등록"
         />
@@ -282,11 +283,14 @@ export const MinecraftAccountScreen = () => {
               <View style={styles.summaryCard}>
                 <View style={styles.summaryHeader}>
                   <View>
-                    <Text style={styles.summaryTitle}>등록 현황</Text>
+                    <View style={styles.summaryTitleRow}>
+                      <Image source={require('/assets/images/minecraft/steve_face.png')} style={styles.summaryTitleIcon} />
+                      <Text style={styles.summaryTitle}>등록 현황</Text>
+                    </View>
                     <Text style={styles.summarySubtitle}>
                       내 계정 1개 + 친구 계정 3개까지 등록 가능
                     </Text>
-                  </View>
+                  </View> 
 
                   <View style={styles.summaryCountBadge}>
                     <Text style={styles.summaryCountText}>
@@ -343,7 +347,7 @@ export const MinecraftAccountScreen = () => {
                       아직 등록된 계정이 없습니다
                     </Text>
                     <Text style={styles.emptyCardDescription}>
-                      먼저 본인 계정을 등록하면 서버 화이트리스트에 포함됩니다.
+                      계정을 등록해야 서버에 접속할 수 있어요.
                     </Text>
                   </View>
                 ) : (
@@ -529,6 +533,16 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     ...SHADOWS.card,
   },
+  summaryTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  summaryTitleIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: RADIUS.xs,
+  },
   summaryHeader: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -693,9 +707,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     borderWidth: 1,
     color: COLORS.text.primary,
-    fontSize: 15,
-    lineHeight: 22,
-    minHeight: 52,
+    fontSize: 14,
+    lineHeight: 16,
+    height: 44,
     paddingHorizontal: SPACING.md,
     paddingVertical: 14,
   },

@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Modal,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -96,7 +97,7 @@ export const MinecraftServerGuideModal = ({
             <View style={styles.modalHeaderTitleWrap}>
               <Text style={styles.modalTitle}>스쿠리 서버 접속 방법</Text>
               <Text style={styles.modalSubtitle}>
-                현재 사진과 서버 정보는 placeholder입니다.
+                Java(컴퓨터)와 BE(휴대폰) 모두 접속 가능해요.
               </Text>
             </View>
 
@@ -123,15 +124,19 @@ export const MinecraftServerGuideModal = ({
                 </Text>
               </View>
 
-              <GuideImagePlaceholder
+              {/* <GuideImagePlaceholder
                 iconName="cube-outline"
                 subtitle="실제 계정 등록 화면 이미지가 들어갈 자리입니다."
                 title="계정 등록 화면 placeholder"
+              /> */}
+              <Image
+                source={require('../../../../assets/images/minecraft/tip/tip-img1.jpeg')}
+                style={[styles.guideStepImage, {height: 400}, {marginTop: SPACING.lg}]}
               />
 
               <Text style={styles.guideStepBody}>
-                스쿠리 앱의 {'<'}마인크래프트 계정 등록{'>'} 화면에서 본인의
-                마인크래프트 닉네임을 입력해 등록하세요.
+                스쿠리 앱의 '마인크래프트 계정 등록' 화면에서 본인의 마인크래프트 닉네임을 입력하고
+                에디션을 선택해 등록하세요.
               </Text>
 
               <View style={styles.guideWarningBox}>
@@ -172,11 +177,26 @@ export const MinecraftServerGuideModal = ({
                 </Text>
               </View>
 
-              <GuideImagePlaceholder
+              {/* <GuideImagePlaceholder
                 iconName="game-controller-outline"
                 subtitle="멀티 플레이 진입 화면 이미지가 들어갈 자리입니다."
                 title="멀티 플레이 화면 placeholder"
-              />
+              /> */}
+              <View style={styles.guideStepImageContainer}>
+                <Text style={styles.guideStepImageTitle}>Java Edition</Text>
+                <Image
+                  source={require('../../../../assets/images/minecraft/tip/tip-img2-je.png')}
+                  style={[styles.guideStepImage, {height: 200}]}
+                />
+              </View>
+
+              <View style={styles.guideStepImageContainer}>
+                <Text style={styles.guideStepImageTitle}>Bedrock Edition</Text>
+                <Image
+                  source={require('../../../../assets/images/minecraft/tip/tip-img2-be.jpeg')}
+                  style={[styles.guideStepImage, {height: 200}]}
+                />
+              </View>
 
               <Text style={styles.guideStepBody}>
                 마인크래프트를 실행한 뒤 멀티 플레이 메뉴로 이동해 서버 추가
@@ -194,15 +214,30 @@ export const MinecraftServerGuideModal = ({
                 </Text>
               </View>
 
-              <GuideImagePlaceholder
+              {/* <GuideImagePlaceholder
                 iconName="server-outline"
                 subtitle="서버 추가 입력 화면 이미지가 들어갈 자리입니다."
                 title="서버 추가 화면 placeholder"
-              />
+              /> */}
+
+              <View style={styles.guideStepImageContainer}>
+                <Text style={styles.guideStepImageTitle}>Java Edition</Text>
+                <Image
+                  source={require('../../../../assets/images/minecraft/tip/tip-img3-je.png')}
+                  style={[styles.guideStepImage, {height: 180}]}
+                />
+              </View>
+
+              <View style={styles.guideStepImageContainer}>
+                <Text style={styles.guideStepImageTitle}>Bedrock Edition</Text>
+                <Image
+                  source={require('../../../../assets/images/minecraft/tip/tip-img3-be.jpeg')}
+                  style={[styles.guideStepImage, {height: 180}]}
+                />
+              </View>
 
               <Text style={styles.guideStepBody}>
-                서버 추가 화면에서 아래 정보를 입력한 뒤 접속하세요. 현재 값은
-                안내용 placeholder이며, 추후 실제 서버 연동 값으로 대체됩니다.
+                서버 추가 화면에서 아래 정보를 입력한 뒤 접속하세요.
               </Text>
 
               <View style={styles.guideServerInfoCard}>
@@ -215,7 +250,7 @@ export const MinecraftServerGuideModal = ({
                     서버 주소: {serverAddress}
                   </Text>
                   <Text style={styles.guideServerInfoLine}>
-                    포트: {GUIDE_JAVA_PORT}
+                    포트(선택): {GUIDE_JAVA_PORT}
                   </Text>
                 </View>
 
@@ -325,6 +360,27 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     lineHeight: 22,
+  },
+  guideStepImage: {
+    width: '100%',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border.image,
+    overflow: 'hidden',
+    marginTop: SPACING.sm,
+  },
+  guideStepImageContainer: {
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+  },
+  guideStepImageTitle: {
+    color: COLORS.text.secondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: SPACING.sm,
+    backgroundColor: COLORS.background.subtle,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
   },
   guideImagePlaceholder: {
     backgroundColor: COLORS.background.subtle,

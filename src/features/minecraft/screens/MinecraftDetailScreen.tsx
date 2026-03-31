@@ -18,7 +18,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {navigateToChatRoom} from '@/app/navigation/services/communityNavigation';
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {
-  StackHeader,
   StateCard,
   ToneBadge,
 } from '@/shared/design-system/components';
@@ -38,6 +37,7 @@ import {
 import {useMinecraftServerOverview} from '../hooks/useMinecraftServerOverview';
 import {useMinecraftWhitelistPlayers} from '../hooks/useMinecraftWhitelistPlayers';
 import type {MinecraftWhitelistPlayer} from '../model/types';
+import {MinecraftStackHeader} from '../components/MinecraftStackHeader';
 
 const getAvatarUri = (uuid?: string) => {
   const avatarKey =
@@ -143,7 +143,7 @@ export const MinecraftDetailScreen = () => {
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
-      <StackHeader
+      <MinecraftStackHeader
         onPressBack={() => navigation.goBack()}
         title="마인크래프트 서버 정보"
       />
@@ -178,7 +178,12 @@ export const MinecraftDetailScreen = () => {
             <View style={styles.summaryCard}>
               <View style={styles.summaryHeader}>
                 <View>
-                  <Text style={styles.summaryTitle}>서버 상태</Text>
+                  <View style={styles.titleRow}>
+                    <Image 
+                      source={require('../../../../assets/images/minecraft/grass.png')} 
+                      style={styles.summaryTitleIcon} />
+                    <Text style={styles.summaryTitle}>스쿠리 서버 상태</Text>
+                  </View>
                   <Text style={styles.summarySubtitle}>
                     마지막 업데이트 {formatDateTime(serverStatus?.updatedAt)}
                   </Text>
@@ -245,8 +250,10 @@ export const MinecraftDetailScreen = () => {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderTitleWrap}>
-                  <Icon color={COLORS.accent.blue} name="server-outline" size={18} />
-                  <Text style={styles.cardTitle}>접속 정보</Text>
+                  <Image 
+                    source={require('../../../../assets/images/minecraft/creeper.png')} 
+                    style={styles.cardTitleIcon} />
+                  <Text style={styles.cardTitle}>스쿠리 서버 정보</Text>
                 </View>
               </View>
 
@@ -388,7 +395,7 @@ export const MinecraftDetailScreen = () => {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderTitleWrap}>
-                  <Icon color={COLORS.accent.purple} name="shield-outline" size={18} />
+                  <Icon color={COLORS.accent.purple} name="people-outline" size={18} />
                   <Text style={styles.cardTitle}>서버 멤버 목록</Text>
                 </View>
 
@@ -547,6 +554,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.xs,
+  },
+  summaryTitleIcon: {
+    width: 26,
+    height: 26,
+    borderRadius: RADIUS.xs,
+  },
   summaryTitle: {
     color: COLORS.text.primary,
     fontSize: 18,
@@ -605,6 +623,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 24,
+  },
+  cardTitleIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: RADIUS.xs,
   },
   headerMeta: {
     color: COLORS.text.tertiary,

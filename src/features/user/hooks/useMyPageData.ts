@@ -1,4 +1,5 @@
 import React from 'react';
+import type {ImageSourcePropType} from 'react-native';
 
 import {useMyPageRepository} from '@/di';
 import {COLORS} from '@/shared/design-system/tokens';
@@ -14,6 +15,7 @@ type MyPageMenuTone = 'blue' | 'green' | 'orange' | 'purple' | 'pink' | 'gray';
 interface MyPageMenuItemConfig {
   actionKey: MyPageMenuActionKey;
   iconName: string;
+  imageSource?: ImageSourcePropType;
   id: string;
   label: string;
   tone: MyPageMenuTone;
@@ -33,26 +35,6 @@ interface MyPageStatConfig {
 
 const MY_PAGE_PROFILE_EDIT_LABEL = '프로필 수정';
 const MY_PAGE_MENU_SECTIONS: MyPageMenuSectionConfig[] = [
-  {
-    id: 'minecraft',
-    title: '마인크래프트',
-    items: [
-      {
-        actionKey: 'minecraftAccount',
-        iconName: 'cube-outline',
-        id: 'minecraft-account',
-        label: '마인크래프트 계정 등록',
-        tone: 'green',
-      },
-      {
-        actionKey: 'minecraftServer',
-        iconName: 'server-outline',
-        id: 'minecraft-server',
-        label: '마인크래프트 서버 정보',
-        tone: 'blue',
-      },
-    ],
-  },
   {
     id: 'activity',
     title: '내 활동',
@@ -77,6 +59,28 @@ const MY_PAGE_MENU_SECTIONS: MyPageMenuSectionConfig[] = [
         id: 'taxi-history',
         label: '택시 이용 내역',
         tone: 'orange',
+      },
+    ],
+  },
+  {
+    id: 'minecraft',
+    title: '마인크래프트 서버',
+    items: [
+      {
+        actionKey: 'minecraftAccount',
+        iconName: 'cube-outline',
+        id: 'minecraft-account',
+        label: '마인크래프트 계정 등록',
+        tone: 'green',
+        imageSource: require('../../../../assets/images/minecraft/steve_face.png'),
+      },
+      {
+        actionKey: 'minecraftServer',
+        iconName: 'server-outline',
+        id: 'minecraft-server',
+        label: '마인크래프트 서버 정보',
+        tone: 'blue',
+        imageSource: require('../../../../assets/images/minecraft/grass.png'),
       },
     ],
   },
@@ -193,6 +197,7 @@ const toViewData = (source: MyPageSource): MyPageScreenViewData => ({
 
       return {
         actionKey: item.actionKey,
+        imageSource: item.imageSource,
         iconBackgroundColor: toneColors.iconBackgroundColor,
         iconColor: toneColors.iconColor,
         iconName: item.iconName,

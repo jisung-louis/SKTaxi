@@ -1,4 +1,5 @@
 import type {MyPageMenuActionKey} from './myPageSource';
+import type {ImageSourcePropType} from 'react-native';
 
 export interface MyPageProfileViewData {
   avatarLabel: string;
@@ -18,6 +19,7 @@ export interface MyPageStatViewData {
 
 export interface MyPageMenuItemViewData {
   actionKey: MyPageMenuActionKey;
+  imageSource?: ImageSourcePropType;
   iconBackgroundColor: string;
   iconColor: string;
   iconName: string;
