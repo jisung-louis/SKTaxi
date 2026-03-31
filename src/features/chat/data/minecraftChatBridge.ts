@@ -1,7 +1,4 @@
-import {
-  sendMinecraftChatMessage as sendMinecraftFeatureChatMessage,
-  subscribeToMinecraftServerInfo as subscribeToMinecraftFeatureServerInfo,
-} from '@/features/minecraft';
+import {subscribeToMinecraftServerInfo as subscribeToMinecraftFeatureServerInfo} from '@/features/minecraft';
 
 import type { ChatRoomServerInfo } from '../model/types';
 
@@ -28,8 +25,4 @@ export const subscribeToMinecraftServerInfo = ({ onData, onError }: ServerInfoCa
     },
     onError,
   });
-};
-
-export const sendMinecraftChatMessage = async (chatRoomId: string, text: string) => {
-  await sendMinecraftFeatureChatMessage(chatRoomId, text);
 };

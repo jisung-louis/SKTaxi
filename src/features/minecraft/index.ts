@@ -5,7 +5,6 @@ export type {
   IMinecraftRepository,
   RegisterAccountParams,
   RegisterAccountResult,
-  SendMessageParams,
 } from './data/repositories/IMinecraftRepository';
 
 export { useMinecraftAccounts } from './hooks/useMinecraftAccounts';
@@ -43,6 +42,5 @@ export {
 } from './services/minecraftLookupService';
 
 export {
-  sendMinecraftChatMessage,
   subscribeToMinecraftServerInfo,
 } from './data/minecraftBridge';

@@ -1,13 +1,31 @@
-import type { SubscriptionCallbacks } from '@/shared/types/subscription';
+import type {
+  SubscriptionCallbacks,
+  Unsubscribe,
+} from '@/shared/types/subscription';
+import {
+  createXhrSseStream,
+  sseClient,
+  type SseStreamConnection,
+  type SseStreamEvent,
+} from '@/shared/realtime';
 
+import {minecraftApiClient} from '../data/api/minecraftApiClient';
+import type {
+  MinecraftOverviewResponseDto,
+  MinecraftPlayerRemoveResponseDto,
+  MinecraftPlayerResponseDto,
+  MinecraftPlayersSnapshotResponseDto,
+} from '../data/dto/minecraftDto';
+import {
+  mapMinecraftOverviewDtoToOverview,
+  mapMinecraftOverviewToServerInfo,
+  mapMinecraftPlayerDtoToWhitelistPlayer,
+} from '../data/mappers/minecraftApiMappers';
 import type {
   MinecraftServerInfo,
   MinecraftServerOverview,
-  MinecraftServerPlayer,
-  MinecraftServerStatus,
   MinecraftWhitelistPlayer,
 } from '../model/types';
-import { subscribeToMinecraftRealtimeValue } from '../data/minecraftRealtimeDataSource';
 
 const EMPTY_SERVER_OVERVIEW: MinecraftServerOverview = {
   serverStatus: null,
@@ -16,200 +34,373 @@ const EMPTY_SERVER_OVERVIEW: MinecraftServerOverview = {
   serverVersion: null,
 };
 
-const parseServerPlayers = (
-  value: any,
-): MinecraftServerStatus['players'] => {
-  if (!value) {
-    return [];
-  }
+interface MinecraftRealtimeState {
+  connection: SseStreamConnection | null;
+  connectionPromise: Promise<void> | null;
+  hasOverview: boolean;
+  hasPlayers: boolean;
+  lastEventId?: string;
+  overview: MinecraftServerOverview;
+  overviewLoadPromise: Promise<void> | null;
+  overviewSubscribers: Set<SubscriptionCallbacks<MinecraftServerOverview>>;
+  players: MinecraftWhitelistPlayer[];
+  playersLoadPromise: Promise<void> | null;
+  playersSubscribers: Set<SubscriptionCallbacks<MinecraftWhitelistPlayer[]>>;
+  reconnectDelayMs: number;
+  reconnectTimerId: ReturnType<typeof setTimeout> | null;
+}
 
-  if (Array.isArray(value)) {
-    return value.map((player: any): MinecraftServerPlayer => ({
-      username: player.username || player.name || '플레이어',
-      uuid: player.uuid,
-    }));
-  }
-
-  if (typeof value === 'object') {
-    return Object.values(value).map((player: any): MinecraftServerPlayer => ({
-      username: player.username || player.name || '플레이어',
-      uuid: player.uuid,
-    }));
-  }
-
-  return [];
+const realtimeState: MinecraftRealtimeState = {
+  connection: null,
+  connectionPromise: null,
+  hasOverview: false,
+  hasPlayers: false,
+  overview: {...EMPTY_SERVER_OVERVIEW},
+  overviewLoadPromise: null,
+  overviewSubscribers: new Set(),
+  players: [],
+  playersLoadPromise: null,
+  playersSubscribers: new Set(),
+  reconnectDelayMs: 3000,
+  reconnectTimerId: null,
 };
 
-const parseJavaWhitelistPlayers = (value: any): MinecraftWhitelistPlayer[] => {
-  if (!value || typeof value !== 'object') {
-    return [];
+const toError = (error: unknown) => {
+  if (error instanceof Error) {
+    return error;
   }
 
-  return Object.entries(value).map(([uuid, data]) => {
-    const record = data as any;
+  return new Error('마인크래프트 데이터를 불러오는 중 오류가 발생했습니다.');
+};
 
-    return {
-      uuid,
-      username: record?.nickname || '플레이어',
-      edition: record?.edition || 'JE',
-      whoseFriend: record?.whoseFriend,
-      addedBy: record?.addedBy || 'unknown',
-      addedAt:
-        typeof record?.addedAt === 'number' ? record.addedAt : Date.now(),
-      lastSeenAt:
-        typeof record?.lastSeenAt === 'number' ? record.lastSeenAt : undefined,
-    };
+const parseJsonPayload = <T>(payload?: string): T | null => {
+  if (!payload) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(payload) as T;
+  } catch {
+    return null;
+  }
+};
+
+const cloneOverview = (
+  overview: MinecraftServerOverview,
+): MinecraftServerOverview => ({
+  ...overview,
+  serverStatus: overview.serverStatus ? {...overview.serverStatus} : null,
+});
+
+const clonePlayers = (players: MinecraftWhitelistPlayer[]) =>
+  players.map(player => ({...player}));
+
+const sortPlayers = (players: MinecraftWhitelistPlayer[]) =>
+  [...players].sort((left, right) => {
+    const usernameCompare = left.username.localeCompare(right.username, 'ko');
+
+    if (usernameCompare !== 0) {
+      return usernameCompare;
+    }
+
+    return left.normalizedKey.localeCompare(right.normalizedKey, 'ko');
+  });
+
+const hasSubscribers = () =>
+  realtimeState.overviewSubscribers.size > 0 ||
+  realtimeState.playersSubscribers.size > 0;
+
+const clearReconnectTimer = () => {
+  if (!realtimeState.reconnectTimerId) {
+    return;
+  }
+
+  clearTimeout(realtimeState.reconnectTimerId);
+  realtimeState.reconnectTimerId = null;
+};
+
+const notifyOverviewSubscribers = () => {
+  const nextOverview = cloneOverview(realtimeState.overview);
+
+  realtimeState.overviewSubscribers.forEach(callbacks => {
+    callbacks.onData(nextOverview);
   });
 };
 
-const parseBedrockWhitelistPlayers = (
-  value: any,
-): MinecraftWhitelistPlayer[] => {
-  if (!value || typeof value !== 'object') {
-    return [];
-  }
+const notifyPlayersSubscribers = () => {
+  const nextPlayers = clonePlayers(realtimeState.players);
 
-  return Object.entries(value).map(([storedName, data]) => {
-    const record = data as any;
-
-    return {
-      uuid: `be:${storedName}`,
-      username: record?.nickname || record?.username || storedName,
-      edition: 'BE',
-      whoseFriend: record?.whoseFriend,
-      addedBy: record?.addedBy || 'unknown',
-      addedAt:
-        typeof record?.addedAt === 'number' ? record.addedAt : Date.now(),
-      lastSeenAt:
-        typeof record?.lastSeenAt === 'number' ? record.lastSeenAt : undefined,
-    };
+  realtimeState.playersSubscribers.forEach(callbacks => {
+    callbacks.onData(nextPlayers);
   });
 };
 
-const sortWhitelistPlayers = (players: MinecraftWhitelistPlayer[]) => {
-  return [...players].sort((a, b) => b.addedAt - a.addedAt);
+const scheduleReconnect = () => {
+  if (
+    !hasSubscribers() ||
+    realtimeState.reconnectTimerId ||
+    realtimeState.connectionPromise ||
+    realtimeState.connection
+  ) {
+    return;
+  }
+
+  realtimeState.reconnectTimerId = setTimeout(() => {
+    realtimeState.reconnectTimerId = null;
+    ensureConnection().catch(() => undefined);
+  }, realtimeState.reconnectDelayMs);
+};
+
+const disposeIfIdle = () => {
+  if (hasSubscribers()) {
+    return;
+  }
+
+  clearReconnectTimer();
+
+  const currentConnection = realtimeState.connection;
+  realtimeState.connection = null;
+  currentConnection?.close();
+};
+
+const handleRealtimeEvent = (event: SseStreamEvent) => {
+  if (event.id) {
+    realtimeState.lastEventId = event.id;
+  }
+
+  if (typeof event.retry === 'number' && event.retry >= 0) {
+    realtimeState.reconnectDelayMs = event.retry;
+  }
+
+  switch (event.event) {
+    case 'SERVER_STATE_SNAPSHOT':
+    case 'SERVER_STATE_UPDATED': {
+      const payload =
+        parseJsonPayload<MinecraftOverviewResponseDto>(event.data);
+
+      if (!payload) {
+        return;
+      }
+
+      realtimeState.overview = mapMinecraftOverviewDtoToOverview(payload);
+      realtimeState.hasOverview = true;
+      notifyOverviewSubscribers();
+      return;
+    }
+
+    case 'PLAYERS_SNAPSHOT': {
+      const payload =
+        parseJsonPayload<MinecraftPlayersSnapshotResponseDto>(event.data);
+
+      if (!payload) {
+        return;
+      }
+
+      realtimeState.players = sortPlayers(
+        payload.players.map(mapMinecraftPlayerDtoToWhitelistPlayer),
+      );
+      realtimeState.hasPlayers = true;
+      notifyPlayersSubscribers();
+      return;
+    }
+
+    case 'PLAYER_UPSERT': {
+      const payload =
+        parseJsonPayload<MinecraftPlayerResponseDto>(event.data);
+
+      if (!payload) {
+        return;
+      }
+
+      const nextPlayer = mapMinecraftPlayerDtoToWhitelistPlayer(payload);
+      realtimeState.players = sortPlayers(
+        realtimeState.players.some(
+          player => player.normalizedKey === nextPlayer.normalizedKey,
+        )
+          ? realtimeState.players.map(player =>
+              player.normalizedKey === nextPlayer.normalizedKey
+                ? nextPlayer
+                : player,
+            )
+          : [...realtimeState.players, nextPlayer],
+      );
+      realtimeState.hasPlayers = true;
+      notifyPlayersSubscribers();
+      return;
+    }
+
+    case 'PLAYER_REMOVE': {
+      const payload =
+        parseJsonPayload<MinecraftPlayerRemoveResponseDto>(event.data);
+
+      if (!payload) {
+        return;
+      }
+
+      realtimeState.players = realtimeState.players.filter(
+        player => player.normalizedKey !== payload.normalizedKey,
+      );
+      realtimeState.hasPlayers = true;
+      notifyPlayersSubscribers();
+      return;
+    }
+
+    case 'HEARTBEAT':
+    default:
+      return;
+  }
+};
+
+const loadOverview = async () => {
+  if (realtimeState.overviewLoadPromise) {
+    return realtimeState.overviewLoadPromise;
+  }
+
+  realtimeState.overviewLoadPromise = minecraftApiClient
+    .getOverview()
+    .then(response => {
+      realtimeState.overview = mapMinecraftOverviewDtoToOverview(response.data);
+      realtimeState.hasOverview = true;
+      notifyOverviewSubscribers();
+    })
+    .finally(() => {
+      realtimeState.overviewLoadPromise = null;
+    });
+
+  return realtimeState.overviewLoadPromise;
+};
+
+const loadPlayers = async () => {
+  if (realtimeState.playersLoadPromise) {
+    return realtimeState.playersLoadPromise;
+  }
+
+  realtimeState.playersLoadPromise = minecraftApiClient
+    .getPlayers()
+    .then(response => {
+      realtimeState.players = sortPlayers(
+        response.data.map(mapMinecraftPlayerDtoToWhitelistPlayer),
+      );
+      realtimeState.hasPlayers = true;
+      notifyPlayersSubscribers();
+    })
+    .finally(() => {
+      realtimeState.playersLoadPromise = null;
+    });
+
+  return realtimeState.playersLoadPromise;
+};
+
+const ensureConnection = async () => {
+  if (
+    !hasSubscribers() ||
+    realtimeState.connection ||
+    realtimeState.connectionPromise
+  ) {
+    return;
+  }
+
+  clearReconnectTimer();
+
+  realtimeState.connectionPromise = (async () => {
+    const connection = await sseClient.connect(
+      {
+        lastEventId: realtimeState.lastEventId,
+        path: '/v1/sse/minecraft',
+      },
+      {
+        connect: options => {
+          realtimeState.reconnectDelayMs = options.reconnectDelayMs;
+
+          let nextConnection: SseStreamConnection | null = null;
+          nextConnection = createXhrSseStream(options, {
+            onClosed: () => {
+              if (realtimeState.connection === nextConnection) {
+                realtimeState.connection = null;
+              }
+
+              scheduleReconnect();
+            },
+            onError: error => {
+              console.warn('마인크래프트 SSE 연결 오류:', error);
+            },
+            onEvent: event => {
+              handleRealtimeEvent(event);
+            },
+          });
+
+          return nextConnection;
+        },
+      },
+    );
+
+    realtimeState.connection = connection;
+  })()
+    .catch(error => {
+      console.warn('마인크래프트 SSE 연결 실패:', error);
+      scheduleReconnect();
+    })
+    .finally(() => {
+      realtimeState.connectionPromise = null;
+      disposeIfIdle();
+    });
+
+  await realtimeState.connectionPromise;
 };
 
 export const subscribeToMinecraftServerOverview = ({
   onData,
   onError,
-}: SubscriptionCallbacks<MinecraftServerOverview>) => {
-  const currentState: MinecraftServerOverview = { ...EMPTY_SERVER_OVERVIEW };
+}: SubscriptionCallbacks<MinecraftServerOverview>): Unsubscribe => {
+  const callbacks = {onData, onError};
+  realtimeState.overviewSubscribers.add(callbacks);
 
-  const emit = () => {
-    onData({ ...currentState });
-  };
+  if (realtimeState.hasOverview) {
+    onData(cloneOverview(realtimeState.overview));
+  } else {
+    loadOverview().catch(error => {
+      callbacks.onError(toError(error));
+    });
+  }
 
-  const unsubscribeStatus = subscribeToMinecraftRealtimeValue<any>(
-    'serverStatus',
-    {
-      onData: data => {
-        if (!data) {
-          currentState.serverStatus = null;
-          currentState.serverVersion = null;
-          emit();
-          return;
-        }
-
-        const players = parseServerPlayers(data.players) ?? [];
-        currentState.serverStatus = {
-          online: data.online ?? true,
-          maxPlayers: data.maxPlayers ?? players.length,
-          currentPlayers:
-            data.currentPlayers ?? data.playerCount ?? players.length,
-          players,
-          updatedAt: data.updatedAt ?? Date.now(),
-        };
-        currentState.serverVersion =
-          typeof data.version === 'string' ? data.version : null;
-        emit();
-      },
-      onError,
-    },
-  );
-
-  const unsubscribeServerUrl = subscribeToMinecraftRealtimeValue<string>(
-    'serverStatus/serverUrl',
-    {
-      onData: serverUrl => {
-        currentState.serverUrl =
-          typeof serverUrl === 'string' ? serverUrl : null;
-        emit();
-      },
-      onError,
-    },
-  );
-
-  const unsubscribeMapUri = subscribeToMinecraftRealtimeValue<string>(
-    'serverStatus/mapUri',
-    {
-      onData: mapUri => {
-        currentState.mapUri = typeof mapUri === 'string' ? mapUri : null;
-        emit();
-      },
-      onError,
-    },
-  );
+  ensureConnection().catch(() => undefined);
 
   return () => {
-    unsubscribeStatus();
-    unsubscribeServerUrl();
-    unsubscribeMapUri();
+    realtimeState.overviewSubscribers.delete(callbacks);
+    disposeIfIdle();
   };
 };
 
 export const subscribeToMinecraftWhitelistPlayers = ({
   onData,
   onError,
-}: SubscriptionCallbacks<MinecraftWhitelistPlayer[]>) => {
-  let javaPlayers: MinecraftWhitelistPlayer[] = [];
-  let bedrockPlayers: MinecraftWhitelistPlayer[] = [];
+}: SubscriptionCallbacks<MinecraftWhitelistPlayer[]>): Unsubscribe => {
+  const callbacks = {onData, onError};
+  realtimeState.playersSubscribers.add(callbacks);
 
-  const emit = () => {
-    onData(sortWhitelistPlayers([...javaPlayers, ...bedrockPlayers]));
-  };
+  if (realtimeState.hasPlayers) {
+    onData(clonePlayers(realtimeState.players));
+  } else {
+    loadPlayers().catch(error => {
+      callbacks.onError(toError(error));
+    });
+  }
 
-  const unsubscribeJavaPlayers = subscribeToMinecraftRealtimeValue<any>(
-    'whitelist/players',
-    {
-      onData: value => {
-        javaPlayers = parseJavaWhitelistPlayers(value);
-        emit();
-      },
-      onError,
-    },
-  );
-
-  const unsubscribeBedrockPlayers = subscribeToMinecraftRealtimeValue<any>(
-    'whitelist/BEPlayers',
-    {
-      onData: value => {
-        bedrockPlayers = parseBedrockWhitelistPlayers(value);
-        emit();
-      },
-      onError,
-    },
-  );
+  ensureConnection().catch(() => undefined);
 
   return () => {
-    unsubscribeJavaPlayers();
-    unsubscribeBedrockPlayers();
+    realtimeState.playersSubscribers.delete(callbacks);
+    disposeIfIdle();
   };
 };
 
 export const subscribeToMinecraftServerInfo = ({
   onData,
   onError,
-}: SubscriptionCallbacks<MinecraftServerInfo>) => {
+}: SubscriptionCallbacks<MinecraftServerInfo>): Unsubscribe => {
   return subscribeToMinecraftServerOverview({
     onData: overview => {
-      onData({
-        currentPlayers: overview.serverStatus?.currentPlayers ?? null,
-        maxPlayers: overview.serverStatus?.maxPlayers ?? null,
-        online: overview.serverStatus?.online ?? null,
-        serverUrl: overview.serverUrl,
-        version: overview.serverVersion,
-      });
+      onData(mapMinecraftOverviewToServerInfo(overview));
     },
     onError,
   });

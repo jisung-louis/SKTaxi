@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { useAuth } from '@/features/auth';
+import {MINECRAFT_CHAT_ROOM_ID} from '@/features/minecraft/constants/minecraftGuide';
 
 import { subscribeToMinecraftServerInfo } from '../data/minecraftChatBridge';
 import type { ChatRoom, ChatRoomServerInfo } from '../model/types';
@@ -72,7 +73,7 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
   }, [chatRepository, chatRoomId, reloadToken, user?.uid]);
 
   useEffect(() => {
-    if (chatRoom?.type !== 'game') {
+    if (chatRoom?.id !== MINECRAFT_CHAT_ROOM_ID) {
       setServerInfo(null);
       return;
     }
@@ -88,7 +89,7 @@ export const useChatRoom = (chatRoomId: string | undefined): UseChatRoomResult =
     });
 
     return () => unsubscribe();
-  }, [chatRoom?.type]);
+  }, [chatRoom?.id]);
 
   const joinRoom = useCallback(async () => {
     if (!chatRoomId || !user?.uid) {

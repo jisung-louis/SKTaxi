@@ -105,24 +105,15 @@ export const MinecraftDetailScreen = () => {
   } = useMinecraftWhitelistPlayers();
   const [isGuideModalVisible, setGuideModalVisible] = React.useState(false);
 
-  const onlinePlayerSet = React.useMemo(() => {
-    if (!serverStatus?.players?.length) {
-      return new Set<string>();
-    }
-
-    return new Set(
-      serverStatus.players.flatMap(player =>
-        [player.uuid, player.username].filter(Boolean) as string[],
-      ),
-    );
-  }, [serverStatus?.players]);
-
   const sortedPlayers = React.useMemo(
     () => sortWhitelistPlayers(players),
     [players],
   );
 
-  const onlinePlayers = serverStatus?.players ?? [];
+  const onlinePlayers = React.useMemo(
+    () => sortWhitelistPlayers(players.filter(player => player.online)),
+    [players],
+  );
   const isServerOnline = Boolean(serverStatus?.online);
   const hasOverviewData = Boolean(serverStatus || serverUrl || serverVersion);
   const guideServerAddress = serverUrl || GUIDE_SERVER_ADDRESS_FALLBACK;
@@ -427,13 +418,11 @@ export const MinecraftDetailScreen = () => {
                 </View>
               ) : (
                 sortedPlayers.map((player, index) => {
-                  const isOnline =
-                    onlinePlayerSet.has(player.uuid) ||
-                    onlinePlayerSet.has(player.username);
+                  const isOnline = player.online === true;
 
                   return (
                     <View
-                      key={player.uuid}
+                      key={player.id}
                       style={[
                         styles.playerRow,
                         index < sortedPlayers.length - 1
