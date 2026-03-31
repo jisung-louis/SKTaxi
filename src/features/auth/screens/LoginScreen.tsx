@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -135,9 +136,12 @@ export const LoginScreen = (_props: LoginScreenProps) => {
             source={require('../../../../assets/images/login/login_main.png')}
             style={styles.heroImage}>
             <View style={[styles.brandPill, {marginTop: insets.top + 8}]}>
-              <Text style={styles.brandPillText}>SKURI</Text>
+              <Image
+                source={require('../../../../assets/icons/sku-wordmark.png')}
+                style={styles.brandWordmark}
+              />
             </View>
-
+            
             <LinearGradient
               colors={[
                 'rgba(255,255,255,0)',
@@ -152,9 +156,10 @@ export const LoginScreen = (_props: LoginScreenProps) => {
 
         <View style={styles.contentSection}>
           <View style={styles.brandRow}>
-            <View style={styles.brandIconBox}>
-              <Icon color={COLORS.text.inverse} name="car-sport" size={22} />
-            </View>
+            <Image
+              source={require('../../../../assets/icons/skuri_v2_icon_ios.png')}
+              style={styles.brandIcon}
+            />
 
             <View>
               <Text style={styles.brandTitle}>SKURI</Text>
@@ -320,18 +325,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 16,
   },
-  brandIconBox: {
-    alignItems: 'center',
-    backgroundColor: AUTH_BRAND_ACCENT_COLOR,
-    borderRadius: 16,
+  brandIcon: {
     height: 48,
-    justifyContent: 'center',
-    marginRight: 12,
+    width: 48,
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.md,
     shadowColor: AUTH_BRAND_ACCENT_COLOR,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.3,
+    elevation: 6,
     shadowRadius: 6,
-    width: 48,
   },
   brandPill: {
     alignItems: 'center',
@@ -340,19 +343,15 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.72)',
     borderRadius: RADIUS.pill,
     borderWidth: 1,
-    height: 43,
     justifyContent: 'center',
     marginLeft: SPACING.xl,
-    paddingHorizontal: 17,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
     ...SHADOWS.card,
   },
-  brandPillText: {
-    color: COLORS.brand.primaryStrong,
-    fontSize: 16,
-    fontStyle: 'italic',
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    lineHeight: 24,
+  brandWordmark: {
+    height: 18, // 9 : 33 = 7 : 
+    width: 66,
   },
   brandRow: {
     alignItems: 'center',

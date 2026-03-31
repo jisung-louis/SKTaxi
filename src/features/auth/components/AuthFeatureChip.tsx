@@ -4,6 +4,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import {
   COLORS,
   RADIUS,
+  SPACING,
 } from '@/shared/design-system/tokens';
 
 interface AuthFeatureChipProps {
@@ -25,7 +26,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.pill,
     height: 28,
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
   },
   label: {
     color: COLORS.text.tertiary,
