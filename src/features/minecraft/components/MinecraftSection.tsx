@@ -87,7 +87,7 @@ export const MinecraftSection: React.FC<MinecraftSectionProps> = ({
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteAccount(account.uuid);
+              await deleteAccount(account.id);
               Alert.alert('삭제 완료', '계정이 화이트리스트에서 제거되었어요.');
             } catch (nextError: any) {
               Alert.alert('오류', nextError?.message || '계정 삭제 중 오류가 발생했습니다.');
@@ -124,7 +124,7 @@ export const MinecraftSection: React.FC<MinecraftSectionProps> = ({
           {minecraftAccounts.map((account) => {
             const avatarUrl = account.uuid && !account.uuid.startsWith('be:') ? account.uuid : '8667ba71b85a4004af54457a9734eed7';
             return (
-              <View key={account.uuid} style={styles.minecraftAccountRow}>
+              <View key={account.id} style={styles.minecraftAccountRow}>
                 <Image
                   source={{ uri: `https://minotar.net/avatar/${avatarUrl}/48` }}
                   style={styles.minecraftAccountAvatar}

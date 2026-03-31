@@ -192,7 +192,7 @@ export const MinecraftAccountScreen = () => {
             text: '삭제',
             style: 'destructive',
             onPress: () => {
-              deleteAccount(account.uuid)
+              deleteAccount(account.id)
                 .then(() => {
                   Alert.alert('삭제 완료', '계정이 삭제되었습니다.');
                 })
@@ -352,7 +352,7 @@ export const MinecraftAccountScreen = () => {
 
                     return (
                       <View
-                        key={account.uuid}
+                        key={account.id}
                         style={[
                           styles.accountRow,
                           index < sortedAccounts.length - 1

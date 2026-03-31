@@ -1,3 +1,3 @@
-import { MockMinecraftRepository } from '../repositories/MockMinecraftRepository';
+import {SpringMinecraftRepository} from '../repositories/SpringMinecraftRepository';
 
-export const minecraftRepository = new MockMinecraftRepository();
+export const minecraftRepository = new SpringMinecraftRepository();

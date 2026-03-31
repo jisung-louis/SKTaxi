@@ -3,7 +3,6 @@ import type {
   IMinecraftRepository,
   RegisterAccountParams,
   RegisterAccountResult,
-  SendMessageParams,
 } from './IMinecraftRepository';
 import type {
   MinecraftAccountEntry,
@@ -74,9 +73,12 @@ export class MockMinecraftRepository implements IMinecraftRepository {
       throw new Error('친구 계정은 최대 3개까지 등록할 수 있습니다.');
     }
 
+    const accountId = `mock-${params.uid}-${uuid}`;
     const nextAccount: MinecraftAccountEntry = {
+      id: accountId,
       nickname,
       uuid,
+      normalizedKey: uuid,
       storedName,
       edition: params.edition,
       linkedAt: Date.now(),
@@ -94,8 +96,10 @@ export class MockMinecraftRepository implements IMinecraftRepository {
     });
 
     return {
+      id: accountId,
       uuid,
       nickname,
+      normalizedKey: uuid,
       storedName,
       whoseFriend,
     };
@@ -105,7 +109,9 @@ export class MockMinecraftRepository implements IMinecraftRepository {
     params: DeleteAccountParams,
   ): Promise<RegisterAccountResult> {
     const currentAccounts = accountsByUser.get(params.uid) ?? [];
-    const targetAccount = currentAccounts.find(account => account.uuid === params.uuid);
+    const targetAccount = currentAccounts.find(
+      account => account.id === params.accountId,
+    );
 
     if (!targetAccount) {
       throw new Error('등록된 계정을 찾을 수 없습니다.');
@@ -125,19 +131,21 @@ export class MockMinecraftRepository implements IMinecraftRepository {
 
     accountsByUser.set(
       params.uid,
-      currentAccounts.filter(account => account.uuid !== params.uuid),
+      currentAccounts.filter(account => account.id !== params.accountId),
     );
-    removeMockMinecraftWhitelistEntry(params.uuid, targetAccount.storedName);
+    removeMockMinecraftWhitelistEntry(targetAccount.uuid, targetAccount.storedName);
 
     return {
+      id: targetAccount.id,
       uuid: targetAccount.uuid,
       nickname: targetAccount.nickname,
+      normalizedKey: targetAccount.normalizedKey,
       storedName: targetAccount.storedName,
       whoseFriend: targetAccount.whoseFriend,
     };
   }
 
-  async isWhitelistRegistered(
+  private async isWhitelistRegistered(
     uuid: string,
     edition: MinecraftEdition,
     storedName?: string,
@@ -151,6 +159,4 @@ export class MockMinecraftRepository implements IMinecraftRepository {
 
     return Boolean(javaPlayers?.[uuid]);
   }
-
-  async sendMessage(_params: SendMessageParams): Promise<void> {}
 }

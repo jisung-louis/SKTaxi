@@ -11,22 +11,17 @@ export interface RegisterAccountParams {
 }
 
 export interface RegisterAccountResult {
+  id: string;
   uuid: string;
   nickname: string;
+  normalizedKey?: string;
   storedName?: string;
   whoseFriend?: string;
 }
 
 export interface DeleteAccountParams {
   uid: string;
-  uuid: string;
-}
-
-export interface SendMessageParams {
-  chatRoomId: string;
-  userId: string;
-  displayName: string;
-  text: string;
+  accountId: string;
 }
 
 export interface IMinecraftRepository {
@@ -35,8 +30,4 @@ export interface IMinecraftRepository {
   registerAccount(params: RegisterAccountParams): Promise<RegisterAccountResult>;
 
   deleteAccount(params: DeleteAccountParams): Promise<RegisterAccountResult>;
-
-  isWhitelistRegistered(uuid: string, edition: MinecraftEdition, storedName?: string): Promise<boolean>;
-
-  sendMessage(params: SendMessageParams): Promise<void>;
 }

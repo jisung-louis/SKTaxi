@@ -19,7 +19,7 @@ export interface UseMinecraftAccountsResult {
     edition: MinecraftEdition,
     whoseFriend?: string,
   ) => Promise<void>;
-  deleteAccount: (uuid: string) => Promise<void>;
+  deleteAccount: (accountId: string) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -92,7 +92,7 @@ export const useMinecraftAccounts = (): UseMinecraftAccountsResult => {
   );
 
   const deleteAccount = useCallback(
-    async (uuid: string) => {
+    async (accountId: string) => {
       if (!user?.uid) {
         throw new Error('로그인이 필요합니다.');
       }
@@ -102,7 +102,7 @@ export const useMinecraftAccounts = (): UseMinecraftAccountsResult => {
         setError(null);
         await deleteMinecraftAccountService({
           uid: user.uid,
-          uuid,
+          accountId,
         });
         await loadAccounts();
       } catch (nextError: any) {
