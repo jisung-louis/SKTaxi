@@ -11,17 +11,16 @@ import {
   type ListRenderItem,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
-  type ViewStyle,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, {
   interpolate,
   interpolateColor,
+  type SharedValue,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated';
-import Icon from 'react-native-vector-icons/Ionicons';
 
 import {COLORS, RADIUS, SPACING} from '@/shared/design-system/tokens';
 
@@ -39,192 +38,52 @@ const INDICATOR_ACTIVE_WIDTH = 20;
 const INDICATOR_SIZE = 4;
 const INDICATOR_PAST_COLOR = '#D1D5DB';
 
-const withAlpha = (hexColor: string, alpha: string) => `${hexColor}${alpha}`;
-
-const getBannerVariant = (imageUrl: string) => {
+const getBannerVariant = (imageUrl: string): 'taxi' | 'notice' | 'timetable' | null => {
   if (imageUrl.startsWith('wireframe://')) {
-    return imageUrl.replace('wireframe://', '');
+    const variant = imageUrl.replace('wireframe://', '');
+
+    if (
+      variant === 'taxi' ||
+      variant === 'notice' ||
+      variant === 'timetable'
+    ) {
+      return variant;
+    }
   }
 
   return null;
 };
 
-const BannerArtwork = ({
-  imageUrl,
-  palette,
-}: Pick<CampusBannerViewData, 'imageUrl' | 'palette'>) => {
+const getLocalBannerArtwork = (imageUrl: string) => {
+  switch (getBannerVariant(imageUrl)) {
+    case 'taxi':
+      return require('../../../../assets/images/banner_default/01_taxi.png');
+    case 'notice':
+      return require('../../../../assets/images/banner_default/02_notice.png');
+    case 'timetable':
+    default:
+      return require('../../../../assets/images/banner_default/03_timetable.png');
+  }
+};
+
+const BannerArtwork = ({imageUrl}: Pick<CampusBannerViewData, 'imageUrl'>) => {
   if (/^https?:\/\//i.test(imageUrl)) {
     return (
       <Image
         resizeMode="contain"
         source={{uri: imageUrl}}
-        style={styles.remoteArtworkImage as ImageStyle}
+        style={styles.artworkImage as ImageStyle}
       />
     );
   }
 
-  const borderColor = withAlpha(palette.accent, '2B');
-  const surfaceColor = withAlpha('#FFFFFF', 'D9');
-  const softAccentColor = withAlpha(palette.accent, '14');
-  const variant = getBannerVariant(imageUrl);
-
-  switch (variant) {
-    case 'taxi':
-      return (
-        <View style={styles.artboard}>
-          <View style={[styles.taxiRoofBadge, {borderColor}]}>
-            <Text style={[styles.taxiRoofBadgeLabel, {color: palette.accent}]}>
-              TAXI
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.taxiBody,
-              {
-                backgroundColor: surfaceColor,
-                borderColor,
-              },
-            ]}>
-            <View style={[styles.taxiWindow, {borderColor}]}>
-              <View
-                style={[
-                  styles.avatarCircle,
-                  {backgroundColor: softAccentColor},
-                ]}>
-                <Icon color={palette.accent} name="person" size={12} />
-              </View>
-              <View
-                style={[
-                  styles.avatarCircle,
-                  {backgroundColor: softAccentColor},
-                ]}>
-                <Icon color={palette.accent} name="person" size={12} />
-              </View>
-            </View>
-            <View
-              style={[
-                styles.taxiLight,
-                styles.taxiLightLeft,
-                {backgroundColor: softAccentColor},
-              ]}
-            />
-            <View
-              style={[
-                styles.taxiLight,
-                styles.taxiLightRight,
-                {backgroundColor: softAccentColor},
-              ]}
-            />
-            <View style={[styles.taxiPlate, {backgroundColor: borderColor}]} />
-          </View>
-
-          <View
-            style={[
-              styles.taxiWheel,
-              styles.taxiWheelLeft,
-              {backgroundColor: COLORS.text.primary},
-            ]}
-          />
-          <View
-            style={[
-              styles.taxiWheel,
-              styles.taxiWheelRight,
-              {backgroundColor: COLORS.text.primary},
-            ]}
-          />
-        </View>
-      );
-    case 'notice':
-      return (
-        <View style={styles.artboard}>
-          <View
-            style={[
-              styles.noticeCard,
-              {backgroundColor: surfaceColor, borderColor},
-            ]}>
-            <View
-              style={[
-                styles.noticeIconCircle,
-                {backgroundColor: softAccentColor},
-              ]}>
-              <Icon color={palette.accent} name="megaphone-outline" size={42} />
-            </View>
-          </View>
-
-          {[
-            styles.noticeChipTopLeft,
-            styles.noticeChipTopRight,
-            styles.noticeChipBottomLeft,
-            styles.noticeChipBottomRight,
-          ].map((chipStyle, index) => (
-            <View
-              key={`notice-chip-${index}`}
-              style={[
-                styles.noticeChip,
-                chipStyle,
-                {
-                  backgroundColor: withAlpha(
-                    palette.accent,
-                    index % 2 === 0 ? '20' : '12',
-                  ),
-                  borderColor,
-                },
-              ]}
-            />
-          ))}
-        </View>
-      );
-    case 'timetable':
-    default:
-      return (
-        <View style={styles.artboard}>
-          <View
-            style={[
-              styles.timetableBoard,
-              {backgroundColor: surfaceColor, borderColor},
-            ]}>
-            <View style={styles.timetableRingsRow}>
-              {[0, 1, 2].map(ringIndex => (
-                <View
-                  key={`timetable-ring-${ringIndex}`}
-                  style={[
-                    styles.timetableRing,
-                    {backgroundColor: palette.accent},
-                  ]}
-                />
-              ))}
-            </View>
-
-            <View style={styles.timetableGrid}>
-              {Array.from({length: 12}).map((_, cellIndex) => (
-                <View
-                  key={`timetable-cell-${cellIndex}`}
-                  style={[
-                    styles.timetableCell,
-                    {
-                      backgroundColor:
-                        cellIndex % 4 === 0
-                          ? withAlpha(palette.accent, '22')
-                          : COLORS.background.surface,
-                      borderColor,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-
-            <View
-              style={[
-                styles.timetablePointer,
-                {backgroundColor: softAccentColor},
-              ]}>
-              <Icon color={palette.accent} name="sparkles-outline" size={18} />
-            </View>
-          </View>
-        </View>
-      );
-  }
+  return (
+    <Image
+      resizeMode="contain"
+      source={getLocalBannerArtwork(imageUrl)}
+      style={styles.artworkImage as ImageStyle}
+    />
+  );
 };
 
 const BannerCard = ({
@@ -279,7 +138,7 @@ const BannerCard = ({
         </View>
 
         <View style={styles.artworkWrap}>
-          <BannerArtwork imageUrl={item.imageUrl} palette={item.palette} />
+          <BannerArtwork imageUrl={item.imageUrl} />
         </View>
       </View>
     </LinearGradient>
@@ -291,7 +150,7 @@ const BannerIndicator = ({
   progress,
 }: {
   index: number;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
 }) => {
   const animatedStyle = useAnimatedStyle(() => {
     const distance = Math.abs(progress.value - index);
@@ -522,175 +381,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: SPACING.md,
   },
-  artboard: {
-    alignItems: 'center',
-    height: 148,
-    justifyContent: 'center',
-    position: 'relative',
-    width: 156,
-  },
-  remoteArtworkImage: {
+  artworkImage: {
     height: 148,
     width: 156,
-  },
-  taxiRoofBadge: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.88)',
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 34,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    position: 'absolute',
-    top: 12,
-  },
-  taxiRoofBadgeLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    lineHeight: 10,
-  },
-  taxiBody: {
-    alignItems: 'center',
-    borderRadius: 24,
-    borderWidth: 1.5,
-    height: 82,
-    justifyContent: 'center',
-    marginTop: 18,
-    width: 116,
-  },
-  taxiWindow: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.62)',
-    borderRadius: 16,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 8,
-    height: 28,
-    justifyContent: 'center',
-    marginBottom: 12,
-    width: 78,
-  },
-  avatarCircle: {
-    alignItems: 'center',
-    borderRadius: RADIUS.pill,
-    height: 20,
-    justifyContent: 'center',
-    width: 20,
-  },
-  taxiLight: {
-    borderRadius: RADIUS.pill,
-    height: 12,
-    position: 'absolute',
-    top: 42,
-    width: 12,
-  },
-  taxiLightLeft: {
-    left: 14,
-  },
-  taxiLightRight: {
-    right: 14,
-  },
-  taxiPlate: {
-    borderRadius: RADIUS.pill,
-    height: 6,
-    width: 36,
-  },
-  taxiWheel: {
-    borderRadius: RADIUS.pill,
-    bottom: 18,
-    height: 20,
-    position: 'absolute',
-    width: 20,
-  },
-  taxiWheelLeft: {
-    left: 32,
-  },
-  taxiWheelRight: {
-    right: 32,
-  },
-  noticeCard: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 1.5,
-    height: 112,
-    justifyContent: 'center',
-    width: 112,
-  },
-  noticeIconCircle: {
-    alignItems: 'center',
-    borderRadius: 40,
-    height: 78,
-    justifyContent: 'center',
-    width: 78,
-  },
-  noticeChip: {
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    height: 16,
-    position: 'absolute',
-    width: 16,
-  },
-  noticeChipTopLeft: {
-    left: 18,
-    top: 26,
-  } as ViewStyle,
-  noticeChipTopRight: {
-    right: 16,
-    top: 18,
-    transform: [{rotate: '12deg'}],
-  } as ViewStyle,
-  noticeChipBottomLeft: {
-    bottom: 28,
-    left: 22,
-    transform: [{rotate: '-8deg'}],
-  } as ViewStyle,
-  noticeChipBottomRight: {
-    bottom: 22,
-    right: 18,
-    transform: [{rotate: '8deg'}],
-  } as ViewStyle,
-  timetableBoard: {
-    borderRadius: 22,
-    borderWidth: 1.5,
-    height: 112,
-    paddingHorizontal: 14,
-    paddingTop: 18,
-    width: 118,
-  },
-  timetableRingsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    left: 22,
-    position: 'absolute',
-    right: 22,
-    top: 8,
-  },
-  timetableRing: {
-    borderRadius: RADIUS.pill,
-    height: 14,
-    width: 4,
-  },
-  timetableGrid: {
-    columnGap: 6,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    rowGap: 6,
-  },
-  timetableCell: {
-    borderRadius: 6,
-    borderWidth: 1,
-    height: 14,
-    width: 24,
-  },
-  timetablePointer: {
-    alignItems: 'center',
-    borderRadius: RADIUS.pill,
-    bottom: 8,
-    height: 28,
-    justifyContent: 'center',
-    position: 'absolute',
-    right: 8,
-    width: 28,
   },
   indicatorRow: {
     alignItems: 'center',
