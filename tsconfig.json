@@ -9,5 +9,5 @@
       "@/*": ["src/*"]
     }
   },
-  "exclude": ["legacy/**/*", "node_modules"]
+  "exclude": ["legacy/**/*", "node_modules", "docs/**/*"]
 }

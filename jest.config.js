@@ -5,11 +5,13 @@ module.exports = {
     '<rootDir>/node_modules/',
     '<rootDir>/android/',
     '<rootDir>/ios/',
+    '<rootDir>/docs/',
   ],
   modulePathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/android/',
     '<rootDir>/ios/',
+    '<rootDir>/docs/',
   ],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
