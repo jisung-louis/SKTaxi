@@ -1,7 +1,7 @@
-import {
-  type ReportCategory,
-} from '@/shared/lib/moderation';
-import {reportApiClient} from '@/shared/api/reportApiClient';
+import type {
+  IReportRepository,
+  ReportCategory,
+} from '@/features/report';
 
 export const BOARD_REPORT_CATEGORIES: ReportCategory[] = [
   '스팸',
@@ -12,31 +12,33 @@ export const BOARD_REPORT_CATEGORIES: ReportCategory[] = [
 ];
 
 export function submitBoardPostReport(
+  reportRepository: IReportRepository,
   postId: string,
   category: ReportCategory,
   reason: string,
 ): Promise<string> {
-  return reportApiClient
+  return reportRepository
     .createReport({
       category,
       reason: reason.trim(),
       targetId: postId,
       targetType: 'POST',
     })
-    .then(response => response.data.id);
+    .then(response => response.id);
 }
 
 export function submitBoardCommentReport(
+  reportRepository: IReportRepository,
   commentId: string,
   category: ReportCategory,
   reason: string,
 ): Promise<string> {
-  return reportApiClient
+  return reportRepository
     .createReport({
       category,
       reason: reason.trim(),
       targetId: commentId,
       targetType: 'COMMENT',
     })
-    .then(response => response.data.id);
+    .then(response => response.id);
 }

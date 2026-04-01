@@ -21,6 +21,8 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
+import {useReportRepository} from '@/di';
+import type {ReportCategory} from '@/features/report';
 import {
   DetailBackHeader,
   DetailBodyBlocks,
@@ -37,7 +39,6 @@ import {
   useScreenEnterAnimation,
   useScreenView,
 } from '@/shared/hooks';
-import type {ReportCategory} from '@/shared/lib/moderation';
 
 import {BoardDetailPopupMenu} from '../components/BoardDetailPopupMenu';
 import {BoardReportModal} from '../components/BoardReportModal';
@@ -47,7 +48,7 @@ import {
   BOARD_REPORT_CATEGORIES,
   submitBoardCommentReport,
   submitBoardPostReport,
-} from '../services/boardModerationService';
+} from '../services/boardReportService';
 
 type BoardDetailNavigationProp = NativeStackNavigationProp<
   BoardStackParamList,
@@ -62,6 +63,7 @@ export const BoardDetailScreen = () => {
     useRoute<
       NativeStackScreenProps<BoardStackParamList, 'BoardDetail'>['route']
     >();
+  const reportRepository = useReportRepository();
   const insets = useSafeAreaInsets();
   const {height: keyboardHeight, isVisible: isKeyboardVisible} =
     useKeyboardInset();
@@ -181,12 +183,14 @@ export const BoardDetailScreen = () => {
 
       if (reportTarget.type === 'post') {
         await submitBoardPostReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
         );
       } else {
         await submitBoardCommentReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
@@ -211,6 +215,7 @@ export const BoardDetailScreen = () => {
   }, [
     handleCloseReportModal,
     reportReason,
+    reportRepository,
     reportTarget,
     selectedReportCategory,
   ]);

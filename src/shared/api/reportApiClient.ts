@@ -19,7 +19,7 @@ export interface CreateReportRequestDto {
 export interface CreateReportResponseDto {
   createdAt: string;
   id: string;
-  status: string;
+  status: 'PENDING' | 'REVIEWING' | 'ACTIONED' | 'REJECTED';
 }
 
 export class ReportApiClient {

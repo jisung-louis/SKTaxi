@@ -19,6 +19,8 @@ import Animated from 'react-native-reanimated';
 
 import {navigateToCampusScreen} from '@/app/navigation/services/campusEntryNavigation';
 import type {CommunityStackParamList} from '@/app/navigation/types';
+import {useReportRepository} from '@/di';
+import type {ReportCategory} from '@/features/report';
 import {
   DetailNotFoundState,
   StateCard,
@@ -47,7 +49,6 @@ import {
   type ChatThreadMessageViewData,
 } from '@/shared/ui/chat';
 import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
-import type {ReportCategory} from '@/shared/lib/moderation';
 import {MinecraftServerGuideModal} from '@/features/minecraft/components/MinecraftServerGuideModal';
 import {
   GUIDE_SERVER_ADDRESS_FALLBACK,
@@ -61,7 +62,7 @@ import {
   CHAT_REPORT_CATEGORIES,
   submitChatMessageReport,
   submitChatRoomReport,
-} from '../services/chatModerationService';
+} from '../services/chatReportService';
 
 type ChatDetailNavigationProp = NativeStackNavigationProp<
   CommunityStackParamList,
@@ -94,6 +95,7 @@ export const ChatDetailScreen = () => {
     useRoute<
       NativeStackScreenProps<ChatStackParamList, 'ChatDetail'>['route']
     >();
+  const reportRepository = useReportRepository();
   const insets = useSafeAreaInsets();
   const screenAnimatedStyle = useScreenEnterAnimation();
   const {
@@ -354,12 +356,14 @@ export const ChatDetailScreen = () => {
 
       if (reportTarget.type === 'message') {
         await submitChatMessageReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
         );
       } else {
         await submitChatRoomReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
@@ -384,6 +388,7 @@ export const ChatDetailScreen = () => {
   }, [
     handleCloseReportModal,
     reportReason,
+    reportRepository,
     reportTarget,
     selectedReportCategory,
   ]);

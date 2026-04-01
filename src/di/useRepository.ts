@@ -25,6 +25,7 @@ import type {
   INoticeRepository,
   IPartyRepository,
   IProfileEditRepository,
+  IReportRepository,
   ITaxiChatRepository,
   ITimetableRepository,
   IUserActivityRepository,
@@ -72,6 +73,14 @@ export function useBoardRepository(): IBoardRepository {
 export function useNoticeRepository(): INoticeRepository {
   const {noticeRepository} = useRepositories();
   return noticeRepository;
+}
+
+/**
+ * Report Repository 접근 훅
+ */
+export function useReportRepository(): IReportRepository {
+  const {reportRepository} = useRepositories();
+  return reportRepository;
 }
 
 /**

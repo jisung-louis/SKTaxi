@@ -23,6 +23,7 @@ import type {
   INoticeRepository,
   IPartyRepository,
   IProfileEditRepository,
+  IReportRepository,
   ITaxiChatRepository,
   ITimetableRepository,
   IUserActivityRepository,
@@ -36,6 +37,7 @@ export interface RepositoryContainer {
   chatRepository: IChatRepository;
   boardRepository: IBoardRepository;
   noticeRepository: INoticeRepository;
+  reportRepository: IReportRepository;
   notificationRepository: INotificationRepository;
   appNoticeRepository: IAppNoticeRepository;
   cafeteriaRepository: ICafeteriaRepository;

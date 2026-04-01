@@ -16,7 +16,9 @@ import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Animated from 'react-native-reanimated';
 
+import {useReportRepository} from '@/di';
 import {useAuth} from '@/features/auth';
+import type {ReportCategory} from '@/features/report';
 import {StateCard} from '@/shared/design-system/components';
 import {COLORS, SPACING} from '@/shared/design-system/tokens';
 import {
@@ -33,7 +35,6 @@ import {
   resolveChatMenuPosition,
 } from '@/shared/ui/chat';
 import {ReportReasonModal} from '@/shared/ui/ReportReasonModal';
-import type {ReportCategory} from '@/shared/lib/moderation';
 
 import {TaxiAccountSheet} from '../components/TaxiAccountSheet';
 import {TaxiArriveSettlementSheet} from '../components/TaxiArriveSettlementSheet';
@@ -63,7 +64,7 @@ import {
   CHAT_REPORT_CATEGORIES,
   submitChatMessageReport,
   submitTaxiPartyReport,
-} from '@/features/chat/services/chatModerationService';
+} from '@/features/chat/services/chatReportService';
 
 type TaxiChatNavigationProp = NativeStackNavigationProp<
   TaxiStackParamList,
@@ -152,6 +153,7 @@ export const ChatScreen = () => {
   const navigation = useNavigation<TaxiChatNavigationProp>();
   const route =
     useRoute<NativeStackScreenProps<TaxiStackParamList, 'Chat'>['route']>();
+  const reportRepository = useReportRepository();
   const insets = useSafeAreaInsets();
   const {height: keyboardHeight, isVisible: keyboardVisible} = useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
@@ -395,12 +397,14 @@ export const ChatScreen = () => {
 
       if (reportTarget.type === 'message') {
         await submitChatMessageReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
         );
       } else {
         await submitTaxiPartyReport(
+          reportRepository,
           reportTarget.id,
           selectedReportCategory,
           reportReason,
@@ -425,6 +429,7 @@ export const ChatScreen = () => {
   }, [
     handleCloseReportModal,
     reportReason,
+    reportRepository,
     reportTarget,
     selectedReportCategory,
   ]);

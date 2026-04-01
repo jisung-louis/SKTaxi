@@ -14,8 +14,8 @@ import {
   View,
 } from 'react-native';
 
+import type {ReportCategory} from '@/features/report';
 import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
-import type {ReportCategory} from '@/shared/lib/moderation';
 
 export interface ReportReasonModalProps {
   categories: ReportCategory[];

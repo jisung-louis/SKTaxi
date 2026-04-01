@@ -15,6 +15,7 @@ import {SpringCampusBannerRepository} from '@/features/campus/data/repositories/
 import {SpringCafeteriaRepository} from '@/features/campus/data/repositories/SpringCafeteriaRepository';
 import {SpringChatRepository} from '@/features/chat/data/repositories/SpringChatRepository';
 import {SpringNoticeRepository} from '@/features/notice/data/repositories/SpringNoticeRepository';
+import {SpringReportRepository} from '@/features/report';
 import {SpringAppConfigRepository} from '@/features/settings/data/repositories/SpringAppConfigRepository';
 import {SpringAppNoticeRepository} from '@/features/settings/data/repositories/SpringAppNoticeRepository';
 import {SpringInquiryFormRepository} from '@/features/settings/data/repositories/SpringInquiryFormRepository';
@@ -56,6 +57,7 @@ export function RepositoryProvider({
       chatRepository: new SpringChatRepository(),
       boardRepository: new SpringBoardRepository(),
       noticeRepository: new SpringNoticeRepository(),
+      reportRepository: new SpringReportRepository(),
       notificationRepository: new SpringNotificationRepository(),
       appNoticeRepository: new SpringAppNoticeRepository(),
       cafeteriaRepository: new SpringCafeteriaRepository(),

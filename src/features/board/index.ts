@@ -54,5 +54,5 @@ export {
   BOARD_REPORT_CATEGORIES,
   submitBoardCommentReport,
   submitBoardPostReport,
-} from './services/boardModerationService';
+} from './services/boardReportService';
 export {navigateToBoardDetail} from './services/boardNavigationService';

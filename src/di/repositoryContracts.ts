@@ -8,6 +8,7 @@ export type {IBoardRepository} from '@/features/board';
 export type {IChatRepository} from '@/features/chat';
 export type {IMemberDirectoryRepository, IMemberRepository} from '@/features/member';
 export type {INoticeRepository} from '@/features/notice';
+export type {IReportRepository} from '@/features/report';
 export type {
   IAppConfigRepository,
   IAppNoticeRepository,

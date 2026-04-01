@@ -1,5 +1,7 @@
-import {reportApiClient} from '@/shared/api/reportApiClient';
-import type {ReportCategory} from '@/shared/lib/moderation';
+import type {
+  IReportRepository,
+  ReportCategory,
+} from '@/features/report';
 
 export const CHAT_REPORT_CATEGORIES: ReportCategory[] = [
   '스팸',
@@ -10,43 +12,46 @@ export const CHAT_REPORT_CATEGORIES: ReportCategory[] = [
 ];
 
 export const submitChatMessageReport = (
+  reportRepository: IReportRepository,
   messageId: string,
   category: ReportCategory,
   reason: string,
 ) =>
-  reportApiClient
+  reportRepository
     .createReport({
       category,
       reason: reason.trim(),
       targetId: messageId,
       targetType: 'CHAT_MESSAGE',
     })
-    .then(response => response.data.id);
+    .then(response => response.id);
 
 export const submitChatRoomReport = (
+  reportRepository: IReportRepository,
   chatRoomId: string,
   category: ReportCategory,
   reason: string,
 ) =>
-  reportApiClient
+  reportRepository
     .createReport({
       category,
       reason: reason.trim(),
       targetId: chatRoomId,
       targetType: 'CHAT_ROOM',
     })
-    .then(response => response.data.id);
+    .then(response => response.id);
 
 export const submitTaxiPartyReport = (
+  reportRepository: IReportRepository,
   partyId: string,
   category: ReportCategory,
   reason: string,
 ) =>
-  reportApiClient
+  reportRepository
     .createReport({
       category,
       reason: reason.trim(),
       targetId: partyId,
       targetType: 'TAXI_PARTY',
     })
-    .then(response => response.data.id);
+    .then(response => response.id);

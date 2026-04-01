@@ -11,6 +11,7 @@ export {
   useChatRepository,
   useBoardRepository,
   useNoticeRepository,
+  useReportRepository,
   useNotificationRepository,
   useAppNoticeRepository,
   useCafeteriaRepository,
