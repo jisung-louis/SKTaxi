@@ -20,6 +20,7 @@ import '@/shared/lib/firebase';
 
 if (Platform.OS === 'android') {
   Geolocation.setRNConfiguration({
+    skipPermissionRequests: true,
     locationProvider: 'playServices',
   });
 }
