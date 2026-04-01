@@ -1,5 +1,12 @@
 import React from 'react';
 
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {
+  NOTICE_BOOKMARK_INVALIDATION_KEYS,
+  NOTICE_DETAIL_WITH_CAMPUS_INVALIDATION_KEYS,
+  NOTICE_MUTATION_INVALIDATION_KEYS,
+  NOTICE_READ_STATUS_INVALIDATION_KEYS,
+} from '@/app/data-freshness/invalidationKeys';
 import {useAuth} from '@/features/auth';
 import {
   formatKoreanAbsoluteDate,
@@ -277,6 +284,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
     string[]
   >([]);
   const requestIdRef = React.useRef(0);
+  const lastInvalidatedLoadedNoticeIdRef = React.useRef<string | null>(null);
   const flattenedCommentEntries = React.useMemo(
     () => flattenCommentEntries(comments),
     [comments],
@@ -372,6 +380,19 @@ export const useNoticeDetailData = (noticeId?: string) => {
   }, [loadDetail]);
 
   React.useEffect(() => {
+    if (
+      !noticeId ||
+      !notice ||
+      lastInvalidatedLoadedNoticeIdRef.current === noticeId
+    ) {
+      return;
+    }
+
+    lastInvalidatedLoadedNoticeIdRef.current = noticeId;
+    invalidateData(NOTICE_DETAIL_WITH_CAMPUS_INVALIDATION_KEYS);
+  }, [notice, noticeId]);
+
+  React.useEffect(() => {
     setCommentDraft('');
     setEditingCommentId(null);
     setReplyTargetCommentId(null);
@@ -393,6 +414,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
               }
             : currentNotice,
         );
+        invalidateData(NOTICE_READ_STATUS_INVALIDATION_KEYS);
       })
       .catch(markError => {
         console.error('공지사항 읽음 처리 실패:', markError);
@@ -524,6 +546,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
             }
           : currentNotice,
       );
+      invalidateData(NOTICE_MUTATION_INVALIDATION_KEYS);
     } catch (toggleError) {
       setNotice(currentNotice =>
         currentNotice
@@ -589,6 +612,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
             }
           : currentNotice,
       );
+      invalidateData(NOTICE_BOOKMARK_INVALIDATION_KEYS);
     } catch (toggleError) {
       setNotice(currentNotice =>
         currentNotice
@@ -640,6 +664,7 @@ export const useNoticeDetailData = (noticeId?: string) => {
       setCommentDraft('');
       setEditingCommentId(null);
       setReplyTargetCommentId(null);
+      invalidateData(NOTICE_MUTATION_INVALIDATION_KEYS);
 
       return {
         commentId: targetCommentId,

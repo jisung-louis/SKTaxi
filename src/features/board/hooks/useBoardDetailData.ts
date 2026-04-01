@@ -2,6 +2,11 @@ import React from 'react';
 import {format} from 'date-fns';
 import {ko} from 'date-fns/locale';
 
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {
+  BOARD_DETAIL_READ_INVALIDATION_KEYS,
+  BOARD_MUTATION_INVALIDATION_KEYS,
+} from '@/app/data-freshness/invalidationKeys';
 import {useAuth} from '@/features/auth';
 import {formatKoreanAbsoluteWithRelativeTime} from '@/shared/lib/date';
 import type {
@@ -186,6 +191,7 @@ export const useBoardDetailData = (postId?: string) => {
     string[]
   >([]);
   const requestIdRef = React.useRef(0);
+  const lastInvalidatedLoadedPostIdRef = React.useRef<string | null>(null);
   const flattenedCommentEntries = React.useMemo(
     () => flattenCommentEntries(comments),
     [comments],
@@ -278,6 +284,15 @@ export const useBoardDetailData = (postId?: string) => {
   React.useEffect(() => {
     loadDetail().catch(() => undefined);
   }, [loadDetail]);
+
+  React.useEffect(() => {
+    if (!postId || !post || lastInvalidatedLoadedPostIdRef.current === postId) {
+      return;
+    }
+
+    lastInvalidatedLoadedPostIdRef.current = postId;
+    invalidateData(BOARD_DETAIL_READ_INVALIDATION_KEYS);
+  }, [post, postId]);
 
   React.useEffect(() => {
     setCommentDraft('');
@@ -418,6 +433,7 @@ export const useBoardDetailData = (postId?: string) => {
             }
           : currentPost,
       );
+      invalidateData(BOARD_MUTATION_INVALIDATION_KEYS);
     } catch (toggleError) {
       setPost(currentPost =>
         currentPost
@@ -483,6 +499,7 @@ export const useBoardDetailData = (postId?: string) => {
             }
           : currentPost,
       );
+      invalidateData(BOARD_MUTATION_INVALIDATION_KEYS);
     } catch (toggleError) {
       setPost(currentPost =>
         currentPost
@@ -541,6 +558,7 @@ export const useBoardDetailData = (postId?: string) => {
       setCommentDraft('');
       setEditingCommentId(null);
       setReplyTargetCommentId(null);
+      invalidateData(BOARD_MUTATION_INVALIDATION_KEYS);
 
       return {
         commentId: targetCommentId,
@@ -611,6 +629,7 @@ export const useBoardDetailData = (postId?: string) => {
 
     try {
       await boardRepository.deletePost(postId);
+      invalidateData(BOARD_MUTATION_INVALIDATION_KEYS);
     } finally {
       setDeletingPost(false);
     }

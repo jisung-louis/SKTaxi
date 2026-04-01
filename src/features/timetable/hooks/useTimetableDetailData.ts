@@ -2,6 +2,8 @@ import React from 'react';
 import {Alert, Share} from 'react-native';
 
 import {useTimetableRepository} from '@/di';
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {CAMPUS_HOME_INVALIDATION_KEY} from '@/app/data-freshness/invalidationKeys';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
 import {getPeriodTimeInfo} from '../services/timetableCalendar';
@@ -762,6 +764,7 @@ export const useTimetableDetailData = (
 
         if (!nextRecord) {
           await loadSemester(selectedSemesterId);
+          invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
           return;
         }
 
@@ -773,6 +776,7 @@ export const useTimetableDetailData = (
               : course,
           ),
         });
+        invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
       } catch (addError) {
         refreshRecord(previousRecord);
 
@@ -851,6 +855,7 @@ export const useTimetableDetailData = (
 
     if (!nextRecord) {
       await loadSemester(selectedSemesterId);
+      invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
       closeAddSheet();
       return;
     }
@@ -880,11 +885,13 @@ export const useTimetableDetailData = (
         ...nextRecord,
         courses: nextCourses,
       });
+      invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
       closeAddSheet();
       return;
     }
 
     refreshRecord(nextRecord);
+    invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
     closeAddSheet();
   }, [
     closeAddSheet,
@@ -951,6 +958,8 @@ export const useTimetableDetailData = (
             } else {
               await loadSemester(selectedSemesterId);
             }
+
+            invalidateData(CAMPUS_HOME_INVALIDATION_KEY);
           } catch (removeError) {
             refreshRecord(previousRecord);
             setSelectedCourseId(removedCourseId);

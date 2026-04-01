@@ -17,6 +17,12 @@ import Animated from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  NOTICE_LIST_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
 import {StateCard} from '@/shared/design-system/components';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {COLORS, RADIUS, SHADOWS, SPACING} from '@/shared/design-system/tokens';
@@ -220,6 +226,12 @@ export const NoticeSearchScreen = () => {
   const showInitialEmptyState =
     !submittedQuery && historyLoaded && recentSearches.length === 0;
   const showResultsLoadingState = loading || !userJoinedAtLoaded;
+
+  useRefetchOnFocus({
+    enabled: Boolean(submittedQuery),
+    invalidationKey: NOTICE_LIST_INVALIDATION_KEY,
+    refetch: retry,
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>

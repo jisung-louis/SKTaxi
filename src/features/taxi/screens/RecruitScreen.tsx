@@ -26,6 +26,8 @@ import Animated, {
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {TAXI_HOME_INVALIDATION_KEY} from '@/app/data-freshness/invalidationKeys';
 import {
   COLORS,
   RADIUS,
@@ -170,6 +172,7 @@ export const RecruitScreen = () => {
     const result = await submitForm();
 
     if (result.partyId) {
+      invalidateData(TAXI_HOME_INVALIDATION_KEY);
       navigation.replace('Chat', {partyId: result.partyId});
       return;
     }

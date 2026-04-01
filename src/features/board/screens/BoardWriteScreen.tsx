@@ -10,6 +10,8 @@ import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {BOARD_WRITE_INVALIDATION_KEYS} from '@/app/data-freshness/invalidationKeys';
 import {useAuth} from '@/features/auth';
 import {COLORS} from '@/shared/design-system/tokens';
 import {useScreenView} from '@/shared/hooks/useScreenView';
@@ -109,6 +111,7 @@ export const BoardWriteScreen = () => {
 
     try {
       const postId = await createPost(formData);
+      invalidateData(BOARD_WRITE_INVALIDATION_KEYS);
 
       navigation.reset({
         index: 1,

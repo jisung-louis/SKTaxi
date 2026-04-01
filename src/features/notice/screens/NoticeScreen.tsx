@@ -12,6 +12,12 @@ import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  NOTICE_LIST_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
 import {PageHeader} from '@/shared/design-system/components';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
@@ -117,6 +123,11 @@ export const NoticeScreen = () => {
     },
     [error, hasMore, loadMore, loading, loadingMore],
   );
+
+  useRefetchOnFocus({
+    invalidationKey: NOTICE_LIST_INVALIDATION_KEY,
+    refetch: refresh,
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>

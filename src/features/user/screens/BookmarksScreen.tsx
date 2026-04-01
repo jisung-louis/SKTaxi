@@ -5,6 +5,12 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  PROFILE_BOOKMARKS_INVALIDATION_KEYS,
+} from '@/app/data-freshness/invalidationKeys';
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
 import {navigateToNoticeDetail} from '@/features/notice';
@@ -32,6 +38,11 @@ export const BookmarksScreen = () => {
   const [activeTab, setActiveTab] = React.useState<BookmarksTabKey>(
     route.params?.initialTab ?? 'community',
   );
+
+  useRefetchOnFocus({
+    invalidationKey: PROFILE_BOOKMARKS_INVALIDATION_KEYS,
+    refetch: reload,
+  });
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
@@ -88,7 +99,7 @@ export const BookmarksScreen = () => {
                       isLast={index === data.communityItems.length - 1}
                       item={item}
                       onPress={postId =>
-                        navigateToBoardDetail(navigation, postId)
+                        navigateToBoardDetail(postId)
                       }
                     />
                   ))
@@ -114,7 +125,7 @@ export const BookmarksScreen = () => {
                       isLast={index === data.noticeItems.length - 1}
                       item={item}
                       onPress={noticeId =>
-                        navigateToNoticeDetail(navigation, noticeId)
+                        navigateToNoticeDetail(noticeId)
                       }
                     />
                   ))

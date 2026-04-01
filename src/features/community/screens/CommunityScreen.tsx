@@ -14,6 +14,12 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  COMMUNITY_BOARD_LIST_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
+import {
   PageHeader,
   SegmentedControl,
 } from '@/shared/design-system/components';
@@ -110,6 +116,13 @@ export const CommunityScreen = () => {
       duration: 240,
     });
   }, [pageWidth, pagerTranslateX, selectedSegment]);
+
+  useRefetchOnFocus({
+    invalidationKey: COMMUNITY_BOARD_LIST_INVALIDATION_KEY,
+    refetch: async () => {
+      handleBoardRefresh();
+    },
+  });
 
   const handleSetSegmentByIndex = React.useCallback((nextIndex: number) => {
     setSelectedSegment(nextIndex === 0 ? 'board' : 'chat');

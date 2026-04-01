@@ -14,12 +14,17 @@ import LinearGradient from 'react-native-linear-gradient';
 import Animated from 'react-native-reanimated';
 import {
   NavigationProp,
-  useFocusEffect,
   useNavigation,
 } from '@react-navigation/native';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  TAXI_HOME_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
 import {useScreenEnterAnimation, useScreenView} from '@/shared/hooks';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {
@@ -126,7 +131,6 @@ export const TaxiScreen = () => {
   const mapRef = React.useRef<MapView | null>(null);
   const [isMapReady, setIsMapReady] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
-  const hasFocusedRef = React.useRef(false);
 
   const contentContainerStyle = React.useMemo(
     () => ({
@@ -214,17 +218,11 @@ export const TaxiScreen = () => {
     }
   }, [refetch]);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (hasFocusedRef.current) {
-        refetch().catch(() => undefined);
-      } else {
-        hasFocusedRef.current = true;
-      }
-
-      return () => {};
-    }, [refetch]),
-  );
+  useRefetchOnFocus({
+    invalidationKey: TAXI_HOME_INVALIDATION_KEY,
+    mode: 'always-after-initial-focus',
+    refetch,
+  });
 
   React.useEffect(() => {
     if (!expandedPartyId) {

@@ -11,6 +11,12 @@ import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  PROFILE_MY_POSTS_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
 import {type CampusStackParamList} from '@/app/navigation/types';
 import {navigateToBoardDetail} from '@/features/board';
 import {StackHeader, StateCard} from '@/shared/design-system/components';
@@ -26,6 +32,11 @@ export const MyPostsScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<CampusStackParamList>>();
   const {data, error, loading, reload} = useMyPostsScreenData();
+
+  useRefetchOnFocus({
+    invalidationKey: PROFILE_MY_POSTS_INVALIDATION_KEY,
+    refetch: reload,
+  });
 
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
@@ -82,7 +93,7 @@ export const MyPostsScreen = () => {
                 key={item.postId}
                 isLast={index === data.items.length - 1}
                 item={item}
-                onPress={postId => navigateToBoardDetail(navigation, postId)}
+                onPress={postId => navigateToBoardDetail(postId)}
               />
             ))
           ) : (

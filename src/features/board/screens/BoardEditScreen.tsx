@@ -13,6 +13,8 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {SafeAreaView} from 'react-native-safe-area-context';
 
+import {invalidateData} from '@/app/data-freshness/dataInvalidation';
+import {BOARD_MUTATION_INVALIDATION_KEYS} from '@/app/data-freshness/invalidationKeys';
 import {
   StateCard,
 } from '@/shared/design-system/components';
@@ -154,6 +156,7 @@ export const BoardEditScreen = () => {
 
     try {
       await updatePost(formData);
+      invalidateData(BOARD_MUTATION_INVALIDATION_KEYS);
 
       navigation.reset({
         index: 1,

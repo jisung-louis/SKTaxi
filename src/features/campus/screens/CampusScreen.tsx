@@ -19,6 +19,12 @@ import Animated from 'react-native-reanimated';
 import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 
+import {
+  useRefetchOnFocus,
+} from '@/app/data-freshness/dataInvalidation';
+import {
+  CAMPUS_HOME_INVALIDATION_KEY,
+} from '@/app/data-freshness/invalidationKeys';
 import {createCampusEntryNavigation} from '@/app/navigation/services/campusEntryNavigation';
 import {BOTTOM_TAB_BAR_HEIGHT} from '@/shared/constants/layout';
 import {StateCard} from '@/shared/design-system/components';
@@ -87,6 +93,11 @@ export const CampusScreen = () => {
       reloadAppNoticeUnread().catch(() => undefined);
     }, [reloadAppNoticeUnread, reloadNotificationUnread]),
   );
+
+  useRefetchOnFocus({
+    invalidationKey: CAMPUS_HOME_INVALIDATION_KEY,
+    refetch,
+  });
 
   const handlePressBanner = React.useCallback(
     async (item: CampusBannerViewData) => {
