@@ -24,7 +24,7 @@ import type {
   IPartyRepository,
   IProfileEditRepository,
   ITaxiChatRepository,
-  ITimetableDetailRepository,
+  ITimetableRepository,
   IUserActivityRepository,
 } from './repositoryContracts';
 
@@ -52,7 +52,7 @@ export interface RepositoryContainer {
   appConfigRepository: IAppConfigRepository;
   inquiryFormRepository: IInquiryFormRepository;
   legalDocumentRepository: ILegalDocumentRepository;
-  timetableDetailRepository: ITimetableDetailRepository;
+  timetableRepository: ITimetableRepository;
   notificationActionRepository: INotificationActionRepository;
   taxiChatRepository: ITaxiChatRepository;
 }

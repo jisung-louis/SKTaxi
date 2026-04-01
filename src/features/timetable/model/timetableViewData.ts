@@ -1,22 +1,9 @@
+import type {
+  TimetableCourseToneId,
+  TimetableWeekdayId,
+} from './timetablePrimitives';
+
 export type TimetableDetailViewMode = 'today' | 'all';
-
-export type TimetableWeekdayId =
-  | 'mon'
-  | 'tue'
-  | 'wed'
-  | 'thu'
-  | 'fri'
-  | 'sat';
-
-export type TimetableCourseToneId =
-  | 'green'
-  | 'blue'
-  | 'pink'
-  | 'yellow'
-  | 'purple'
-  | 'teal'
-  | 'orange'
-  | 'red';
 
 export interface TimetableSemesterOptionViewData {
   id: string;

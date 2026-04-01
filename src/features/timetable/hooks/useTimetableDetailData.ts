@@ -1,29 +1,31 @@
 import React from 'react';
 import {Alert, Share} from 'react-native';
 
-import {useTimetableDetailRepository} from '@/di';
+import {useTimetableRepository} from '@/di';
 import {RepositoryError, RepositoryErrorCode} from '@/shared/lib/errors';
 
-import {getPeriodTimeInfo} from '../services/timetableUtils';
+import {getPeriodTimeInfo} from '../services/timetableCalendar';
 import type {
   TimetableCatalogCourseRecord,
   TimetableCourseRecord,
   TimetableCourseScheduleRecord,
   TimetableManualCourseDraft,
   TimetableSemesterRecord,
-} from '../model/timetableDetailSource';
+} from '../model/timetableDomain';
 import {TIMETABLE_COURSE_TONES} from '../model/timetableCourseTones';
 import type {
   TimetableAddCourseSheetViewData,
   TimetableCourseDetailViewData,
-  TimetableCourseToneId,
   TimetableDetailScreenViewData,
   TimetableDetailViewMode,
   TimetableDayColumnViewData,
   TimetablePeriodViewData,
   TimetableTodayRowViewData,
+} from '../model/timetableViewData';
+import type {
+  TimetableCourseToneId,
   TimetableWeekdayId,
-} from '../model/timetableDetailViewData';
+} from '../model/timetablePrimitives';
 import {
   removeTimetableCourseTone,
   setTimetableCourseTone,
@@ -598,7 +600,7 @@ const buildScreenViewData = ({
 export const useTimetableDetailData = (
   initialMode: TimetableDetailViewMode = 'all',
 ) => {
-  const timetableDetailRepository = useTimetableDetailRepository();
+  const timetableRepository = useTimetableRepository();
   const [activeMode, setActiveMode] =
     React.useState<TimetableDetailViewMode>(initialMode);
   const [activeTab, setActiveTab] = React.useState<'manual' | 'search'>('search');
@@ -624,7 +626,7 @@ export const useTimetableDetailData = (
     setError(null);
 
     try {
-      const semesters = await timetableDetailRepository.listSemesterRecords();
+      const semesters = await timetableRepository.listSemesterRecords();
       const options = semesters.map(semester => ({
         id: semester.id,
         label: semester.label,
@@ -642,7 +644,7 @@ export const useTimetableDetailData = (
         return;
       }
 
-      const nextRecord = await timetableDetailRepository.getSemesterRecord(
+      const nextRecord = await timetableRepository.getSemesterRecord(
         nextSemesterId,
       );
 
@@ -660,7 +662,7 @@ export const useTimetableDetailData = (
     } finally {
       setLoading(false);
     }
-  }, [timetableDetailRepository]);
+  }, [timetableRepository]);
 
   React.useEffect(() => {
     loadSemester().catch(() => undefined);
@@ -752,7 +754,7 @@ export const useTimetableDetailData = (
       });
 
       try {
-        const nextRecord = await timetableDetailRepository.addCatalogCourse({
+        const nextRecord = await timetableRepository.addCatalogCourse({
           courseId,
           semesterId: selectedSemesterId,
           toneId: selectedToneId,
@@ -796,7 +798,7 @@ export const useTimetableDetailData = (
       refreshRecord,
       selectedSemesterId,
       selectedToneId,
-      timetableDetailRepository,
+      timetableRepository,
     ],
   );
 
@@ -842,7 +844,7 @@ export const useTimetableDetailData = (
     }
 
     const previousCourseIds = new Set(record.courses.map(course => course.id));
-    const nextRecord = await timetableDetailRepository.addManualCourse({
+    const nextRecord = await timetableRepository.addManualCourse({
       draft: manualDraft,
       semesterId: selectedSemesterId,
     });
@@ -891,7 +893,7 @@ export const useTimetableDetailData = (
     record,
     refreshRecord,
     selectedSemesterId,
-    timetableDetailRepository,
+    timetableRepository,
   ]);
 
   const removeSelectedCourse = React.useCallback(() => {
@@ -930,7 +932,7 @@ export const useTimetableDetailData = (
           });
 
           try {
-            const nextRecord = await timetableDetailRepository.removeCourse({
+            const nextRecord = await timetableRepository.removeCourse({
               courseId: removedCourseId,
               semesterId: selectedSemesterId,
             });
@@ -968,7 +970,7 @@ export const useTimetableDetailData = (
     refreshRecord,
     selectedCourseId,
     selectedSemesterId,
-    timetableDetailRepository,
+    timetableRepository,
   ]);
 
   const shareTimetable = React.useCallback(async () => {

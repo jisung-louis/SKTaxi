@@ -4,7 +4,7 @@ import type { BoardStackParamList } from '@/features/board';
 import type { ChatStackParamList } from '@/features/chat';
 import type { NoticeStackParamList } from '@/features/notice';
 import type { TaxiStackParamList } from '@/features/taxi';
-import type {TimetableDetailViewMode} from '@/features/timetable/model/timetableDetailViewData';
+import type {TimetableDetailViewMode} from '@/features/timetable';
 
 export type RootStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;

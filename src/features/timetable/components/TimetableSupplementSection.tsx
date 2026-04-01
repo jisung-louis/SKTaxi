@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, RADIUS, SHADOWS} from '@/shared/design-system/tokens';
 
 import {TIMETABLE_COURSE_TONES} from '../model/timetableCourseTones';
-import type {TimetableSupplementItemViewData} from '../model/timetableDetailViewData';
+import type {TimetableSupplementItemViewData} from '../model/timetableViewData';
 
 interface TimetableSupplementSectionProps {
   items: TimetableSupplementItemViewData[];

@@ -9,7 +9,7 @@ import {
   generatePeriods,
   getCurrentSemester,
   getPeriodTimeInfo,
-} from '@/features/timetable/services/timetableUtils';
+} from '@/features/timetable/services/timetableCalendar';
 import {normalizeDate, normalizeDateObject} from '@/shared/lib/date';
 
 import {getAcademicCalendarEventColorTone} from '../model/academicCalendarEventTones';

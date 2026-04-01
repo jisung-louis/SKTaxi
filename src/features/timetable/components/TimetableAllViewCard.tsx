@@ -9,7 +9,7 @@ import type {
   TimetableDayColumnViewData,
   TimetableGridBlockViewData,
   TimetablePeriodViewData,
-} from '../model/timetableDetailViewData';
+} from '../model/timetableViewData';
 
 interface TimetableAllViewCardProps {
   blocks: TimetableGridBlockViewData[];

@@ -1,6 +1,6 @@
 import {COLORS} from '@/shared/design-system/tokens';
 
-import type {TimetableCourseToneId} from './timetableDetailViewData';
+import type {TimetableCourseToneId} from './timetablePrimitives';
 
 export const TIMETABLE_COURSE_TONES: Record<
   TimetableCourseToneId,

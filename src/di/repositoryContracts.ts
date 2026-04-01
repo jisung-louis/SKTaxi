@@ -19,7 +19,7 @@ export type {
   IPartyRepository,
   ITaxiChatRepository,
 } from '@/features/taxi';
-export type {ITimetableDetailRepository} from '@/features/timetable/data/repositories/ITimetableDetailRepository';
+export type {ITimetableRepository} from '@/features/timetable';
 export type {
   IAccountManagementRepository,
 } from '@/features/user/data/repositories/IAccountManagementRepository';

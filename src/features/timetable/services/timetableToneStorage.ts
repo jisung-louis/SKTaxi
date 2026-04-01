@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type {TimetableCourseToneId} from '../model/timetableDetailViewData';
+import type {TimetableCourseToneId} from '../model/timetablePrimitives';
 
 const TIMETABLE_TONE_STORAGE_KEY = '@sktaxi/timetable-course-tones/v1';
 

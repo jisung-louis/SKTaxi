@@ -11,7 +11,7 @@ import {
 import type {
   TimetableTodayEmptyStateViewData,
   TimetableTodayRowViewData,
-} from '../model/timetableDetailViewData';
+} from '../model/timetableViewData';
 
 const TODAY_ROW_HEIGHT = 60;
 const TODAY_ROW_GAP = 8;

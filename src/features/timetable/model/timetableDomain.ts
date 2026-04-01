@@ -1,7 +1,7 @@
 import type {
   TimetableCourseToneId,
   TimetableWeekdayId,
-} from './timetableDetailViewData';
+} from './timetablePrimitives';
 
 export interface TimetableCourseScheduleRecord {
   day: TimetableWeekdayId;

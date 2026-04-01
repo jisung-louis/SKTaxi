@@ -1,14 +1,14 @@
-import type {TimetableCourseToneId} from '../../model/timetableDetailViewData';
+import type {TimetableCourseToneId} from '../../model/timetablePrimitives';
 import type {
   TimetableManualCourseDraft,
   TimetableSemesterRecord,
-} from '../../model/timetableDetailSource';
-import {getCurrentSemester} from '../../services/timetableUtils';
+} from '../../model/timetableDomain';
+import {getCurrentSemester} from '../../services/timetableCalendar';
 import {getTimetableCourseToneMap} from '../../services/timetableToneStorage';
 import {buildTimetableSemesterRecord} from '../mappers/timetableApiMapper';
 import {timetableApiClient, TimetableApiClient} from '../api/timetableApiClient';
 import type {CourseSummaryDto} from '../dto/timetableDto';
-import type {ITimetableDetailRepository} from './ITimetableDetailRepository';
+import type {ITimetableRepository} from './ITimetableRepository';
 
 const COURSE_PAGE_SIZE = 100;
 
@@ -35,7 +35,7 @@ const fetchAllSemesterCourses = async (
   return courses;
 };
 
-export class SpringTimetableDetailRepository implements ITimetableDetailRepository {
+export class SpringTimetableRepository implements ITimetableRepository {
   constructor(private readonly apiClient: TimetableApiClient = timetableApiClient) {}
 
   private async buildSemesterRecord(

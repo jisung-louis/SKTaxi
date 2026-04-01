@@ -25,9 +25,9 @@ import {
 } from '../model/timetableCourseTones';
 import type {
   TimetableAddCourseSheetViewData,
-  TimetableCourseToneId,
   TimetableManualDayOptionViewData,
-} from '../model/timetableDetailViewData';
+} from '../model/timetableViewData';
+import type {TimetableCourseToneId} from '../model/timetablePrimitives';
 import {TimetableBottomSheet} from './TimetableBottomSheet';
 
 interface TimetableAddCourseSheetProps {

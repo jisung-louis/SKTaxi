@@ -22,7 +22,7 @@ import {SpringLegalDocumentRepository} from '@/features/settings/data/repositori
 import {SpringPartyRepository} from '@/features/taxi/data/repositories/SpringPartyRepository';
 import {SpringNotificationActionRepository} from '@/features/taxi/data/repositories/SpringNotificationActionRepository';
 import {SpringTaxiChatRepository} from '@/features/taxi/data/repositories/SpringTaxiChatRepository';
-import {SpringTimetableDetailRepository} from '@/features/timetable/data/repositories/SpringTimetableDetailRepository';
+import {SpringTimetableRepository} from '@/features/timetable/data/repositories/SpringTimetableRepository';
 import {SpringAccountManagementRepository} from '@/features/user/data/repositories/SpringAccountManagementRepository';
 import {SpringMyPageRepository} from '@/features/user/data/repositories/SpringMyPageRepository';
 import {SpringNotificationRepository} from '@/features/user/data/repositories/SpringNotificationRepository';
@@ -73,7 +73,7 @@ export function RepositoryProvider({
       appConfigRepository: new SpringAppConfigRepository(),
       inquiryFormRepository: new SpringInquiryFormRepository(),
       legalDocumentRepository: new SpringLegalDocumentRepository(),
-      timetableDetailRepository: new SpringTimetableDetailRepository(),
+      timetableRepository: new SpringTimetableRepository(),
       notificationActionRepository: new SpringNotificationActionRepository(),
       taxiChatRepository: new SpringTaxiChatRepository(),
     };

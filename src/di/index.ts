@@ -26,7 +26,7 @@ export {
   useAppConfigRepository,
   useInquiryFormRepository,
   useLegalDocumentRepository,
-  useTimetableDetailRepository,
+  useTimetableRepository,
   useNotificationActionRepository,
   useTaxiChatRepository,
 } from './useRepository';

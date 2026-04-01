@@ -104,7 +104,7 @@ describe('buildTimetableSemesterRecord', () => {
       id: 'manual-course',
       name: '플랫폼세미나',
       isOnline: true,
-      professor: '미정',
+      professor: '-',
       schedules: [],
       toneId: 'red',
     });

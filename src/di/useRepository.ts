@@ -26,7 +26,7 @@ import type {
   IPartyRepository,
   IProfileEditRepository,
   ITaxiChatRepository,
-  ITimetableDetailRepository,
+  ITimetableRepository,
   IUserActivityRepository,
 } from './repositoryContracts';
 
@@ -175,9 +175,9 @@ export function useLegalDocumentRepository(): ILegalDocumentRepository {
   return legalDocumentRepository;
 }
 
-export function useTimetableDetailRepository(): ITimetableDetailRepository {
-  const {timetableDetailRepository} = useRepositories();
-  return timetableDetailRepository;
+export function useTimetableRepository(): ITimetableRepository {
+  const {timetableRepository} = useRepositories();
+  return timetableRepository;
 }
 
 /**

@@ -32,7 +32,7 @@ import {TimetableSemesterSheet} from '../components/TimetableSemesterSheet';
 import {TimetableSupplementSection} from '../components/TimetableSupplementSection';
 import {TimetableTodayViewCard} from '../components/TimetableTodayViewCard';
 import {useTimetableDetailData} from '../hooks/useTimetableDetailData';
-import type {TimetableDetailViewMode} from '../model/timetableDetailViewData';
+import type {TimetableDetailViewMode} from '../model/timetableViewData';
 
 const MODE_ITEMS: SegmentedControlItem<TimetableDetailViewMode>[] = [
   {id: 'today', label: '오늘 시간표'},

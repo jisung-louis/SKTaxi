@@ -8,11 +8,11 @@ import type {
   TimetableCatalogCourseRecord,
   TimetableCourseRecord,
   TimetableSemesterRecord,
-} from '../../model/timetableDetailSource';
+} from '../../model/timetableDomain';
 import type {
   TimetableCourseToneId,
   TimetableWeekdayId,
-} from '../../model/timetableDetailViewData';
+} from '../../model/timetablePrimitives';
 
 const WEEKDAY_BY_NUMBER: Record<number, TimetableWeekdayId> = {
   1: 'mon',
