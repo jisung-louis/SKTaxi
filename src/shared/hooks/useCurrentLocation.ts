@@ -7,6 +7,56 @@ export interface Coordinates {
   longitude: number;
 }
 
+interface GeolocationError {
+  code: number;
+  message: string;
+  PERMISSION_DENIED?: number;
+  POSITION_UNAVAILABLE?: number;
+  TIMEOUT?: number;
+}
+
+const ANDROID_FAST_LOCATION_OPTIONS = {
+  enableHighAccuracy: false,
+  timeout: 5000,
+  maximumAge: 60000,
+} as const;
+
+const ANDROID_PRECISE_LOCATION_OPTIONS = {
+  enableHighAccuracy: true,
+  timeout: 20000,
+  maximumAge: 10000,
+} as const;
+
+const DEFAULT_LOCATION_OPTIONS = {
+  enableHighAccuracy: true,
+  timeout: 15000,
+  maximumAge: 10000,
+} as const;
+
+const getCurrentPositionAsync = (options: {
+  enableHighAccuracy: boolean;
+  timeout: number;
+  maximumAge: number;
+}) =>
+  new Promise<Coordinates>((resolve, reject) => {
+    Geolocation.getCurrentPosition(
+      position => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      reject,
+      options,
+    );
+  });
+
+const isRecoverableAndroidLocationError = (error: GeolocationError) =>
+  error.code === error.TIMEOUT ||
+  error.code === error.POSITION_UNAVAILABLE ||
+  error.code === 2 ||
+  error.code === 3;
+
 export const requestLocationPermission = async () => {
   if (Platform.OS === 'ios') {
     return new Promise<boolean>((resolve) => {
@@ -87,6 +137,8 @@ export const useCurrentLocation = () => {
   }, []);
 
   const getLocation = useCallback(async () => {
+    setLoading(true);
+
     try {
       if (Platform.OS === 'android') {
         const hasPermission = await requestLocationPermissionInternal();
@@ -97,23 +149,32 @@ export const useCurrentLocation = () => {
         }
       }
 
-      Geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-          setLoading(false);
-        },
-        (error) => {
-          console.error('위치 정보를 가져오는데 실패했습니다:', error);
-          setLocation(null);
-          setLoading(false);
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 },
-      );
+      let currentLocation: Coordinates;
+
+      if (Platform.OS === 'android') {
+        try {
+          currentLocation = await getCurrentPositionAsync(ANDROID_FAST_LOCATION_OPTIONS);
+        } catch (error) {
+          const locationError = error as GeolocationError;
+
+          if (!isRecoverableAndroidLocationError(locationError)) {
+            throw locationError;
+          }
+
+          console.warn(
+            'Android 빠른 위치 조회 실패, 고정밀 위치 조회로 재시도합니다:',
+            locationError,
+          );
+          currentLocation = await getCurrentPositionAsync(ANDROID_PRECISE_LOCATION_OPTIONS);
+        }
+      } else {
+        currentLocation = await getCurrentPositionAsync(DEFAULT_LOCATION_OPTIONS);
+      }
+
+      setLocation(currentLocation);
+      setLoading(false);
     } catch (error) {
-      console.error('위치 권한 요청 실패:', error);
+      console.error('위치 정보를 가져오는데 실패했습니다:', error);
       setLocation(null);
       setLoading(false);
     }

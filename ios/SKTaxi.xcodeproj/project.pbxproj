@@ -7,10 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02C0EFBB9FD14CC18C1713D1 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D8F465C8988A4348B73CA55B /* Colors.xcassets */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		251FCC7E3A2C4C50AE1656AD /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A7792653EB9048BB9C5A44F8 /* BootSplash.storyboard */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		7B6572C5EED810A94AD48FD9 /* Pods_SKTaxi.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F47A6FE54349B9C39816DFC6 /* Pods_SKTaxi.framework */; };
-		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		961893442F78FFE3001470FE /* skuri.icon in Resources */ = {isa = PBXBuildFile; fileRef = 961893432F78FFE3001470FE /* skuri.icon */; };
 		961893462F7901A2001470FE /* skuri_v2_icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 961893452F7901A2001470FE /* skuri_v2_icon.png */; };
 		962C6A4A2DE30046001B7558 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 962C6A492DE30046001B7558 /* GoogleService-Info.plist */; };
@@ -33,7 +34,6 @@
 		29582F322A3F4EBC82063070 /* Montserrat.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Montserrat.ttf; path = ../assets/fonts/Montserrat.ttf; sourceTree = "<group>"; };
 		38206E7BEA84D1B25C734F5C /* Pods-SKTaxi.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SKTaxi.debug.xcconfig"; path = "Target Support Files/Pods-SKTaxi/Pods-SKTaxi.debug.xcconfig"; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = SKTaxi/AppDelegate.swift; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = SKTaxi/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		961893432F78FFE3001470FE /* skuri.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = skuri.icon; sourceTree = "<group>"; };
 		961893452F7901A2001470FE /* skuri_v2_icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = skuri_v2_icon.png; sourceTree = "<group>"; };
 		962C6A492DE30046001B7558 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "SKTaxi/GoogleService-Info.plist"; sourceTree = "<group>"; };
@@ -44,6 +44,8 @@
 		96C1DE692EE0775A0028B7F8 /* new_taxi_party.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = new_taxi_party.wav; sourceTree = "<group>"; };
 		96E9BA242EB521AA0081CB2E /* skuriicon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = skuriicon.icon; sourceTree = "<group>"; };
 		A1B2C3D4E5F6789012345679 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; name = Settings.bundle; path = SKTaxi/Settings.bundle; sourceTree = "<group>"; };
+		A7792653EB9048BB9C5A44F8 /* BootSplash.storyboard */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = BootSplash.storyboard; path = SKTaxi/BootSplash.storyboard; sourceTree = "<group>"; };
+		D8F465C8988A4348B73CA55B /* Colors.xcassets */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = folder.assetcatalog; name = Colors.xcassets; path = SKTaxi/Colors.xcassets; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F47A6FE54349B9C39816DFC6 /* Pods_SKTaxi.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SKTaxi.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -68,7 +70,6 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
-				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				96E9BA242EB521AA0081CB2E /* skuriicon.icon */,
 				961893452F7901A2001470FE /* skuri_v2_icon.png */,
@@ -78,6 +79,8 @@
 				96C1DE682EE0775A0028B7F8 /* new_notice.wav */,
 				96C1DE692EE0775A0028B7F8 /* new_taxi_party.wav */,
 				A1B2C3D4E5F6789012345679 /* Settings.bundle */,
+				A7792653EB9048BB9C5A44F8 /* BootSplash.storyboard */,
+				D8F465C8988A4348B73CA55B /* Colors.xcassets */,
 			);
 			name = SKTaxi;
 			sourceTree = "<group>";
@@ -212,7 +215,6 @@
 				962C6A4A2DE30046001B7558 /* GoogleService-Info.plist in Resources */,
 				96E9BA252EB521AA0081CB2E /* skuriicon.icon in Resources */,
 				961893442F78FFE3001470FE /* skuri.icon in Resources */,
-				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				BB35ADDF91BA4D275FDFD4FD /* PrivacyInfo.xcprivacy in Resources */,
 				A1B2C3D4E5F6789012345678 /* Settings.bundle in Resources */,
@@ -222,6 +224,8 @@
 				961893462F7901A2001470FE /* skuri_v2_icon.png in Resources */,
 				96C1DE6D2EE0775A0028B7F8 /* new_chat_inapp.wav in Resources */,
 				B5845C48751A4B6A89144A2E /* Montserrat.ttf in Resources */,
+				251FCC7E3A2C4C50AE1656AD /* BootSplash.storyboard in Resources */,
+				02C0EFBB9FD14CC18C1713D1 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

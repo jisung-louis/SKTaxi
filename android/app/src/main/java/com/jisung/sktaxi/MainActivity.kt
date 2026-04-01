@@ -5,6 +5,7 @@ import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
 import com.facebook.react.defaults.DefaultReactActivityDelegate
+import com.zoontek.rnbootsplash.RNBootSplash
 
 class MainActivity : ReactActivity() {
 
@@ -22,8 +23,7 @@ class MainActivity : ReactActivity() {
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    // 스플래시 스크린 테마를 AppTheme으로 변경
-    setTheme(R.style.AppTheme)
+    RNBootSplash.init(this, R.style.BootTheme)
     // react-native-screens: 프래그먼트 상태 복원 비활성화 (크래시 방지)
     // https://github.com/software-mansion/react-native-screens/issues/17#issuecomment-424704067
     super.onCreate(null)

@@ -8,7 +8,8 @@
 import 'react-native-gesture-handler';
 import React from 'react';
 import {BottomSheetModalProvider} from '@gorhom/bottom-sheet';
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppNavigation } from '@/app/navigation/AppNavigation';
@@ -16,6 +17,12 @@ import { AppProviders } from '@/app/providers/AppProviders';
 import { AppRuntimeHost } from '@/app/bootstrap/AppRuntimeHost';
 import { StartupModalHost } from '@/app/bootstrap/StartupModalHost';
 import '@/shared/lib/firebase';
+
+if (Platform.OS === 'android') {
+  Geolocation.setRNConfiguration({
+    locationProvider: 'playServices',
+  });
+}
 
 const AppContent = () => {
   return (
