@@ -1,5 +1,33 @@
 import type { NoticeForegroundNotificationPayload } from '../model/types';
 
+const BASE64_ALPHABET =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+const encodeBase64Ascii = (value: string): string => {
+  let output = '';
+
+  for (let index = 0; index < value.length; index += 3) {
+    const byte1 = value.charCodeAt(index);
+    const byte2 = value.charCodeAt(index + 1);
+    const byte3 = value.charCodeAt(index + 2);
+    const hasByte2 = !Number.isNaN(byte2);
+    const hasByte3 = !Number.isNaN(byte3);
+
+    const chunk = (byte1 * 65536) + ((hasByte2 ? byte2 : 0) * 256) + (hasByte3 ? byte3 : 0);
+
+    output += BASE64_ALPHABET[Math.floor(chunk / 262144) % 64];
+    output += BASE64_ALPHABET[Math.floor(chunk / 4096) % 64];
+    output += !hasByte2
+      ? '='
+      : BASE64_ALPHABET[Math.floor(chunk / 64) % 64];
+    output += !hasByte3
+      ? '='
+      : BASE64_ALPHABET[chunk % 64];
+  }
+
+  return output;
+};
+
 export const navigateToNoticeDetail = (navigation: any, noticeId: string) => {
   try {
     navigation.navigate('Main', {
@@ -92,7 +120,9 @@ export const toNoticeDetailWebViewUrl = (link: string) => {
 
   const rawPath = `/bbs/skukr/${bbsId}/${articleId}/artclView.do?isViewMine=false&bbsClSeq=&srchWrd=&page=1&password=`;
   const encodedPath = encodeURIComponent(rawPath);
-  const fullEncoded = btoa(`fnct1|@@|${encodedPath}`);
+  // encodeURIComponent output is ASCII-only, so a local ASCII base64 encoder
+  // avoids relying on browser-only globals like btoa in React Native.
+  const fullEncoded = encodeBase64Ascii(`fnct1|@@|${encodedPath}`);
 
   return `https://www.sungkyul.ac.kr/skukr/${subviewId}/subview.do?enc=${fullEncoded}`;
 };
