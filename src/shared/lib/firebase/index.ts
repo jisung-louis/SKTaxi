@@ -7,8 +7,6 @@ export {
 } from './analytics';
 export { authInstance, subscribeAuthStateChange } from './auth';
 export { logCrashlyticsMessage } from './crashlytics';
-export { db } from './firestore';
-export { FirestoreModerationRepository } from './moderationRepository';
 export {
   getCurrentFcmToken,
   getInitialNotificationMessage,
@@ -17,10 +15,3 @@ export {
   subscribeMessagingTokenRefresh,
   subscribeNotificationOpenedApp,
 } from './messaging';
-export { FirestoreStorageRepository } from './storageRepository';
-export type {
-  IStorageRepository,
-  UploadOptions,
-  UploadProgressCallback,
-  UploadResult,
-} from './storageRepository';

@@ -9,66 +9,6 @@ jest.mock('@react-native-firebase/app', () => ({
   initializeApp: jest.fn(),
 }));
 
-jest.mock('@react-native-firebase/firestore', () => {
-  const mockCollection = jest.fn(() => ({
-    doc: jest.fn(() => mockDocRef),
-  }));
-
-  const mockDocRef = {
-    get: jest.fn(() => Promise.resolve({ exists: () => false, data: () => null })),
-    set: jest.fn(() => Promise.resolve()),
-    update: jest.fn(() => Promise.resolve()),
-    delete: jest.fn(() => Promise.resolve()),
-    onSnapshot: jest.fn((callback) => {
-      callback({ exists: () => false, data: () => null });
-      return jest.fn();
-    }),
-  };
-
-  const mockQuery = {
-    onSnapshot: jest.fn((callback) => {
-      callback({ docs: [] });
-      return jest.fn();
-    }),
-  };
-
-  return {
-    __esModule: true,
-    default: jest.fn(() => ({
-      collection: mockCollection,
-      doc: jest.fn(() => mockDocRef),
-    })),
-    collection: mockCollection,
-    doc: jest.fn(() => mockDocRef),
-    query: jest.fn(() => mockQuery),
-    where: jest.fn(),
-    orderBy: jest.fn(),
-    limit: jest.fn(),
-    startAfter: jest.fn(),
-    onSnapshot: jest.fn((query, callback) => {
-      callback({ docs: [] });
-      return jest.fn();
-    }),
-    getDoc: jest.fn(() => Promise.resolve({ exists: () => false, data: () => null })),
-    getDocs: jest.fn(() => Promise.resolve({ docs: [], empty: true })),
-    addDoc: jest.fn(() => Promise.resolve({ id: 'mock-id' })),
-    updateDoc: jest.fn(() => Promise.resolve()),
-    deleteDoc: jest.fn(() => Promise.resolve()),
-    setDoc: jest.fn(() => Promise.resolve()),
-    serverTimestamp: jest.fn(() => new Date()),
-    arrayUnion: jest.fn((value) => value),
-    arrayRemove: jest.fn((value) => value),
-    increment: jest.fn((value) => value),
-    writeBatch: jest.fn(() => ({
-      set: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      commit: jest.fn(() => Promise.resolve()),
-    })),
-    collectionGroup: jest.fn(() => mockQuery),
-  };
-});
-
 jest.mock('@react-native-firebase/auth', () => ({
   __esModule: true,
   default: jest.fn(() => ({
@@ -82,20 +22,6 @@ jest.mock('@react-native-firebase/auth', () => ({
   })),
   getAuth: jest.fn(() => ({
     currentUser: { uid: 'test-user-id', email: 'test@example.com' },
-  })),
-}));
-
-jest.mock('@react-native-firebase/storage', () => ({
-  __esModule: true,
-  default: jest.fn(() => ({
-    ref: jest.fn(() => ({
-      putFile: jest.fn(() => Promise.resolve()),
-      getDownloadURL: jest.fn(() => Promise.resolve('https://example.com/image.jpg')),
-      delete: jest.fn(() => Promise.resolve()),
-    })),
-    refFromURL: jest.fn(() => ({
-      delete: jest.fn(() => Promise.resolve()),
-    })),
   })),
 }));
 
