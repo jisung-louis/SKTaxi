@@ -1,6 +1,6 @@
 # RN Spring API 커버리지와 로깅 가이드
 
-> 최종 수정일: 2026-03-29
+> 최종 수정일: 2026-04-01
 > 관련 문서: [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [API 명세](./api-specification.md)
 
 ---
@@ -37,6 +37,7 @@
   - Board / Community board의 list/detail/comments/like/bookmark/write/edit
   - Notice 본체의 home/detail/read/like/comments
   - Campus academic / cafeteria 본체
+  - Minecraft overview / players / 내 계정 CRUD / public SSE
 - 부분 연결
   - Taxi Party domain 전체
   - Chat domain 전체
@@ -474,6 +475,48 @@ runtime note:
 - 2026-03-29 기준 backend는 같은 주 안에서 동일한 `category + title`의 `badges`, `likeCount`, `dislikeCount`가 날짜마다 달라지지 않도록 저장 단계에서 검증한다.
 - Cafeteria detail / campus home preview는 더 이상 `오늘 제공`, `오늘`, `주간 n회` 같은 frequency badge를 source of truth로 쓰지 않고, Figma 구현 시 `menuEntries` 메타데이터를 직접 사용해야 한다.
 - 현재 campus domain에서 Spring source of truth로 남지 않은 것은 course/timetable/user preview 조합용 기존 mock repository뿐이며, 이번 Phase H 범위 밖이다.
+
+### 3.10 Minecraft overview / whitelist realtime
+
+상태:
+
+- 연결 완료
+
+endpoint / realtime contract:
+
+- `GET /v1/minecraft/overview`
+- `GET /v1/minecraft/players`
+- `GET /v1/members/me/minecraft-accounts`
+- `POST /v1/members/me/minecraft-accounts`
+- `DELETE /v1/members/me/minecraft-accounts/{accountId}`
+- `GET /v1/sse/minecraft`
+
+현재 사용처:
+
+- Campus 메인 마인크래프트 섹션
+- 마인크래프트 상세 화면
+- 마인크래프트 계정 등록/삭제 화면
+- Community 채팅의 마인크래프트 가이드/서버 주소 표시
+
+코드:
+
+- `src/features/minecraft/data/api/minecraftApiClient.ts`
+- `src/features/minecraft/data/repositories/SpringMinecraftRepository.ts`
+- `src/features/minecraft/services/minecraftRealtimeService.ts`
+- `src/features/minecraft/hooks/useMinecraftServerOverview.ts`
+- `src/features/minecraft/hooks/useMinecraftWhitelistPlayers.ts`
+- `src/features/minecraft/hooks/useMinecraftAccounts.ts`
+- `src/features/minecraft/components/MinecraftSection.tsx`
+- `src/features/minecraft/screens/MinecraftDetailScreen.tsx`
+- `src/features/minecraft/screens/MinecraftAccountScreen.tsx`
+- `src/features/chat/screens/ChatDetailScreen.tsx`
+
+runtime note:
+
+- Minecraft feature는 아직 `RepositoryProvider`가 아니라 feature-local `minecraftRuntime` composition을 통해 Spring repository를 사용한다.
+- server overview / players는 `GET` 초기 로드 후 `GET /v1/sse/minecraft` signal/payload로 동기화한다.
+- whitelist players는 `PLAYERS_SNAPSHOT`, `PLAYER_UPSERT`, `PLAYER_REMOVE` 이벤트를 직접 반영한다.
+- 계정 등록/삭제는 REST mutation 성공 후 `getMyAccounts()`를 다시 호출해 화면 상태를 맞춘다.
 
 ---
 

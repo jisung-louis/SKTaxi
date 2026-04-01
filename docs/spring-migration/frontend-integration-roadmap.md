@@ -1,7 +1,7 @@
 # RN Spring 연동 로드맵
 
-> 최종 수정일: 2026-03-20
-> 관련 문서: [프로젝트 종합 문서](./project-overview.md) | [역할 정의](./role-definition.md) | [API 명세](./api-specification.md) | [백엔드 레이어 점검](./backend-layer-review-and-spring-migration.md) | [RN Notification Migration Reference](./rn-notification-migration-reference.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md)
+> 최종 수정일: 2026-04-01
+> 관련 문서: [프로젝트 종합 문서](../project/project-overview.md) | [역할 정의](./role-definition.md) | [API 명세](./api-specification.md) | [백엔드 레이어 점검](./backend-layer-review-and-spring-migration.md) | [RN Notification Migration Reference](./rn-notification-migration-reference.md) | [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 진행 현황](./frontend-migration-status.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md)
 
 ---
 
@@ -16,61 +16,37 @@ Firebase/Mock 기반 현재 구조에서
 Spring 서버 내부 구현 관점을 다룬다면,
 본 문서는 RN 앱에서 어떤 순서로 어떤 경계를 바꿔야 하는지에 집중한다.
 
+현재 시점의 최신 완료 범위와 실제 호출 API는 이 문서보다
+`frontend-migration-status.md`, `frontend-api-coverage.md`를 우선 source of truth로 본다.
+
 ---
 
 ## 2. 현재 프론트 상태 요약
 
-### 2.1 유지할 수 있는 구조
+### 2.1 이미 고정된 구조
 
-- 전역 DI 경계는 이미 존재한다.
+- 전역 DI 경계는 이미 런타임 기본값으로 사용한다.
   - `src/di/RepositoryProvider.tsx`
   - `src/di/RepositoryContext.ts`
   - `src/di/useRepository.ts`
-- 도메인 Repository 인터페이스도 상당수 정리되어 있다.
-  - `IPartyRepository`
-  - `IChatRepository`
-  - `IBoardRepository`
-  - `INoticeRepository`
-  - `IUserRepository`
-- Firebase Auth 기반 로그인 흐름은 유지 가능하다.
+- 주요 도메인 기본 repository는 Spring 구현으로 연결됐다.
+  - `partyRepository`
+  - `chatRepository`
+  - `boardRepository`
+  - `noticeRepository`
+  - `academicRepository`
+  - `cafeteriaRepository`
+  - `notificationRepository`
+  - `appNoticeRepository`
+- Firebase Auth 기반 로그인 흐름은 유지한다.
   - Spring은 Firebase ID Token 검증만 수행한다.
 
-### 2.2 최근 구조 개선 사항
+### 2.2 현재 남아 있는 과도기 구조
 
-다음 화면 계열은 기존의 “hook이 mock 구현을 직접 아는 구조”에서
-“hook -> repository entrypoint” 구조로 한 단계 정리되었다.
-
-- `src/features/settings/hooks/useAppNoticeFeedData.ts`
-- `src/features/settings/hooks/useAppNoticeDetailData.ts`
-- `src/features/user/hooks/useNotificationCenterData.ts`
-- `src/features/taxi/hooks/useTaxiHomeData.ts`
-
-현재 위 hook들은 각각 아래 entrypoint만 참조한다.
-
-- `src/features/settings/data/repositories/appNoticeScreenRepository.ts`
-- `src/features/user/data/repositories/notificationCenterRepository.ts`
-- `src/features/taxi/data/repositories/taxiHomeRepository.ts`
-
-이 변경으로 얻는 이점:
-
-- hook이 더 이상 `Mock...Repository` 클래스를 직접 몰라도 된다.
-- Spring 전환 시 hook 수정 없이 entrypoint 구현만 교체할 수 있다.
-- 화면 로직과 데이터 소스 선택 지점이 분리된다.
-
-### 2.3 아직 남은 구조적 한계
-
-- 위 entrypoint는 아직도 module-level에서 mock 구현을 직접 생성한다.
-- 즉, 전역 DI(`RepositoryProvider`)와 feature-local entrypoint가 공존하는 상태다.
-- 따라서 구조는 분명 좋아졌지만, 아직 “완전히 통일된 주입 구조”는 아니다.
-
-현재 이 패턴이 남아 있는 대표 영역:
-
-- Notice home/detail
-- Board detail
-- Chat detail
-- Community home
-- Campus detail/home
-- Taxi recruit/chat/pending
+- 인증은 `FirebaseAuthRepository`를 계속 사용한다.
+- Minecraft feature는 전역 DI가 아니라 feature-local composition(`minecraftRuntime`)으로 Spring API + SSE를 사용한다.
+- 일부 훅/유틸 이름에는 `useFirestoreSubscription`처럼 레거시 명명이 남아 있지만, 실제 구독 구현은 Spring repository subscription에도 재사용된다.
+- 일반 Chat 이미지 메시지 실사용 연결과 일부 후속 legacy 정리는 아직 남아 있다.
 
 ---
 

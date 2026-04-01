@@ -30,6 +30,8 @@
 - React Navigation v7
 - Reanimated / Gesture Handler / Gorhom Bottom Sheet
 - React Native Maps, WebView, image picker/resizer
+- Firebase Auth / Messaging / Analytics / Crashlytics client SDK 유지
+- 도메인 데이터는 Spring REST + SSE + STOMP 기준으로 연결
 
 프론트 코드는 기능 단위 폴더 구조를 사용한다.
 
@@ -54,6 +56,7 @@
 - StorageRepository: 이미지 저장 추상화
   - 기본 provider: LOCAL 파일 시스템
   - 선택 provider: FIREBASE
+- 마인크래프트 연동: public/internal API, public SSE, bridge outbox까지 Spring 백엔드 기준으로 구현
 
 백엔드 패키지 구조는 도메인 중심이다.
 
@@ -101,7 +104,17 @@
 #### 공개 채팅
 
 - 공개 채팅방 목록/상세/참여/나가기 지원
+- 공개 채팅방 참여/나가기와 파티 채팅 멤버 입장/퇴장은 실제 `SYSTEM` chat message로 저장되고 STOMP topic으로 브로드캐스트됨
+- 공개 채팅/파티 채팅 메시지 payload는 `senderName`과 함께 `senderPhotoUrl`을 내려준다.
+- 일반 앱 메시지는 `members.photo_url`을 사용하고, 마인크래프트 origin 메시지는 Minotar URL을 사용한다.
 - 공개 채팅과 택시 파티 채팅은 같은 채팅 도메인을 공유하되 계약은 분리되어 있음
+
+#### 마인크래프트
+
+- 공개 게임방 canonical id는 `public:game:minecraft`다.
+- 마인크래프트 채팅은 일반 공개 채팅방으로 저장하되, 플러그인은 Spring internal API + SSE bridge로 연결한다.
+- 서버 상태, 온라인 플레이어 목록, 화이트리스트, JE/BE 검증 규칙은 별도 `minecraft` 도메인으로 이관한다.
+- 구현/운영 상세와 이관 배경은 [minecraft-spring-migration-plan.md](/Users/jisung/skuri-backend/docs/minecraft-spring-migration-plan.md) 기준으로 본다.
 
 #### 공지/게시판
 

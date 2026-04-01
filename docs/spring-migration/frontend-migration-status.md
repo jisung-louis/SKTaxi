@@ -1,6 +1,6 @@
 # RN Spring 연동 진행 현황
 
-> 최종 수정일: 2026-03-29
+> 최종 수정일: 2026-04-01
 > 관련 문서: [RN Spring 연동 아키텍처 가이드](./frontend-architecture-guideline.md) | [RN Spring 연동 로드맵](./frontend-integration-roadmap.md) | [Spring API 커버리지와 로깅 가이드](./frontend-api-coverage.md) | [API 명세](./api-specification.md)
 
 ---
@@ -39,6 +39,7 @@
 - Board detail, Notice home/detail, Community board home은 더 이상 feature-local repository entrypoint를 source of truth로 사용하지 않는다.
 - Campus academic calendar detail은 중앙 DI `academicRepository` 기준으로 수렴했고, legacy Firebase/detail entrypoint dead path는 제거됐다.
 - Board / Notice / Campus central repository는 이제 mock이 아니라 Spring concrete repository를 기본 source of truth로 사용한다.
+- Minecraft feature는 Spring REST + public SSE 기준으로 overview/players/accounts 경로 연결이 완료됐다.
 - Community board 탭은 중앙 DI `boardRepository`의 Spring 응답을 기준으로 목록/featured post를 조합한다.
 - Board public contract는 관리자 moderation을 반영해 `HIDDEN` 게시글을 목록/상세에서 제외하고, `HIDDEN` 댓글은 placeholder로 마스킹한다.
 - Phase H follow-up까지 반영되어 Board / Notice / Campus 본체 이전과 남아 있던 backend contract gap 3개 정리가 완료됐다.
@@ -62,6 +63,7 @@
 - 일반 Chat의 Phase F 범위는 닫혔고, 다음 남은 Chat backlog는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 - Phase G는 완료 상태이며, campus home/cafeteria detail을 포함한 남은 screen-level mock chain 정리를 마쳤다.
 - Phase H는 Board / Notice / Campus central repository 전환과 follow-up contract 반영까지 완료 상태다.
+- Minecraft feature는 feature-local composition 경계에 남아 있지만, 런타임 데이터는 이미 Spring API/SSE를 source of truth로 사용한다.
 
 ---
 
@@ -769,6 +771,7 @@ Phase G 완료 후 구조 상태:
 - Campus academic/cafeteria domain 기본 source는 중앙 DI `SpringAcademicRepository` / `SpringCafeteriaRepository`로 전환됐다.
 - Campus home은 중앙 DI repository들을 조합하는 `campusHomeQuery`로 수렴했고, academic/cafeteria preview도 Spring source를 읽는다.
 - Cafeteria detail은 중앙 DI `cafeteriaRepository` + `cafeteriaMenuAssembler` 기준으로 동작하고, central mock 기본값은 제거됐다.
+- Minecraft feature는 `minecraftRuntime` composition을 통해 `SpringMinecraftRepository` + `minecraftRealtimeService`를 사용하며, Campus/Chat 화면에서 같은 Spring source를 재사용한다.
 - Chat domain의 다음 남은 구조 과제는 이미지 메시지 실사용 연결과 이후 legacy 정리다.
 
 ---

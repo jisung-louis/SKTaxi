@@ -1,14 +1,21 @@
 # 백엔드 레이어 점검 및 Spring 마이그레이션 가이드
 
-현재 프로젝트의 서버리스 백엔드 구조를 점검하고, Spring으로 재구현할 때 필요한 설계 요구사항을 정리한 문서입니다.
+이 문서는 **마이그레이션 kickoff 시점의 legacy Firebase 구조를 설명한 분석 기록**과,
+그 구조를 Spring으로 옮길 때 필요한 설계 요구사항을 함께 정리한 문서입니다.
+
+현재 런타임은 이 문서의 legacy 설명과 다르다.
+
+- 프론트 기본 repository wiring은 대부분 Spring 구현을 사용한다.
+- Firebase는 인증/일부 클라이언트 SDK 용도로만 남아 있다.
+- 아래 1장은 "당시 왜 이런 설계 전환이 필요했는가"를 설명하는 historical context로 읽어야 한다.
 
 ---
 
-## 1. `firebase-cloud-functions/src/index.ts` vs `src/repositories` 역할 차이
+## 1. legacy Firebase 구조 기준 역할 차이
 
 ### 요약
 
-| 구분 | `firebase-cloud-functions/src/index.ts` (Cloud Functions) | `src/repositories` (Repository) |
+| 구분 | legacy Cloud Functions 계층 | legacy RN Repository 계층 |
 |------|--------------------------------------------|---------------------------------|
 | **실행 위치** | Firebase 서버(이벤트/스케줄 시) | 클라이언트(React Native 앱) |
 | **역할** | 이벤트 반응 + 스케줄 작업 + 부가 효과 | 앱의 Firestore/Storage 직접 접근 추상화 |
@@ -17,7 +24,7 @@
 
 ---
 
-### 1.1 `firebase-cloud-functions/src/index.ts` (Cloud Functions)의 책임
+### 1.1 legacy Cloud Functions 계층의 책임
 
 **서버에서만 돌아가는, “이벤트에 반응하는 로직”과 “주기 작업”**입니다.
 
@@ -55,7 +62,7 @@ Cloud Functions는 **“데이터가 이렇게 바뀌었을 때 / 이 시간이 
 
 ---
 
-### 1.2 `src/repositories`의 책임
+### 1.2 legacy RN Repository 계층의 책임
 
 **앱(클라이언트)이 Firestore·Storage 등에 접근하는 방법을 인터페이스로 추상화한 계층**입니다.
 
