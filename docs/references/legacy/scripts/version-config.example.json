@@ -21,26 +21,6 @@
   }
 }
 
-// 서비스 점검 예시:
-// {
-//   "ios": {
-//     "minimumVersion": "999.0.0",
-//     "forceUpdate": true,
-//     "icon": "construct-outline",
-//     "title": "서비스 점검 중",
-//     "message": "더 나은 서비스를 위해 점검 중입니다.\n잠시 후 다시 시도해주세요.",
-//     "showButton": false
-//   },
-//   "android": {
-//     "minimumVersion": "999.0.0",
-//     "forceUpdate": true,
-//     "icon": "construct-outline",
-//     "title": "서비스 점검 중",
-//     "message": "더 나은 서비스를 위해 점검 중입니다.\n잠시 후 다시 시도해주세요.",
-//     "showButton": false
-//   }
-// }
-
 
 
 
