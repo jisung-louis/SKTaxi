@@ -6,7 +6,10 @@ export type BoardStackParamList = {
         searchText?: string;
       }
     | undefined;
-  BoardDetail: {postId: string};
+  BoardDetail: {
+    initialCommentId?: string;
+    postId: string;
+  };
   BoardWrite: undefined;
   BoardEdit: {postId: string};
 };

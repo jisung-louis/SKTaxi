@@ -5,16 +5,20 @@ import type {
   SubscriptionCallbacks,
   Unsubscribe,
 } from '@/shared/types/subscription';
+import type {
+  NotificationData,
+  NotificationType,
+} from '../../model/notificationContract';
 
 /**
  * 알림 데이터
  */
 export interface Notification {
   id: string;
-  type: string;
+  type: NotificationType;
   title: string;
   message: string;
-  data: Record<string, unknown>;
+  data: NotificationData;
   isRead: boolean;
   readAt?: Date;
   createdAt: Date;

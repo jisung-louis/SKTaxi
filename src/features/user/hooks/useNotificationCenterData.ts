@@ -23,7 +23,7 @@ interface UseNotificationCenterDataResult {
 
 const NOTIFICATION_CENTER_LIMIT = 100;
 const isInboxNotification = (notification: Notification) =>
-  notification.type !== 'app_notice';
+  notification.type !== 'APP_NOTICE';
 
 export const useNotificationCenterData =
   (): UseNotificationCenterDataResult => {

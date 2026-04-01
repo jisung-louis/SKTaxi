@@ -74,7 +74,7 @@ const createSubscriptionError = (error: unknown) => {
 };
 
 const shouldIncludeInUnreadCount = (notification: Notification) =>
-  notification.type !== 'app_notice';
+  notification.type !== 'APP_NOTICE';
 
 const countUnreadNotifications = (notifications: Notification[]) =>
   notifications.reduce(

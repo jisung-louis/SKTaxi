@@ -5,5 +5,8 @@ export type NoticeStackParamList = {
         initialQuery?: string;
       }
     | undefined;
-  NoticeDetail: { noticeId: string };
+  NoticeDetail: {
+    initialCommentId?: string;
+    noticeId: string;
+  };
 };

@@ -1,4 +1,7 @@
 import type { NoticeForegroundNotificationPayload } from '../model/types';
+export {
+  navigateToNoticeDetail,
+} from '@/app/navigation/services/appRouteNavigation';
 
 const BASE64_ALPHABET =
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -26,26 +29,6 @@ const encodeBase64Ascii = (value: string): string => {
   }
 
   return output;
-};
-
-export const navigateToNoticeDetail = (navigation: any, noticeId: string) => {
-  try {
-    navigation.navigate('Main', {
-      screen: 'NoticeTab',
-      params: {
-        screen: 'NoticeDetail',
-        params: { noticeId },
-      },
-    });
-    return;
-  } catch {}
-
-  try {
-    navigation.navigate('NoticeTab', {
-      screen: 'NoticeDetail',
-      params: { noticeId },
-    });
-  } catch {}
 };
 
 export const buildNoticeForegroundNotification = ({

@@ -12,7 +12,10 @@ import {useNavigation} from '@react-navigation/native';
 import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-import {handleStoredNotificationNavigation} from '@/app/navigation/services/notificationNavigation';
+import {
+  getStoredNotificationNavigationIntent,
+  openNotificationNavigationIntent,
+} from '@/app/navigation/services/notificationNavigation';
 import type {CampusStackParamList} from '@/app/navigation/types';
 import {
   StackHeader,
@@ -65,11 +68,13 @@ export const NotificationScreen = () => {
         await notificationCenter.markAsRead(item.id);
       }
 
-      navigation.popToTop();
-      handleStoredNotificationNavigation({
-        navigation,
-        notification: item.notification,
-      });
+      const intent = getStoredNotificationNavigationIntent(item.notification);
+
+      if (intent) {
+        navigation.popToTop();
+      }
+
+      openNotificationNavigationIntent(intent);
     },
     [navigation, notificationCenter],
   );

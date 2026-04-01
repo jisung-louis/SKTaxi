@@ -1,66 +1,25 @@
 import type { CampusStackParamList } from '@/app/navigation/types';
-import { navigateToNoticeDetail } from '@/features/notice';
+import {
+  navigateToCampusScreen as navigateToCampusScreenWithRoot,
+  navigateToNoticeDetail,
+  navigateToNoticeMain as navigateToNoticeMainWithRoot,
+  navigateToTaxiAcceptancePending as navigateToTaxiAcceptancePendingWithRoot,
+  navigateToTaxiScreen,
+} from '@/app/navigation/services/appRouteNavigation';
 import type { Party } from '@/features/taxi';
-
-type NavigationLike = {
-  navigate: (...args: any[]) => void;
-};
-
-const tryNavigate = (navigate: () => void) => {
-  try {
-    navigate();
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 export const navigateToCampusScreen = <
   TScreen extends keyof CampusStackParamList,
 >(
-  navigation: NavigationLike,
+  _navigation: unknown,
   screen: TScreen,
   params?: CampusStackParamList[TScreen],
-) => {
-  if (
-    tryNavigate(() =>
-      navigation.navigate('CampusTab', {
-        screen,
-        params,
-      }),
-    )
-  ) {
-    return;
-  }
+) => navigateToCampusScreenWithRoot(screen, params);
 
-  if (params === undefined) {
-    tryNavigate(() => navigation.navigate(screen as string));
-    return;
-  }
-
-  tryNavigate(() => navigation.navigate(screen as string, params));
-};
-
-export const navigateToTaxiMain = (navigation: NavigationLike) => {
-  if (
-    tryNavigate(() =>
-      navigation.navigate('Main', {
-        screen: 'TaxiTab',
-      }),
-    )
-  ) {
-    return;
-  }
-
-  tryNavigate(() =>
-    navigation.navigate('TaxiTab', {
-      screen: 'TaxiMain',
-    }),
-  );
-};
+export const navigateToTaxiMain = (_navigation: unknown) => navigateToTaxiScreen();
 
 export const navigateToTaxiAcceptancePending = (
-  navigation: NavigationLike,
+  _navigation: unknown,
   {
     party,
     requestId,
@@ -68,51 +27,13 @@ export const navigateToTaxiAcceptancePending = (
     party: Party;
     requestId: string;
   },
-) => {
-  if (
-    tryNavigate(() =>
-      navigation.navigate('Main', {
-        screen: 'TaxiTab',
-        params: {
-          screen: 'AcceptancePending',
-          params: { party, requestId },
-        },
-      }),
-    )
-  ) {
-    return;
-  }
+) => navigateToTaxiAcceptancePendingWithRoot(party, requestId);
 
-  tryNavigate(() =>
-    navigation.navigate('TaxiTab', {
-      screen: 'AcceptancePending',
-      params: { party, requestId },
-    }),
-  );
-};
-
-export const navigateToNoticeMain = (
-  navigation: NavigationLike,
-) => {
-  if (
-    tryNavigate(() =>
-      navigation.navigate('Main', {
-        screen: 'NoticeTab',
-      }),
-    )
-  ) {
-    return;
-  }
-
-  tryNavigate(() =>
-    navigation.navigate('NoticeTab', {
-      screen: 'NoticeMain',
-    }),
-  );
-};
+export const navigateToNoticeMain = (_navigation: unknown) =>
+  navigateToNoticeMainWithRoot();
 
 export const createCampusEntryNavigation = (
-  navigation: NavigationLike,
+  navigation: unknown,
 ) => {
   return {
     openCampusScreen: <TScreen extends keyof CampusStackParamList>(
@@ -120,7 +41,7 @@ export const createCampusEntryNavigation = (
       params?: CampusStackParamList[TScreen],
     ) => navigateToCampusScreen(navigation, screen, params),
     openNoticeDetail: (noticeId: string) =>
-      navigateToNoticeDetail(navigation, noticeId),
+      navigateToNoticeDetail(noticeId),
     openNoticeList: () => navigateToNoticeMain(navigation),
     openPendingJoinRequest: ({
       party,

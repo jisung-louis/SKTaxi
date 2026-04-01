@@ -301,7 +301,10 @@ const pickScrollTargetEventId = (
       return getAcademicEventDurationDays(right) - getAcademicEventDurationDays(left);
     })[0]?.id;
 
-export const useAcademicCalendarDetailData = (initialDate?: string) => {
+export const useAcademicCalendarDetailData = (
+  initialDate?: string,
+  initialScheduleId?: string,
+) => {
   const academicRepository = useAcademicRepository();
   const [activeMode, setActiveMode] =
     React.useState<AcademicCalendarDetailViewMode>('month');
@@ -334,6 +337,20 @@ export const useAcademicCalendarDetailData = (initialDate?: string) => {
       setCurrentDate(normalizeDate(initialDate));
     }
   }, [initialDate]);
+
+  React.useEffect(() => {
+    if (initialDate || !initialScheduleId || events.length === 0) {
+      return;
+    }
+
+    const matchedEvent = events.find(event => event.id === initialScheduleId);
+
+    if (!matchedEvent) {
+      return;
+    }
+
+    setCurrentDate(normalizeDate(matchedEvent.startDate));
+  }, [events, initialDate, initialScheduleId]);
 
   const today = React.useMemo(() => normalizeDateObject(new Date()), []);
 

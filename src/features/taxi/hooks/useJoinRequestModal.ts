@@ -1,5 +1,5 @@
 import React from 'react';
-import {useNavigation} from '@react-navigation/native';
+import {navigateToTaxiChat} from '@/app/navigation/services/appRouteNavigation';
 
 import {useUserDisplayNames} from '@/features/user';
 
@@ -22,7 +22,6 @@ export interface UseJoinRequestModalResult {
   handleAccept: () => Promise<void>;
   handleDecline: () => Promise<void>;
   handleJoinRequestAccepted: (partyId: string) => void;
-  handleJoinRequestRejected: () => void;
   handleRequestClose: () => void;
   joinData: JoinRequestData | null;
   requesterName: string;
@@ -67,7 +66,6 @@ export function useJoinRequestModal({
   enabled = true,
   userId,
 }: UseJoinRequestModalOptions): UseJoinRequestModalResult {
-  const navigation = useNavigation();
   const notificationActionRepository = useNotificationActionRepository();
   const partyRepository = usePartyRepository();
   const [pendingRequests, setPendingRequests] = React.useState<JoinRequest[]>([]);
@@ -227,26 +225,15 @@ export function useJoinRequestModal({
 
   const handleJoinRequestAccepted = React.useCallback(
     (partyId: string) => {
-      (navigation as any).navigate('Main', {
-        screen: 'TaxiTab',
-        params: {
-          screen: 'Chat',
-          params: {partyId},
-        },
-      });
+      navigateToTaxiChat(partyId);
     },
-    [navigation],
+    [],
   );
-
-  const handleJoinRequestRejected = React.useCallback(() => {
-    (navigation as any).popToTop();
-  }, [navigation]);
 
   return {
     handleAccept,
     handleDecline,
     handleJoinRequestAccepted,
-    handleJoinRequestRejected,
     handleRequestClose,
     joinData,
     requesterName,

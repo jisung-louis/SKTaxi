@@ -1,3 +1,3 @@
 export {
-  navigateToBoardDetail,
+  navigateToAcademicCalendarDetail,
 } from '@/app/navigation/services/appRouteNavigation';

@@ -1,12 +1,11 @@
 import React from 'react';
-import { Alert } from 'react-native';
 
-import { useAuthEntryGuard } from '@/app/guards';
-import { JoinRequestModal, useJoinRequestModal, useMyParty } from '@/features/taxi';
-import { ForegroundNotification } from '@/shared/ui/ForegroundNotification';
+import {useAuthEntryGuard} from '@/app/guards';
+import {ForegroundNotification} from '@/shared/ui/ForegroundNotification';
+import {JoinRequestModal, useJoinRequestModal, useMyParty} from '@/features/taxi';
 
-import { useRegisterPushHandlers } from './registerPushHandlers';
-import { useForegroundNotificationRuntime } from './useForegroundNotificationRuntime';
+import {useRegisterPushHandlers} from './registerPushHandlers';
+import {useForegroundNotificationRuntime} from './useForegroundNotificationRuntime';
 
 export const AppRuntimeHost = () => {
   const {
@@ -16,20 +15,12 @@ export const AppRuntimeHost = () => {
 
   const {
     foregroundNotification,
+    getCurrentChatRoomId,
+    getCurrentScreen,
+    handleCommunityChatForegroundNotification,
     handleForegroundNotificationPress,
     handleForegroundNotificationDismiss,
-    handlePartyDeleted: handlePartyDeletedBase,
-    handleNoticeReceived,
-    handleAppNoticeNotificationReceived,
-    handleChatMessageReceived,
-    handleSettlementCompleted,
-    handleMemberKicked,
-    handlePartyCreated,
-    handleBoardNotificationReceived,
-    handleNoticeNotificationReceived,
-    handleChatRoomMessageReceived,
-    getCurrentScreen,
-    getCurrentChatRoomId,
+    showForegroundNotification,
   } = useForegroundNotificationRuntime();
   const {isLeader, myParty} = useMyParty();
 
@@ -41,39 +32,27 @@ export const AppRuntimeHost = () => {
     handleDecline,
     handleRequestClose,
     handleJoinRequestAccepted,
-    handleJoinRequestRejected,
   } = useJoinRequestModal({
     activeLeaderPartyId: isLeader ? myParty?.id ?? null : null,
     enabled: !needsProfile && permissionsComplete,
     userId: user?.uid,
   });
 
-  const handlePartyDeleted = React.useCallback(() => {
-    handlePartyDeletedBase();
-    Alert.alert('파티가 해체되었어요', '리더가 파티를 해체했습니다.', [
-      { text: '확인' },
-    ]);
-  }, [handlePartyDeletedBase]);
-
   useRegisterPushHandlers({
-    userId: user?.uid,
+    getCurrentScreen,
+    getCurrentChatRoomId,
+    handleCommunityChatForegroundNotification,
+    handleJoinRequestAccepted,
+    handleJoinRequestReceived: payload => {
+      setJoinData({
+        partyId: payload.partyId,
+        requestId: payload.requestId,
+      });
+    },
     needsProfile,
     permissionsComplete,
-    setJoinData,
-    handlePartyDeleted,
-    handleNoticeReceived,
-    handleAppNoticeNotificationReceived,
-    handleJoinRequestAccepted,
-    handleJoinRequestRejected,
-    handleChatMessageReceived,
-    getCurrentScreen,
-    handleSettlementCompleted,
-    handleMemberKicked,
-    handlePartyCreated,
-    handleBoardNotificationReceived,
-    handleNoticeNotificationReceived,
-    handleChatRoomMessageReceived,
-    getCurrentChatRoomId,
+    showForegroundNotification,
+    userId: user?.uid,
   });
 
   if (loading) {

@@ -1,28 +1,23 @@
+import type {
+  NavigationState,
+  PartialState,
+} from '@react-navigation/native';
+
+import {
+  getCurrentLeafRouteFromNavigationState,
+} from './getCurrentLeafRouteFromNavigationState';
+
+type NavigationStateLike = NavigationState | PartialState<NavigationState>;
+
 export const getCurrentChatRoomIdFromNavigationState = (
-  state: any,
+  state: NavigationStateLike | undefined,
 ): string | undefined => {
-  if (!state) {
+  const activeRoute = getCurrentLeafRouteFromNavigationState(state);
+
+  if (activeRoute?.name !== 'ChatDetail') {
     return undefined;
   }
 
-  const mainTabRoute = state.routes?.find((route: any) => route.name === 'Main');
-  if (!mainTabRoute) {
-    return undefined;
-  }
-
-  const mainTabState = mainTabRoute.state;
-  const tabRoute = mainTabState?.routes?.[mainTabState.index];
-
-  if (!tabRoute || tabRoute.name !== 'CommunityTab') {
-    return undefined;
-  }
-
-  const stackState = tabRoute.state;
-  const stackRoute = stackState?.routes?.[stackState.index];
-
-  if (stackRoute?.name !== 'ChatDetail') {
-    return undefined;
-  }
-
-  return stackRoute.params?.chatRoomId;
+  const chatRoomId = activeRoute.params?.chatRoomId;
+  return typeof chatRoomId === 'string' ? chatRoomId : undefined;
 };

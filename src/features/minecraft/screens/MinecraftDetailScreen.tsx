@@ -179,8 +179,8 @@ export const MinecraftDetailScreen = () => {
               <View style={styles.summaryHeader}>
                 <View>
                   <View style={styles.titleRow}>
-                    <Image 
-                      source={require('../../../../assets/images/minecraft/grass.png')} 
+                    <Image
+                      source={require('../../../../assets/images/minecraft/grass.png')}
                       style={styles.summaryTitleIcon} />
                     <Text style={styles.summaryTitle}>스쿠리 서버 상태</Text>
                   </View>
@@ -250,8 +250,8 @@ export const MinecraftDetailScreen = () => {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <View style={styles.cardHeaderTitleWrap}>
-                  <Image 
-                    source={require('../../../../assets/images/minecraft/creeper.png')} 
+                  <Image
+                    source={require('../../../../assets/images/minecraft/creeper.png')}
                     style={styles.cardTitleIcon} />
                   <Text style={styles.cardTitle}>스쿠리 서버 정보</Text>
                 </View>
@@ -307,10 +307,7 @@ export const MinecraftDetailScreen = () => {
                 accessibilityRole="button"
                 activeOpacity={0.86}
                 onPress={() => {
-                  navigateToChatRoom(
-                    navigation as unknown as {navigate: (...args: any[]) => void},
-                    MINECRAFT_CHAT_ROOM_ID,
-                  );
+                  navigateToChatRoom(MINECRAFT_CHAT_ROOM_ID);
                 }}
                 style={styles.secondaryAction}>
                 <View style={styles.secondaryActionLeft}>

@@ -1,152 +1,94 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { useCallback, useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import type {Dispatch, SetStateAction} from 'react';
+import {useCallback, useState} from 'react';
 
+import type {NotificationNavigationIntent} from '@/app/notifications/model/notificationNavigationIntent';
+import {getRootNavigationState} from '@/app/navigation/navigationRef';
 import {
   getCurrentChatRoomIdFromNavigationState,
-} from '@/app/navigation/services/communityNavigation';
-import { handleForegroundNotificationNavigation } from '@/app/navigation/services/notificationNavigation';
-import { useAuth } from '@/features/auth';
+} from '@/app/navigation/selectors/getCurrentChatRoomIdFromNavigationState';
+import {
+  getCurrentRouteNameFromNavigationState,
+} from '@/app/navigation/selectors/getCurrentLeafRouteFromNavigationState';
+import {handleForegroundNotificationNavigation} from '@/app/navigation/services/notificationNavigation';
+import {useAuth} from '@/features/auth';
 import {
   resolveChatRoomForegroundNotification,
   useChatRepository,
 } from '@/features/chat';
-import {
-  buildNoticeForegroundNotification,
-  buildNoticePushForegroundNotification,
-} from '@/features/notice';
-import {
-  buildAppNoticeForegroundNotification,
-} from '@/features/settings';
-
-export type ForegroundNotificationType =
-  | 'notice'
-  | 'chat'
-  | 'settlement'
-  | 'kicked'
-  | 'party_created'
-  | 'board_notification'
-  | 'notice_notification'
-  | 'app_notice'
-  | 'chat_room_message';
 
 export interface ForegroundNotificationState {
-  visible: boolean;
-  title: string;
   body: string;
-  noticeId?: string;
-  partyId?: string;
-  postId?: string;
-  chatRoomId?: string;
-  type?: ForegroundNotificationType;
+  intent?: NotificationNavigationIntent | null;
+  title: string;
+  visible: boolean;
+}
+
+export interface ForegroundNotificationInput {
+  body: string;
+  intent?: NotificationNavigationIntent | null;
+  title: string;
+}
+
+export interface CommunityChatForegroundNotificationInput {
+  chatRoomId: string;
+  intent?: NotificationNavigationIntent | null;
+  messageText: string;
+  senderName: string;
 }
 
 export interface UseForegroundNotificationRuntimeResult {
   foregroundNotification: ForegroundNotificationState;
-  setForegroundNotification: Dispatch<SetStateAction<ForegroundNotificationState>>;
-  handleForegroundNotificationPress: () => void;
-  handleForegroundNotificationDismiss: () => void;
-  handlePartyDeleted: () => void;
-  handleNoticeReceived: (
-    noticeId: string,
-    noticeTitle?: string,
-    noticeCategory?: string,
-  ) => void;
-  handleAppNoticeNotificationReceived: (data: {
-    appNoticeId: string;
-    title: string;
-  }) => void;
-  handleChatMessageReceived: (data: {
-    body: string;
-    partyId: string;
-    title: string;
-  }) => void;
-  handleSettlementCompleted: (partyId: string) => void;
-  handleMemberKicked: () => void;
-  handlePartyCreated: (data: {
-    partyId: string;
-    title: string;
-    body: string;
-  }) => void;
-  handleBoardNotificationReceived: (data: {
-    postId: string;
-    type: string;
-    title: string;
-    body: string;
-  }) => void;
-  handleNoticeNotificationReceived: (data: {
-    noticeId: string;
-    type: string;
-    title: string;
-    body: string;
-  }) => void;
-  handleChatRoomMessageReceived: (data: {
-    chatRoomId: string;
-    senderName: string;
-    messageText: string;
-  }) => Promise<void>;
-  getCurrentScreen: () => string | undefined;
   getCurrentChatRoomId: () => string | undefined;
+  getCurrentScreen: () => string | undefined;
+  handleCommunityChatForegroundNotification: (
+    data: CommunityChatForegroundNotificationInput,
+  ) => Promise<void>;
+  handleForegroundNotificationDismiss: () => void;
+  handleForegroundNotificationPress: () => void;
+  setForegroundNotification: Dispatch<SetStateAction<ForegroundNotificationState>>;
+  showForegroundNotification: (data: ForegroundNotificationInput) => void;
 }
 
 export function useForegroundNotificationRuntime(): UseForegroundNotificationRuntimeResult {
-  const navigation = useNavigation();
-  const { user: authUser } = useAuth();
+  const {user: authUser} = useAuth();
   const chatRepository = useChatRepository();
-
   const [foregroundNotification, setForegroundNotification] =
     useState<ForegroundNotificationState>({
-      visible: false,
-      title: '',
       body: '',
+      title: '',
+      visible: false,
     });
 
   const getCurrentScreen = useCallback(() => {
-    const state = (navigation as any).getState?.();
-    if (!state) {
-      return undefined;
-    }
-
-    const mainTabRoute = state.routes?.find((route: any) => route.name === 'Main');
-    if (!mainTabRoute) {
-      return undefined;
-    }
-
-    const mainTabState = mainTabRoute.state;
-    if (!mainTabState) {
-      return undefined;
-    }
-
-    const tabRoute = mainTabState.routes?.[mainTabState.index];
-    if (!tabRoute) {
-      return undefined;
-    }
-
-    const stackState = tabRoute.state;
-    if (!stackState) {
-      return undefined;
-    }
-
-    const stackRoute = stackState.routes?.[stackState.index];
-    return stackRoute?.name;
-  }, [navigation]);
+    return getCurrentRouteNameFromNavigationState(getRootNavigationState());
+  }, []);
 
   const getCurrentChatRoomId = useCallback(() => {
-    const state = (navigation as any).getState?.();
-    return getCurrentChatRoomIdFromNavigationState(state);
-  }, [navigation]);
+    return getCurrentChatRoomIdFromNavigationState(getRootNavigationState());
+  }, []);
+
+  const showForegroundNotification = useCallback(
+    ({body, intent, title}: ForegroundNotificationInput) => {
+      setForegroundNotification({
+        body,
+        intent,
+        title,
+        visible: true,
+      });
+    },
+    [],
+  );
 
   const handleForegroundNotificationPress = useCallback(() => {
     handleForegroundNotificationNavigation({
-      navigation,
-      notification: foregroundNotification,
+      intent: foregroundNotification.intent,
     });
 
     setForegroundNotification(previous => ({
       ...previous,
       visible: false,
     }));
-  }, [foregroundNotification, navigation]);
+  }, [foregroundNotification.intent]);
 
   const handleForegroundNotificationDismiss = useCallback(() => {
     setForegroundNotification(previous => ({
@@ -155,145 +97,36 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
     }));
   }, []);
 
-  const handlePartyDeleted = useCallback(() => {}, []);
-
-  const handleNoticeReceived = useCallback(
-    (noticeId: string, noticeTitle?: string, noticeCategory?: string) => {
-      const payload = buildNoticeForegroundNotification({
-        noticeCategory,
-        noticeId,
-        noticeTitle,
-      });
-
-      setForegroundNotification({
-        visible: true,
-        title: payload.title,
-        body: payload.body,
-        noticeId: payload.noticeId,
-        type: payload.type,
-      });
-    },
-    [],
-  );
-
-  const handleAppNoticeNotificationReceived = useCallback(
-    (data: { appNoticeId: string; title: string }) => {
-      const payload = buildAppNoticeForegroundNotification(data);
-
-      setForegroundNotification({
-        visible: true,
-        title: payload.title,
-        body: payload.body,
-        noticeId: payload.noticeId,
-        type: payload.type,
-      });
-    },
-    [],
-  );
-
-  const handleChatMessageReceived = useCallback(
-    (data: { body: string; partyId: string; title: string }) => {
-      setForegroundNotification({
-        visible: true,
-        title: data.title,
-        body: data.body,
-        partyId: data.partyId,
-        type: 'chat',
-      });
-    },
-    [],
-  );
-
-  const handleSettlementCompleted = useCallback((partyId: string) => {
-    setForegroundNotification({
-      visible: true,
-      title: '모든 정산이 완료되었어요',
-      body: '동승 파티 종료 준비가 되었습니다.',
-      partyId,
-      type: 'settlement',
-    });
-  }, []);
-
-  const handleMemberKicked = useCallback(() => {
-    setForegroundNotification({
-      visible: true,
-      title: '파티에서 강퇴되었어요',
-      body: '리더가 당신을 파티에서 나가게 했습니다.',
-      type: 'kicked',
-    });
-  }, []);
-
-  const handlePartyCreated = useCallback(
-    (data: { partyId: string; title: string; body: string }) => {
-      setForegroundNotification({
-        visible: true,
-        title: data.title,
-        body: data.body,
-        partyId: data.partyId,
-        type: 'party_created',
-      });
-    },
-    [],
-  );
-
-  const handleBoardNotificationReceived = useCallback(
-    (data: { postId: string; type: string; title: string; body: string }) => {
-      setForegroundNotification({
-        visible: true,
-        title: data.title,
-        body: data.body,
-        postId: data.postId,
-        type: 'board_notification',
-      });
-    },
-    [],
-  );
-
-  const handleNoticeNotificationReceived = useCallback(
-    (data: { noticeId: string; type: string; title: string; body: string }) => {
-      const payload = buildNoticePushForegroundNotification(data);
-
-      setForegroundNotification({
-        visible: true,
-        title: payload.title,
-        body: payload.body,
-        noticeId: payload.noticeId,
-        type: payload.type,
-      });
-    },
-    [],
-  );
-
-  const handleChatRoomMessageReceived = useCallback(
-    async (data: {
-      chatRoomId: string;
-      senderName: string;
-      messageText: string;
-    }) => {
+  const handleCommunityChatForegroundNotification = useCallback(
+    async ({
+      chatRoomId,
+      intent,
+      messageText,
+      senderName,
+    }: CommunityChatForegroundNotificationInput) => {
       try {
         const notificationPayload =
           await resolveChatRoomForegroundNotification({
             chatRepository,
-            chatRoomId: data.chatRoomId,
+            chatRoomId,
             department: authUser?.department,
-            messageText: data.messageText,
-            senderName: data.senderName,
+            messageText,
+            senderName,
           });
 
         setForegroundNotification({
-          visible: true,
-          title: notificationPayload.title,
           body: notificationPayload.body,
-          chatRoomId: notificationPayload.chatRoomId,
-          type: 'chat_room_message',
-        });
-      } catch {
-        setForegroundNotification({
+          intent,
+          title: notificationPayload.title,
           visible: true,
+        });
+      } catch (error) {
+        console.warn('커뮤니티 채팅 알림 구성에 실패했습니다.', error);
+        setForegroundNotification({
+          body: `${senderName || '익명'} : ${messageText}`,
+          intent,
           title: '채팅방',
-          body: `${data.senderName || '익명'} : ${data.messageText}`,
-          chatRoomId: data.chatRoomId,
-          type: 'chat_room_message',
+          visible: true,
         });
       }
     },
@@ -302,20 +135,12 @@ export function useForegroundNotificationRuntime(): UseForegroundNotificationRun
 
   return {
     foregroundNotification,
-    setForegroundNotification,
-    handleForegroundNotificationPress,
-    handleForegroundNotificationDismiss,
-    handlePartyDeleted,
-    handleNoticeReceived,
-    handleAppNoticeNotificationReceived,
-    handleChatMessageReceived,
-    handleSettlementCompleted,
-    handleMemberKicked,
-    handlePartyCreated,
-    handleBoardNotificationReceived,
-    handleNoticeNotificationReceived,
-    handleChatRoomMessageReceived,
-    getCurrentScreen,
     getCurrentChatRoomId,
+    getCurrentScreen,
+    handleCommunityChatForegroundNotification,
+    handleForegroundNotificationDismiss,
+    handleForegroundNotificationPress,
+    setForegroundNotification,
+    showForegroundNotification,
   };
 }

@@ -57,6 +57,7 @@ export const NoticeDetailScreen = () => {
       NativeStackScreenProps<NoticeStackParamList, 'NoticeDetail'>['route']
     >();
   const insets = useSafeAreaInsets();
+  const initialCommentId = route.params?.initialCommentId;
   const {height: keyboardHeight, isVisible: isKeyboardVisible} =
     useKeyboardInset();
   const screenAnimatedStyle = useScreenEnterAnimation();
@@ -97,6 +98,7 @@ export const NoticeDetailScreen = () => {
   const composerRef = React.useRef<TextInput>(null);
   const commentOffsetMapRef = React.useRef(new Map<string, number>());
   const pendingScrollCommentIdRef = React.useRef<string | null>(null);
+  const lastAppliedInitialCommentIdRef = React.useRef<string | null>(null);
 
   const handlePressBack = React.useCallback(() => {
     if (navigation.canGoBack()) {
@@ -246,6 +248,35 @@ export const NoticeDetailScreen = () => {
     },
     [headerOffset],
   );
+
+  React.useEffect(() => {
+    if (
+      !initialCommentId ||
+      lastAppliedInitialCommentIdRef.current === initialCommentId ||
+      commentItems.length === 0
+    ) {
+      return;
+    }
+
+    lastAppliedInitialCommentIdRef.current = initialCommentId;
+    pendingScrollCommentIdRef.current = initialCommentId;
+
+    const timeoutId = setTimeout(() => {
+      const commentOffset = commentOffsetMapRef.current.get(initialCommentId);
+
+      if (commentOffset == null) {
+        return;
+      }
+
+      pendingScrollCommentIdRef.current = null;
+      scrollViewRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(0, commentOffset - headerOffset - SPACING.md),
+      });
+    }, Platform.OS === 'ios' ? 220 : 120);
+
+    return () => clearTimeout(timeoutId);
+  }, [commentItems.length, headerOffset, initialCommentId]);
 
   const handleOpenExternalLink = React.useCallback(() => {
     const targetUrl = notice?.link?.trim();

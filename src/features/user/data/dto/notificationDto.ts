@@ -1,20 +1,8 @@
-export type NotificationTypeDto =
-  | 'ACADEMIC_SCHEDULE'
-  | 'APP_NOTICE'
-  | 'CHAT_MESSAGE'
-  | 'COMMENT_CREATED'
-  | 'MEMBER_KICKED'
-  | 'NOTICE'
-  | 'PARTY_ARRIVED'
-  | 'PARTY_CLOSED'
-  | 'PARTY_CREATED'
-  | 'PARTY_ENDED'
-  | 'PARTY_REOPENED'
-  | 'PARTY_JOIN_ACCEPTED'
-  | 'PARTY_JOIN_DECLINED'
-  | 'PARTY_JOIN_REQUEST'
-  | 'POST_LIKED'
-  | 'SETTLEMENT_COMPLETED';
+import type {
+  NotificationType,
+} from '../../model/notificationContract';
+
+export type NotificationTypeDto = NotificationType;
 
 export interface NotificationDataDto {
   academicScheduleId?: string | null;

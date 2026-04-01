@@ -11,62 +11,61 @@ const buildIconMeta = (
   notification: Notification,
 ): Pick<NotificationInboxItemViewData, 'contextLabel' | 'iconName' | 'iconTone'> => {
   switch (notification.type) {
-    case 'app_notice':
+    case 'APP_NOTICE':
       return {
         contextLabel: '앱 공지',
         iconName: 'megaphone-outline',
         iconTone: 'orange',
       };
-    case 'notice':
-    case 'notice_post_comment':
-    case 'notice_post_like':
+    case 'NOTICE':
       return {
         contextLabel: '공지사항',
-        iconName:
-          notification.type === 'notice_post_like'
-            ? 'heart-outline'
-            : 'notifications-outline',
+        iconName: 'notifications-outline',
         iconTone: 'orange',
       };
-    case 'party_join_request':
-    case 'party_join_accepted':
-    case 'party_join_rejected':
-    case 'party_closed':
-    case 'party_arrived':
-    case 'party_created':
-    case 'party_ended':
-    case 'party_reopened':
-    case 'settlement_completed':
+    case 'PARTY_JOIN_REQUEST':
+    case 'PARTY_JOIN_ACCEPTED':
+    case 'PARTY_JOIN_DECLINED':
+    case 'PARTY_CLOSED':
+    case 'PARTY_ARRIVED':
+    case 'PARTY_CREATED':
+    case 'PARTY_ENDED':
+    case 'PARTY_REOPENED':
+    case 'SETTLEMENT_COMPLETED':
       return {
         contextLabel: '택시 파티',
         iconName: 'car-sport-outline',
         iconTone: 'yellow',
       };
-    case 'chat_message':
+    case 'CHAT_MESSAGE':
       return {
-        contextLabel: '택시 채팅',
+        contextLabel: notification.data.chatRoomId?.startsWith('party:')
+          ? '택시 채팅'
+          : '커뮤니티',
         iconName: 'chatbubble-outline',
         iconTone: 'green',
       };
-    case 'member_kicked':
+    case 'MEMBER_KICKED':
       return {
         contextLabel: '보안 알림',
         iconName: 'shield-checkmark-outline',
         iconTone: 'purple',
       };
-    case 'board_post_like':
+    case 'POST_LIKED':
       return {
-        contextLabel: '커뮤니티',
-        iconName: 'heart-outline',
+        contextLabel: notification.data.noticeId ? '공지사항' : '커뮤니티',
+        iconName: notification.data.noticeId
+          ? 'notifications-outline'
+          : 'heart-outline',
         iconTone: 'orange',
       };
-    case 'board_post_comment':
+    case 'COMMENT_CREATED':
       return {
-        contextLabel: '커뮤니티',
+        contextLabel: notification.data.noticeId ? '공지사항' : '커뮤니티',
         iconName: 'chatbubble-outline',
         iconTone: 'green',
       };
-    case 'academic_schedule':
+    case 'ACADEMIC_SCHEDULE':
       return {
         contextLabel: '학사 일정',
         iconName: 'calendar-outline',

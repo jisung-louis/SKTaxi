@@ -37,7 +37,7 @@ export const AcademicCalendarDetailScreen = () => {
   const insets = useSafeAreaInsets();
   const scrollViewRef = React.useRef<ScrollView>(null);
   const cardRefs = React.useRef<Record<string, View | null>>({});
-  const hasAutoScrolledRef = React.useRef(false);
+  const lastAutoScrolledEventIdRef = React.useRef<string | null>(null);
   const initialDate = route.params?.initialDate;
   const scheduleId = route.params?.scheduleId;
 
@@ -51,7 +51,7 @@ export const AcademicCalendarDetailScreen = () => {
     movePrev,
     reload,
     selectMode,
-  } = useAcademicCalendarDetailData(initialDate);
+  } = useAcademicCalendarDetailData(initialDate, scheduleId);
 
   const scrollToEvent = React.useCallback((eventId: string) => {
     const targetRef = cardRefs.current[eventId];
@@ -73,7 +73,7 @@ export const AcademicCalendarDetailScreen = () => {
   }, []);
 
   React.useEffect(() => {
-    if (!data || hasAutoScrolledRef.current) {
+    if (!data) {
       return;
     }
 
@@ -87,7 +87,11 @@ export const AcademicCalendarDetailScreen = () => {
       return;
     }
 
-    hasAutoScrolledRef.current = true;
+    if (lastAutoScrolledEventIdRef.current === targetEventId) {
+      return;
+    }
+
+    lastAutoScrolledEventIdRef.current = targetEventId;
 
     const timeoutId = setTimeout(() => {
       scrollToEvent(targetEventId);

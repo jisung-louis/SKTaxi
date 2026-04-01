@@ -2,15 +2,20 @@ import React, { PropsWithChildren } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import BootSplash from 'react-native-bootsplash';
 
+import {
+  flushPendingNavigationActions,
+  rootNavigationRef,
+} from './navigationRef';
 import { RootNavigator } from './RootNavigator';
 
 export const AppNavigation = ({ children }: PropsWithChildren) => {
   const handleNavigationReady = () => {
+    flushPendingNavigationActions();
     BootSplash.hide({fade: true});
   };
 
   return (
-    <NavigationContainer onReady={handleNavigationReady}>
+    <NavigationContainer ref={rootNavigationRef} onReady={handleNavigationReady}>
       <RootNavigator />
       {children}
     </NavigationContainer>

@@ -1,3 +1,7 @@
+export {
+  navigateToAppNoticeDetail,
+} from '@/app/navigation/services/appRouteNavigation';
+
 export interface AppNoticeForegroundNotificationPayload {
   body: string;
   noticeId: string;
@@ -15,21 +19,4 @@ export const buildAppNoticeForegroundNotification = (data: {
     title: '새 앱 공지',
     type: 'app_notice',
   };
-};
-
-export const navigateToAppNoticeDetail = (navigation: any, noticeId: string) => {
-  try {
-    navigation.navigate('Main', {
-      screen: 'CampusTab',
-      params: { screen: 'AppNoticeDetail', params: { noticeId } },
-    });
-    return;
-  } catch {}
-
-  try {
-    navigation.navigate('CampusTab', {
-      screen: 'AppNoticeDetail',
-      params: { noticeId },
-    });
-  } catch {}
 };
