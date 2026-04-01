@@ -1,6 +1,6 @@
 {
   "name": "SKURI Taxi",
-  "version": "1.2.7",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "android": "react-native run-android",
